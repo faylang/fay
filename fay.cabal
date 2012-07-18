@@ -1,0 +1,38 @@
+name:                fay
+version:             0.1.0.0
+synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
+description:         Fay is a strict subset of Haskell which can be compiled (type-checked) with GHC, and compiled to JavaScript.
+homepage:            http://chrisdone.com/fay
+license:             BSD3
+license-file:        LICENSE
+author:              Chris Done
+maintainer:          chrisdone@gmail.com
+copyright:           2012 Chris Done
+category:            Development
+build-type:          Simple
+cabal-version:       >=1.8
+data-files:          js/runtime.js
+                     hs/stdlib.hs
+extra-source-files:  examples/alert.hs
+
+library
+  hs-source-dirs:    src
+  exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude
+  other-modules:     Language.Fay.Print, Control.Monad.IO
+  ghc-options:       -O2
+  build-depends:     base >= 4 && < 5,
+                     mtl,
+                     language-javascript,
+                     haskell-src-exts,
+                     json
+executable fay
+  hs-source-dirs:    src
+  ghc-options:       -O2
+  main-is:           Main.hs
+  build-depends:     base >= 4 && < 5,
+                     mtl,
+                     language-javascript,
+                     haskell-src-exts,
+                     process,
+                     directory,
+                     json

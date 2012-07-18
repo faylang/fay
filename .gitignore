@@ -1,0 +1,5 @@
+cabal-dev/
+dist/
+examples/*.js
+examples/*.html
+TAGS

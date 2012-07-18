@@ -1,5 +1,4 @@
-data Bool = True | False
-
 main = print True
 
-print = foreignJS 1 "console.log" ""
+print :: Foreign a => a -> Fay ()
+print = foreignFay "console.log" ""

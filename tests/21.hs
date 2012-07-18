@@ -1,5 +1,4 @@
-data Bool = True | False
-
 main = do print "Hello,"; print "World!"
 
-print = foreignJS 1 "console.log" ""
+print :: Foreign a => a -> Fay ()
+print = foreignFay "console.log" ""

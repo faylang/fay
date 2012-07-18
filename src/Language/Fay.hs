@@ -433,7 +433,16 @@ compilePApp cons pats exp body = do
   substmts <- foldM (\body (i,pat) -> compilePat (JsIndex i forcedExp) pat body)
                     body
                     (reverse (zip [1..] pats))
-  return [JsIf (JsEq (JsGetProp (JsIndex 0 forcedExp) "name") (JsLit (JsStr (qname cons))))
+  let constructor = JsIndex 0 forcedExp
+      compareConstructorNames
+        -- Special-casing on the booleans.
+        | cons == "True" = JsEq forcedExp (JsLit (JsBool True))
+        | cons == "False" = JsEq forcedExp (JsLit (JsBool False))
+        -- Everything else, generic:
+        | otherwise =
+            JsEq (JsGetProp constructor "name")
+                 (JsLit (JsStr (qname cons)))
+  return [JsIf compareConstructorNames
                substmts
                []]
 

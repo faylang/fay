@@ -570,9 +570,15 @@ thunk :: JsExp -> JsExp
 -- thunk exp = JsNew (hjIdent "Thunk") [JsFun [] [] (Just exp)]
 thunk exp =
   case exp of
+    -- JS constants don't need to be in thunks, they're already strict.
     JsLit{} -> exp
     JsName "true" -> exp
     JsName "false" -> exp
+    -- Functions (e.g. lets) used for introducing a new lexical scope
+    -- aren't necessary inside a thunk. This is a simple aesthetic
+    -- optimization.
+    JsApp fun@JsFun{} [] -> JsNew ":thunk" [fun]
+    -- Otherwise make a regular thunk.
     _ -> JsNew ":thunk" [JsFun [] [] (Just exp)]
 
 -- | Wrap an expression in a thunk.

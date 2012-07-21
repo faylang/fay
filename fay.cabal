@@ -14,12 +14,13 @@ build-type:          Simple
 cabal-version:       >=1.8
 data-files:          js/runtime.js
                      hs/stdlib.hs
+                     src/Language/Fay/Stdlib.hs
 extra-source-files:  examples/alert.hs
 
 library
   hs-source-dirs:    src
   exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude
-  other-modules:     Language.Fay.Print, Control.Monad.IO
+  other-modules:     Language.Fay.Print, Control.Monad.IO, Language.Fay.Stdlib
   ghc-options:       -O2
   build-depends:     base >= 4 && < 5,
                      mtl,
@@ -32,7 +33,10 @@ library
                      HUnit,
                      process,
                      filepath,
-                     directory
+                     directory,
+                     blaze-html,
+                     blaze-markup,
+                     bytestring
 
 executable fay
   hs-source-dirs:    src
@@ -57,3 +61,20 @@ executable fay-tests
                      process,
                      filepath,
                      directory
+
+executable fay-docs
+  hs-source-dirs:    src
+  ghc-options:       -O2
+  main-is:           Docs.hs
+  build-depends:     base >= 4 && < 5,
+                     mtl,
+                     language-javascript,
+                     haskell-src-exts,
+                     json,
+                     HUnit,
+                     process,
+                     filepath,
+                     directory,
+                     blaze-html,
+                     blaze-markup,
+                     bytestring

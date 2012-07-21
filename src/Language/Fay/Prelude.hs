@@ -8,7 +8,9 @@ module Language.Fay.Prelude
   ,Double
   ,Bool(..)
   ,Show(show)
-  ,Read,read
+  ,Read
+  ,Maybe(..)
+  ,read
   ,fromInteger
   ,fromRational
   ,(>>)
@@ -23,12 +25,15 @@ module Language.Fay.Prelude
   ,(||)
   ,(&&)
   ,fail
-  ,return)
+  ,return
+  ,module Language.Fay.Stdlib)
   where
 
 import Language.Fay.Types (Fay)
+import Language.Fay.Stdlib
 
-import Prelude hiding ((>>),(>>=),fromInteger,fromRational,fail,return)
+import Prelude ((>),(<),(==),(||),(&&),Maybe(..),Double,Ord,Integer,error,String,(+),Bool(..),Char,Show(..)
+               ,Read(..),read,(/=),(*),(-))
 import GHC.Real (Ratio)
 
 -- | Just to satisfy GHC.

@@ -137,7 +137,7 @@ instance Printable JsExp where
   printJS (JsIndex i exp) = 
     "(" ++ printJS exp ++ ")[" ++ show i ++ "]"
   printJS (JsEq exp1 exp2) =
-    "(" ++ printJS exp1 ++ " == " ++ printJS exp2 ++ ")"
+    printJS exp1 ++ " == " ++ printJS exp2
   printJS (JsGetProp exp prop) =
     printJS exp ++ "." ++ printJS prop
 
@@ -148,6 +148,7 @@ instance Printable JsExp where
 jsEncodeName :: String -> String
 -- Special symbols:
 jsEncodeName ":tmp" = "$tmp"
+jsEncodeName ":thunk" = "$"
 -- Used keywords:
 jsEncodeName "null" = "_null"
 -- Anything else.

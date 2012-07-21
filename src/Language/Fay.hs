@@ -9,7 +9,9 @@
 
 -- | The Haskell→Javascript compiler.
 
-module Language.Fay where
+module Language.Fay
+  (compile,compileViaStr,compileModule)
+  where
 
 import           Language.Fay.Print              ()
 import           Language.Fay.Types
@@ -358,13 +360,13 @@ compileLambda pats exp = do
 compileCase :: Exp -> [Alt] -> Compile JsExp
 compileCase exp alts = do
   exp <- compileExp exp
-  pats <- fmap optimizePatConditions $ mapM (compilePatAlt (JsName tmpName)) alts
+  pats <- fmap optimizePatConditions $ mapM (compilePatAlt (JsName (tmpName exp))) alts
   return $
-    (JsApp (JsFun [tmpName]
+    (JsApp (JsFun [tmpName exp]
                   (concat pats)
                   (if any isWildCardAlt alts
                       then Nothing
-                      else Just (throwExp "unhandled case" (JsName tmpName))))
+                      else Just (throwExp "unhandled case" (JsName (tmpName exp)))))
            [exp])
 
 compileDoBlock :: [Stmt] -> Compile JsExp
@@ -463,12 +465,12 @@ compileInfixPat :: JsExp -> Pat -> [JsStmt] -> Compile [JsStmt]
 compileInfixPat exp pat@(PInfixApp left (Special cons) right) body =
   case cons of
     Cons -> do
-      let forcedExp = JsName tmpName
+      let forcedExp = JsName (tmpName exp)
           x = (JsGetProp forcedExp "car")
           xs = (JsGetProp forcedExp "cdr")
       rightMatch <- compilePat xs right body
       leftMatch <- compilePat x left rightMatch
-      return [JsVar tmpName (force exp)
+      return [JsVar (tmpName exp) (force exp)
              ,JsIf (JsInstanceOf forcedExp (hjIdent "Cons"))
                    leftMatch
                    []]
@@ -556,12 +558,22 @@ isWildCardPat PVar{}      = True
 isWildCardPat _           = False
 
 -- | A temporary name for testing conditions and such.
-tmpName :: JsName
-tmpName = ":tmp"
+tmpName :: JsExp -> JsName
+tmpName exp =
+  fromString $
+    case exp of
+      JsName (qname -> x) -> "$_" ++ x
+      _ -> ":tmp"
 
 -- | Wrap an expression in a thunk.
 thunk :: JsExp -> JsExp
-thunk exp = JsNew (hjIdent "Thunk") [JsFun [] [] (Just exp)]
+-- thunk exp = JsNew (hjIdent "Thunk") [JsFun [] [] (Just exp)]
+thunk exp =
+  case exp of
+    JsLit{} -> exp
+    JsName "true" -> exp
+    JsName "false" -> exp
+    _ -> JsNew ":thunk" [JsFun [] [] (Just exp)]
 
 -- | Wrap an expression in a thunk.
 monad :: JsExp -> JsExp
@@ -569,7 +581,7 @@ monad exp = JsNew (hjIdent "Monad") [exp]
 
 -- | Wrap an expression in a thunk.
 stmtsThunk :: [JsStmt] -> JsExp
-stmtsThunk stmts = JsNew (hjIdent "Thunk") [JsFun [] stmts Nothing]
+stmtsThunk stmts = JsNew ":thunk" [JsFun [] stmts Nothing]
 
 unserialize :: String -> JsExp -> JsExp
 unserialize typ exp =

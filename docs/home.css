@@ -1,0 +1,42 @@
+/* Standard elements */
+body {
+    font-family: sans-serif;
+    color: #666;
+}
+/* Page layout */
+.wrap {
+    margin: auto;
+}
+/* Header */
+h1 {
+    font-size: 2em;
+    margin-bottom:0;
+    padding-bottom:0;
+}
+.subheadline {
+    font-size: 20px;
+    margin-bottom: 2em;
+    font-style: italic;
+}
+
+/* Syntax highlighting */
+.example {  }
+.example pre { margin-top:0 }
+.example pre .diff { color:#555 }
+.example pre code .title { color:#333 }
+.example pre code .string { color:#366354 }
+.example pre code .built_in { color:#397460 }
+.example pre code .preprocessor { color:#4F4371 }
+.example pre code .comment { color:#555 }
+.example pre code .command { color:#397460 }
+.example pre code .special { color:#333 }
+.example pre code .formula { color:#4F4371 }
+.example pre code .keyword { color:#397460 }
+.example pre code .number { color:#4F4371 }
+.example pre code .header { color:#555 }
+.example pre code .addition { background-color:#FDD;color:#695B5B }
+.example pre code .deletion { background-color:#DFD;color:#000 }
+.example pre { margin:0 }
+.example table { border-spacing: 20px; }
+.example td { vertical-align: top; padding: 1em; box-shadow: 0px 0px 20px #ccc; border-radius: 5px; }
+.example .lang { font-size: small; margin-bottom: 1em; color: #999 }

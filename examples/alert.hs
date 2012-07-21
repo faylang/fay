@@ -3,10 +3,9 @@
 module Main where
 
 import Language.Fay.FFI
-import Language.Fay.Prelude hiding (show)
+import Language.Fay.Prelude
 
--- | Main entry point.
-main :: Fay ()
+main :: IO ()
 main = alert "Hello, World!"
 
 -- | Alert using window.alert.

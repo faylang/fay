@@ -6,23 +6,21 @@ var False = false;
 */
 
 // Force a thunk (if it is a thunk) until WHNF.
-var Fay$$force = function(thunkish,nocache){
-  while (thunkish instanceof Fay$$Thunk) {
+var _ = function(thunkish,nocache){
+  while (thunkish instanceof $) {
     thunkish = thunkish.force(nocache);
   }
   return thunkish;
 };
 
-var _ = Fay$$force;
-
 // Thunk object.
-function Fay$$Thunk(value){
+function $(value){
   this.forced = false;
   this.value = value;
 };
 
 // Force the thunk.
-Fay$$Thunk.prototype.force = function(nocache){
+$.prototype.force = function(nocache){
   return nocache
     ? this.value()
     : this.forced
@@ -56,7 +54,7 @@ function Fay$$Monad(value){
 // >>
 var Fay$$then = function(a){
   return function(b){
-    return new Fay$$Thunk(function(){
+    return new $(function(){
       _(a,true);
       return b;
     });
@@ -66,7 +64,7 @@ var Fay$$then = function(a){
 // >>=
 var Fay$$bind = function(m){
   return function(f){
-    return new Fay$$Thunk(function(){
+    return new $(function(){
       var monad = _(m,true);
       return f(monad.value);
     });
@@ -131,7 +129,7 @@ function Fay$$serialize(type,obj){
 
 // Encode a value to a Show representation
 function Fay$$encodeShow(x){
-  if (x instanceof Fay$$Thunk) x = _(x);
+  if (x instanceof $) x = _(x);
   if (x instanceof Array) {
     if (x.length == 0) {
       return "[]";
@@ -203,7 +201,7 @@ var Fay$$cons = function(x){
 function Fay$$index(index){
   return function(list){
     for(var i = 0; i < index; i++) {
-      list = Fay$$force(list).cdr;
+      list = _(list).cdr;
     }
     return list.car;
   };

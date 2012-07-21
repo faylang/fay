@@ -15,7 +15,7 @@ cabal-version:       >=1.8
 data-files:          js/runtime.js
                      hs/stdlib.hs
                      src/Language/Fay/Stdlib.hs
-extra-source-files:  examples/alert.hs examples/alert.hs examples/console.hs examples/console.js examples/dom.hs
+extra-source-files:  examples/alert.hs examples/alert.hs examples/console.hs examples/dom.hs
                      -- Test cases
                      tests/10 tests/10.hs tests/11 tests/11.hs tests/12 tests/12.hs tests/13
                      tests/13.hs tests/14 tests/14.hs tests/15 tests/15.hs tests/16 tests/16.hs

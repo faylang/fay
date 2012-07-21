@@ -25,7 +25,9 @@ import           Text.Blaze.Renderer.Utf8 (renderMarkup)
 -- | Main entry point.
 main :: IO ()
 main = do
-  generate >>= L.writeFile "docs/home.html"
+  let file = "docs" </> "home.html"
+  generate >>= L.writeFile file
+  putStrLn $ "Documentation file written to " ++ file
   
 generate = do
   sources <- mapM readFile examples

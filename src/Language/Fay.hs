@@ -324,10 +324,18 @@ compileExp exp =
 instance CompilesTo Exp JsExp where compileTo = compileExp
 
 compileApp :: Exp -> Exp -> Compile JsExp
-compileApp exp1 exp2 =
+compileApp exp1 exp2 = fmap optimizeApp $
   JsApp <$> (forceFlatName <$> compileExp exp1)
         <*> fmap return (compileExp exp2)
   where forceFlatName name = JsApp (JsName "_") [name]
+
+optimizeApp :: JsExp -> JsExp
+optimizeApp exp =
+  case exp of
+    exp -> exp
+      
+  where name JsName{} = True
+        name _        = False
 
 compileInfixApp :: Exp -> QOp -> Exp -> Compile JsExp
 compileInfixApp exp1 op exp2 = do
@@ -350,12 +358,16 @@ compileLambda pats exp = do
   exp <- compileExp exp
   stmts <- foldM (\inner (param,pat) -> do
                    stmts <- compilePat (JsName param) pat inner
-                   return [JsEarlyReturn (JsFun [param] (stmts ++ [unhandledcase param]) Nothing)])
+                   return [JsEarlyReturn (JsFun [param] (stmts ++ [unhandledcase param | not allfree]) Nothing)])
                  [JsEarlyReturn exp]
                  (reverse (zip uniqueNames pats))
-  return (JsApp (JsFun [] (stmts) Nothing) [])
+  case stmts of
+    [JsEarlyReturn fun@JsFun{}] -> return fun
+    _ -> error "Unexpected statements in compileLambda"
+--  return (JsApp (JsFun [] (stmts) Nothing) [])
 
   where unhandledcase = throw "unhandled case" . JsName
+        allfree = all isWildCardPat pats
 
 compileCase :: Exp -> [Alt] -> Compile JsExp
 compileCase exp alts = do

@@ -36,7 +36,8 @@ library
                      directory,
                      blaze-html,
                      blaze-markup,
-                     bytestring
+                     bytestring,
+                     time
 
 executable fay
   hs-source-dirs:    src
@@ -77,4 +78,5 @@ executable fay-docs
                      directory,
                      blaze-html,
                      blaze-markup,
-                     bytestring
+                     bytestring,
+                     time

@@ -2,20 +2,43 @@
 body {
     font-family: sans-serif;
     color: #666;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+a {
+    color: #F40095;
+    text-decoration: none
+}
+a:hover {
+    text-decoration: underline;
+}
+li + li {
+    margin-top: 0.5em;
 }
 /* Page layout */
 .wrap {
     margin: auto;
+    width: 40em;
 }
 /* Header */
 h1 {
     font-size: 2em;
     margin-bottom:0;
     padding-bottom:0;
+    color: #F40095
+}
+h2 {
+    color: #850095;
+    padding-bottom: 0em;
+    margin-bottom: 0;
+}
+h3 {
+    color: #948091;
+    font-style: italic;
 }
 .subheadline {
     font-size: 20px;
-    margin-bottom: 2em;
+    margin-bottom: 1em;
     font-style: italic;
 }
 
@@ -38,5 +61,19 @@ h1 {
 .example pre code .deletion { background-color:#DFD;color:#000 }
 .example pre { margin:0 }
 .example table { border-spacing: 20px; }
-.example td { vertical-align: top; padding: 1em; box-shadow: 0px 0px 20px #ccc; border-radius: 5px; }
+.example { vertical-align: top; padding: 1em; box-shadow: 0px 0px 20px #ccc; border-radius: 5px; }
 .example .lang { font-size: small; margin-bottom: 1em; color: #999 }
+.example .tab-title { cursor: pointer; }
+.example .tab-title-current em { font-weight: bold; color: #555; font-style: normal }
+.example .tab-title { display: inline-block; margin-right: 1em; }
+.example pre { overflow: auto }
+
+.footer {
+    margin-top: 5em;
+    font-size: 0.9em;
+    background: #eee;
+    padding: 1em;
+    border-top-left-radius: 1em;
+    border-top-right-radius: 1em;
+}
+p code { background: #eee; padding: 0.1em 0.2em; }

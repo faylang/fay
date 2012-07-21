@@ -88,9 +88,9 @@ instance Printable JsStmt where
                      ,printJS elses ++ "}"]
          else "}"
   printJS (JsEarlyReturn exp) =
-    ("return (" ++ printJS exp ++ ");")
+    ("return " ++ printJS exp ++ ";")
   printJS (JsThrow exp) =
-    ("throw (" ++ printJS exp ++ ");")
+    ("throw " ++ printJS exp ++ ";")
 
 -- | Print an expression.
 instance Printable JsExp where

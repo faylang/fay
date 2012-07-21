@@ -338,10 +338,20 @@ optimizeApp exp =
         name _        = False
 
 compileInfixApp :: Exp -> QOp -> Exp -> Compile JsExp
-compileInfixApp exp1 op exp2 = do
-  var <- resolveOpToVar op
-  compileExp (App (App var exp1) exp2)
+compileInfixApp exp1 op exp2 =
+  case getOp op of
+    UnQual (Symbol symbol)
+      | symbol `elem` words "* + - / < > || &&" -> do
+          e1 <- compileExp exp1
+          e2 <- compileExp exp2
+          return (JsInfix symbol (force e1) (force e2)) 
+    _ -> do
+      var <- resolveOpToVar op
+      compileExp (App (App var exp1) exp2)
 
+  where getOp (QVarOp op) = op
+        getOp (QConOp op) = op
+  
 compileList :: [Exp] -> Compile JsExp
 compileList xs = do
   exps <- mapM compileExp xs

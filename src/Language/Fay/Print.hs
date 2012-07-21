@@ -140,6 +140,8 @@ instance Printable JsExp where
     printJS exp1 ++ " == " ++ printJS exp2
   printJS (JsGetProp exp prop) =
     printJS exp ++ "." ++ printJS prop
+  printJS (JsInfix op x y) =
+    printJS x ++ " " ++ op ++ " " ++ printJS y
 
 --------------------------------------------------------------------------------
 -- Utilities

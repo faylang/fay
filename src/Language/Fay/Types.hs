@@ -100,6 +100,7 @@ data JsExp
   | JsInstanceOf JsExp JsName
   | JsIndex Int JsExp
   | JsEq JsExp JsExp
+  | JsInfix String JsExp JsExp -- Used to optimize *, /, +, etc
   deriving (Show,Eq)
 
 -- | Literal value type.

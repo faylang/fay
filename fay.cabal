@@ -15,7 +15,27 @@ cabal-version:       >=1.8
 data-files:          js/runtime.js
                      hs/stdlib.hs
                      src/Language/Fay/Stdlib.hs
-extra-source-files:  examples/alert.hs
+extra-source-files:  examples/alert.hs examples/alert.hs examples/console.hs examples/console.js examples/dom.hs
+                     -- Test cases
+                     tests/10 tests/10.hs tests/11 tests/11.hs tests/12 tests/12.hs tests/13
+                     tests/13.hs tests/14 tests/14.hs tests/15 tests/15.hs tests/16 tests/16.hs
+                     tests/17 tests/17.hs tests/18 tests/18.hs tests/19 tests/19.hs tests/1.hs
+                     tests/2 tests/20 tests/20.hs tests/21 tests/21.hs tests/22 tests/22.hs
+                     tests/23 tests/23.hs tests/24 tests/24.hs tests/25.hs tests/26 tests/26.hs
+                     tests/2.hs tests/3 tests/3.hs tests/4 tests/4.hs tests/5 tests/5.hs tests/6
+                     tests/6.hs tests/7 tests/7.hs tests/8 tests/8.hs tests/9 tests/9.hs
+                     -- Documentation files
+                     docs/beautify.js docs/highlight.pack.js docs/home.css docs/home.js docs/jquery.js
+                     -- Documentation snippets
+                     docs/snippets/conditions.hs
+                     docs/snippets/data.hs
+                     docs/snippets/declarations.hs
+                     docs/snippets/dom.hs
+                     docs/snippets/enums.hs
+                     docs/snippets/ffi.hs
+                     docs/snippets/functions.hs
+                     docs/snippets/lists.hs
+                     docs/snippets/patterns.hs
 
 library
   hs-source-dirs:    src
@@ -53,6 +73,7 @@ executable fay-tests
   hs-source-dirs:    src
   ghc-options:       -O2
   main-is:           Tests.hs
+  other-modules:     Language.Fay.Compiler
   build-depends:     base >= 4 && < 5,
                      mtl,
                      language-javascript,
@@ -67,6 +88,7 @@ executable fay-docs
   hs-source-dirs:    src
   ghc-options:       -O2
   main-is:           Docs.hs
+  other-modules:     Text.Blaze.Extra
   build-depends:     base >= 4 && < 5,
                      mtl,
                      language-javascript,

@@ -25,8 +25,7 @@ import           Text.Blaze.Renderer.Utf8 (renderMarkup)
 -- | Main entry point.
 main :: IO ()
 main = do
-  generate >>= L.putStr
-  putStrLn ""
+  generate >>= L.writeFile "docs/home.html"
   
 generate = do
   sources <- mapM readFile examples
@@ -197,6 +196,8 @@ thesetup = do
   p "To compile a Fay program, run:"
   pre $ code "$ fay -autorun foo.hs"
   p $ do "The "; code "-autorun"; " flag will make sure that the "; code "main"; " function is called."
+  p "You can also install this via cabal-dev, but be sure to run the commands from the cabal-dev bin dir: "
+  pre $ code "$ cabal-dev install\n$ cabal-dev/bin/fay -autorun foo.hs"
 
 thereference = do
   h2 "Language Reference"

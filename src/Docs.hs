@@ -43,7 +43,7 @@ generate = do
                 upperize xs = xs
         examples = map (("docs" </> "snippets") </>)
                        (map (++".hs")
-                            ["declarations","conditions"])
+                            ["declarations","conditions","functions"])
 
 page examples = do
   docType

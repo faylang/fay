@@ -84,7 +84,7 @@ theexamples examples = do
   a ! name "examples" $ return ()
   h2 "Examples"
   p $ do "The following examples are generated from the "
-         code "examples"
+         code "docs/snippets"
          " directory in the Fay project distribution. "
          "The Fay tab of each example shows the original Fay code, and the "
          " JavaScript tab shows the actual generated output of the compiler "

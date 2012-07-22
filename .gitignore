@@ -5,3 +5,6 @@ examples/*.html
 tests/*.js
 TAGS
 docs/home.html
+*.hi
+*.o
+*.hcr

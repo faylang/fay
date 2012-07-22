@@ -137,7 +137,7 @@ instance Printable JsExp where
   printJS (JsIndex i exp) = 
     "(" ++ printJS exp ++ ")[" ++ show i ++ "]"
   printJS (JsEq exp1 exp2) =
-    printJS exp1 ++ " == " ++ printJS exp2
+    printJS exp1 ++ " === " ++ printJS exp2
   printJS (JsGetProp exp prop) =
     printJS exp ++ "." ++ printJS prop
   printJS (JsInfix op x y) =

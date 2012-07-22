@@ -248,7 +248,7 @@ function Fay$$equal(lit1,lit2){
   // Simple case
   lit1 = _(lit1);
   lit2 = _(lit2);
-  if(lit1 == lit2) {
+  if(lit1 === lit2) {
     return true;
   }
   // General case
@@ -262,7 +262,7 @@ function Fay$$equal(lit1,lit2){
   } else if (lit1 instanceof Fay$$Cons) {
     while(lit1 instanceof Fay$$Cons && lit2 instanceof Fay$$Cons && Fay$$equal(lit1.car,lit2.car))
       lit1 = lit1.cdr, lit2 = lit2.cdr;
-    return (lit1 == null && lit2 == null);
+    return (lit1 === null && lit2 === null);
   } else return false;
 }
 

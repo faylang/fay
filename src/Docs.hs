@@ -137,6 +137,7 @@ theintro = do
     li $ "Pure by default"
     li $ "Compiles to JavaScript"
     li $ "Has fundamental data types (Double, String, etc.) based upon what JS can support"
+    li $ "Outputs minifier-aware code for small compressed size"
     li $ "Has a trivial foreign function interface to JavaScript"
   p $ do "Because Fay is intended to be small and simple, it relies on GHC, the Haskell compiler, "
          "for static checking. So the workflow when working with Fay is: "

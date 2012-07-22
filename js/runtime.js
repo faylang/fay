@@ -6,18 +6,18 @@ var False = false;
 */
 
 // Force a thunk (if it is a thunk) until WHNF.
-var _ = function(thunkish,nocache){
+function _(thunkish,nocache){
   while (thunkish instanceof $) {
     thunkish = thunkish.force(nocache);
   }
   return thunkish;
-};
+}
 
 // Thunk object.
 function $(value){
   this.forced = false;
   this.value = value;
-};
+}
 
 // Force the thunk.
 $.prototype.force = function(nocache){
@@ -52,31 +52,31 @@ function Fay$$Monad(value){
 }
 
 // >>
-var Fay$$then = function(a){
+function Fay$$then(a){
   return function(b){
     return new $(function(){
       _(a,true);
       return b;
     });
   };
-};
+}
 
 // >>=
-var Fay$$bind = function(m){
+function Fay$$bind(m){
   return function(f){
     return new $(function(){
       var monad = _(m,true);
       return f(monad.value);
     });
   };
-};
+}
 
 var Fay$$unit = null;
 
 // return
-var Fay$$return = function(a){
+function Fay$$return(a){
   return new Fay$$Monad(a);
-};
+}
 
 /*******************************************************************************
 * FFI.
@@ -180,7 +180,7 @@ function Fay$$unserialize(typ,obj){
 function Fay$$Cons(car,cdr){
   this.car = car;
   this.cdr = cdr;
-};
+}
 
 // Make a list.
 function Fay$$list(xs){
@@ -188,14 +188,14 @@ function Fay$$list(xs){
   for(var i=xs.length-1; i>=0;i--)
     out = new Fay$$Cons(xs[i],out);
   return out;
-};
+}
 
 // Built-in list cons.
-var Fay$$cons = function(x){
+function Fay$$cons(x){
   return function(y){
     return new Fay$$Cons(x,y);
   };
-};
+}
 
 // List index.
 function Fay$$index(index){
@@ -212,32 +212,32 @@ function Fay$$index(index){
 */
 
 // Built-in ×.
-var Fay$$mult = function(x){
+function Fay$$mult(x){
   return function(y){
     return _(x) * _(y);
   };
-};
+}
 
 // Built-in +.
-var Fay$$add = function(x){
-  return function(y){ 
+function Fay$$add(x){
+  return function(y){
     return _(x) + _(y);
   };
-};
+}
 
 // Built-in -.
-var Fay$$sub = function(x){
+function Fay$$sub(x){
   return function(y){
     return _(x) - _(y);
   };
-};
+}
 
 // Built-in /.
-var Fay$$div = function(x){
+function Fay$$div(x){
   return function(y){
     return _(x) / _(y);
   };
-};
+}
 
 /*******************************************************************************
 * Booleans.
@@ -267,46 +267,46 @@ function Fay$$equal(lit1,lit2){
 }
 
 // Built-in ==.
-var Fay$$eq = function(x){
+function Fay$$eq(x){
   return function(y){
     return Fay$$equal(x,y);
   };
-};
+}
 
 // Built-in /=.
-var Fay$$neq = function(x){
+function Fay$$neq(x){
   return function(y){
     return !(Fay$$equal(x,y));
   };
-};
+}
 
 // Built-in >.
-var Fay$$gt = function(x){
+function Fay$$gt(x){
   return function(y){
     return _(x) > _(y);
   };
-};
+}
 
 // Built-in <.
-var Fay$$lt = function(x){
+function Fay$$lt(x){
   return function(y){
     return _(x) < _(y);
   };
-};
+}
 
 // Built-in &&.
-var Fay$$and = function(x){
+function Fay$$and(x){
   return function(y){
     return _(x) && _(y);
   };
-};
+}
 
 // Built-in ||.
-var Fay$$or = function(x){
+function Fay$$or(x){
   return function(y){
     return _(x) || _(y);
   };
-};
+}
 
 /*******************************************************************************
 * Mutable references.
@@ -332,7 +332,7 @@ function Fay$$readRef(ref,x){
 */
 function Fay$$date(str){
   return window.Date.parse(str);
-};
+}
 
 /*******************************************************************************
 * Application code.

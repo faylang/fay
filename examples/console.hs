@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Main where
+module Console where
 
 import Language.Fay.FFI
 import Language.Fay.Prelude

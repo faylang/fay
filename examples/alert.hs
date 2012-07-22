@@ -1,11 +1,11 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Main where
+module Alert where
 
 import Language.Fay.FFI
 import Language.Fay.Prelude
 
-main :: IO ()
+main :: Fay ()
 main = alert "Hello, World!"
 
 -- | Alert using window.alert.

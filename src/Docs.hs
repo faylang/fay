@@ -161,7 +161,11 @@ thejsproblem = do
 
 thecomparisons = do
   h2 "Comparisons to other methods"
-  h3 "CoffeeScript"
+  coffee
+  royandelm
+
+coffee = do
+  h3 "CoffeeScript and LiveScript"
   p $ do "CoffeeScript is a syntactic layer above JavaScript that does not change semantics. "
          "It adds some additional syntactic constructs, but makes no fundamental changes, "
          "you are still essentially working in JavaScript, but with more convenient "
@@ -170,6 +174,11 @@ thecomparisons = do
          "different semantics. It is lazy, it has partial application and currying, "
          "pattern matching for all data types, all expressions are pure and only "
          "statements in the Fay monad can be impure."
+  p $ do "LiveScript is also a similar approach in the wave of compile-to-JS projects "
+         "that have developed in recent years. LiveScript's translation is also quite "
+         "readable and predictable, this is also the only thing in common with Fay."
+
+royandelm = do
   h3 "Roy and Elm"
   p $ do "Roy is an approach to bring functional programming to JavaScript, it has lots of "
          "interesting features but it has different syntax and type-system semantics "

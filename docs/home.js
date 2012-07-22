@@ -24,9 +24,32 @@ $(document).ready(function(){
     //     example.find('.pre').hide().first().show();
     //     tabs.children().first().addClass('tab-title-current');
     // });
+    var wrapwidth = $('.wrap').width();
     $('.example').each(function(){
         var tr = $(this).find('tr');
         var left = tr.find('td').first();
+        left.addClass('left');
         var right = left.next();
+        var toggle = $('<a class="toggle" href="javascript:">Show JavaScript</a>');
+        function toggleButton(){
+            if(right.is(':visible')) {
+                toggle.text("Hide JavaScript");
+                toggle.addClass('toggle-hide');
+                toggle.removeClass('toggle-show');
+            }
+            else {
+                toggle.text("Show JavaScript");
+                toggle.addClass('toggle-show');
+                toggle.removeClass('toggle-hide');
+            }
+        }
+        toggle.click(function(){
+            right.fadeToggle();
+            toggleButton();
+        });
+        if(tr.width() > wrapwidth + (30*wrapwidth/100))
+            right.hide();
+        toggleButton();
+        left.find('.panel').prepend(toggle);
     });
 });

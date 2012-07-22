@@ -17,10 +17,9 @@ li + li {
 }
 /* Page layout */
 .wrap {
-    margin-left: 1em;
-    margin-right: 1em;
+    margin: auto;
+    width: 40em;
 }
-p,ul { width: 40em; }
 /* Header */
 h1 {
     font-size: 2em;
@@ -70,11 +69,27 @@ h3 {
 .example pre { overflow: auto }
 .example { float: left }
 .example table { margin-left: -1em; }
-.example td {  vertical-align: top; padding: 1em; box-shadow: 0px 0px 20px #ccc; border-radius: 5px; }
+.example td { vertical-align: top; box-shadow: 0px 0px 20px #ccc; border-radius: 5px; }
 .example-heading { margin-bottom: 0; }
 .example-clear + .example-heading { margin-top: 0; padding-top: 0 }
 .example-clear { clear: both }
-
+.example .panel { padding: 1em; position: relative; }
+.example .toggle {
+    background: #F40095;
+    color: white;
+    padding: 0.3em;
+    border-bottom-left-radius: 0.2em;
+    border-bottom-right-radius: 0.2em;
+    position: absolute;
+    top: -1px;
+    right: 1em;
+    font-size: 0.8em
+}
+.example .toggle-hide {
+    opacity: 0.5;
+    background: #eee;
+    color: #999;
+}
 .footer {
     margin-top: 5em;
     font-size: 0.9em;

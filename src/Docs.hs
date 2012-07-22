@@ -98,15 +98,17 @@ theexamples examples = do
       table $ do
         tr $ do
           td $ do
-            div !. "lang" $ em "Fay"
-            pre !. "pre" $
-              code !. "language-haskell" $
-                toHtml fay
+            div !. "panel" $ do
+              div !. "lang" $ em "Fay"
+              pre !. "pre" $
+                code !. "language-haskell" $
+                  toHtml fay
           td $ do
-            div !. "lang" $ em "JavaScript"
-            pre !. "pre" $
-              code !. "language-javascript" $
-                toHtml javascript
+            div !. "panel" $ do
+              div !. "lang" $ em "JavaScript"
+              pre !. "pre" $
+                code !. "language-javascript" $
+                  toHtml javascript
     div !. "example-clear" $ return ()
 
 thefooter now =

@@ -78,7 +78,7 @@ thebody now examples = do
 
 theheading = do
   h1 "Fay programming language"
-  div !. "subheadline" $ "A strict subset of Haskell that compiles to JavaScript"
+  div !. "subheadline" $ "A proper subset of Haskell that compiles to JavaScript"
 
 theexamples examples = do
   a ! name "examples" $ return ()
@@ -117,7 +117,7 @@ theintro = do
   h2 "Introduction"
   p "Fay is a small programming language which has the following properties:"
   ul $ do
-    li $ do "A strict syntactic and semantic subset of "
+    li $ do "A proper syntactic and semantic subset of "
             a ! href "http://haskell.org/" $ "Haskell"
     li $ "Statically typed"
     li $ "Lazy"

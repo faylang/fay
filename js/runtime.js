@@ -211,7 +211,7 @@ function Fay$$index(index){
 * Numbers.
 */
 
-// Built-in ×.
+// Built-in *.
 function Fay$$mult(x){
   return function(y){
     return _(x) * _(y);

@@ -44,7 +44,7 @@ h3 {
 
 /* Syntax highlighting */
 .example {  }
-.example pre { margin-top:0; max-width: 30em; 
+.example pre { margin-top:0; 
 word-wrap: break-word; }
 .example pre .diff { color:#555 }
 .example pre code .title { color:#333 }

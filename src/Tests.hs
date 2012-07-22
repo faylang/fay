@@ -12,7 +12,7 @@ import Test.HUnit
 
 -- | Main test runner.
 main :: IO ()
-main = runUnitTests >>= print
+main = runUnitTests >> return ()
 
 -- | Run the case-by-case unit tests.
 runUnitTests :: IO Counts

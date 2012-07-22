@@ -44,10 +44,11 @@ $(document).ready(function(){
             }
         }
         toggle.click(function(){
-            right.fadeToggle();
-            toggleButton();
+            right.fadeToggle(function(){
+                toggleButton();
+            });
         });
-        if(tr.width() > wrapwidth + (30*wrapwidth/100))
+        if(tr.width() > wrapwidth + (20*wrapwidth/100))
             right.hide();
         toggleButton();
         left.find('.panel').prepend(toggle);

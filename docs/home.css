@@ -44,7 +44,8 @@ h3 {
 
 /* Syntax highlighting */
 .example {  }
-.example pre { margin-top:0 }
+.example pre { margin-top:0; max-width: 30em; 
+word-wrap: break-word; }
 .example pre .diff { color:#555 }
 .example pre code .title { color:#333 }
 .example pre code .string { color:#366354 }
@@ -66,7 +67,7 @@ h3 {
 .example .tab-title { cursor: pointer; }
 .example .tab-title-current em { font-weight: bold; color: #555; font-style: normal }
 .example .tab-title { display: inline-block; margin-right: 1em; }
-.example pre { overflow: auto }
+.example pre {  }
 .example { float: left }
 .example table { margin-left: -1em; }
 .example td { vertical-align: top; box-shadow: 0px 0px 20px #ccc; border-radius: 5px; }

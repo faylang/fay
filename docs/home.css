@@ -17,9 +17,10 @@ li + li {
 }
 /* Page layout */
 .wrap {
-    margin: auto;
-    width: 40em;
+    margin-left: 1em;
+    margin-right: 1em;
 }
+p,ul { width: 40em; }
 /* Header */
 h1 {
     font-size: 2em;
@@ -60,13 +61,19 @@ h3 {
 .example pre code .addition { background-color:#FDD;color:#695B5B }
 .example pre code .deletion { background-color:#DFD;color:#000 }
 .example pre { margin:0 }
-.example table { border-spacing: 20px; }
-.example { vertical-align: top; padding: 1em; box-shadow: 0px 0px 20px #ccc; border-radius: 5px; }
+.example table { border-spacing: 1em; }
+.example {}
 .example .lang { font-size: small; margin-bottom: 1em; color: #999 }
 .example .tab-title { cursor: pointer; }
 .example .tab-title-current em { font-weight: bold; color: #555; font-style: normal }
 .example .tab-title { display: inline-block; margin-right: 1em; }
 .example pre { overflow: auto }
+.example { float: left }
+.example table { margin-left: -1em; }
+.example td {  vertical-align: top; padding: 1em; box-shadow: 0px 0px 20px #ccc; border-radius: 5px; }
+.example-heading { margin-bottom: 0; }
+.example-clear + .example-heading { margin-top: 0; padding-top: 0 }
+.example-clear { clear: both }
 
 .footer {
     margin-top: 5em;

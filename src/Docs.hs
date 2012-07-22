@@ -18,7 +18,7 @@ import           Prelude hiding (head,div)
 import           System.Directory
 import           System.FilePath
 import           Text.Blaze.Extra
-import           Text.Blaze.Html5 as H hiding (contents,map)
+import           Text.Blaze.Html5 as H hiding (contents,map,style)
 import           Text.Blaze.Html5.Attributes as A hiding (title)
 import           Text.Blaze.Renderer.Utf8 (renderMarkup)
 
@@ -65,6 +65,7 @@ thehead = do
   script ! src "home.js" $ return ()
 
 thebody now examples = do
+  fork
   div !. "wrap" $ do
     theheading
     theintro
@@ -75,6 +76,11 @@ thebody now examples = do
     thereference
     thefooter now
 
+fork = 
+  a ! href "https://github.com/chrisdone/fay" $
+    img ! style "position: absolute; top: 0; right: 0; border: 0;"
+        ! src "https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"
+        ! alt "Fork me on GitHub"
 
 theheading = do
   h1 "Fay programming language"

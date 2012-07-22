@@ -44,7 +44,6 @@ library
   ghc-options:       -O2
   build-depends:     base >= 4 && < 5,
                      mtl,
-                     language-javascript,
                      haskell-src-exts,
                      json,
 
@@ -65,7 +64,6 @@ executable fay
   main-is:           Main.hs
   build-depends:     base >= 4 && < 5,
                      mtl,
-                     language-javascript,
                      haskell-src-exts,
                      json
 
@@ -76,7 +74,6 @@ executable fay-tests
   other-modules:     Language.Fay.Compiler
   build-depends:     base >= 4 && < 5,
                      mtl,
-                     language-javascript,
                      haskell-src-exts,
                      json,
                      HUnit,
@@ -91,7 +88,6 @@ executable fay-docs
   other-modules:     Text.Blaze.Extra
   build-depends:     base >= 4 && < 5,
                      mtl,
-                     language-javascript,
                      haskell-src-exts,
                      json,
                      HUnit,

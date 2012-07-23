@@ -220,7 +220,7 @@ thesetup = do
   p "And then install from the directory: "
   pre $ code "$ cabal install"
   h3 "Running"
-  p "To check that everything is okay, run the tests:"
+  p "To check that everything is okay, run the tests (you will need nodejs installed):"
   pre $ code "$ fay-tests"
   p "To compile a Fay program, run:"
   pre $ code "$ fay -autorun foo.hs"

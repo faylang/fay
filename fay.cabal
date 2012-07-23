@@ -39,13 +39,14 @@ extra-source-files:  examples/alert.hs examples/alert.hs examples/console.hs exa
 
 library
   hs-source-dirs:    src
-  exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude
+  exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude, Language.Fay.Show
   other-modules:     Language.Fay.Print, Control.Monad.IO, Language.Fay.Stdlib
   ghc-options:       -O2
   build-depends:     base >= 4 && < 5,
                      mtl,
                      haskell-src-exts,
                      json,
+                     pretty-show,
 
                      -- Requirements for the executables which
                      -- `cabal-dev ghci' needs.

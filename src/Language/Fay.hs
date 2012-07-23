@@ -446,10 +446,19 @@ compilePat exp pat body = do
 compilePLit :: JsExp -> Literal -> [JsStmt] -> Compile [JsStmt]
 compilePLit exp literal body = do
   lit <- compileLit literal
-  return [JsIf (JsApp (JsName (hjIdent "equal"))
-                      [exp,lit])
+  return [JsIf (equalExps exp lit)
                body
                []]
+
+equalExps a b 
+  | isConstant a && isConstant b = JsEq a b
+  | isConstant a = JsEq a (force b)
+  | isConstant b = JsEq (force a) b
+  | otherwise =
+     JsApp (JsName (hjIdent "equal")) [a,b]
+
+  where isConstant JsLit{} = True
+        isConstant _       = False
 
 compilePApp :: QName -> [Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
 compilePApp cons pats exp body = do

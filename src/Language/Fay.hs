@@ -316,7 +316,8 @@ compileExp exp =
                                         return (JsApp (JsName "enumFrom") [e])
     EnumFromTo i i'               -> do f <- compileExp i
                                         t <- compileExp i'
-                                        return (JsApp (JsName "enumFromTo") [f,t])
+                                        return (JsApp (JsApp (JsName "enumFromTo") [f])
+                                                      [t])
     ExpTypeSig _ e _ -> compileExp e
 
     exp -> throwError (UnsupportedExpression exp)

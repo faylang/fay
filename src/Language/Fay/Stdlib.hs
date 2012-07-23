@@ -95,7 +95,10 @@ when p m = if p then m >> return () else return ()
 
 enumFrom i = i : enumFrom (i + 1)
 
-enumFromTo i n = if i == n then [] else i : enumFromTo (i + 1) n
+enumFromTo i n =
+  if i == n
+     then [i]
+     else i : enumFromTo (i + 1) n
 
 zipWith :: (a->b->c) -> [a]->[b]->[c]
 zipWith f (a:as) (b:bs) = f a b : zipWith f as bs

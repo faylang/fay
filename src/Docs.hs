@@ -25,7 +25,7 @@ import           Text.Blaze.Renderer.Utf8 (renderMarkup)
 -- | Main entry point.
 main :: IO ()
 main = do
-  let file = "docs" </> "home.html"
+  let file = "docs" </> "index.html"
   generate >>= L.writeFile file
   putStrLn $ "Documentation file written to " ++ file
   
@@ -33,7 +33,10 @@ generate = do
   sources <- mapM readFile examples
   javascripts <- mapM compile examples
   now <- getCurrentTime
-  return $ renderMarkup $ page now (zip3 (map titlize examples) sources javascripts)
+  analytics <- readFile $ "docs" </> "analytics.js"
+  return $ renderMarkup $ page now
+                               analytics
+                               (zip3 (map titlize examples) sources javascripts)
     
   where compile file = do
           contents <- readFile file
@@ -49,11 +52,11 @@ generate = do
                        (map (++".hs")
                             (words "declarations conditions functions lists data enums patterns ffi dom"))
 
-page now examples = do
+page now analytics examples = do
   docType
   html $ do
     head $ thehead
-    body $ thebody now examples
+    body $ thebody now analytics examples
 
 thehead = do
   title $ "The Fay Programming Language — A Haskell subset"
@@ -64,7 +67,7 @@ thehead = do
   script ! src "beautify.js" $ return ()
   script ! src "home.js" $ return ()
 
-thebody now examples = do
+thebody now analytics examples = do
   fork
   div !. "wrap" $ do
     theheading
@@ -75,6 +78,7 @@ thebody now examples = do
     theexamples examples
     thereference
     thefooter now
+  preEscapedToMarkup analytics
 
 fork = 
   a ! href "https://github.com/chrisdone/fay" $

@@ -4,6 +4,7 @@ examples/*.js
 examples/*.html
 tests/*.js
 TAGS
+docs/index.html
 docs/home.html
 *.hi
 *.o

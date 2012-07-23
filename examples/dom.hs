@@ -6,7 +6,11 @@ module Dom where
 import Language.Fay.FFI
 import Language.Fay.Prelude
 
-main = do
+main :: Fay ()
+main = addEventListener "load" printBody False
+
+printBody :: Fay ()
+printBody = do
   result <- documentGetElements "body"
   print result
 
@@ -20,3 +24,7 @@ documentGetElements :: String -> Fay [Element]
 documentGetElements =
   foreignFay "document.getElementsByTagName"
              "array"
+
+addEventListener :: String -> Fay () -> Bool -> Fay ()
+addEventListener =
+    foreignFay "window.addEventListener" ""

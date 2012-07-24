@@ -658,6 +658,8 @@ resolveOpToVar op =
       | symbol == "/="  -> return (Var (hjIdent "neq"))
       | symbol == ">"   -> return (Var (hjIdent "gt"))
       | symbol == "<"   -> return (Var (hjIdent "lt"))
+      | symbol == ">="  -> return (Var (hjIdent "gte"))
+      | symbol == "<="  -> return (Var (hjIdent "lte"))
       | symbol == "&&"  -> return (Var (hjIdent "and"))
       | symbol == "||"  -> return (Var (hjIdent "or"))
       | symbol == ">>=" -> return (Var (hjIdent "bind"))

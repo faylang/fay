@@ -294,6 +294,20 @@ function Fay$$lt(x){
   };
 }
 
+// Built-in >=.
+function Fay$$gte(x){
+  return function(y){
+    return _(x) >= _(y);
+  };
+}
+
+// Built-in <=.
+function Fay$$lte(x){
+  return function(y){
+    return _(x) <= _(y);
+  };
+}
+
 // Built-in &&.
 function Fay$$and(x){
   return function(y){

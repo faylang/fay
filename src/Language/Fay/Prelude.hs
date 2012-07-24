@@ -22,6 +22,9 @@ module Language.Fay.Prelude
   ,(-)
   ,(>)
   ,(<)
+  ,(>=)
+  ,(<=)
+  ,(/)
   ,(||)
   ,(&&)
   ,fail
@@ -33,7 +36,7 @@ import Language.Fay.Types (Fay)
 import Language.Fay.Stdlib
 
 import Prelude ((>),(<),(==),(||),(&&),Maybe(..),Double,Ord,Integer,error,String,(+),Bool(..),Char,Show(..)
-               ,Read(..),read,(/=),(*),(-))
+               ,Read(..),read,(/=),(*),(-),(<=),(>=),(/))
 import GHC.Real (Ratio)
 
 -- | Just to satisfy GHC.

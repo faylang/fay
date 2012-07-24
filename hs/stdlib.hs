@@ -14,3 +14,7 @@ data Maybe a
 
 show :: (Foreign a,Show a) => a -> String
 show = foreignPure "Fay$$encodeShow" "string"
+
+-- There is only Double in JS.
+fromInteger x = x
+fromRational x = x

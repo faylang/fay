@@ -50,6 +50,7 @@ data CompileError
   = ParseError SrcLoc String
   | UnsupportedDeclaration Decl
   | UnsupportedMatchSyntax Match
+  | UnsupportedWhereInMatch Match
   | UnsupportedExpression Exp
   | UnsupportedLiteral Literal
   | UnsupportedLetBinding Decl

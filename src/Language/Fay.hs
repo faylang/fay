@@ -251,7 +251,9 @@ unname (Ident str) = str
 compileFunCase :: [Match] -> Compile [JsStmt]
 compileFunCase [] = return []
 compileFunCase matches@(Match _ name argslen _ _ _:_) = do
-  pats <- fmap optimizePatConditions $ forM matches $ \(Match _ _ pats _ rhs _) -> do
+  pats <- fmap optimizePatConditions $ forM matches $ \match@(Match _ _ pats _ rhs wheres) -> do
+    unless (noBinds wheres) $ do throwError (UnsupportedWhereInMatch match) -- TODO: Support `where'.
+                                 return ()
     exp <- compileRhs rhs
     foldM (\inner (arg,pat) -> do
              compilePat (JsName arg) pat inner)
@@ -267,6 +269,9 @@ compileFunCase matches@(Match _ name argslen _ _ _:_) = do
                       else [throw ("unhandled case in " ++ show name)
                                   (JsList (map JsName args))]
         isWildCardMatch (Match _ _ pats _ _ _) = all isWildCardPat pats
+        noBinds (BDecls []) = True
+        noBinds (IPBinds []) = True
+        noBinds _ = False
 
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp

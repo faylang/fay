@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -312,17 +313,18 @@ optimizeTailCalls :: [JsParam] -- ^ The function parameters.
                   -> [JsStmt]  -- ^ A new optimized function body.
 optimizeTailCalls params name stmts = abandonIfNoChange $
   JsWhile (JsLit (JsBool True))
-          (concatMap replaceTailStmt stmts)
-             
-  where replaceTailStmt (JsIf cond sothen orelse) = [JsIf cond (concatMap replaceTailStmt sothen)
-                                                               (concatMap replaceTailStmt orelse)]
-        replaceTailStmt (JsEarlyReturn exp) = expTailReplace exp
-        replaceTailStmt x = [x]
-        expTailReplace (flatten -> Just (JsName (UnQual call):args@(_:_)))
-          | call == name = updateParamsInstead args
-        expTailReplace original = [JsEarlyReturn original]
-        updateParamsInstead args = zipWith update params args where
-          update param arg = JsUpdate param arg
+          (concatMap replaceTailStmt
+                     (reverse (zip (reverse stmts) [0..])))
+  
+  where replaceTailStmt (JsIf cond sothen orelse,i) = [JsIf cond (concatMap (replaceTailStmt . (,i)) sothen)
+                                                                 (concatMap (replaceTailStmt . (,i)) orelse)]
+        replaceTailStmt (JsEarlyReturn exp,i) = expTailReplace i exp
+        replaceTailStmt (x,_) = [x]
+        expTailReplace i (flatten -> Just (JsName (UnQual call):args@(_:_)))
+          | call == name = updateParamsInstead i args
+        expTailReplace i original = [JsEarlyReturn original]
+        updateParamsInstead i args = zipWith JsUpdate params args ++
+                                     [JsContinue | i /= 0]
         abandonIfNoChange new@(JsWhile _ newstmts)
           | newstmts == stmts = stmts
           | otherwise         = [new]

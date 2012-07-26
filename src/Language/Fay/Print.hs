@@ -97,6 +97,7 @@ instance Printable JsStmt where
     unwords ["while (" ++ printJS cond ++ ") {"
             ,printJS stmts
             ,"}"]
+  printJS JsContinue = "continue;"
 
 -- | Print an expression.
 instance Printable JsExp where

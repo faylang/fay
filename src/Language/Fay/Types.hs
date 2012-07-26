@@ -94,6 +94,7 @@ data JsStmt
   | JsThrow JsExp
   | JsWhile JsExp [JsStmt]
   | JsUpdate JsName JsExp
+  | JsContinue
   deriving (Show,Eq)
   
 -- | Expression type.

@@ -1,0 +1,40 @@
+2012-07-26
+0.1.1.0: Lots of documentation updates, some runtime fixes, some more examples, tail-call optimization prototype.
+
+cf6b848 Add analytics to .cabal.
+13b8d0e Fix types for ghc.
+4a021a3 Use continue (for now) for TCO (refs #19).
+b43220c Tail recursive optimization prototype (refs #19).
+137a702 Tail recursive example doc.
+6ec356b Ref example.
+e10023c fromInteger/fromRational in the runtime (closes #20).
+7527aaa Add missing operators to Prelude and built-ins list (closes #16).
+9ce6915 Throw error about unsupported `where' (closes #17).
+406067c Fix silly enumFromTo mistake.
+8c37842 A test-case that tail-recursive functions run iteratively.
+1791e68 Optimize constant patterns slightly, shaves off some time.
+f016d01 Add Fay.Show (preliminary implementation).
+66cf298 Add data/show example.
+486c4f3 Add note about generating docs.
+15fd56c Add note that you need nodejs installed to run the tests.
+ae207b7 Include google analytics in docs and generate index.html rather than home.html.
+07f7f4a Updated dom example with onload handler.
+e702218 Remove max-width to fix firefox.
+aa5dc2b Mention minifying slightly in docs.
+e53addc Remove language-javascript dependency.
+f976ff6 Remove non-ascii character in runtime.js
+2abd59d Don't print counts in fay-tests.
+c0127c3 Add small note about livescript.
+0d35867 Added fork on github for docs.
+f6a0d62 Use === instead of == for jseq (closes #6).
+7d1a382 Some word break on the pre's.
+37e3d53 Rename modules from Main to X (closes #5).
+6734221 Ignore more stuff.
+4479709 Toggle examples.
+3ddf795 Put examples side-by-side (closes #3).
+5ae7cca s/strict/proper to avoid confusion.
+a482a5b Convert from function expression assignments to function definitions
+
+2012-07-21
+0.1.0.0: First version.
+

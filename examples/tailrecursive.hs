@@ -15,13 +15,13 @@ main = do
   benchmark
   benchmark
   benchmark
-  benchmark  
+  benchmark
 
 benchmark = do
   start <- getSeconds
-  print (sum 1000000 0 :: Double)
+  printD (sum 1000000 0 :: Double)
   end <- getSeconds
-  print (show (end-start) ++ "ms")
+  printS (show (end-start) ++ "ms")
 
 -- tail recursive
 sum 0 acc = acc
@@ -30,5 +30,8 @@ sum n acc = sum (n - 1) (acc + n)
 getSeconds :: Fay Double
 getSeconds = foreignFay "new Date" ""
 
-print :: Double -> Fay ()
-print = foreignFay "console.log" ""
+printD :: Double -> Fay ()
+printD = foreignFay "console.log" ""
+
+printS :: String -> Fay ()
+printS = foreignFay "console.log" ""

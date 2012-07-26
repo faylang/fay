@@ -50,7 +50,7 @@ generate = do
                 upperize xs = xs
         examples = map (("docs" </> "snippets") </>)
                        (map (++".hs")
-                            (words "declarations conditions functions lists data enums patterns ffi dom"))
+                            (words "declarations conditions functions lists data enums patterns ffi dom tail"))
 
 page now analytics examples = do
   docType

@@ -1,5 +1,5 @@
 name:                fay
-version:             0.1.0.0
+version:             0.1.1.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a strict subset of Haskell which can be compiled (type-checked) 
                      with GHC, and compiled to JavaScript.
@@ -15,7 +15,8 @@ cabal-version:       >=1.8
 data-files:          js/runtime.js
                      hs/stdlib.hs
                      src/Language/Fay/Stdlib.hs
-extra-source-files:  examples/alert.hs examples/alert.hs examples/console.hs examples/dom.hs
+extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examples/dom.hs
+                     examples/tailrecursive.hs examples/data.hs
                      -- Test cases
                      tests/10 tests/10.hs tests/11 tests/11.hs tests/12 tests/12.hs tests/13
                      tests/13.hs tests/14 tests/14.hs tests/15 tests/15.hs tests/16 tests/16.hs
@@ -23,7 +24,8 @@ extra-source-files:  examples/alert.hs examples/alert.hs examples/console.hs exa
                      tests/2 tests/20 tests/20.hs tests/21 tests/21.hs tests/22 tests/22.hs
                      tests/23 tests/23.hs tests/24 tests/24.hs tests/25.hs tests/26 tests/26.hs
                      tests/2.hs tests/3 tests/3.hs tests/4 tests/4.hs tests/5 tests/5.hs tests/6
-                     tests/6.hs tests/7 tests/7.hs tests/8 tests/8.hs tests/9 tests/9.hs
+                     tests/6.hs tests/7 tests/7.hs tests/8 tests/8.hs tests/9 tests/9.hs tests/27
+                     tests/27.hs tests/28 tests/28.hs
                      -- Documentation files
                      docs/beautify.js docs/highlight.pack.js docs/home.css docs/home.js docs/jquery.js
                      -- Documentation snippets
@@ -36,17 +38,19 @@ extra-source-files:  examples/alert.hs examples/alert.hs examples/console.hs exa
                      docs/snippets/functions.hs
                      docs/snippets/lists.hs
                      docs/snippets/patterns.hs
+                     docs/snippets/tail.hs
 
 library
   hs-source-dirs:    src
   exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude, Language.Fay.Show
-  other-modules:     Language.Fay.Print, Control.Monad.IO, Language.Fay.Stdlib
+  other-modules:     Language.Fay.Print, Control.Monad.IO, Language.Fay.Stdlib, System.Process.Extra
   ghc-options:       -O2
   build-depends:     base >= 4 && < 5,
                      mtl,
                      haskell-src-exts,
                      json,
                      pretty-show,
+                     data-default,
 
                      -- Requirements for the executables which
                      -- `cabal-dev ghci' needs.
@@ -66,7 +70,9 @@ executable fay
   build-depends:     base >= 4 && < 5,
                      mtl,
                      haskell-src-exts,
-                     json
+                     json,
+                     process,
+                     data-default
 
 executable fay-tests
   hs-source-dirs:    src
@@ -80,7 +86,8 @@ executable fay-tests
                      HUnit,
                      process,
                      filepath,
-                     directory
+                     directory,
+                     data-default
 
 executable fay-docs
   hs-source-dirs:    src
@@ -98,4 +105,5 @@ executable fay-docs
                      blaze-html,
                      blaze-markup,
                      bytestring,
-                     time
+                     time,
+                     data-default

@@ -15,20 +15,31 @@ module Language.Fay.Types
   ,Compile
   ,CompilesTo(..)
   ,Printable(..)
-  ,Fay)
+  ,Fay
+  ,Config(..))
   where
 
 import Control.Exception
 import Control.Monad.Error (Error,ErrorT)
 import Control.Monad.Identity (Identity)
+import Control.Monad.Reader
 import Data.Data
+import Data.Default
 import Language.Haskell.Exts
 
 --------------------------------------------------------------------------------
 -- Compiler types
 
+data Config = Config
+  { configTCO         :: Bool
+  , configInlineForce :: Bool
+  } deriving (Show)
+
+instance Default Config where
+  def = Config False False
+
 -- | Convenience/doc type.
-type Compile = ErrorT CompileError IO
+type Compile = ReaderT Config (ErrorT CompileError IO)
 
 -- | Convenience type for function parameters.
 type JsParam = JsName
@@ -81,6 +92,8 @@ data JsStmt
   | JsIf JsExp [JsStmt] [JsStmt]
   | JsEarlyReturn JsExp
   | JsThrow JsExp
+  | JsWhile JsExp [JsStmt]
+  | JsUpdate JsName JsExp
   deriving (Show,Eq)
   
 -- | Expression type.

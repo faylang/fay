@@ -2,12 +2,14 @@ module Main where
 
 import Language.Fay.Compiler
 
+import Data.Default
 import Data.List
 import System.Directory
 import System.Exit
 import System.FilePath
 import System.IO
 import System.Process
+import System.Process.Extra
 import Test.HUnit
 
 -- | Main test runner.
@@ -26,7 +28,7 @@ runUnitTests = do
               let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
                   out = toJsName file
               outExists <- doesFileExist root
-              compileFromTo True file out
+              compileFromTo def True file out
               result <- runJavaScriptFile out
               if outExists
                  then do output <- readFile root
@@ -36,12 +38,3 @@ runUnitTests = do
 -- | Run a JS file.
 runJavaScriptFile :: String -> IO (Either String String)
 runJavaScriptFile file = readAllFromProcess "node" file
-
--- | Read all stuff from a process.
-readAllFromProcess :: FilePath -> String -> IO (Either String String)
-readAllFromProcess program file = do
-  (_,out,err,pid) <- runInteractiveProcess program [file] Nothing Nothing
-  code <- waitForProcess pid
-  case code of
-    ExitSuccess -> fmap Right (hGetContents out)
-    ExitFailure _ -> fmap Left (hGetContents err)

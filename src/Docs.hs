@@ -6,12 +6,13 @@
 
 module Main where
 
-import           Language.Fay
+import           Language.Fay (compileViaStr,compileModule)
 
 import           Control.Exception
 import           Control.Monad
 import qualified Data.ByteString.Lazy as L
 import           Data.Char
+import           Data.Default
 import           Data.List (isSuffixOf,sort)
 import           Data.Time
 import           Prelude hiding (head,div)
@@ -41,7 +42,7 @@ generate = do
   where compile file = do
           contents <- readFile file
           putStrLn $ "Compiling " ++ file ++ " ..."
-          result <- compileViaStr compileModule contents
+          result <- compileViaStr def compileModule contents
           case result of
             Right javascript -> return javascript
             Left err -> throw err

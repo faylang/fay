@@ -79,6 +79,8 @@ instance Printable [JsStmt] where
 instance Printable JsStmt where
   printJS (JsVar name expr) =
     (unwords ["var",printJS name,"=",printJS expr ++ ";"])
+  printJS (JsUpdate name expr) =
+    (unwords [printJS name,"=",printJS expr ++ ";"])
   printJS (JsIf exp thens elses) =
     concat
       [("if (" ++ printJS exp ++ ") {")
@@ -91,6 +93,10 @@ instance Printable JsStmt where
     ("return " ++ printJS exp ++ ";")
   printJS (JsThrow exp) =
     ("throw " ++ printJS exp ++ ";")
+  printJS (JsWhile cond stmts) =
+    unwords ["while (" ++ printJS cond ++ ") {"
+            ,printJS stmts
+            ,"}"]
 
 -- | Print an expression.
 instance Printable JsExp where

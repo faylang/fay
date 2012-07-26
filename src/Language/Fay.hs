@@ -10,44 +10,72 @@
 -- | The Haskell→Javascript compiler.
 
 module Language.Fay
-  (compile,compileViaStr,compileModule)
+
   where
 
-import           Language.Fay.Print              ()
-import           Language.Fay.Types
+import Language.Fay.Print              ()
+import Language.Fay.Types
 
-import           Control.Applicative
-import           Control.Monad.Error
-import           Control.Monad.IO
-import           Data.List
-import           Data.String
-import           Language.Haskell.Exts
+import Control.Applicative
+import Control.Monad.Error
+import Control.Monad.Reader
+import Control.Monad.IO
+import Data.List
+import Data.String
+import Language.Haskell.Exts
+-- import System.Process.Extra
 
 --------------------------------------------------------------------------------
 -- Top level entry points
 
 -- | Compile something that compiles to something else.
-compile :: CompilesTo from to => from -> IO (Either CompileError to)
-compile = runCompile . compileTo
+compile :: CompilesTo from to => Config -> from -> IO (Either CompileError to)
+compile config = runCompile config . compileTo
 
 -- | Run the compiler.
-runCompile :: Compile a -> IO (Either CompileError a)
-runCompile m = runErrorT m
+runCompile :: Config -> Compile a -> IO (Either CompileError a)
+runCompile config m = runErrorT (runReaderT m config)
 
 -- | Compile a Haskell source string to a JavaScript source string.
 compileViaStr :: (Show from,Show to,CompilesTo from to)
-              => (from -> Compile to)
+              => Config
+              -> (from -> Compile to)
               -> String
               -> IO (Either CompileError String)
-compileViaStr with from =
-  runCompile (parseResult (throwError . uncurry ParseError)
+compileViaStr config with from =
+  runCompile config
+             (parseResult (throwError . uncurry ParseError)
                           (fmap printJS . with)
+                          (parse from))
+
+-- | Compile a Haskell source string to a JavaScript source string.
+compileToAst :: (Show from,Show to,CompilesTo from to)
+              => Config
+              -> (from -> Compile to)
+              -> String
+              -> IO (Either CompileError to)
+compileToAst config with from =
+  runCompile config
+             (parseResult (throwError . uncurry ParseError)
+                          with
                           (parse from))
 
 compileFromStr with from =
   parseResult (throwError . uncurry ParseError)
               (with)
               (parse from)
+
+-- printCompile :: (Show from,Show to,CompilesTo from to)
+--               => Config
+--               -> (from -> Compile to)
+--               -> String
+--               -> IO ()
+-- printCompile config with from = do
+--   result <- compileViaStr config with from
+--   case result of
+--     Left err -> putStrLn $ show err
+--     Right ok -> do writeFile "/tmp/x.js" ok
+--                    prettyPrintFile "/tmp/x.js" >>= putStr
 
 --------------------------------------------------------------------------------
 -- Compilers
@@ -103,7 +131,7 @@ compileDecl decl =
     InstDecl{} -> return [] -- FIXME: Ignore.
     _ -> throwError (UnsupportedDeclaration decl)
 
-compilePatBind :: Maybe Type -> Decl -> ErrorT CompileError IO [JsStmt]
+compilePatBind :: Maybe Type -> Decl -> Compile [JsStmt]
 compilePatBind sig pat =
   case pat of
     PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
@@ -251,6 +279,7 @@ unname (Ident str) = str
 compileFunCase :: [Match] -> Compile [JsStmt]
 compileFunCase [] = return []
 compileFunCase matches@(Match _ name argslen _ _ _:_) = do
+  tco <- asks configTCO
   pats <- fmap optimizePatConditions $ forM matches $ \match@(Match _ _ pats _ rhs wheres) -> do
     unless (noBinds wheres) $ do throwError (UnsupportedWhereInMatch match) -- TODO: Support `where'.
                                  return ()
@@ -261,7 +290,10 @@ compileFunCase matches@(Match _ name argslen _ _ _:_) = do
           (zip args pats)
   return [JsVar (UnQual name)
                 (foldr (\arg inner -> JsFun [arg] [] (Just inner))
-                       (stmtsThunk (concat pats ++ basecase))
+                       (stmtsThunk (let stmts = (concat pats ++ basecase)
+                                    in if tco
+                                          then optimizeTailCalls args name stmts
+                                          else stmts))
                        args)]
   where args = zipWith const uniqueNames argslen
         basecase = if any isWildCardMatch matches
@@ -272,6 +304,43 @@ compileFunCase matches@(Match _ name argslen _ _ _:_) = do
         noBinds (BDecls []) = True
         noBinds (IPBinds []) = True
         noBinds _ = False
+
+-- | Optimize functions in tail-call form.
+optimizeTailCalls :: [JsParam] -- ^ The function parameters.
+                  -> Name      -- ^ The function name.
+                  -> [JsStmt]  -- ^ The body of the function.
+                  -> [JsStmt]  -- ^ A new optimized function body.
+optimizeTailCalls params name stmts = abandonIfNoChange $
+  JsWhile (JsLit (JsBool True))
+          (concatMap replaceTailStmt stmts)
+             
+  where replaceTailStmt (JsIf cond sothen orelse) = [JsIf cond (concatMap replaceTailStmt sothen)
+                                                               (concatMap replaceTailStmt orelse)]
+        replaceTailStmt (JsEarlyReturn exp) = expTailReplace exp
+        replaceTailStmt x = [x]
+        expTailReplace (flatten -> Just (JsName (UnQual call):args@(_:_)))
+          | call == name = updateParamsInstead args
+        expTailReplace original = [JsEarlyReturn original]
+        updateParamsInstead args = zipWith update params args where
+          update param arg = JsUpdate param arg
+        abandonIfNoChange new@(JsWhile _ newstmts)
+          | newstmts == stmts = stmts
+          | otherwise         = [new]
+
+flatten :: JsExp -> Maybe [JsExp]
+flatten (JsApp op@JsApp{} arg) = do
+  inner <- expand op
+  return (inner ++ arg)
+flatten name@JsName{} = return [name]
+flatten x = Nothing
+
+expand (JsApp (JsName (UnQual (Ident "_"))) xs) = do
+  fmap concat (mapM flatten xs)
+expand x = Nothing
+
+-- -- | Run a JS file.
+-- prettyPrintFile :: String -> IO String
+-- prettyPrintFile file = fmap (either id id) (readAllFromProcess "js-beautify" file)
 
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp
@@ -344,13 +413,14 @@ optimizeApp exp =
         name _        = False
 
 compileInfixApp :: Exp -> QOp -> Exp -> Compile JsExp
-compileInfixApp exp1 op exp2 =
+compileInfixApp exp1 op exp2 = do
+  config <- ask
   case getOp op of
     UnQual (Symbol symbol)
       | symbol `elem` words "* + - / < > || &&" -> do
           e1 <- compileExp exp1
           e2 <- compileExp exp2
-          return (JsInfix symbol (force e1) (force e2)) 
+          return (JsInfix symbol (forceInlinable config e1) (forceInlinable config e2)) 
     _ -> do
       var <- resolveOpToVar op
       compileExp (App (App var exp1) exp2)
@@ -380,7 +450,6 @@ compileLambda pats exp = do
   case stmts of
     [JsEarlyReturn fun@JsFun{}] -> return fun
     _ -> error "Unexpected statements in compileLambda"
---  return (JsApp (JsFun [] (stmts) Nothing) [])
 
   where unhandledcase = throw "unhandled case" . JsName
         allfree = all isWildCardPat pats
@@ -463,8 +532,8 @@ equalExps a b
   | otherwise =
      JsApp (JsName (hjIdent "equal")) [a,b]
 
-  where isConstant JsLit{} = True
-        isConstant _       = False
+isConstant JsLit{} = True
+isConstant _       = False
 
 compilePApp :: QName -> [Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
 compilePApp cons pats exp body = do
@@ -632,18 +701,19 @@ unserialize typ exp =
 
 -- | Force an expression in a thunk.
 force :: JsExp -> JsExp
-force exp =
-  JsApp (JsName "_") [exp]
+force exp
+  | isConstant exp = exp
+  | otherwise = JsApp (JsName "_") [exp]
 
 -- | Force an expression in a thunk.
-monadValue :: JsExp -> JsExp
-monadValue exp =
-  JsGetProp (forceNoMemoize exp) "value"
-
--- | Force an expression in a thunk.
-forceNoMemoize :: JsExp -> JsExp
-forceNoMemoize exp =
-  JsApp (JsName (hjIdent "force")) [exp,JsLit (JsBool True)]
+forceInlinable :: Config -> JsExp -> JsExp
+forceInlinable config exp
+  | isConstant exp = exp
+  | configInlineForce config =
+    JsParen (JsTernaryIf (exp `JsInstanceOf` ":thunk")
+                         (JsApp (JsName "_") [exp])
+                         exp)
+  | otherwise = JsApp (JsName "_") [exp]
 
 -- | Resolve operators to only built-in (for now) functions.
 resolveOpToVar :: QOp -> Compile Exp

@@ -18,4 +18,4 @@ instance Foreign Foo
 main = print (show (Foo 123 "abc" Bar))
 
 print :: String -> Fay ()
-print = foreignFay "console.log" ""
+print = foreignFay "console.log" FayNone

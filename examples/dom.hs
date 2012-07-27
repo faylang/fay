@@ -23,8 +23,8 @@ instance Foreign Element
 documentGetElements :: String -> Fay [Element]
 documentGetElements =
   foreignFay "document.getElementsByTagName"
-             "array"
+             FayArray
 
 addEventListener :: String -> Fay () -> Bool -> Fay ()
 addEventListener =
-    foreignFay "window.addEventListener" ""
+    foreignFay "window.addEventListener" FayNone

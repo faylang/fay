@@ -3,4 +3,4 @@ main = print (case False of
                _    -> "Ney!")
 
 print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" ""
+print = foreignFay "console.log" FayNone

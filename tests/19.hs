@@ -8,4 +8,4 @@ foo (Person "Chris" "Done" 14) = "Hello!"
 foo _ = "World!"
 
 print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" ""
+print = foreignFay "console.log" FayNone

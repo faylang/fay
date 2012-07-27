@@ -10,4 +10,4 @@ main = alert "Hello, World!"
 
 -- | Alert using window.alert.
 alert :: Foreign a => a -> Fay ()
-alert = foreignFay "window.alert" ""
+alert = foreignFay "window.alert" FayNone

@@ -5,4 +5,4 @@ main = print (case [1,2,3,4,5] of
   _           -> "Broken.")
 
 print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" ""
+print = foreignFay "console.log" FayNone

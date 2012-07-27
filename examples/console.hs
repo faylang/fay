@@ -9,4 +9,4 @@ main = print "Hello, World!"
 
 -- | Print using console.log.
 print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" ""
+print = foreignFay "console.log" FayNone

@@ -22,10 +22,10 @@ data Ref a
 instance Foreign a => Foreign (Ref a)
 
 newRef :: Foreign a => a -> Fay (Ref a)
-newRef = foreignFay "new Fay$$Ref" ""
+newRef = foreignFay "new Fay$$Ref" FayNone
 
 writeRef :: Foreign a => Ref a -> a -> Fay ()
-writeRef = foreignFay "Fay$$writeRef" ""
+writeRef = foreignFay "Fay$$writeRef" FayNone
 
 readRef :: Foreign a => Ref a -> Fay a
-readRef = foreignFay "Fay$$readRef" ""
+readRef = foreignFay "Fay$$readRef" FayNone

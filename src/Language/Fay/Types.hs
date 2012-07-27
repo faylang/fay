@@ -17,7 +17,8 @@ module Language.Fay.Types
   ,Printable(..)
   ,Fay
   ,CompileConfig(..)
-  ,CompileState(..))
+  ,CompileState(..)
+  ,FayReturnType(..))
   where
 
 import Control.Exception
@@ -146,3 +147,7 @@ data JsLit
   | JsFloating Double
   | JsBool Bool
   deriving (Show,Eq)
+
+data FayReturnType = FayArray | FayList | FayString | FayNone
+  deriving (Read,Show)
+

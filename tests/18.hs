@@ -7,4 +7,4 @@ main = print (case Person "Chris" "Done" 14 of
                 _ -> "World!")
 
 print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" ""
+print = foreignFay "console.log" FayNone

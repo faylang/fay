@@ -19,8 +19,8 @@ import Language.Fay.Types
 
 import Control.Applicative
 import Control.Monad.Error
-import Control.Monad.State
 import Control.Monad.IO
+import Control.Monad.State
 import Data.List
 import Data.Maybe
 import Data.String
@@ -147,7 +147,7 @@ compileDecl decl =
 
 -- | Compile a top-level pattern bind.
 compilePatBind :: Maybe Type -> Decl -> Compile [JsStmt]
-compilePatBind sig pat =
+compilePatBind sig pat = do
   case pat of
     PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
       case ffiExp rhs of
@@ -165,7 +165,7 @@ compilePatBind sig pat =
         method = flip elem ["foreignMethodFay","foreignMethod"]
         ffiExp (App (App (Var (UnQual (Ident ident)))
                          (Lit (String name)))
-                    (Lit (String typ)))
+                    (Con (UnQual (Ident (reads -> [(typ,"")])))))
           = Just (ident,name,typ)
         ffiExp _ = Nothing
 
@@ -177,13 +177,13 @@ compileNormalPatBind ident rhs = do
   return [bind]
 
 -- | Compile a foreign function.
-compileFFIFunc :: Type -> Name -> (String,String,String) -> Compile [JsStmt]
+compileFFIFunc :: Type -> Name -> (String,String,FayReturnType) -> Compile [JsStmt]
 compileFFIFunc sig ident detail@(_,name,_) = do
   let args = zipWith const uniqueNames [1..typeArity sig]
   compileFFI sig ident detail (JsRawName name) args args
 
 -- | Compile a foreign method.
-compileFFIMethod :: Type -> Name -> (String,String,String) -> Compile [JsStmt]
+compileFFIMethod :: Type -> Name -> (String,String,FayReturnType) -> Compile [JsStmt]
 compileFFIMethod sig ident detail@(_,name,_) = do
   let args = zipWith const uniqueNames [1..typeArity sig]
       jsargs = drop 1 args
@@ -193,7 +193,7 @@ compileFFIMethod sig ident detail@(_,name,_) = do
 -- | Compile an FFI call.
 compileFFI :: Type
            -> Name
-           -> (String,String,String)
+           -> (String,String,FayReturnType)
            -> JsExp
            -> [JsName]
            -> [JsName]
@@ -729,9 +729,17 @@ monad exp = JsNew (hjIdent "Monad") [exp]
 stmtsThunk :: [JsStmt] -> JsExp
 stmtsThunk stmts = JsNew ":thunk" [JsFun [] stmts Nothing]
 
-unserialize :: String -> JsExp -> JsExp
+unserialize :: FayReturnType -> JsExp -> JsExp
 unserialize typ exp =
-  JsApp (JsName (hjIdent "unserialize")) [JsLit (JsStr typ),exp]
+  JsApp (JsName (hjIdent "unserialize"))
+        [JsLit (JsStr (showReturnType typ)),exp]
+    
+  where showReturnType typ =
+          case typ of
+            FayArray -> "array"
+            FayList -> "list"
+            FayString -> "string"
+            FayNone -> ""
 
 -- | Force an expression in a thunk.
 force :: JsExp -> JsExp

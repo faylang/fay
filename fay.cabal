@@ -1,5 +1,5 @@
 name:                fay
-version:             0.1.2.0
+version:             0.2.0.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which can be compiled (type-checked) 
                      with GHC, and compiled to JavaScript. It is lazy, pure, with a Fay monad,
@@ -20,13 +20,8 @@ description:         Fay is a proper subset of Haskell which can be compiled (ty
                      .
                      /Release Notes/
                      .
-                     * Some tidying and module export support.
-                     .
-                     * Export an object w/ export lists. This shouldn't break existing uses, but will break API uses (refs #8).
-                     .
-                     * Tidy up code a bit, switch to a newtype monad.
-                     .
-                     * Add CHANGELOG and RELEASE NOTES for Hackage update.
+                     * Changed the return type specification of the FFI, breaking change. You will have
+                       to change your code.
                      .
                      See full history at: <https://github.com/chrisdone/fay/commits>
 homepage:            http://fay-lang.org/

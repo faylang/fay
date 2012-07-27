@@ -7,4 +7,4 @@ map f []     = []
 map f (x:xs) = f x : map f xs
 
 print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" ""
+print = foreignFay "console.log" FayNone

@@ -2,6 +2,7 @@
 
 module Language.Fay.Prelude
   (Fay
+  ,FayReturnType(..)
   ,Char
   ,String
   ,Integer
@@ -32,7 +33,7 @@ module Language.Fay.Prelude
   ,module Language.Fay.Stdlib)
   where
 
-import Language.Fay.Types (Fay)
+import Language.Fay.Types (Fay,FayReturnType(..))
 import Language.Fay.Stdlib
 
 import Prelude ((>),(<),(==),(||),(&&),Maybe(..),Double,Ord,Integer,error,String,(+),Bool(..),Char,Show(..)

@@ -4,7 +4,7 @@
 
 module Language.Fay.FFI where
 
-import Language.Fay.Types (Fay)
+import Language.Fay.Types (Fay,FayReturnType(..))
 import Prelude (Bool,String,Double,Char,error)
 
 data JsPtr a
@@ -39,31 +39,31 @@ instance (Foreign a,Foreign b) => Foreign (a -> b)
 -- | Declare a foreign action.
 foreignFay
   :: Foreign a
-  => String -- ^ The foreign function name.
-  -> String -- ^ JS return type.
-  -> a -- ^ Bottom.
+  => String        -- ^ The foreign function name.
+  -> FayReturnType -- ^ JS return type.
+  -> a             -- ^ Bottom.
 foreignFay = error "Language.Fay.FFI.foreignFay: Used foreign function not in a JS engine context."
 
 -- | Declare a foreign function.
 foreignPure
   :: Foreign a
-  => String -- ^ The foreign function name.
-  -> String -- ^ JS return type.
-  -> a      -- ^ Bottom.
+  => String        -- ^ The foreign function name.
+  -> FayReturnType -- ^ JS return type.
+  -> a             -- ^ Bottom.
 foreignPure = error "Language.Fay.FFI.foreign: Used foreign function not in a JS engine context."
 
 -- | Declare a foreign action.
 foreignMethodFay
   :: Foreign a
-  => String      -- ^ The foreign function name.
-  -> String -- ^ JS return type.
-  -> a -- ^ Bottom.
+  => String         -- ^ The foreign function name.
+  -> FayReturnType  -- ^ JS return type.
+  -> a              -- ^ Bottom.
 foreignMethodFay = error "Language.Fay.FFI.foreignMethodFay: Used foreign function not in a JS engine context."
 
 -- | Declare a foreign function.
 foreignMethod
   :: Foreign a
-  => String -- ^ The foreign function name.
-  -> String -- ^ JS return type.
-  -> a      -- ^ Bottom.
+  => String        -- ^ The foreign function name.
+  -> FayReturnType -- ^ JS return type.
+  -> a             -- ^ Bottom.
 foreignMethod = error "Language.Fay.FFI.foreignMethod: Used foreign function not in a JS engine context."

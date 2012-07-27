@@ -1,7 +1,7 @@
 main = print (show (take 5 (let ns = 1 : map (foo 123) ns in ns)))
 
 show :: Foreign a => a -> String
-show = foreignPure "JSON.stringify" ""
+show = foreignPure "JSON.stringify" FayString
 
 foo x y = x * y / 2
 
@@ -12,4 +12,4 @@ map f []     = []
 map f (x:xs) = f x : map f xs
 
 print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" ""
+print = foreignFay "console.log" FayNone

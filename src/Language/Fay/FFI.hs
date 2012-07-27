@@ -67,3 +67,21 @@ foreignMethod
   -> FayReturnType -- ^ JS return type.
   -> a             -- ^ Bottom.
 foreignMethod = error "Language.Fay.FFI.foreignMethod: Used foreign function not in a JS engine context."
+
+-- -- | Declare a foreign action.
+-- foreignSetProp
+--   :: (Foreign object,Foreign value)
+--   => String   -- ^ The property.
+--   -> object   -- ^ The object.
+--   -> value    -- ^ The value.
+--   -> Fay ()   -- ^ Bottom.
+-- foreignSetProp = error "Language.Fay.FFI.foreignSetProp: Used foreign function not in a JS engine context."
+
+-- -- | Declare a foreign action.
+-- foreignGetProp
+--   :: (Foreign object,Foreign value)
+--   => String        -- ^ The property.
+--   -> FayReturnType -- ^ JS return type.
+--   -> object        -- ^ The object.
+--   -> Fay value     -- ^ Bottom.
+-- foreignGetProp = error "Language.Fay.FFI.foreignGetProp: Used foreign function not in a JS engine context."

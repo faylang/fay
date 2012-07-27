@@ -157,12 +157,14 @@ compilePatBind sig pat = do
             Just sig -> case () of
               () | func binding   -> compileFFIFunc sig ident detail
                  | method binding -> compileFFIMethod sig ident detail
+--                 | value binding  -> compileFFIValue sig ident detail
                  | otherwise      -> throwError (FfiNeedsTypeSig pat)
         _ -> compileNormalPatBind ident rhs
     _ -> throwError (UnsupportedDeclaration pat)
 
   where func = flip elem ["foreignFay","foreignPure"]
         method = flip elem ["foreignMethodFay","foreignMethod"]
+--        value = flip elem ["foreignGetValue"]
         ffiExp (App (App (Var (UnQual (Ident ident)))
                          (Lit (String name)))
                     (Con (UnQual (Ident (reads -> [(typ,"")])))))
@@ -175,6 +177,13 @@ compileNormalPatBind ident rhs = do
   body <- compileExp rhs
   bind <- bindToplevel (UnQual ident) (thunk body)
   return [bind]
+
+-- -- | Compile a foreign value.
+-- compileFFIValue :: Type -> Name -> (String,String,FayReturnType) -> Compile [JsStmt]
+-- compileFFIValue sig ident detail@(_,name,_) = do
+--   bind <- bindToplevel (UnQual ident)
+--                        (thunk (monad (JsRawName name)))
+--   return [bind]
 
 -- | Compile a foreign function.
 compileFFIFunc :: Type -> Name -> (String,String,FayReturnType) -> Compile [JsStmt]
@@ -199,14 +208,17 @@ compileFFI :: Type
            -> [JsName]
            -> Compile [JsStmt]
 compileFFI sig ident (binding,_,typ) exp params args = do
+  let innerexp
+        | length args == 0 = exp
+        | otherwise = JsApp exp
+                            (map (\(typ,name) -> serialize typ (JsName name))
+                                 (zip types args))
   bind <- bindToplevel (UnQual ident)
                        (foldr (\name inner -> JsFun [name] [] (Just inner))
                               (thunk
                                (maybeMonad
                                 (unserialize typ
-                                             (JsApp exp
-                                                    (map (\(typ,name) -> serialize typ (JsName name))
-                                                         (zip types args))))))
+                                             innerexp)))
                               params)
   return [bind]
 

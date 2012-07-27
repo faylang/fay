@@ -1,7 +1,6 @@
 cabal-dev/
 dist/
 examples/*.js
-examples/*.html
 tests/*.js
 TAGS
 docs/index.html

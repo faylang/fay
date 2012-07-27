@@ -12,17 +12,19 @@ module Language.Fay.Types
   ,JsParam
   ,JsName
   ,CompileError(..)
-  ,Compile
+  ,Compile(..)
   ,CompilesTo(..)
   ,Printable(..)
   ,Fay
-  ,Config(..))
+  ,CompileConfig(..)
+  ,CompileState(..))
   where
 
 import Control.Exception
-import Control.Monad.Error (Error,ErrorT)
+import Control.Applicative
+import Control.Monad.Error (Error,ErrorT,MonadError)
 import Control.Monad.Identity (Identity)
-import Control.Monad.Reader
+import Control.Monad.State
 import Data.Data
 import Data.Default
 import Language.Haskell.Exts
@@ -30,16 +32,30 @@ import Language.Haskell.Exts
 --------------------------------------------------------------------------------
 -- Compiler types
 
-data Config = Config
+-- | Configuration of the compiler.
+data CompileConfig = CompileConfig
   { configTCO         :: Bool
   , configInlineForce :: Bool
   } deriving (Show)
 
-instance Default Config where
-  def = Config False False
+-- | Default configuration.
+instance Default CompileConfig where
+  def = CompileConfig False False
 
--- | Convenience/doc type.
-type Compile = ReaderT Config (ErrorT CompileError IO)
+-- | State of the compiler.
+data CompileState = CompileState
+  { stateConfig  :: CompileConfig
+  , stateExports :: [Name]
+  } deriving (Show)
+
+-- | Compile monad.
+newtype Compile a = Compile { unCompile :: StateT CompileState (ErrorT CompileError IO) a }
+  deriving (MonadState CompileState
+           ,MonadError CompileError
+           ,MonadIO
+           ,Monad
+           ,Functor
+           ,Applicative)
 
 -- | Convenience type for function parameters.
 type JsParam = JsName

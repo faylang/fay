@@ -7,7 +7,7 @@ import Language.Fay.Types
 import Paths_fay
 
 -- | Compile file program to…
-compileFromTo :: Config -> Bool -> FilePath -> FilePath -> IO ()
+compileFromTo :: CompileConfig -> Bool -> FilePath -> FilePath -> IO ()
 compileFromTo config autorun filein fileout = do
   runtime <- getDataFileName "js/runtime.js"
   stdlibpath <- getDataFileName "hs/stdlib.hs"
@@ -29,7 +29,7 @@ compileFromTo config autorun filein fileout = do
 
 -- | Compile the given module to a runnable program.
 compileProgram :: (Show from,Show to,CompilesTo from to)
-               => Config -> Bool -> String -> (from -> Compile to) -> String
+               => CompileConfig -> Bool -> String -> (from -> Compile to) -> String
                -> IO (Either CompileError String)
 compileProgram config autorun raw with hscode = do
   result <- compileViaStr config with hscode

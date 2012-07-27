@@ -150,26 +150,33 @@ compilePatBind :: Maybe Type -> Decl -> Compile [JsStmt]
 compilePatBind sig pat = do
   case pat of
     PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
-      case ffiExp rhs of
+      case ffiExp rhs <|> ffiProp rhs of
         Just detail@(binding,_,_) ->
           case sig of
             Nothing -> compileNormalPatBind ident rhs
             Just sig -> case () of
               () | func binding   -> compileFFIFunc sig ident detail
                  | method binding -> compileFFIMethod sig ident detail
+                 | setprop binding -> compileFFISetProp sig ident detail
 --                 | value binding  -> compileFFIValue sig ident detail
                  | otherwise      -> throwError (FfiNeedsTypeSig pat)
         _ -> compileNormalPatBind ident rhs
     _ -> throwError (UnsupportedDeclaration pat)
 
   where func = flip elem ["foreignFay","foreignPure"]
-        method = flip elem ["foreignMethodFay","foreignMethod"]
---        value = flip elem ["foreignGetValue"]
+        method = flip elem ["foreignPropFay","foreignProp"]
+        setprop = flip elem ["foreignSetProp"]
+
         ffiExp (App (App (Var (UnQual (Ident ident)))
                          (Lit (String name)))
                     (Con (UnQual (Ident (reads -> [(typ,"")])))))
           = Just (ident,name,typ)
         ffiExp _ = Nothing
+
+        ffiProp (App (Var (UnQual (Ident ident)))
+                     (Lit (String name)))
+          = Just (ident,name,FayNone)
+        ffiProp _ = Nothing
 
 -- | Compile a normal simple pattern binding.
 compileNormalPatBind :: Name -> Exp -> Compile [JsStmt]
@@ -177,13 +184,6 @@ compileNormalPatBind ident rhs = do
   body <- compileExp rhs
   bind <- bindToplevel (UnQual ident) (thunk body)
   return [bind]
-
--- -- | Compile a foreign value.
--- compileFFIValue :: Type -> Name -> (String,String,FayReturnType) -> Compile [JsStmt]
--- compileFFIValue sig ident detail@(_,name,_) = do
---   bind <- bindToplevel (UnQual ident)
---                        (thunk (monad (JsRawName name)))
---   return [bind]
 
 -- | Compile a foreign function.
 compileFFIFunc :: Type -> Name -> (String,String,FayReturnType) -> Compile [JsStmt]
@@ -199,6 +199,24 @@ compileFFIMethod sig ident detail@(_,name,_) = do
       obj = head args
   compileFFI sig ident detail (JsGetProp (force (JsName obj)) (fromString name)) args jsargs
 
+-- | Compile a foreign method.
+compileFFISetProp :: Type -> Name -> (String,String,FayReturnType) -> Compile [JsStmt]
+compileFFISetProp sig ident detail@(_,name,_) = do
+  let args = zipWith const uniqueNames [1..typeArity sig]
+      jsargs = drop 1 args
+      obj = head args
+  compileFFI sig
+             ident
+             detail
+             (JsUpdateProp (force (JsName obj))
+                           (fromString name)
+                           (serialize (head (tail funcTypes))
+                                      (JsName (head jsargs))))
+             args
+             []
+               
+  where funcTypes = functionTypeArgs sig
+
 -- | Compile an FFI call.
 compileFFI :: Type
            -> Name
@@ -210,6 +228,7 @@ compileFFI :: Type
 compileFFI sig ident (binding,_,typ) exp params args = do
   let innerexp
         | length args == 0 = exp
+        | binding == "foreignSetProp" = exp
         | otherwise = JsApp exp
                             (map (\(typ,name) -> serialize typ (JsName name))
                                  (zip types args))
@@ -217,14 +236,16 @@ compileFFI sig ident (binding,_,typ) exp params args = do
                        (foldr (\name inner -> JsFun [name] [] (Just inner))
                               (thunk
                                (maybeMonad
-                                (unserialize typ
-                                             innerexp)))
+                                (if binding == "foreignSetProp"
+                                    then innerexp
+                                    else unserialize typ innerexp)))
                               params)
   return [bind]
 
   where (maybeMonad,types) | binding == "foreignFay"       = (monad,funcTypes)
-                           | binding == "foreignMethodFay" = (monad,drop 1 funcTypes)
-                           | binding == "foreignMethod"    = (id,drop 1 funcTypes)
+                           | binding == "foreignPropFay"   = (monad,drop 1 funcTypes)
+                           | binding == "foreignProp"      = (id,drop 1 funcTypes)
+                           | binding == "foreignSetProp"   = (monad,[])
                            | otherwise                     = (id,funcTypes)
         funcTypes = functionTypeArgs sig
 

@@ -130,6 +130,7 @@ data JsExp
   | JsSequence [JsExp]
   | JsParen JsExp
   | JsGetProp JsExp JsName
+  | JsUpdateProp JsExp JsName JsExp
   | JsList [JsExp]
   | JsNew JsName [JsExp]
   | JsThrowExp JsExp
@@ -149,5 +150,4 @@ data JsLit
   deriving (Show,Eq)
 
 data FayReturnType = FayArray | FayList | FayString | FayNone
-  deriving (Read,Show)
-
+  deriving (Read,Show,Eq)

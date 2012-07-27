@@ -1,8 +1,10 @@
 name:                fay
-version:             0.2.0.0
+version:             0.1.2.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
-description:         Fay is a strict subset of Haskell which can be compiled (type-checked) 
-                     with GHC, and compiled to JavaScript.
+description:         Fay is a proper subset of Haskell which can be compiled (type-checked) 
+                     with GHC, and compiled to JavaScript. It is lazy, pure, with a Fay monad,
+                     an FFI, tail-recursion optimization (experimental). It implements no type
+                     system, for type-checking you should use GHC.
                      .
                      /Documentation/
                      .
@@ -18,78 +20,16 @@ description:         Fay is a strict subset of Haskell which can be compiled (ty
                      .
                      /Release Notes/
                      .
-                     Lots of documentation updates, some runtime
-                     fixes, some more examples, tail-call optimization
-                     prototype.
+                     * Some tidying and module export support.
                      .
-                     * Add analytics to .cabal.
+                     * Export an object w/ export lists. This shouldn't break existing uses, but will break API uses (refs #8).
                      .
-                     * Fix types for ghc.
+                     * Tidy up code a bit, switch to a newtype monad.
                      .
-                     * Use continue (for now) for TCO (refs #19).
-                     .
-                     * Tail recursive optimization prototype (refs #19).
-                     .
-                     * Tail recursive example doc.
-                     .
-                     * Ref example.
-                     .
-                     * fromInteger/fromRational in the runtime (closes #20).
-                     .
-                     * Add missing operators to Prelude and built-ins list (closes #16).
-                     .
-                     * Throw error about unsupported `where' (closes #17).
-                     .
-                     * Fix silly enumFromTo mistake.
-                     .
-                     * A test-case that tail-recursive functions run iteratively.
-                     .
-                     * Optimize constant patterns slightly, shaves off some time.
-                     .
-                     * Add Fay.Show (preliminary implementation).
-                     .
-                     * Add data/show example.
-                     .
-                     * Add note about generating docs.
-                     .
-                     * Add note that you need nodejs installed to run the tests.
-                     .
-                     * Include google analytics in docs and generate index.html rather than home.html.
-                     .
-                     * Updated dom example with onload handler.
-                     .
-                     * Remove max-width to fix firefox.
-                     .
-                     * Mention minifying slightly in docs.
-                     .
-                     * Remove language-javascript dependency.
-                     .
-                     * Remove non-ascii character in runtime.js
-                     .
-                     * Don't print counts in fay-tests.
-                     .
-                     * Add small note about livescript.
-                     .
-                     * Added fork on github for docs.
-                     .
-                     * Use === instead of == for jseq (closes #6).
-                     .
-                     * Some word break on the pre's.
-                     .
-                     * Rename modules from Main to X (closes #5).
-                     .
-                     * Ignore more stuff.
-                     .
-                     * Toggle examples.
-                     .
-                     * Put examples side-by-side (closes #3).
-                     .
-                     * s/strict/proper to avoid confusion.
-                     .
-                     * Convert from function expression assignments to function definitions
+                     * Add CHANGELOG and RELEASE NOTES for Hackage update.
                      .
                      See full history at: <https://github.com/chrisdone/fay/commits>
-homepage:            http://chrisdone.com/fay
+homepage:            http://fay-lang.org/
 license:             BSD3
 license-file:        LICENSE
 author:              Chris Done
@@ -106,7 +46,7 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      -- Test cases
                      tests/10 tests/10.hs tests/11 tests/11.hs tests/12 tests/12.hs tests/13
                      tests/13.hs tests/14 tests/14.hs tests/15 tests/15.hs tests/16 tests/16.hs
-                     tests/17 tests/17.hs tests/18 tests/18.hs tests/19 tests/19.hs tests/1.hs
+                     tests/17 tests/17.hs tests/18 tests/18.hs tests/19 tests/19.hs
                      tests/2 tests/20 tests/20.hs tests/21 tests/21.hs tests/22 tests/22.hs
                      tests/23 tests/23.hs tests/24 tests/24.hs tests/25.hs tests/26 tests/26.hs
                      tests/2.hs tests/3 tests/3.hs tests/4 tests/4.hs tests/5 tests/5.hs tests/6

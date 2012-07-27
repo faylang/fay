@@ -31,7 +31,7 @@ author:              Chris Done
 maintainer:          chrisdone@gmail.com
 copyright:           2012 Chris Done
 category:            Development
-build-type:          Simple
+build-type:          Custom
 cabal-version:       >=1.8
 data-files:          js/runtime.js
                      hs/stdlib.hs

@@ -44,7 +44,7 @@ generate = do
           putStrLn $ "Compiling " ++ file ++ " ..."
           result <- compileViaStr def compileModule contents
           case result of
-            Right javascript -> return javascript
+            Right (javascript,state) -> return javascript
             Left err -> throw err
         titlize = takeWhile (/='.') . upperize . takeFileName
           where upperize (x:xs) = toUpper x : xs

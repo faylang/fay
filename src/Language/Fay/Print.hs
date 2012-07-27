@@ -81,6 +81,8 @@ instance Printable JsStmt where
     (unwords ["var",printJS name,"=",printJS expr ++ ";"])
   printJS (JsUpdate name expr) =
     (unwords [printJS name,"=",printJS expr ++ ";"])
+  printJS (JsSetProp name prop expr) =
+    (concat [printJS name,".",printJS prop," = ",printJS expr ++ ";"])
   printJS (JsIf exp thens elses) =
     concat
       [("if (" ++ printJS exp ++ ") {")

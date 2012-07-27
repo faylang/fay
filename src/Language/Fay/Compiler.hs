@@ -1,9 +1,11 @@
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Language.Fay.Compiler where
 
 import Control.Exception  (throw)
 import Language.Fay (compileViaStr,compileModule)
 import Language.Fay.Types
+import Language.Haskell.Exts.Syntax
 import Paths_fay
 
 -- | Compile file program to…
@@ -35,22 +37,35 @@ compileProgram config autorun raw with hscode = do
   result <- compileViaStr config with hscode
   case result of
     Left err -> return (Left err)
-    Right jscode -> return (Right (unlines ["var Fay = function(){"
-                                           ,raw
-                                           ,jscode
-                                           ,"return {"
-                                           ,"  force:_,"
-                                           ,"  thunk:$,"
-                                           ,"  list:Fay$$list,"
-                                           ,"  encodeShow:Fay$$encodeShow,"
-                                           ,"  main:main,"
-                                           ,"  eval:Fay$$eval"
-                                           ,"  };"
-                                           ,"};"
-                                           ,if autorun
-                                               then ";\nvar fay = new Fay();fay.force(fay.main);"
-                                               else ""
-                                           ]))
+    Right (jscode,state) -> do
+      let (ModuleName modulename) = stateModuleName state
+          exports                 = stateExports state
+      return (Right (unlines ["var " ++ modulename ++ " = function(){"
+                             ,raw
+                             ,jscode
+                             ,"// Exports"
+                             ,unlines (map printExport exports)
+                             ,"// Built-ins"
+                             ,"this.$force      = _;"
+                             ,"this.$           = $;"
+                             ,"this.$list       = Fay$$list;"
+                             ,"this.$encodeShow = Fay$$encodeShow;"
+                             ,"this.$eval       = Fay$$eval;"
+                             ,"};"
+                             ,if autorun
+                                 then unlines [";"
+                                              ,"var main = new " ++ modulename ++ "();"
+                                              ,"main.$force(main.main);"
+                                              ]
+                                 else ""
+                             ]))
+
+-- | Print an this.x = x; export out.
+printExport :: Name -> String
+printExport name =
+  printJS (JsSetProp "this"
+                     (UnQual name)
+                     (JsName (UnQual name)))
 
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String

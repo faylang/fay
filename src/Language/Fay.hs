@@ -22,6 +22,7 @@ import Control.Monad.Error
 import Control.Monad.State
 import Control.Monad.IO
 import Data.List
+import Data.Maybe
 import Data.String
 import Language.Haskell.Exts
 -- import System.Process.Extra
@@ -30,14 +31,16 @@ import Language.Haskell.Exts
 -- Top level entry points
 
 -- | Compile something that compiles to something else.
-compile :: CompilesTo from to => CompileConfig -> from -> IO (Either CompileError to)
+compile :: CompilesTo from to => CompileConfig -> from -> IO (Either CompileError (to,CompileState))
 compile config = runCompile config . compileTo
 
 -- | Run the compiler.
-runCompile :: CompileConfig -> Compile a -> IO (Either CompileError a)
-runCompile config m = runErrorT (evalStateT (unCompile m) state) where
+runCompile :: CompileConfig -> Compile a -> IO (Either CompileError (a,CompileState))
+runCompile config m = runErrorT (runStateT (unCompile m) state) where
   state = CompileState { stateConfig  = config
                        , stateExports = []
+                       , stateModuleName = "Main"
+                       , stateExportAll = True
                        }
 
 -- | Compile a Haskell source string to a JavaScript source string.
@@ -45,7 +48,7 @@ compileViaStr :: (Show from,Show to,CompilesTo from to)
               => CompileConfig
               -> (from -> Compile to)
               -> String
-              -> IO (Either CompileError String)
+              -> IO (Either CompileError (String,CompileState))
 compileViaStr config with from =
   runCompile config
              (parseResult (throwError . uncurry ParseError)
@@ -57,7 +60,7 @@ compileToAst :: (Show from,Show to,CompilesTo from to)
               => CompileConfig
               -> (from -> Compile to)
               -> String
-              -> IO (Either CompileError to)
+              -> IO (Either CompileError (to,CompileState))
 compileToAst config with from =
   runCompile config
              (parseResult (throwError . uncurry ParseError)
@@ -88,7 +91,11 @@ compileFromStr with from =
 
 -- | Compile Haskell module.
 compileModule :: Module -> Compile [JsStmt]
-compileModule (Module _ _modulename _pragmas Nothing _exports imports decls) = do
+compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
+  modify $ \s -> s { stateModuleName = modulename
+                   , stateExportAll = isNothing exports
+                   }
+  mapM_ emitExport (fromMaybe [] exports)
   imported <- fmap concat (mapM compileImport imports)
   current <- compileDecls decls
   return (imported ++ current)
@@ -166,7 +173,8 @@ compilePatBind sig pat =
 compileNormalPatBind :: Name -> Exp -> Compile [JsStmt]
 compileNormalPatBind ident rhs = do
   body <- compileExp rhs
-  return [JsVar (UnQual ident) (thunk body)]
+  bind <- bindToplevel (UnQual ident) (thunk body)
+  return [bind]
 
 -- | Compile a foreign function.
 compileFFIFunc :: Type -> Name -> (String,String,String) -> Compile [JsStmt]
@@ -191,15 +199,16 @@ compileFFI :: Type
            -> [JsName]
            -> Compile [JsStmt]
 compileFFI sig ident (binding,_,typ) exp params args = do
-  return [JsVar (UnQual ident)
-                (foldr (\name inner -> JsFun [name] [] (Just inner))
-                       (thunk
-                        (maybeMonad
-                         (unserialize typ
-                                      (JsApp exp
-                                             (map (\(typ,name) -> serialize typ (JsName name))
-                                                  (zip types args))))))
-                       params)]
+  bind <- bindToplevel (UnQual ident)
+                       (foldr (\name inner -> JsFun [name] [] (Just inner))
+                              (thunk
+                               (maybeMonad
+                                (unserialize typ
+                                             (JsApp exp
+                                                    (map (\(typ,name) -> serialize typ (JsName name))
+                                                         (zip types args))))))
+                              params)
+  return [bind]
 
   where (maybeMonad,types) | binding == "foreignFay"       = (monad,funcTypes)
                            | binding == "foreignMethodFay" = (monad,drop 1 funcTypes)
@@ -277,10 +286,10 @@ compileDataDecl decl constructors = do
           fmap concat $
             forM fields $ \(i,field) ->
               forM field $ \name ->
-                return (JsVar (UnQual name)
-                              (JsFun ["x"]
-                                     []
-                                     (Just (thunk (JsIndex i (force (JsName "x")))))))
+                bindToplevel (UnQual name)
+                             (JsFun ["x"]
+                                    []
+                                    (Just (thunk (JsIndex i (force (JsName "x"))))))
 
 -- | Extract the string from a qname.
 qname :: QName -> String
@@ -305,13 +314,14 @@ compileFunCase matches@(Match _ name argslen _ _ _:_) = do
              compilePat (JsName arg) pat inner)
           [JsEarlyReturn exp]
           (zip args pats)
-  return [JsVar (UnQual name)
-                (foldr (\arg inner -> JsFun [arg] [] (Just inner))
-                       (stmtsThunk (let stmts = (concat pats ++ basecase)
-                                    in if tco
-                                          then optimizeTailCalls args name stmts
-                                          else stmts))
-                       args)]
+  bind <- bindToplevel (UnQual name)
+                       (foldr (\arg inner -> JsFun [arg] [] (Just inner))
+                              (stmtsThunk (let stmts = (concat pats ++ basecase)
+                                           in if tco
+                                                 then optimizeTailCalls args name stmts
+                                                 else stmts))
+                              args)
+  return [bind]
   where args = zipWith const uniqueNames argslen
         basecase = if any isWildCardMatch matches
                       then []
@@ -375,10 +385,11 @@ compileFunMatch match =
     (Match _ name args Nothing (UnGuardedRhs rhs) _) -> do
       body <- compileExp rhs
       args <- mapM patToArg args
-      return [JsVar (UnQual name)
-                    (foldr (\arg inner -> JsFun [arg] [] (Just inner))
-                           (thunk body)
-                           args)]
+      bind <- bindToplevel (UnQual name)
+                           (foldr (\arg inner -> JsFun [arg] [] (Just inner))
+                                  (thunk body)
+                                  args)
+      return [bind]
     match -> throwError (UnsupportedMatchSyntax match)
 
   where patToArg (PVar name) = return (UnQual name)
@@ -767,6 +778,21 @@ resolveOpToVar op =
 -- | Make an identifier from the built-in HJ module.
 hjIdent :: String -> QName
 hjIdent = Qual (ModuleName "Fay") . Ident
+
+-- | Make a top-level binding.
+bindToplevel :: QName -> JsExp -> Compile JsStmt
+bindToplevel name exp = do
+  exportAll <- gets stateExportAll
+  when exportAll $ emitExport (EVar name)
+  return (JsVar name exp)
+
+-- | Emit exported names.
+emitExport :: ExportSpec -> Compile ()
+emitExport spec = 
+  case spec of
+    EVar (UnQual name) -> modify $ \s -> s { stateExports = name : stateExports s }
+    EVar _             -> error "Emitted a qualifed export, not supported."
+    _ -> throwError (UnsupportedExportSpec spec)
 
 --------------------------------------------------------------------------------
 -- Utilities

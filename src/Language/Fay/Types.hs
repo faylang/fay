@@ -44,8 +44,10 @@ instance Default CompileConfig where
 
 -- | State of the compiler.
 data CompileState = CompileState
-  { stateConfig  :: CompileConfig
-  , stateExports :: [Name]
+  { stateConfig     :: CompileConfig
+  , stateExports    :: [Name]
+  , stateExportAll  :: Bool
+  , stateModuleName :: ModuleName
   } deriving (Show)
 
 -- | Compile monad.
@@ -76,6 +78,7 @@ class Printable a where
 data CompileError
   = ParseError SrcLoc String
   | UnsupportedDeclaration Decl
+  | UnsupportedExportSpec ExportSpec
   | UnsupportedMatchSyntax Match
   | UnsupportedWhereInMatch Match
   | UnsupportedExpression Exp
@@ -110,6 +113,7 @@ data JsStmt
   | JsThrow JsExp
   | JsWhile JsExp [JsStmt]
   | JsUpdate JsName JsExp
+  | JsSetProp JsName JsName JsExp
   | JsContinue
   deriving (Show,Eq)
   

@@ -97,7 +97,7 @@ compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
                    }
   mapM_ emitExport (fromMaybe [] exports)
   imported <- fmap concat (mapM compileImport imports)
-  current <- compileDecls decls
+  current <- compileDecls True decls
   return (imported ++ current)
 compileModule mod = throwError (UnsupportedModuleSyntax mod)
 
@@ -117,26 +117,26 @@ compileImport i =
         "It was: " ++ show i
 
 -- | Compile Haskell declaration.
-compileDecls :: [Decl] -> Compile [JsStmt]
-compileDecls decls = do
+compileDecls :: Bool -> [Decl] -> Compile [JsStmt]
+compileDecls toplevel decls = do
   case decls of
     [] -> return []
-    (TypeSig _ _ sig:bind@PatBind{}:decls) -> appendM (compilePatBind (Just sig) bind)
-                                                      (compileDecls decls)
-    (decl:decls) -> appendM (compileDecl decl)
-                            (compileDecls decls)
+    (TypeSig _ _ sig:bind@PatBind{}:decls) -> appendM (compilePatBind toplevel (Just sig) bind)
+                                                      (compileDecls toplevel decls)
+    (decl:decls) -> appendM (compileDecl toplevel decl)
+                            (compileDecls toplevel decls)
 
   where appendM m n = do x <- m
                          xs <- n
                          return (x ++ xs)
 
 -- | Compile a declaration.
-compileDecl :: Decl -> Compile [JsStmt]
-compileDecl decl =
+compileDecl :: Bool -> Decl -> Compile [JsStmt]
+compileDecl toplevel decl =
   case decl of
-    pat@PatBind{} -> compilePatBind Nothing pat
-    FunBind matches -> compileFunCase matches
-    DataDecl _ DataType _ _ _ constructors _ -> compileDataDecl decl constructors
+    pat@PatBind{} -> compilePatBind toplevel Nothing pat
+    FunBind matches -> compileFunCase toplevel matches
+    DataDecl _ DataType _ _ _ constructors _ -> compileDataDecl toplevel decl constructors
     -- Just ignore type aliases and signatures.
     TypeDecl{} -> return []
     TypeSig{} -> return []
@@ -146,21 +146,21 @@ compileDecl decl =
     _ -> throwError (UnsupportedDeclaration decl)
 
 -- | Compile a top-level pattern bind.
-compilePatBind :: Maybe Type -> Decl -> Compile [JsStmt]
-compilePatBind sig pat = do
+compilePatBind :: Bool -> Maybe Type -> Decl -> Compile [JsStmt]
+compilePatBind toplevel sig pat = do
   case pat of
     PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
       case ffiExp rhs <|> ffiProp rhs of
         Just detail@(binding,_,_) ->
           case sig of
-            Nothing -> compileNormalPatBind ident rhs
+            Nothing -> compileNormalPatBind toplevel ident rhs
             Just sig -> case () of
               () | func binding   -> compileFFIFunc sig ident detail
                  | method binding -> compileFFIMethod sig ident detail
                  | setprop binding -> compileFFISetProp sig ident detail
 --                 | value binding  -> compileFFIValue sig ident detail
                  | otherwise      -> throwError (FfiNeedsTypeSig pat)
-        _ -> compileNormalPatBind ident rhs
+        _ -> compileNormalPatBind toplevel ident rhs
     _ -> throwError (UnsupportedDeclaration pat)
 
   where func = flip elem ["foreignFay","foreignPure"]
@@ -179,10 +179,10 @@ compilePatBind sig pat = do
         ffiProp _ = Nothing
 
 -- | Compile a normal simple pattern binding.
-compileNormalPatBind :: Name -> Exp -> Compile [JsStmt]
-compileNormalPatBind ident rhs = do
+compileNormalPatBind :: Bool -> Name -> Exp -> Compile [JsStmt]
+compileNormalPatBind toplevel ident rhs = do
   body <- compileExp rhs
-  bind <- bindToplevel (UnQual ident) (thunk body)
+  bind <- bindToplevel toplevel (UnQual ident) (thunk body)
   return [bind]
 
 -- | Compile a foreign function.
@@ -232,7 +232,8 @@ compileFFI sig ident (binding,_,typ) exp params args = do
         | otherwise = JsApp exp
                             (map (\(typ,name) -> serialize typ (JsName name))
                                  (zip types args))
-  bind <- bindToplevel (UnQual ident)
+  bind <- bindToplevel True
+                       (UnQual ident)
                        (foldr (\name inner -> JsFun [name] [] (Just inner))
                               (thunk
                                (maybeMonad
@@ -292,8 +293,8 @@ typeArity t =
     _              -> 0
 
 -- | Compile a data declaration.
-compileDataDecl :: Decl -> [QualConDecl] -> Compile [JsStmt]
-compileDataDecl decl constructors = do
+compileDataDecl :: Bool -> Decl -> [QualConDecl] -> Compile [JsStmt]
+compileDataDecl toplevel decl constructors = do
   fmap concat $
     forM constructors $ \(QualConDecl _ _ _ condecl) ->
       case condecl of
@@ -319,7 +320,8 @@ compileDataDecl decl constructors = do
           fmap concat $
             forM fields $ \(i,field) ->
               forM field $ \name ->
-                bindToplevel (UnQual name)
+                bindToplevel toplevel
+                             (UnQual name)
                              (JsFun ["x"]
                                     []
                                     (Just (thunk (JsIndex i (force (JsName "x"))))))
@@ -335,9 +337,9 @@ unname (Ident str) = str
 unname _ = error "Expected ident from uname." -- FIXME:
 
 -- | Compile a function which pattern matches (causing a case analysis).
-compileFunCase :: [Match] -> Compile [JsStmt]
-compileFunCase [] = return []
-compileFunCase matches@(Match _ name argslen _ _ _:_) = do
+compileFunCase :: Bool -> [Match] -> Compile [JsStmt]
+compileFunCase _toplevel [] = return []
+compileFunCase toplevel matches@(Match _ name argslen _ _ _:_) = do
   tco <- config configTCO
   pats <- fmap optimizePatConditions $ forM matches $ \match@(Match _ _ pats _ rhs wheres) -> do
     unless (noBinds wheres) $ do _ <- throwError (UnsupportedWhereInMatch match) -- TODO: Support `where'.
@@ -347,7 +349,8 @@ compileFunCase matches@(Match _ name argslen _ _ _:_) = do
              compilePat (JsName arg) pat inner)
           [JsEarlyReturn exp]
           (zip args pats)
-  bind <- bindToplevel (UnQual name)
+  bind <- bindToplevel toplevel
+                       (UnQual name)
                        (foldr (\arg inner -> JsFun [arg] [] (Just inner))
                               (stmtsThunk (let stmts = (concat pats ++ basecase)
                                            in if tco
@@ -412,13 +415,14 @@ compileRhs (UnGuardedRhs exp) = compileExp exp
 compileRhs rhs                = throwError (UnsupportedRhs rhs)
 
 -- | Compile a pattern match binding.
-compileFunMatch :: Match -> Compile [JsStmt]
-compileFunMatch match =
+compileFunMatch :: Bool -> Match -> Compile [JsStmt]
+compileFunMatch toplevel match =
   case match of
     (Match _ name args Nothing (UnGuardedRhs rhs) _) -> do
       body <- compileExp rhs
       args <- mapM patToArg args
-      bind <- bindToplevel (UnQual name)
+      bind <- bindToplevel toplevel
+                           (UnQual name)
                            (foldr (\arg inner -> JsFun [arg] [] (Just inner))
                                   (thunk body)
                                   args)
@@ -428,7 +432,7 @@ compileFunMatch match =
   where patToArg (PVar name) = return (UnQual name)
         patToArg _           = throwError (UnsupportedMatchSyntax match)
 
-instance CompilesTo Decl [JsStmt] where compileTo = compileDecl
+instance CompilesTo Decl [JsStmt] where compileTo = compileDecl False
 
 -- | Compile Haskell expression.
 compileExp :: Exp -> Compile JsExp
@@ -695,8 +699,8 @@ compileLet decls exp = do
 compileLetDecl :: Decl -> Compile [JsStmt]
 compileLetDecl decl =
   case decl of
-    decl@PatBind{} -> compileDecls [decl]
-    decl@FunBind{} -> compileDecls [decl]
+    decl@PatBind{} -> compileDecls False [decl]
+    decl@FunBind{} -> compileDecls False [decl]
     _              -> throwError (UnsupportedLetBinding decl)
 
 -- | Compile Haskell literal.
@@ -842,10 +846,10 @@ hjIdent :: String -> QName
 hjIdent = Qual (ModuleName "Fay") . Ident
 
 -- | Make a top-level binding.
-bindToplevel :: QName -> JsExp -> Compile JsStmt
-bindToplevel name exp = do
+bindToplevel :: Bool -> QName -> JsExp -> Compile JsStmt
+bindToplevel toplevel name exp = do
   exportAll <- gets stateExportAll
-  when exportAll $ emitExport (EVar name)
+  when (toplevel && exportAll) $ emitExport (EVar name)
   return (JsVar name exp)
 
 -- | Emit exported names.

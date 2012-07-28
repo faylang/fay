@@ -153,6 +153,11 @@ instance Printable JsExp where
     (concat ["(",printJS name,".",printJS prop," = ",printJS expr,")"])
   printJS (JsInfix op x y) =
     printJS x ++ " " ++ op ++ " " ++ printJS y
+  -- Externs: Careful, here be dragons! Or at least warm lizards.
+  printJS (JsGetPropExtern exp prop) =
+    printJS exp ++ "['" ++ printJS prop ++ "']"
+  printJS (JsUpdatePropExtern name prop expr) =
+    (concat ["(",printJS name,"['",printJS prop,"'] = ",printJS expr,")"])
 
 --------------------------------------------------------------------------------
 -- Utilities

@@ -83,7 +83,7 @@ instance Show JQuery
 
 -- | Make a jQuery object out of an element.
 jquery :: [Element] -> JQuery
-jquery = foreignPure "window.jQuery" FayNone
+jquery = foreignPure "window['jQuery']" FayNone
 
 -- | Bind a handler for when the element is ready.
 ready :: JQuery -> Fay () -> Fay ()
@@ -91,7 +91,7 @@ ready = foreignMethodFay "ready" FayNone
 
 -- | Query for elements.
 query :: String -> Fay [Element]
-query = foreignFay "window.jQuery" FayList
+query = foreignFay "window['jQuery']" FayList
 
 -- | Set the text of the given object.
 setText :: JQuery -> String -> Fay ()
@@ -149,7 +149,7 @@ prepend = foreignMethodFay "prepend" FayNone
 
 -- | Make a new element.
 makeElement :: String -> Fay JQuery
-makeElement = foreignFay "window.jQuery" FayNone
+makeElement = foreignFay "window['jQuery']" FayNone
 
 -- | Get the width of the given object.
 getWidth :: JQuery -> Fay Double
@@ -175,7 +175,7 @@ instance Foreign Highlighter
 
 -- | Get the highlighter.
 hljs :: Highlighter
-hljs = foreignValue "window.hljs" FayNone
+hljs = foreignValue "window['hljs']" FayNone
 
 -- | Init syntax highlighting on load.
 initHighlightingOnLoad :: Highlighter -> Fay ()

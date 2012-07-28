@@ -133,6 +133,8 @@ data JsExp
   | JsParen JsExp
   | JsGetProp JsExp JsName
   | JsUpdateProp JsExp JsName JsExp
+  | JsGetPropExtern JsExp JsName
+  | JsUpdatePropExtern JsExp JsName JsExp
   | JsList [JsExp]
   | JsNew JsName [JsExp]
   | JsThrowExp JsExp

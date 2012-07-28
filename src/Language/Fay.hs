@@ -196,7 +196,7 @@ compileFFIMethod sig ident detail@(_,name,_) = do
   let args = zipWith const uniqueNames [1..typeArity sig]
       jsargs = drop 1 args
       obj = head args
-  compileFFI sig ident detail (JsGetProp (force (JsName obj)) (fromString name)) args jsargs
+  compileFFI sig ident detail (JsGetPropExtern (force (JsName obj)) (fromString name)) args jsargs
 
 -- | Compile a foreign method.
 compileFFISetProp :: Type -> Name -> (String,String,FayReturnType) -> Compile [JsStmt]
@@ -207,10 +207,10 @@ compileFFISetProp sig ident detail@(_,name,_) = do
   compileFFI sig
              ident
              detail
-             (JsUpdateProp (force (JsName obj))
-                           (fromString name)
-                           (serialize (head (tail funcTypes))
-                                      (JsName (head jsargs))))
+             (JsUpdatePropExtern (force (JsName obj))
+                                 (fromString name)
+                                 (serialize (head (tail funcTypes))
+                                            (JsName (head jsargs))))
              args
              []
                

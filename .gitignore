@@ -5,6 +5,7 @@ tests/*.js
 TAGS
 docs/index.html
 docs/home.html
+docs/home.js
 *.hi
 *.o
 *.hcr

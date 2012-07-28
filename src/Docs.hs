@@ -7,6 +7,7 @@
 module Main where
 
 import           Language.Fay (compileViaStr,compileModule)
+import           Language.Fay.Compiler (compileFromTo)
 
 import           Control.Exception
 import           Control.Monad
@@ -28,6 +29,7 @@ main :: IO ()
 main = do
   let file = "docs" </> "index.html"
   generate >>= L.writeFile file
+  generateJs
   putStrLn $ "Documentation file written to " ++ file
   
 generate = do
@@ -52,6 +54,14 @@ generate = do
         examples = map (("docs" </> "snippets") </>)
                        (map (++".hs")
                             (words "declarations conditions functions lists data enums patterns ffi dom tail"))
+
+generateJs = do
+  putStrLn $ "Compiling " ++ inp ++ " to " ++ out ++ " ..."
+  compileFromTo def True inp out
+    
+  where docs = ("docs" </>)
+        inp = (docs "home.hs")
+        out = (docs "home.js")
 
 page now analytics examples = do
   docType

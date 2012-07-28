@@ -1,3 +1,8 @@
+-- | Generate the web site/documentation for the Fay project.
+--
+-- This depends on the Fay compiler to generate examples and the
+-- javascript of the page is also built with Fay.
+
 module Main where
 
 import Language.Fay.Compiler

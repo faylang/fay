@@ -13,6 +13,15 @@ function _(thunkish,nocache){
   return thunkish;
 }
 
+// Apply a function to arguments (see method2 in Fay.hs).
+function __(){
+    var f = arguments[0];
+    for (var i = 1, len = arguments.length; i < len; i++) {
+        f = (f instanceof $? _(f) : f)(arguments[i]);
+    }
+    return f;
+}
+
 // Thunk object.
 function $(value){
   this.forced = false;

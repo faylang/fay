@@ -40,17 +40,22 @@ compileProgram config autorun raw with hscode = do
     Right (jscode,state) -> do
       let (ModuleName modulename) = stateModuleName state
           exports                 = stateExports state
-      return (Right (unlines ["var " ++ modulename ++ " = function(){"
+      return (Right (unlines ["/** @constructor"
+                             ,"*/"
+                             ,"var " ++ modulename ++ " = function(){"
                              ,raw
                              ,jscode
                              ,"// Exports"
                              ,unlines (map printExport exports)
                              ,"// Built-ins"
                              ,"this.$force      = _;"
-                             ,"this.$           = $;"
-                             ,"this.$list       = Fay$$list;"
-                             ,"this.$encodeShow = Fay$$encodeShow;"
-                             ,"this.$eval       = Fay$$eval;"
+                             ,if configExportBuiltins config
+                                 then unlines ["this.$           = $;"
+                                              ,"this.$list       = Fay$$list;"
+                                              ,"this.$encodeShow = Fay$$encodeShow;"
+                                              ,"this.$eval       = Fay$$eval;"
+                                              ]
+                                 else ""
                              ,"};"
                              ,if autorun
                                  then unlines [";"

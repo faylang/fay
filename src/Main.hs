@@ -21,6 +21,8 @@ main = do
   forM_ files $ \file -> do
     compileFromTo def { configTCO = elem "tco" opts
                       , configInlineForce = elem "inline-force" opts
+                      , configFlattenApps = elem "flatten-apps" opts
+                      , configExportBuiltins = not (elem "no-export-builtins" opts)
                       }
                   (elem "autorun" opts)
                   file

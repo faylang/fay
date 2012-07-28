@@ -35,13 +35,15 @@ import Language.Haskell.Exts
 
 -- | Configuration of the compiler.
 data CompileConfig = CompileConfig
-  { configTCO         :: Bool
-  , configInlineForce :: Bool
+  { configTCO            :: Bool
+  , configInlineForce    :: Bool
+  , configFlattenApps    :: Bool
+  , configExportBuiltins :: Bool
   } deriving (Show)
 
 -- | Default configuration.
 instance Default CompileConfig where
-  def = CompileConfig False False
+  def = CompileConfig False False False True
 
 -- | State of the compiler.
 data CompileState = CompileState

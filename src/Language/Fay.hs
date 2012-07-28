@@ -25,7 +25,7 @@ import Data.List
 import Data.Maybe
 import Data.String
 import Language.Haskell.Exts
--- import System.Process.Extra
+import System.Process.Extra
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -74,17 +74,17 @@ compileFromStr with from =
               (with)
               (parse from)
 
--- printCompile :: (Show from,Show to,CompilesTo from to)
---               => Config
---               -> (from -> Compile to)
---               -> String
---               -> IO ()
--- printCompile config with from = do
---   result <- compileViaStr config with from
---   case result of
---     Left err -> putStrLn $ show err
---     Right ok -> do writeFile "/tmp/x.js" ok
---                    prettyPrintFile "/tmp/x.js" >>= putStr
+printCompile :: (Show from,Show to,CompilesTo from to)
+              => CompileConfig
+              -> (from -> Compile to)
+              -> String
+              -> IO ()
+printCompile config with from = do
+  result <- compileViaStr config with from
+  case result of
+    Left err -> putStrLn $ show err
+    Right (ok,_) -> do writeFile "/tmp/x.js" ok
+                       prettyPrintFile "/tmp/x.js" >>= putStr
 
 --------------------------------------------------------------------------------
 -- Compilers
@@ -403,8 +403,8 @@ expand (JsApp (JsName (UnQual (Ident "_"))) xs) = do
 expand _ = Nothing
 
 -- -- | Run a JS file.
--- prettyPrintFile :: String -> IO String
--- prettyPrintFile file = fmap (either id id) (readAllFromProcess "js-beautify" file)
+prettyPrintFile :: String -> IO String
+prettyPrintFile file = fmap (either id id) (readAllFromProcess "js-beautify" file)
 
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp
@@ -465,10 +465,31 @@ instance CompilesTo Exp JsExp where compileTo = compileExp
 
 -- | Compile simple application.
 compileApp :: Exp -> Exp -> Compile JsExp
-compileApp exp1 exp2 = 
-  JsApp <$> (forceFlatName <$> compileExp exp1)
-        <*> fmap return (compileExp exp2)
-  where forceFlatName name = JsApp (JsName "_") [name]
+compileApp exp1 exp2 = do
+   flattenApps <- config configFlattenApps
+   if flattenApps then method2 else method1
+   where
+  -- Method 1:           
+  -- In this approach code ends up looking like this:
+  -- a(a(a(a(a(a(a(a(a(a(L)(c))(b))(0))(0))(y))(t))(a(a(F)(3*a(a(d)+a(a(f)/20))))*a(a(f)/2)))(140+a(f)))(y))(t)})
+  -- Which might be OK for speed, but increases the JS stack a fair bit.
+  method1 =
+    JsApp <$> (forceFlatName <$> compileExp exp1)
+          <*> fmap return (compileExp exp2)
+  forceFlatName name = JsApp (JsName "_") [name]
+
+  -- Method 2:
+  -- In this approach code ends up looking like this:
+  -- d(O,a,b,0,0,B,w,e(d(I,3*e(e(c)+e(e(g)/20))))*e(e(g)/2),140+e(g),B,w)}),d(K,g,e(c)+0.05))
+  -- Which should be much better for the stack and readability, but probably not great for speed.
+  method2 = fmap flatten $
+    JsApp <$> compileExp exp1
+          <*> fmap return (compileExp exp2)
+  flatten (JsApp op args) =
+   case op of
+     JsApp l r -> JsApp l (r ++ args)
+     _        -> JsApp (JsName "__") (op : args)
+  flatten x = x
 
 -- | Compile an infix application, optimizing the JS cases.
 compileInfixApp :: Exp -> QOp -> Exp -> Compile JsExp

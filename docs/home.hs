@@ -68,28 +68,22 @@ setupExpanders = do
 setupTableOfContents :: Fay ()
 setupTableOfContents = do
   toc <- makeElement "<div class='table-of-contents'><p>Table of Contents</p></div>"
-  ul <- makeElement "<ul></ul>"
-  append toc ul
-  body <- query "body"
-  subheadline <- query ".subheadline"
-  after subheadline toc
+  query ".subheadline" >>= flip after toc
+  ul <- makeElement "<ul></ul>" >>= flip appendTo toc
   headings <- query "h2"
   each headings $ \i heading ->
     let anchor = ("section-" ++ show i)
-    in do text <- getText (wrap [heading])
-          -- Make sure the anchor exists at the heading point.
-          attr (wrap [heading]) "id" anchor
-          -- 
-          li <- makeElement "<li></li>"
-          append ul li
+        h = wrap [heading]
+    in do -- Make sure the anchor exists at the heading point.
+          attr h "id" anchor
+          -- Make the entry.
+          li <- makeElement "<li></li>" >>= flip appendTo ul
+          a <- makeElement "<a></a>" >>= flip appendTo li
+          getText h >>= setText a
           -- Link up to an anchor.
-          a <- makeElement "<a></a>"
           attr a "href" ("#" ++ anchor)
-          setText a text
-          append li a
-          -- For the indentation:
-          name <- getTagName heading
-          addClass li name
+          -- For the indentation.
+          getTagName heading >>= addClass li
 
 --------------------------------------------------------------------------------
 -- Window object
@@ -209,6 +203,10 @@ after = foreignMethodFay "after" FayNone
 -- | Append an element to this one.
 append :: JQuery -> JQuery -> Fay JQuery
 append = foreignMethodFay "append" FayNone
+
+-- | Append this to an element.
+appendTo :: JQuery -> JQuery -> Fay JQuery
+appendTo = foreignMethodFay "appendTo" FayNone
 
 -- | Make a new element.
 makeElement :: String -> Fay JQuery

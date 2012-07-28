@@ -1,5 +1,5 @@
 name:                fay
-version:             0.2.1.0
+version:             0.2.2.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which can be compiled (type-checked) 
                      with GHC, and compiled to JavaScript. It is lazy, pure, with a Fay monad,
@@ -22,15 +22,13 @@ description:         Fay is a proper subset of Haskell which can be compiled (ty
                      .
                      /Release Notes/
                      .
-                     Support setting properties.
+                     Some more compilation options.
                      .
-                     * Support assigning props (closes #10).
+                     * Optional flat function application (-flatten-apps).
                      .
-                     * Support zero-arg functions i.e. values.
+                     * Exporting-builtins is optional (-no-export-builtins).
                      .
-                     * Add node example (closes #15).
-                     .
-                     * Add warning in the build script.
+                     * The main module is annotated as a Closure @constructor.
                      .
                      See full history at: <https://github.com/chrisdone/fay/commits>
 homepage:            http://fay-lang.org/
@@ -46,7 +44,8 @@ data-files:          js/runtime.js
                      hs/stdlib.hs
                      src/Language/Fay/Stdlib.hs
 extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examples/dom.hs
-                     examples/tailrecursive.hs examples/data.hs
+                     examples/tailrecursive.hs examples/data.hs examples/canvaswater.hs
+                     examples/canvas.water.html examples/haskell.png
                      -- Test cases
                      tests/10 tests/10.hs tests/11 tests/11.hs tests/12 tests/12.hs tests/13
                      tests/13.hs tests/14 tests/14.hs tests/15 tests/15.hs tests/16 tests/16.hs

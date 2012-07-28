@@ -58,6 +58,10 @@
 
 
 
+function $jsBeautify(source,indentSize) {
+    return js_beautify(source, { indent_size: indentSize });
+}
+
 function js_beautify(js_source_text, options) {
 
     var input, output, token_text, last_type, last_text, last_last_text, last_word, flags, flag_store, indent_string;

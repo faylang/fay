@@ -73,8 +73,7 @@ setupTableOfContents = do
   body <- query "body"
   subheadline <- query ".subheadline"
   after subheadline toc
-  headings <- query "h2,h3,h4,h5"
-  return ()
+  headings <- query "h2"
   each headings $ \i heading ->
     let anchor = ("section-" ++ show i)
     in do text <- getText (wrap [heading])

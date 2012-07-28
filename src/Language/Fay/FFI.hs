@@ -68,6 +68,14 @@ foreignProp
   -> a             -- ^ Bottom.
 foreignProp = error "Language.Fay.FFI.foreignProp: Used foreign function not in a JS engine context."
 
+-- | Declare a foreign function.
+foreignPropFay
+  :: Foreign a
+  => String        -- ^ The foreign function name.
+  -> FayReturnType -- ^ JS return type.
+  -> a             -- ^ Bottom.
+foreignPropFay = error "Language.Fay.FFI.foreignProp: Used foreign function not in a JS engine context."
+
 -- | Declare a foreign action.
 foreignMethodFay
   :: Foreign a

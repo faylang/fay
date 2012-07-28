@@ -29,7 +29,9 @@ module Language.Fay.Stdlib
   ,intersperse
   ,prependToAll
   ,intercalate
-  ,forM_)
+  ,forM_
+  ,mapM_
+  ,when)
   where
 
 import Prelude (Maybe(..),(==),(>>),return,(+),(<),(>),Bool(..),Ord,(||))
@@ -153,3 +155,6 @@ intercalate xs xss = concat (intersperse xs xss)
 
 forM_ (x:xs) m = m x >> forM_ xs m
 forM_ []     _ = return ()
+
+mapM_ m (x:xs) = m x >> mapM_ m xs
+mapM_ _ []     = return ()

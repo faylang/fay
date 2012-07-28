@@ -798,6 +798,7 @@ unserialize typ exp =
             FayArray -> "array"
             FayList -> "list"
             FayString -> "string"
+            FayBool -> "bool"
             FayNone -> ""
 
 -- | Force an expression in a thunk.

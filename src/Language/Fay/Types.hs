@@ -151,5 +151,5 @@ data JsLit
   | JsBool Bool
   deriving (Show,Eq)
 
-data FayReturnType = FayArray | FayList | FayString | FayNone
+data FayReturnType = FayArray | FayList | FayString | FayBool | FayNone
   deriving (Read,Show,Eq)

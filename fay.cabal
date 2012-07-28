@@ -28,7 +28,7 @@ description:         Fay is a proper subset of Haskell which can be compiled (ty
                      .
                      * Exporting-builtins is optional (-no-export-builtins).
                      .
-                     * The main module is annotated as a Closure @constructor.
+                     * The main module is annotated as a Closure \@constructor.
                      .
                      See full history at: <https://github.com/chrisdone/fay/commits>
 homepage:            http://fay-lang.org/

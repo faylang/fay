@@ -100,3 +100,31 @@ word-wrap: break-word; }
     border-top-right-radius: 1em;
 }
 p code { background: #eee; padding: 0.1em 0.2em; }
+.table-of-contents {
+    font-size: 0.9em;
+    border: #ddd;
+    background: #eee;
+    padding: 1em;
+    float: right;
+    border-radius: 5px;
+    margin-left: 1em;
+}
+.table-of-contents p {
+    padding: 0;
+    margin: 0;
+}
+.table-of-contents ul {
+    padding: 0;
+}
+.table-of-contents li {
+    list-style-type: none;
+}
+.table-of-contents .H2 {
+    margin-left: 1em;
+}
+.table-of-contents .H3 {
+    margin-left: 2em;
+}
+.table-of-contents a {
+    color: #555;
+}

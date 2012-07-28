@@ -21,36 +21,76 @@ import Language.Fay.Prelude
 -- | Main entry point.
 main :: Fay ()
 main = do
-  ready (jquery [thedocument]) $ do
-    samples <- query ".language-javascript"
-    forM_ samples $ \this ->
-      let sample = jquery [this]
-      in do text <- getText sample
-            setText sample
-                    (beautify text 2)
-    setTabReplace hljs "    "
-    initHighlightingOnLoad hljs
-    wrapwidth <- query ".wrap" >>= getWidth . jquery
-    each ".example" $ \this -> do
-      tr <- getFind this "tr"
-      left <- getFind tr "td" >>= getFirst
-      addClass left "left"
-      right <- getNext left
-      toggle <- makeElement "<a class='toggle' href='javascript:'>Show JavaScript</a>"
-      toggleButton <- return $ do
-        visible <- getIs right ":visible"
-        if visible
-           then do setText toggle "Hide JavaScript"
-                   swapClasses toggle "toggle-hide" "toggle-show"
-           else do setText toggle "Show JavaScript"
-                   swapClasses toggle "toggle-show" "toggle-hide"
-      setClick toggle $ fadeToggle right $ toggleButton
-      width <- getWidth tr
-      when (width > wrapwidth + 20*wrapwidth/100) $ hide right
-      toggleButton
-      panel <- getFind left ".panel"
-      prepend panel toggle
-      return ()
+  ready (wrap [thedocument]) $ do
+    indentAndHighlight
+    setupExpanders
+    setupTableOfContents
+
+-- | Setup highlighting/code re-indenting.
+indentAndHighlight :: Fay ()
+indentAndHighlight = do
+  samples <- query ".language-javascript"
+  each samples $ \i this ->
+    let sample = wrap [this]
+    in do text <- getText sample
+          setText sample
+                  (beautify text 2)
+  setTabReplace hljs "    "
+  initHighlightingOnLoad hljs
+
+-- | Setup example expanders.
+setupExpanders :: Fay ()
+setupExpanders = do
+  wrapwidth <- query ".wrap" >>= getWidth
+  examples <- query ".example"
+  each examples $ \i this -> do
+    tr <- getFind (wrap [this]) "tr"
+    left <- getFind tr "td" >>= getFirst
+    addClass left "left"
+    right <- getNext left
+    toggle <- makeElement "<a class='toggle' href='javascript:'>Show JavaScript</a>"
+    toggleButton <- return $ do
+      visible <- getIs right ":visible"
+      if visible
+         then do setText toggle "Hide JavaScript"
+                 swapClasses toggle "toggle-hide" "toggle-show"
+         else do setText toggle "Show JavaScript"
+                 swapClasses toggle "toggle-show" "toggle-hide"
+    setClick toggle $ fadeToggle right $ toggleButton
+    width <- getWidth tr
+    when (width > wrapwidth + 20*wrapwidth/100) $ hide right
+    toggleButton
+    panel <- getFind left ".panel"
+    prepend panel toggle
+    return ()
+
+-- | Generate a table of contents.
+setupTableOfContents :: Fay ()
+setupTableOfContents = do
+  toc <- makeElement "<div class='table-of-contents'><p>Table of Contents</p></div>"
+  ul <- makeElement "<ul></ul>"
+  append toc ul
+  body <- query "body"
+  subheadline <- query ".subheadline"
+  after subheadline toc
+  headings <- query "h2,h3,h4,h5"
+  return ()
+  each headings $ \i heading ->
+    let anchor = ("section-" ++ show i)
+    in do text <- getText (wrap [heading])
+          -- Make sure the anchor exists at the heading point.
+          attr (wrap [heading]) "id" anchor
+          -- 
+          li <- makeElement "<li></li>"
+          append ul li
+          -- Link up to an anchor.
+          a <- makeElement "<a></a>"
+          attr a "href" ("#" ++ anchor)
+          setText a text
+          append li a
+          -- For the indentation:
+          name <- getTagName heading
+          addClass li name
 
 --------------------------------------------------------------------------------
 -- Window object
@@ -74,6 +114,10 @@ instance Show Element
 thedocument :: Element
 thedocument = foreignValue "window.document" FayNone
 
+-- | Get the size of the given jquery array.
+getTagName :: Element -> Fay String
+getTagName = foreignPropFay "tagName" FayString
+  
 --------------------------------------------------------------------------------
 -- jQuery
 
@@ -82,20 +126,28 @@ instance Foreign JQuery
 instance Show JQuery
 
 -- | Make a jQuery object out of an element.
-jquery :: [Element] -> JQuery
-jquery = foreignPure "window['jQuery']" FayNone
+wrap :: [Element] -> JQuery
+wrap = foreignPure "window['jQuery']" FayNone
 
 -- | Bind a handler for when the element is ready.
 ready :: JQuery -> Fay () -> Fay ()
 ready = foreignMethodFay "ready" FayNone
 
+-- | Bind a handler for when the element is ready.
+each :: JQuery -> (Double -> Element -> Fay ()) -> Fay ()
+each = foreignMethodFay "each" FayNone
+
 -- | Query for elements.
-query :: String -> Fay [Element]
-query = foreignFay "window['jQuery']" FayList
+query :: String -> Fay JQuery
+query = foreignFay "window['jQuery']" FayNone
 
 -- | Set the text of the given object.
 setText :: JQuery -> String -> Fay ()
 setText = foreignMethodFay "text" FayNone
+
+-- | Set the text of the given object.
+attr :: JQuery -> String -> String -> Fay ()
+attr = foreignMethodFay "attr" FayNone
 
 -- | Set the click of the given object.
 setClick :: JQuery -> Fay () -> Fay ()
@@ -131,6 +183,10 @@ getText = foreignMethodFay "text" FayString
 getIs :: JQuery -> String -> Fay Bool
 getIs = foreignMethodFay "is" FayBool
 
+-- | Get the size of the given jquery array.
+getSize :: JQuery -> Fay Double
+getSize = foreignPropFay "length" FayNone
+
 -- | Get the next of the given object.
 getNext :: JQuery -> Fay JQuery
 getNext = foreignMethodFay "next" FayNone
@@ -147,6 +203,14 @@ getFind = foreignMethodFay "find" FayNone
 prepend :: JQuery -> JQuery -> Fay JQuery
 prepend = foreignMethodFay "prepend" FayNone
 
+-- | Append an element /after/ this one.
+after :: JQuery -> JQuery -> Fay JQuery
+after = foreignMethodFay "after" FayNone
+
+-- | Append an element to this one.
+append :: JQuery -> JQuery -> Fay JQuery
+append = foreignMethodFay "append" FayNone
+
 -- | Make a new element.
 makeElement :: String -> Fay JQuery
 makeElement = foreignFay "window['jQuery']" FayNone
@@ -154,12 +218,6 @@ makeElement = foreignFay "window['jQuery']" FayNone
 -- | Get the width of the given object.
 getWidth :: JQuery -> Fay Double
 getWidth = foreignMethodFay "width" FayNone
-
--- | For each element in a query set do something.
-each :: String -> (JQuery -> Fay ()) -> Fay ()
-each q go = do
-  results <- query q
-  forM_ results $ \result -> go (jquery [result])
 
 --------------------------------------------------------------------------------
 -- Pretty printing / highlighting

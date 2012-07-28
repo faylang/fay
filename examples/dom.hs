@@ -15,7 +15,7 @@ printBody = do
   print result
 
 print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" ""
+print = foreignFay "console.log" FayNone
 
 data Element
 instance Foreign Element

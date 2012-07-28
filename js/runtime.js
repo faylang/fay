@@ -171,7 +171,7 @@ function Fay$$encodeShow(x){
 
 // Unserialize an object from JS to Fay.
 function Fay$$unserialize(typ,obj){
-  if(typ == 'string' || typ == 'array')
+  if(typ == 'string' || typ == 'array' || typ == 'list')
     return Fay$$list(obj);
   else if(typ == 'bool')
     return obj? True : False;

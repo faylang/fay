@@ -50,9 +50,11 @@ fromRational = error "Language.Fay.Prelude.fromRational Used fromRational outsid
 
 (>>) :: Fay a -> Fay b -> Fay b
 (>>) = error "Language.Fay.Prelude.(>>): Used (>>) outside JS."
+infixl 1 >>
 
 (>>=) :: Fay a -> (a -> Fay b) -> Fay b
 (>>=) = error "Language.Fay.Prelude.(>>=): Used (>>=) outside JS."
+infixl 1 >>=
 
 fail :: String -> Fay a
 fail = error "Language.Fay.Prelude.fail: Used fail outside JS."

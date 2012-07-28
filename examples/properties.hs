@@ -35,10 +35,10 @@ getInnerHtml :: Element -> Fay String
 getInnerHtml = foreignPropFay "innerHTML" FayString
 
 thebody :: Element
-thebody = foreignPure "document.body" FayNone
+thebody = foreignValue "document.body" FayNone
 
 thewindow :: Element
-thewindow = foreignPure "window" FayNone
+thewindow = foreignValue "window" FayNone
 
 data Element
 instance Foreign Element

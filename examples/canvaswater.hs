@@ -55,7 +55,7 @@ instance Eventable Element
 
 -- | Add an event listener to an element.
 addEventListener :: (Foreign a,Eventable a) => a -> String -> Fay () -> Bool -> Fay ()
-addEventListener = foreignPropFay "addEventListener" FayNone
+addEventListener = foreignMethodFay "addEventListener" FayNone
 
 -- | Get an element by its ID.
 getElementById :: String -> Fay Element
@@ -85,11 +85,11 @@ instance Foreign Context
 
 -- | Get an element by its ID.
 getContext :: Element -> String -> Fay Context
-getContext = foreignPropFay "getContext" FayNone
+getContext = foreignMethodFay "getContext" FayNone
 
 -- | Draw an image onto a canvas rendering context.
 drawImage :: Context -> Image -> Double -> Double -> Fay ()
-drawImage = foreignPropFay "drawImage" FayNone
+drawImage = foreignMethodFay "drawImage" FayNone
 
 -- | Draw an image onto a canvas rendering context.
 --
@@ -101,7 +101,7 @@ drawImage = foreignPropFay "drawImage" FayNone
 drawImageSpecific :: Context -> Image
                   -> Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
                   -> Fay ()
-drawImageSpecific = foreignPropFay "drawImage" FayNone
+drawImageSpecific = foreignMethodFay "drawImage" FayNone
 
 -- | Set the fill style.
 setFillStyle :: Context -> String -> Fay ()
@@ -109,7 +109,7 @@ setFillStyle = foreignSetProp "fillStyle"
 
 -- | Set the fill style.
 setFillRect :: Context -> Double -> Double -> Double -> Double -> Fay ()
-setFillRect = foreignPropFay "fillRect" FayNone
+setFillRect = foreignMethodFay "fillRect" FayNone
 
 --------------------------------------------------------------------------------
 -- Ref

@@ -52,13 +52,13 @@ foreignPure
   -> a             -- ^ Bottom.
 foreignPure = error "Language.Fay.FFI.foreign: Used foreign function not in a JS engine context."
 
--- | Declare a foreign action.
-foreignPropFay
+-- | Declare a foreign function.
+foreignValue
   :: Foreign a
-  => String         -- ^ The foreign function name.
-  -> FayReturnType  -- ^ JS return type.
-  -> a              -- ^ Bottom.
-foreignPropFay = error "Language.Fay.FFI.foreignPropFay: Used foreign function not in a JS engine context."
+  => String        -- ^ The foreign function name.
+  -> FayReturnType -- ^ JS return type.
+  -> a             -- ^ Bottom.
+foreignValue = error "Language.Fay.FFI.foreignValue: Used foreign function not in a JS engine context."
 
 -- | Declare a foreign function.
 foreignProp
@@ -67,6 +67,22 @@ foreignProp
   -> FayReturnType -- ^ JS return type.
   -> a             -- ^ Bottom.
 foreignProp = error "Language.Fay.FFI.foreignProp: Used foreign function not in a JS engine context."
+
+-- | Declare a foreign action.
+foreignMethodFay
+  :: Foreign a
+  => String         -- ^ The foreign function name.
+  -> FayReturnType  -- ^ JS return type.
+  -> a              -- ^ Bottom.
+foreignMethodFay = error "Language.Fay.FFI.foreignMethodFay: Used foreign function not in a JS engine context."
+
+-- | Declare a foreign function.
+foreignMethod
+  :: Foreign a
+  => String        -- ^ The foreign function name.
+  -> FayReturnType -- ^ JS return type.
+  -> a             -- ^ Bottom.
+foreignMethod = error "Language.Fay.FFI.foreignMethod: Used foreign function not in a JS engine context."
 
 -- | Declare a foreign action.
 foreignSetProp

@@ -162,8 +162,10 @@ jsEncodeName :: String -> String
 -- Special symbols:
 jsEncodeName ":tmp" = "$tmp"
 jsEncodeName ":thunk" = "$"
+jsEncodeName ":this" = "this"
 -- Used keywords:
-jsEncodeName "null" = "_null"
+jsEncodeName "null" = "_$null"
+jsEncodeName "this" = "_$this"
 -- Anything else.
 jsEncodeName name =
   if isPrefixOf "$_" name

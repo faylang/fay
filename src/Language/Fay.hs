@@ -158,13 +158,12 @@ compilePatBind toplevel sig pat = do
               () | func binding   -> compileFFIFunc sig ident detail
                  | method binding -> compileFFIMethod sig ident detail
                  | setprop binding -> compileFFISetProp sig ident detail
---                 | value binding  -> compileFFIValue sig ident detail
                  | otherwise      -> throwError (FfiNeedsTypeSig pat)
         _ -> compileNormalPatBind toplevel ident rhs
     _ -> throwError (UnsupportedDeclaration pat)
 
-  where func = flip elem ["foreignFay","foreignPure"]
-        method = flip elem ["foreignPropFay","foreignProp"]
+  where func = flip elem ["foreignFay","foreignPure","foreignValue"]
+        method = flip elem ["foreignMethodFay","foreignProp","foreignPropFay","foreignMethod"]
         setprop = flip elem ["foreignSetProp"]
 
         ffiExp (App (App (Var (UnQual (Ident ident)))
@@ -227,7 +226,7 @@ compileFFI :: Type
            -> Compile [JsStmt]
 compileFFI sig ident (binding,_,typ) exp params args = do
   let innerexp
-        | length args == 0 = exp
+        | length args == 0 && elem binding ["foreignProp","foreignPropFay","foreignValue"] = exp
         | binding == "foreignSetProp" = exp
         | otherwise = JsApp exp
                             (map (\(typ,name) -> serialize typ (JsName name))
@@ -244,8 +243,10 @@ compileFFI sig ident (binding,_,typ) exp params args = do
   return [bind]
 
   where (maybeMonad,types) | binding == "foreignFay"       = (monad,funcTypes)
-                           | binding == "foreignPropFay"   = (monad,drop 1 funcTypes)
                            | binding == "foreignProp"      = (id,drop 1 funcTypes)
+                           | binding == "foreignMethodFay" = (monad,drop 1 funcTypes)
+                           | binding == "foreignPropFay"   = (monad,drop 1 funcTypes)
+                           | binding == "foreignMethod"    = (id,drop 1 funcTypes)
                            | binding == "foreignSetProp"   = (monad,[])
                            | otherwise                     = (id,funcTypes)
         funcTypes = functionTypeArgs sig

@@ -4,11 +4,14 @@ print = foreignFay "window.console.log" ""
 alert :: Foreign a => a -> Fay ()
 alert = foreignFay "window.alert" ""
 
-thebody :: Element
-thebody = foreignPure "document.body" FayNone
-
 getInnerHtml :: Element -> Fay String
-getInnerHtml = foreignPropFay "innerHTML" FayString
+getInnerHtml = foreignMethodFay "innerHTML" FayString
 
 setInnerHtml :: Element -> String -> Fay ()
 setInnerHtml = foreignSetProp "innerHTML"
+
+thedocument :: Element
+thedocument = foreignValue "window.document" FayNone
+
+jquery :: Element -> JQuery
+jquery = foreignPure "window.jQuery" FayNone

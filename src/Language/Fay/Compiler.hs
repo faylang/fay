@@ -68,7 +68,7 @@ compileProgram config autorun raw with hscode = do
 -- | Print an this.x = x; export out.
 printExport :: Name -> String
 printExport name =
-  printJS (JsSetProp "this"
+  printJS (JsSetProp ":this"
                      (UnQual name)
                      (JsName (UnQual name)))
 

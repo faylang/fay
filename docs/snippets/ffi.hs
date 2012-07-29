@@ -5,7 +5,7 @@ alert :: Foreign a => a -> Fay ()
 alert = ffi "window.alert(%1)" ""
 
 getInnerHtml :: Element -> Fay String
-getInnerHtml = ffi "%1.innerHTML(%2)" FayString
+getInnerHtml = ffi "%1.innerHTML" FayString
 
 setInnerHtml :: Element -> String -> Fay ()
 setInnerHtml = ffi "%1.innerHTML=%2"

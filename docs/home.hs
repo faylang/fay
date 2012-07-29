@@ -21,7 +21,7 @@ import Language.Fay.Prelude
 -- | Main entry point.
 main :: Fay ()
 main = do
-  ready (wrap [thedocument]) $ do
+  ready (wrap thedocument) $ do
     indentAndHighlight
     setupExpanders
     setupTableOfContents
@@ -31,10 +31,9 @@ indentAndHighlight :: Fay ()
 indentAndHighlight = do
   samples <- query ".language-javascript"
   each samples $ \i this ->
-    let sample = wrap [this]
+    let sample = wrap this
     in do text <- getText sample
-          setText sample
-                  (beautify text 2)
+          setText sample (beautify text 2)
   setTabReplace hljs "    "
   initHighlightingOnLoad hljs
 
@@ -44,7 +43,7 @@ setupExpanders = do
   wrapwidth <- query ".wrap" >>= getWidth
   examples <- query ".example"
   each examples $ \i this -> do
-    tr <- getFind (wrap [this]) "tr"
+    tr <- getFind (wrap this) "tr"
     left <- getFind tr "td" >>= getFirst
     addClass left "left"
     right <- getNext left
@@ -68,17 +67,17 @@ setupExpanders = do
 setupTableOfContents :: Fay ()
 setupTableOfContents = do
   toc <- makeElement "<div class='table-of-contents'><p>Table of Contents</p></div>"
-  query ".subheadline" >>= flip after toc
-  ul <- makeElement "<ul></ul>" >>= flip appendTo toc
+  query ".subheadline" >>= after toc
+  ul <- makeElement "<ul></ul>" >>= appendTo toc
   headings <- query "h2"
   each headings $ \i heading ->
     let anchor = ("section-" ++ show i)
-        h = wrap [heading]
+        h = wrap heading
     in do -- Make sure the anchor exists at the heading point.
           attr h "id" anchor
           -- Make the entry.
-          li <- makeElement "<li></li>" >>= flip appendTo ul
-          a <- makeElement "<a></a>" >>= flip appendTo li
+          li <- makeElement "<li></li>" >>= appendTo ul
+          a <- makeElement "<a></a>" >>= appendTo li
           getText h >>= setText a
           -- Link up to an anchor.
           attr a "href" ("#" ++ anchor)
@@ -123,7 +122,7 @@ instance Foreign JQuery
 instance Show JQuery
 
 -- | Make a jQuery object out of an element.
-wrap :: [Element] -> JQuery
+wrap :: Element -> JQuery
 wrap = ffi "window['jQuery'](%1)" FayNone
 
 -- | Bind a handler for when the element is ready.
@@ -202,7 +201,7 @@ prepend = ffi "%1['prepend'](%2)" FayNone
 
 -- | Append an element /after/ this one.
 after :: JQuery -> JQuery -> Fay JQuery
-after = ffi "%1['after'](%2)" FayNone
+after = ffi "%2['after'](%1)" FayNone
 
 -- | Append an element to this one.
 append :: JQuery -> JQuery -> Fay JQuery
@@ -210,7 +209,7 @@ append = ffi "%1['append'](%2)" FayNone
 
 -- | Append this to an element.
 appendTo :: JQuery -> JQuery -> Fay JQuery
-appendTo = ffi "%1['appendTo'](%2)" FayNone
+appendTo = ffi "%2['appendTo'](%1)" FayNone
 
 -- | Make a new element.
 makeElement :: String -> Fay JQuery

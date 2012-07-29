@@ -197,6 +197,10 @@ formatFFI :: String              -- ^ The format string.
           -> [(JsParam,ArgType)] -- ^ Arguments.
           -> Compile String      -- ^ The JS code.
 formatFFI formatstr args = go formatstr where
+  go ('%':'*':xs) = do
+    these <- mapM inject (zipWith const [1..] args)
+    rest <- go xs
+    return (intercalate "," these ++ rest)
   go ('%':'%':xs) = do
     rest <- go xs
     return ('%' : rest)
@@ -204,15 +208,19 @@ formatFFI formatstr args = go formatstr where
   go ('%':(span isDigit -> (op,xs))) = do
     case readMay op of
      Nothing -> throwError (FfiFormatBadChars op)
-     Just n ->
-       case listToMaybe (drop (n-1) args) of
-         Nothing -> throwError (FfiFormatNoSuchArg n)
-         Just (arg,typ) -> do
-           rest <- go xs
-           return (printJS (serialize typ (JsName arg)) ++ rest)
+     Just n -> do
+       this <- inject n
+       rest <- go xs
+       return (this ++ rest)
   go (x:xs) = do rest <- go xs
                  return (x : rest)
   go [] = return []
+    
+  inject n =
+    case listToMaybe (drop (n-1) args) of
+      Nothing -> throwError (FfiFormatNoSuchArg n)
+      Just (arg,typ) -> do
+        return (printJS (serialize typ (JsName arg)))
 
 -- | Serialize a value to native JS, if possible.
 serialize :: ArgType -> JsExp -> JsExp

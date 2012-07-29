@@ -582,6 +582,7 @@ compilePat exp pat body = do
     pat@PInfixApp{} -> compileInfixPat exp pat body
     PList pats      -> compilePList pats body exp
     PTuple pats     -> compilePList pats body exp
+    PAsPat name pat -> compilePAsPat exp name pat body
     pat             -> throwError (UnsupportedPattern pat)
 
 -- | Compile a literal value from a pattern match.
@@ -591,6 +592,11 @@ compilePLit exp literal body = do
   return [JsIf (equalExps exp lit)
                body
                []]
+
+compilePAsPat :: JsExp -> Name -> Pat -> [JsStmt] -> Compile [JsStmt]
+compilePAsPat exp name pat body = do
+  x <- compilePat exp pat body;
+  return ([JsVar (UnQual name) exp] ++ x ++ body)
 
 -- | Equality test for two expressions, with some optimizations.
 equalExps :: JsExp -> JsExp -> JsExp

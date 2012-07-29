@@ -169,12 +169,12 @@ compilePatBind toplevel sig pat = do
         ffiExp (App (App (Var (UnQual (Ident ident)))
                          (Lit (String name)))
                     (Con (UnQual (Ident (reads -> [(typ,"")])))))
-          = Just (ident,name,typ)
+          | func ident || method ident || setprop ident = Just (ident,name,typ)
         ffiExp _ = Nothing
 
         ffiProp (App (Var (UnQual (Ident ident)))
                      (Lit (String name)))
-          = Just (ident,name,FayNone)
+          | func ident || method ident || setprop ident = Just (ident,name,FayNone)
         ffiProp _ = Nothing
 
 -- | Compile a normal simple pattern binding.

@@ -178,7 +178,7 @@ compileFFI name formatstr returnType sig = do
   case JS.parse (printJS (wrapReturn inner)) (prettyPrint name) of
     Left err -> throwError (FfiFormatInvalidJavaScript inner err)
     Right{}  -> fmap return (bindToplevel True (UnQual name) (body inner))
-    
+
   where body inner = foldr wrapParam (wrapReturn inner) params
         wrapParam name inner = JsFun [name] [] (Just inner)
         params = zipWith const uniqueNames [1..typeArity sig]
@@ -215,7 +215,7 @@ formatFFI formatstr args = go formatstr where
   go (x:xs) = do rest <- go xs
                  return (x : rest)
   go [] = return []
-    
+
   inject n =
     case listToMaybe (drop (n-1) args) of
       Nothing -> throwError (FfiFormatNoSuchArg n)
@@ -353,7 +353,7 @@ optimizeTailCalls params name stmts = abandonIfNoChange $
   JsWhile (JsLit (JsBool True))
           (concatMap replaceTailStmt
                      (reverse (zip (reverse stmts) [0::Integer ..])))
-  
+
   where replaceTailStmt (JsIf cond sothen orelse,i) = [JsIf cond (concatMap (replaceTailStmt . (,i)) sothen)
                                                                  (concatMap (replaceTailStmt . (,i)) orelse)]
         replaceTailStmt (JsEarlyReturn exp,i) = expTailReplace i exp
@@ -449,7 +449,7 @@ compileApp exp1 exp2 = do
    flattenApps <- config configFlattenApps
    if flattenApps then method2 else method1
    where
-  -- Method 1:           
+  -- Method 1:
   -- In this approach code ends up looking like this:
   -- a(a(a(a(a(a(a(a(a(a(L)(c))(b))(0))(0))(y))(t))(a(a(F)(3*a(a(d)+a(a(f)/20))))*a(a(f)/2)))(140+a(f)))(y))(t)})
   -- Which might be OK for speed, but increases the JS stack a fair bit.
@@ -480,14 +480,14 @@ compileInfixApp exp1 op exp2 = do
       | symbol `elem` words "* + - / < > || &&" -> do
           e1 <- compileExp exp1
           e2 <- compileExp exp2
-          return (JsInfix symbol (forceInlinable config e1) (forceInlinable config e2)) 
+          return (JsInfix symbol (forceInlinable config e1) (forceInlinable config e2))
     _ -> do
       var <- resolveOpToVar op
       compileExp (App (App var exp1) exp2)
 
   where getOp (QVarOp op) = op
         getOp (QConOp op) = op
-  
+
 -- | Compile a list expression.
 compileList :: [Exp] -> Compile JsExp
 compileList xs = do
@@ -582,6 +582,7 @@ compilePat exp pat body = do
     pat@PInfixApp{} -> compileInfixPat exp pat body
     PList pats      -> compilePList pats body exp
     PTuple pats     -> compilePList pats body exp
+    PAsPat name pat -> compilePAsPat exp name pat body
     pat             -> throwError (UnsupportedPattern pat)
 
 -- | Compile a literal value from a pattern match.
@@ -592,9 +593,14 @@ compilePLit exp literal body = do
                body
                []]
 
+compilePAsPat :: JsExp -> Name -> Pat -> [JsStmt] -> Compile [JsStmt]
+compilePAsPat exp name pat body = do
+  x <- compilePat exp pat body;
+  return ([JsVar (UnQual name) exp] ++ x ++ body)
+
 -- | Equality test for two expressions, with some optimizations.
 equalExps :: JsExp -> JsExp -> JsExp
-equalExps a b 
+equalExps a b
   | isConstant a && isConstant b = JsEq a b
   | isConstant a = JsEq a (force b)
   | isConstant b = JsEq (force a) b
@@ -767,7 +773,7 @@ unserialize :: FayReturnType -> JsExp -> JsExp
 unserialize typ exp =
   JsApp (JsName (hjIdent "unserialize"))
         [JsLit (JsStr (showReturnType typ)),exp]
-    
+
   where showReturnType typ =
           case typ of
             FayArray -> "array"
@@ -831,7 +837,7 @@ bindToplevel toplevel name exp = do
 
 -- | Emit exported names.
 emitExport :: ExportSpec -> Compile ()
-emitExport spec = 
+emitExport spec =
   case spec of
     EVar (UnQual name) -> modify $ \s -> s { stateExports = name : stateExports s }
     EVar _             -> error "Emitted a qualifed export, not supported."

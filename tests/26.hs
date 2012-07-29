@@ -1,4 +1,4 @@
 main = print (5 * 3 / 2)
 
-print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" FayNone
+print :: Double -> Fay ()
+print = ffi "console.log(%1)" FayNone

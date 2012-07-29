@@ -16,5 +16,5 @@ sum n acc = sum (n - 1) (acc + n)
 getSeconds :: Fay Double
 getSeconds = foreignFay "new Date" FayNone
 
-print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" FayNone
+print :: Double -> Fay ()
+print = ffi "console.log(%1)" FayNone

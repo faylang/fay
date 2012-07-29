@@ -88,13 +88,17 @@ setupTableOfContents = do
 --------------------------------------------------------------------------------
 -- Window object
 
+-- | Print something.
+print :: Show a => a -> Fay ()
+print = consolelog . show
+
 -- | Console log.
-print :: (Show a,Foreign a) => a -> Fay ()
-print = foreignFay "console.log" FayNone
+consolelog :: String -> Fay ()
+consolelog = ffi "console.log(%1)" FayNone
 
 -- | Pop-up an alert.
 alert :: String -> Fay ()
-alert = foreignFay "window.alert" FayNone
+alert = ffi "window.alert(%1)" FayNone
 
 --------------------------------------------------------------------------------
 -- DOM
@@ -105,12 +109,12 @@ instance Show Element
 
 -- | The document.
 thedocument :: Element
-thedocument = foreignValue "window.document" FayNone
+thedocument = ffi "window.document" FayNone
 
 -- | Get the size of the given jquery array.
 getTagName :: Element -> Fay String
-getTagName = foreignPropFay "tagName" FayString
-  
+getTagName = ffi "%1['tagName']" FayString
+
 --------------------------------------------------------------------------------
 -- jQuery
 
@@ -120,47 +124,47 @@ instance Show JQuery
 
 -- | Make a jQuery object out of an element.
 wrap :: [Element] -> JQuery
-wrap = foreignPure "window['jQuery']" FayNone
+wrap = ffi "window['jQuery'](%1)" FayNone
 
 -- | Bind a handler for when the element is ready.
 ready :: JQuery -> Fay () -> Fay ()
-ready = foreignMethodFay "ready" FayNone
+ready = ffi "%1['ready'](%2)" FayNone
 
 -- | Bind a handler for when the element is ready.
 each :: JQuery -> (Double -> Element -> Fay ()) -> Fay ()
-each = foreignMethodFay "each" FayNone
+each = ffi "%1['each'](%2)" FayNone
 
 -- | Query for elements.
 query :: String -> Fay JQuery
-query = foreignFay "window['jQuery']" FayNone
+query = ffi "window['jQuery'](%1)" FayNone
 
 -- | Set the text of the given object.
 setText :: JQuery -> String -> Fay ()
-setText = foreignMethodFay "text" FayNone
+setText = ffi "%1['text'](%2)" FayNone
 
 -- | Set the text of the given object.
 attr :: JQuery -> String -> String -> Fay ()
-attr = foreignMethodFay "attr" FayNone
+attr = ffi "%1['attr'](%2,%3)" FayNone
 
 -- | Set the click of the given object.
 setClick :: JQuery -> Fay () -> Fay ()
-setClick = foreignMethodFay "click" FayNone
+setClick = ffi "%1['click'](%2)" FayNone
 
 -- | Toggle the visibility of an element, faded.
 fadeToggle :: JQuery -> Fay () -> Fay ()
-fadeToggle = foreignMethodFay "fadeToggle" FayNone
+fadeToggle = ffi "%1['fadeToggle'](%2)" FayNone
 
 -- | Hide an element.
 hide :: JQuery -> Fay ()
-hide = foreignMethodFay "hide" FayNone
+hide = ffi "%1['hide']()" FayNone
 
 -- | Add a class to the given object.
 addClass :: JQuery -> String -> Fay ()
-addClass = foreignMethodFay "addClass" FayNone
+addClass = ffi "%1['addClass'](%2)" FayNone
 
 -- | Remove a class from the given object.
 removeClass :: JQuery -> String -> Fay ()
-removeClass = foreignMethodFay "removeClass" FayNone
+removeClass = ffi "%1['removeClass'](%2)" FayNone
 
 -- | Swap the given classes on the object.
 swapClasses :: JQuery -> String -> String -> Fay ()
@@ -170,51 +174,51 @@ swapClasses obj addme removeme = do
 
 -- | Get the text of the given object.
 getText :: JQuery -> Fay String
-getText = foreignMethodFay "text" FayString
+getText = ffi "%1['text']()" FayString
 
 -- | Get the text of the given object.
 getIs :: JQuery -> String -> Fay Bool
-getIs = foreignMethodFay "is" FayBool
+getIs = ffi "%1['is'](%2)" FayBool
 
 -- | Get the size of the given jquery array.
 getSize :: JQuery -> Fay Double
-getSize = foreignPropFay "length" FayNone
+getSize = ffi "%1['length']" FayNone
 
 -- | Get the next of the given object.
 getNext :: JQuery -> Fay JQuery
-getNext = foreignMethodFay "next" FayNone
+getNext = ffi "%1['next']()" FayNone
 
 -- | Get the first of the given object.
 getFirst :: JQuery -> Fay JQuery
-getFirst = foreignMethodFay "first" FayNone
+getFirst = ffi "%1['first']()" FayNone
 
 -- | Get the find of the given object.
 getFind :: JQuery -> String -> Fay JQuery
-getFind = foreignMethodFay "find" FayNone
+getFind = ffi "%1['find'](%2)" FayNone
 
 -- | Prepend an element to this one.
 prepend :: JQuery -> JQuery -> Fay JQuery
-prepend = foreignMethodFay "prepend" FayNone
+prepend = ffi "%1['prepend'](%2)" FayNone
 
 -- | Append an element /after/ this one.
 after :: JQuery -> JQuery -> Fay JQuery
-after = foreignMethodFay "after" FayNone
+after = ffi "%1['after'](%2)" FayNone
 
 -- | Append an element to this one.
 append :: JQuery -> JQuery -> Fay JQuery
-append = foreignMethodFay "append" FayNone
+append = ffi "%1['append'](%2)" FayNone
 
 -- | Append this to an element.
 appendTo :: JQuery -> JQuery -> Fay JQuery
-appendTo = foreignMethodFay "appendTo" FayNone
+appendTo = ffi "%1['appendTo'](%2)" FayNone
 
 -- | Make a new element.
 makeElement :: String -> Fay JQuery
-makeElement = foreignFay "window['jQuery']" FayNone
+makeElement = ffi "window['jQuery'](%1)" FayNone
 
 -- | Get the width of the given object.
 getWidth :: JQuery -> Fay Double
-getWidth = foreignMethodFay "width" FayNone
+getWidth = ffi "%1['width']()" FayNone
 
 --------------------------------------------------------------------------------
 -- Pretty printing / highlighting
@@ -223,19 +227,19 @@ getWidth = foreignMethodFay "width" FayNone
 beautify :: String -- ^ The JS code.
          -> Double -- ^ The indentation level.
          -> String -- ^ The reformatted JS code.
-beautify = foreignPure "$jsBeautify" FayString
+beautify = ffi "$jsBeautify(%1,%2)" FayString
 
 data Highlighter
 instance Foreign Highlighter
 
 -- | Get the highlighter.
 hljs :: Highlighter
-hljs = foreignValue "window['hljs']" FayNone
+hljs = ffi "window['hljs']" FayNone
 
 -- | Init syntax highlighting on load.
 initHighlightingOnLoad :: Highlighter -> Fay ()
-initHighlightingOnLoad = foreignMethodFay "initHighlightingOnLoad" FayNone
+initHighlightingOnLoad = ffi "%1['initHighlightingOnLoad']()" FayNone
 
 -- | Init syntax highlighting on load.
 setTabReplace :: Highlighter -> String -> Fay ()
-setTabReplace = foreignSetProp "tabReplace"
+setTabReplace = ffi "%1['tabReplace']=%2" FayNone

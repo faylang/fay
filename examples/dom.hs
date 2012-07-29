@@ -14,17 +14,14 @@ printBody = do
   result <- documentGetElements "body"
   print result
 
-print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" FayNone
+print :: String -> Fay ()
+print = ffi "console.log(%1)" FayNone
 
 data Element
 instance Foreign Element
 
 documentGetElements :: String -> Fay [Element]
-documentGetElements =
-  foreignFay "document.getElementsByTagName"
-             FayArray
+documentGetElements = ffi "document.getElementsByTagName(%1)" FayArray
 
 addEventListener :: String -> Fay () -> Bool -> Fay ()
-addEventListener =
-    foreignFay "window.addEventListener" FayNone
+addEventListener = ffi "window['addEventListener'](%1,%2,%3)" FayNone

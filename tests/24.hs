@@ -4,5 +4,5 @@ main = print (case [1,2,3,4,5] of
   [1,2,3,4,5] -> "OK."
   _           -> "Broken.")
 
-print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" FayNone
+print :: String -> Fay ()
+print = ffi "console.log(%1)" FayNone

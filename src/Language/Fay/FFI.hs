@@ -37,66 +37,9 @@ instance Foreign a => Foreign (Fay a)
 instance (Foreign a,Foreign b) => Foreign (a -> b)
 
 -- | Declare a foreign action.
-foreignFay
+ffi
   :: Foreign a
-  => String        -- ^ The foreign function name.
-  -> FayReturnType -- ^ JS return type.
+  => String        -- ^ The foreign value.
+  -> FayReturnType -- ^ JS return type (if any).
   -> a             -- ^ Bottom.
-foreignFay = error "Language.Fay.FFI.foreignFay: Used foreign function not in a JS engine context."
-
--- | Declare a foreign function.
-foreignPure
-  :: Foreign a
-  => String        -- ^ The foreign function name.
-  -> FayReturnType -- ^ JS return type.
-  -> a             -- ^ Bottom.
-foreignPure = error "Language.Fay.FFI.foreign: Used foreign function not in a JS engine context."
-
--- | Declare a foreign function.
-foreignValue
-  :: Foreign a
-  => String        -- ^ The foreign function name.
-  -> FayReturnType -- ^ JS return type.
-  -> a             -- ^ Bottom.
-foreignValue = error "Language.Fay.FFI.foreignValue: Used foreign function not in a JS engine context."
-
--- | Declare a foreign function.
-foreignProp
-  :: Foreign a
-  => String        -- ^ The foreign function name.
-  -> FayReturnType -- ^ JS return type.
-  -> a             -- ^ Bottom.
-foreignProp = error "Language.Fay.FFI.foreignProp: Used foreign function not in a JS engine context."
-
--- | Declare a foreign function.
-foreignPropFay
-  :: Foreign a
-  => String        -- ^ The foreign function name.
-  -> FayReturnType -- ^ JS return type.
-  -> a             -- ^ Bottom.
-foreignPropFay = error "Language.Fay.FFI.foreignProp: Used foreign function not in a JS engine context."
-
--- | Declare a foreign action.
-foreignMethodFay
-  :: Foreign a
-  => String         -- ^ The foreign function name.
-  -> FayReturnType  -- ^ JS return type.
-  -> a              -- ^ Bottom.
-foreignMethodFay = error "Language.Fay.FFI.foreignMethodFay: Used foreign function not in a JS engine context."
-
--- | Declare a foreign function.
-foreignMethod
-  :: Foreign a
-  => String        -- ^ The foreign function name.
-  -> FayReturnType -- ^ JS return type.
-  -> a             -- ^ Bottom.
-foreignMethod = error "Language.Fay.FFI.foreignMethod: Used foreign function not in a JS engine context."
-
--- | Declare a foreign action.
-foreignSetProp
-  :: (Foreign object,Foreign value)
-  => String   -- ^ The property.
-  -> object   -- ^ The object.
-  -> value    -- ^ The value.
-  -> Fay ()   -- ^ Bottom.
-foreignSetProp = error "Language.Fay.FFI.foreignSetProp: Used foreign function not in a JS engine context."
+ffi = error "Language.Fay.FFI.foreignFay: Used foreign function not in a JS engine context."

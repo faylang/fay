@@ -1,17 +1,17 @@
 print :: Foreign a => a -> Fay ()
-print = foreignFay "window.console.log" ""
+print = ffi "window.console.log(%1)" ""
 
 alert :: Foreign a => a -> Fay ()
-alert = foreignFay "window.alert" ""
+alert = ffi "window.alert(%1)" ""
 
 getInnerHtml :: Element -> Fay String
-getInnerHtml = foreignMethodFay "innerHTML" FayString
+getInnerHtml = ffi "%1.innerHTML(%2)" FayString
 
 setInnerHtml :: Element -> String -> Fay ()
-setInnerHtml = foreignSetProp "innerHTML"
+setInnerHtml = ffi "%1.innerHTML=%2"
 
 thedocument :: Element
-thedocument = foreignValue "window.document" FayNone
+thedocument = ffi "window.document" FayNone
 
 jquery :: Element -> JQuery
-jquery = foreignPure "window.jQuery" FayNone
+jquery = ffi "window.jQuery(%1)" FayNone

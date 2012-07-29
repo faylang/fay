@@ -103,7 +103,7 @@ instance Printable JsStmt where
 
 -- | Print an expression.
 instance Printable JsExp where
-  printJS (JsRawName name) = name
+  printJS (JsRawExp name) = name
   printJS (JsThrowExp exp) =
     "(function(){ throw (" ++ printJS exp ++ "); })()"
   printJS (JsFun params stmts ret) =

@@ -14,18 +14,22 @@ module Language.Fay
 
   where
 
-import Language.Fay.Print              ()
-import Language.Fay.Types
+import           Language.Fay.Print              ()
+import           Language.Fay.Types
 
-import Control.Applicative
-import Control.Monad.Error
-import Control.Monad.IO
-import Control.Monad.State
-import Data.List
-import Data.Maybe
-import Data.String
-import Language.Haskell.Exts
-import System.Process.Extra
+import           Control.Applicative
+import           Control.Monad.Error
+import           Control.Monad.IO
+import           Control.Monad.State
+import           Data.Char
+import           Data.List
+import           Data.Maybe
+import           Data.String
+import           Language.Haskell.Exts
+import           Safe
+
+import qualified Language.JavaScript.Parser as JS
+import           System.Process.Extra
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -150,120 +154,73 @@ compilePatBind :: Bool -> Maybe Type -> Decl -> Compile [JsStmt]
 compilePatBind toplevel sig pat = do
   case pat of
     PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
-      case ffiExp rhs <|> ffiProp rhs of
-        Just detail@(binding,_,_) ->
-          case sig of
-            Nothing -> compileNormalPatBind toplevel ident rhs
-            Just sig -> case () of
-              () | func binding   -> compileFFIFunc sig ident detail
-                 | method binding -> compileFFIMethod sig ident detail
-                 | setprop binding -> compileFFISetProp sig ident detail
-                 | otherwise      -> throwError (FfiNeedsTypeSig pat)
+      case ffiExp rhs of
+        Just (formatstr,typ) -> case sig of
+          Just sig -> compileFFI ident formatstr typ sig
+          Nothing  -> throwError (FfiNeedsTypeSig pat)
         _ -> compileNormalPatBind toplevel ident rhs
     _ -> throwError (UnsupportedDeclaration pat)
 
-  where func = flip elem ["foreignFay","foreignPure","foreignValue"]
-        method = flip elem ["foreignMethodFay","foreignProp","foreignPropFay","foreignMethod"]
-        setprop = flip elem ["foreignSetProp"]
-
-        ffiExp (App (App (Var (UnQual (Ident ident)))
-                         (Lit (String name)))
+  where ffiExp (App (App (Var (UnQual (Ident "ffi")))
+                         (Lit (String formatstr)))
                     (Con (UnQual (Ident (reads -> [(typ,"")])))))
-          | func ident || method ident || setprop ident = Just (ident,name,typ)
+          = Just (formatstr,typ)
         ffiExp _ = Nothing
 
-        ffiProp (App (Var (UnQual (Ident ident)))
-                     (Lit (String name)))
-          | func ident || method ident || setprop ident = Just (ident,name,FayNone)
-        ffiProp _ = Nothing
-
--- | Compile a normal simple pattern binding.
-compileNormalPatBind :: Bool -> Name -> Exp -> Compile [JsStmt]
-compileNormalPatBind toplevel ident rhs = do
-  body <- compileExp rhs
-  bind <- bindToplevel toplevel (UnQual ident) (thunk body)
-  return [bind]
-
--- | Compile a foreign function.
-compileFFIFunc :: Type -> Name -> (String,String,FayReturnType) -> Compile [JsStmt]
-compileFFIFunc sig ident detail@(_,name,_) = do
-  let args = zipWith const uniqueNames [1..typeArity sig]
-  compileFFI sig ident detail (JsRawName name) args args
-
--- | Compile a foreign method.
-compileFFIMethod :: Type -> Name -> (String,String,FayReturnType) -> Compile [JsStmt]
-compileFFIMethod sig ident detail@(_,name,_) = do
-  let args = zipWith const uniqueNames [1..typeArity sig]
-      jsargs = drop 1 args
-      obj = head args
-  compileFFI sig ident detail (JsGetPropExtern (force (JsName obj)) (fromString name)) args jsargs
-
--- | Compile a foreign method.
-compileFFISetProp :: Type -> Name -> (String,String,FayReturnType) -> Compile [JsStmt]
-compileFFISetProp sig ident detail@(_,name,_) = do
-  let args = zipWith const uniqueNames [1..typeArity sig]
-      jsargs = drop 1 args
-      obj = head args
-  compileFFI sig
-             ident
-             detail
-             (JsUpdatePropExtern (force (JsName obj))
-                                 (fromString name)
-                                 (serialize (head (tail funcTypes))
-                                            (JsName (head jsargs))))
-             args
-             []
-               
-  where funcTypes = functionTypeArgs sig
-
 -- | Compile an FFI call.
-compileFFI :: Type
-           -> Name
-           -> (String,String,FayReturnType)
-           -> JsExp
-           -> [JsName]
-           -> [JsName]
+compileFFI :: Name             -- ^ Name of the to-be binding.
+           -> String           -- ^ The format string.
+           -> FayReturnType    -- ^ The return type.
+           -> Type             -- ^ Type signature.
            -> Compile [JsStmt]
-compileFFI sig ident (binding,_,typ) exp params args = do
-  let innerexp
-        | length args == 0 && elem binding ["foreignProp","foreignPropFay","foreignValue"] = exp
-        | binding == "foreignSetProp" = exp
-        | otherwise = JsApp exp
-                            (map (\(typ,name) -> serialize typ (JsName name))
-                                 (zip types args))
-  bind <- bindToplevel True
-                       (UnQual ident)
-                       (foldr (\name inner -> JsFun [name] [] (Just inner))
-                              (thunk
-                               (maybeMonad
-                                (if binding == "foreignSetProp"
-                                    then innerexp
-                                    else unserialize typ innerexp)))
-                              params)
-  return [bind]
+compileFFI name formatstr returnType sig = do
+  inner <- formatFFI formatstr (zip params funcArgTypes)
+  case JS.parse (printJS (wrapReturn inner)) (prettyPrint name) of
+    Left err -> throwError (FfiFormatInvalidJavaScript inner err)
+    Right{}  -> fmap return (bindToplevel True (UnQual name) (body inner))
+    
+  where body inner = foldr wrapParam (wrapReturn inner) params
+        wrapParam name inner = JsFun [name] [] (Just inner)
+        params = zipWith const uniqueNames [1..typeArity sig]
+        wrapReturn inner = thunk $
+          case lastMay funcArgTypes of
+            -- Fay action:
+            Just JsType -> monad (unserialize returnType (JsRawExp inner))
+            -- Returns a “pure” value;
+            Just{} -> unserialize returnType (JsRawExp inner)
+            -- Base case:
+            Nothing -> JsRawExp inner
+        funcArgTypes = functionTypeArgs sig
 
-  where (maybeMonad,types) | binding == "foreignFay"       = (monad,funcTypes)
-                           | binding == "foreignProp"      = (id,drop 1 funcTypes)
-                           | binding == "foreignMethodFay" = (monad,drop 1 funcTypes)
-                           | binding == "foreignPropFay"   = (monad,drop 1 funcTypes)
-                           | binding == "foreignMethod"    = (id,drop 1 funcTypes)
-                           | binding == "foreignSetProp"   = (monad,[])
-                           | otherwise                     = (id,funcTypes)
-        funcTypes = functionTypeArgs sig
-
--- | These are the data types that are serializable directly to native
--- JS data types. Strings, floating points and arrays. The others are:
--- actiosn in the JS monad, which are thunks that shouldn't be forced
--- when serialized but wrapped up as JS zero-arg functions, and
--- unknown types can't be converted but should at least be forced.
-data ArgType = FunctionType | JsType | StringType | DoubleType | ListType | BoolType | UnknownType
-  deriving (Show,Eq)
+-- | Format the FFI format string with the given arguments.
+formatFFI :: String              -- ^ The format string.
+          -> [(JsParam,ArgType)] -- ^ Arguments.
+          -> Compile String      -- ^ The JS code.
+formatFFI formatstr args = go formatstr where
+  go ('%':'%':xs) = do
+    rest <- go xs
+    return ('%' : rest)
+  go ['%'] = throwError FfiFormatIncompleteArg
+  go ('%':(span isDigit -> (op,xs))) = do
+    case readMay op of
+     Nothing -> throwError (FfiFormatBadChars op)
+     Just n ->
+       case listToMaybe (drop (n-1) args) of
+         Nothing -> throwError (FfiFormatNoSuchArg n)
+         Just (arg,typ) -> do
+           rest <- go xs
+           return (printJS (serialize typ (JsName arg)) ++ rest)
+  go (x:xs) = do rest <- go xs
+                 return (x : rest)
+  go [] = return []
 
 -- | Serialize a value to native JS, if possible.
 serialize :: ArgType -> JsExp -> JsExp
 serialize typ exp =
-  JsApp (JsName (hjIdent "serialize"))
-        [JsName (fromString (show typ)),exp]
+  case typ of
+    UnknownType -> force exp
+    _ -> JsApp (JsName (hjIdent "serialize"))
+               [JsName (fromString (show typ)),exp]
 
 -- | Get arg types of a function type.
 functionTypeArgs :: Type -> [ArgType]
@@ -272,26 +229,36 @@ functionTypeArgs t =
     TyForall _ _ i -> functionTypeArgs i
     TyFun a b      -> argType a : functionTypeArgs b
     TyParen st     -> functionTypeArgs st
-    _              -> []
+    r              -> [argType r]
 
-  where argType t =
-          case t of
-            TyApp (TyCon "Fay") _ -> JsType
-            TyCon "String"       -> StringType
-            TyCon "Double"       -> DoubleType
-            TyCon "Bool"         -> BoolType
-            TyFun{}              -> FunctionType
-            TyList _             -> ListType
-            _                    -> UnknownType
+-- | Convert a Haskell type to an internal FFI representation.
+argType :: Type -> ArgType
+argType t =
+  case t of
+    TyApp (TyCon "Fay") _ -> JsType
+    TyCon "String"        -> StringType
+    TyCon "Double"        -> DoubleType
+    TyCon "Bool"          -> BoolType
+    TyFun{}               -> FunctionType
+    TyList _              -> ListType
+    TyParen st            -> argType st
+    _                     -> UnknownType
 
 -- | Get the arity of a type.
-typeArity :: Type -> Integer
+typeArity :: Type -> Int
 typeArity t =
   case t of
     TyForall _ _ i -> typeArity i
     TyFun _ b      -> 1 + typeArity b
     TyParen st     -> typeArity st
     _              -> 0
+
+-- | Compile a normal simple pattern binding.
+compileNormalPatBind :: Bool -> Name -> Exp -> Compile [JsStmt]
+compileNormalPatBind toplevel ident rhs = do
+  body <- compileExp rhs
+  bind <- bindToplevel toplevel (UnQual ident) (thunk body)
+  return [bind]
 
 -- | Compile a data declaration.
 compileDataDecl :: Bool -> Decl -> [QualConDecl] -> Compile [JsStmt]

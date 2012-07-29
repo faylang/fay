@@ -7,5 +7,5 @@ foo (Person "Chris" "Barf" 14) = "Bar!"
 foo (Person "Chris" "Done" 14) = "Hello!"
 foo _ = "World!"
 
-print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" FayNone
+print :: String -> Fay ()
+print = ffi "console.log(%1)" FayNone

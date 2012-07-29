@@ -13,7 +13,7 @@ data Maybe a
   | Nothing
 
 show :: (Foreign a,Show a) => a -> String
-show = foreignPure "Fay$$encodeShow" FayString
+show = ffi "Fay$$encodeShow(%1)" FayString
 
 -- There is only Double in JS.
 fromInteger x = x

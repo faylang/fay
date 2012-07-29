@@ -11,21 +11,22 @@ import Language.Fay.Prelude
 main :: Fay ()
 main = do
   ref <- newRef "Hello, World!"
-  readRef ref >>= print
+  x <- readRef ref
   writeRef ref "Hai!"
   readRef ref >>= print
 
-print :: String -> Fay ()
-print = foreignFay "console.log" ""
-
 data Ref a
+instance Show (Ref a)
 instance Foreign a => Foreign (Ref a)
 
 newRef :: Foreign a => a -> Fay (Ref a)
-newRef = foreignFay "new Fay$$Ref" FayNone
+newRef = ffi "new Fay$$Ref(%1)" FayNone
 
 writeRef :: Foreign a => Ref a -> a -> Fay ()
-writeRef = foreignFay "Fay$$writeRef" FayNone
+writeRef = ffi "Fay$$writeRef(%1,%2)" FayNone
 
 readRef :: Foreign a => Ref a -> Fay a
-readRef = foreignFay "Fay$$readRef" FayNone
+readRef = ffi "Fay$$readRef(%1)" FayNone
+
+print :: String -> Fay ()
+print = ffi "console.log(%1)" FayNone

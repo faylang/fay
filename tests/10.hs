@@ -8,5 +8,5 @@ foldr f z (x:xs) = f x (foldr f z xs)
 append (x:xs) ys = x : append xs ys
 append []     ys = ys
 
-print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" FayNone
+print :: String -> Fay ()
+print = ffi "console.log(%1)" FayNone

@@ -1,4 +1,4 @@
 main = print ((\a 'a' -> "OK.") 0 'b')
 
-print :: Foreign a => a -> Fay ()
-print = foreignFay "console.log" FayNone
+print :: String -> Fay ()
+print = ffi "console.log(%1)" FayNone

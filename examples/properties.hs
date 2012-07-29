@@ -19,26 +19,26 @@ updateBody = do
 
 -- | Alert using window.alert.
 alert' :: String -> Fay ()
-alert' = foreignFay "console.log" FayNone
+alert' = ffi "console['log'](%1)" FayNone
 
 -- | Alert using window.alert.
 alert :: Foreign a => a -> Fay ()
-alert = foreignFay "console.log" FayNone
+alert = ffi "console['log'](%1)" FayNone
   
 addEventListener :: String -> Fay () -> Bool -> Fay ()
-addEventListener = foreignFay "window.addEventListener" FayNone
+addEventListener = ffi "window['addEventListener'](%1,%2,%3)" FayNone
 
 setInnerHtml :: Element -> String -> Fay ()
-setInnerHtml = foreignSetProp "innerHTML"
+setInnerHtml = ffi "%1['innerHTML']=%2" FayNone
 
 getInnerHtml :: Element -> Fay String
-getInnerHtml = foreignPropFay "innerHTML" FayString
+getInnerHtml = ffi "%1['innerHTML']" FayString
 
 thebody :: Element
-thebody = foreignValue "document.body" FayNone
+thebody = ffi "document.body" FayNone
 
 thewindow :: Element
-thewindow = foreignValue "window" FayNone
+thewindow = ffi "window" FayNone
 
 data Element
 instance Foreign Element

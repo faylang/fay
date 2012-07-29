@@ -18,7 +18,8 @@ module Language.Fay.Types
   ,Fay
   ,CompileConfig(..)
   ,CompileState(..)
-  ,FayReturnType(..))
+  ,FayReturnType(..)
+  ,ArgType(..))
   where
 
 import Control.Exception
@@ -97,6 +98,10 @@ data CompileError
   | InvalidDoBlock
   | RecursiveDoUnsupported
   | FfiNeedsTypeSig Decl
+  | FfiFormatBadChars String
+  | FfiFormatNoSuchArg Int
+  | FfiFormatIncompleteArg
+  | FfiFormatInvalidJavaScript String String
   deriving (Show,Eq,Data,Typeable)
 instance Error CompileError
 instance Exception CompileError
@@ -123,7 +128,7 @@ data JsStmt
 -- | Expression type.
 data JsExp
   = JsName JsName
-  | JsRawName String
+  | JsRawExp String
   | JsFun [JsParam] [JsStmt] (Maybe JsExp)
   | JsLit JsLit
   | JsApp JsExp [JsExp]
@@ -155,3 +160,11 @@ data JsLit
 
 data FayReturnType = FayArray | FayList | FayString | FayBool | FayNone
   deriving (Read,Show,Eq)
+
+-- | These are the data types that are serializable directly to native
+-- JS data types. Strings, floating points and arrays. The others are:
+-- actiosn in the JS monad, which are thunks that shouldn't be forced
+-- when serialized but wrapped up as JS zero-arg functions, and
+-- unknown types can't be converted but should at least be forced.
+data ArgType = FunctionType | JsType | StringType | DoubleType | ListType | BoolType | UnknownType
+  deriving (Show,Eq)

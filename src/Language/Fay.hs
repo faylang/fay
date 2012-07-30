@@ -110,10 +110,14 @@ instance CompilesTo Module [JsStmt] where compileTo = compileModule
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]
 compileImport (ImportDecl _ (ModuleName name) _ _ _ _ _)
-  | isPrefixOf "Language.Fay." name || name == "Prelude" = return []
+  | elem name ["Language.Fay.Prelude","Language.Fay.FFI","Language.Fay.Types"] || name == "Prelude" = return []
 compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
   contents <- io (readFile (replace '.' '/' name ++ ".hs"))
-  compileFromStr compileModule contents
+  cfg <- config id
+  result <- liftIO $ compileToAst cfg compileModule contents
+  case result of
+    Right (stmts,state) -> return stmts
+    Left err -> throwError err
     where replace c r = map (\x -> if x == c then r else x)
 compileImport i =
   error $ "Import syntax not supported. " ++

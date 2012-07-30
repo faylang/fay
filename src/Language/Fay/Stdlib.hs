@@ -34,7 +34,7 @@ module Language.Fay.Stdlib
   ,when)
   where
 
-import Prelude (Maybe(..),(==),(>>),return,(+),(<),(>),Bool(..),Ord,(||))
+import           Prelude (Bool(..), Maybe(..), Ord, return, (+), (<), (==), (>), (>>), (||))
 
 -- START
 
@@ -88,7 +88,7 @@ insertBy :: (a -> a -> Ordering) -> a -> [a] -> [a]
 insertBy _   x [] = [x]
 insertBy cmp x ys =
   case ys of
-    y:ys' -> 
+    y:ys' ->
       case cmp x y of
          GT -> y : insertBy cmp x ys'
          _  -> x : ys

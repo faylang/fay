@@ -2,9 +2,9 @@
 
 module System.Process.Extra where
 
-import System.Exit
-import System.IO
-import System.Process
+import           System.Exit
+import           System.IO
+import           System.Process
 
 -- | Read all stuff from a process.
 readAllFromProcess :: FilePath -> String -> IO (Either String String)

@@ -1,6 +1,6 @@
 -- | Compile with: dist/build/fay/fay -autorun examples/canvaswater.hs
 
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls    #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 -- | A demonstration of Fay using the canvas element to display a
@@ -8,8 +8,8 @@
 
 module CanvasWater (main) where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 -- | Main entry point.
 main :: Fay ()
@@ -93,8 +93,8 @@ drawImage = ffi "%1['drawImage'](%2,%3,%4)" FayNone
 
 -- | Draw an image onto a canvas rendering context.
 --
---   Nine arguments: the element, source (x,y) coordinates, source width and 
---   height (for cropping), destination (x,y) coordinates, and destination width 
+--   Nine arguments: the element, source (x,y) coordinates, source width and
+--   height (for cropping), destination (x,y) coordinates, and destination width
 --   and height (resize).
 --
 --   context.drawImage(img_elem, sx, sy, sw, sh, dx, dy, dw, dh);

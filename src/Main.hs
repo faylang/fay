@@ -1,16 +1,15 @@
-{-# LANGUAGE ViewPatterns #-}
 
 -- | Main compiler executable.
 
 module Main where
 
-import Language.Fay.Compiler
-import Language.Fay.Types
+import           Language.Fay.Compiler
+import           Language.Fay.Types
 
-import Control.Monad
-import Data.Default
-import Data.List
-import System.Environment
+import           Control.Monad
+import           Data.Default
+import           Data.List
+import           System.Environment
 
 -- | Main entry point.
 main :: IO ()

@@ -1,28 +1,28 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE CPP #-}
 {-# OPTIONS -fno-warn-missing-signatures -fno-warn-unused-do-bind #-}
 
 -- | Generate documentation for Fay.
 
 module Main where
 
-import           Language.Fay (compileViaStr,compileModule)
-import           Language.Fay.Compiler (compileFromTo)
+import           Language.Fay                (compileModule, compileViaStr)
+import           Language.Fay.Compiler       (compileFromTo)
 
 import           Control.Exception
 import           Control.Monad
-import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy        as L
 import           Data.Char
 import           Data.Default
-import           Data.List (isSuffixOf,sort)
+import           Data.List                   (isSuffixOf, sort)
 import           Data.Time
-import           Prelude hiding (head,div)
+import           Prelude                     hiding (div, head)
 import           System.Directory
 import           System.FilePath
 import           Text.Blaze.Extra
-import           Text.Blaze.Html5 as H hiding (contents,map,style)
+import           Text.Blaze.Html5            as H hiding (contents, map, style)
 import           Text.Blaze.Html5.Attributes as A hiding (title)
-import           Text.Blaze.Renderer.Utf8 (renderMarkup)
+import           Text.Blaze.Renderer.Utf8    (renderMarkup)
 
 -- | Main entry point.
 main :: IO ()
@@ -31,7 +31,7 @@ main = do
   generate >>= L.writeFile file
   generateJs
   putStrLn $ "Documentation file written to " ++ file
-  
+
 generate = do
   sources <- mapM readFile examples
   javascripts <- mapM compile examples
@@ -40,7 +40,7 @@ generate = do
   return $ renderMarkup $ page now
                                analytics
                                (zip3 (map titlize examples) sources javascripts)
-    
+
   where compile file = do
           contents <- readFile file
           putStrLn $ "Compiling " ++ file ++ " ..."
@@ -58,7 +58,7 @@ generate = do
 generateJs = do
   putStrLn $ "Compiling " ++ inp ++ " to " ++ out ++ " ..."
   compileFromTo def True inp out
-    
+
   where docs = ("docs" </>)
         inp = (docs "home.hs")
         out = (docs "home.js")
@@ -91,7 +91,7 @@ thebody now analytics examples = do
     thefooter now
   preEscapedToMarkup analytics
 
-fork = 
+fork =
   a ! href "https://github.com/chrisdone/fay" $
     img ! style "position: absolute; top: 0; right: 0; border: 0;"
         ! src "https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"
@@ -172,7 +172,7 @@ thejsproblem = do
             " The depths to which JavaScript sucks is well-documented and well-understood. Its main faults are: its lack of module system, weak-typing, verbose function syntax, late binding, which has led to the creation of various static analysis tools to alleviate this language flaw, but with limited success (there is even a static type checker), finicky equality/automatic conversion, this behaviour, and lack of static types."
     li $ do strong "We need JavaScript:"
             " Using it for what it is good for, i.e. providing a platform for browser development, but not using the language per se, is therefore desirable, and many are working to achieve this, in varying forms. There are various ways to do it, but we ought to opt for compiling an existing language, Haskell, to JavaScript, because we do not have time to learn or teach other people a new language, garner a new library set and a new type checker and all that Haskell implementations provide."
-  p $ a ! href "http://www.haskell.org/haskellwiki/The_JavaScript_Problem" $ 
+  p $ a ! href "http://www.haskell.org/haskellwiki/The_JavaScript_Problem" $
         "See here for more elaboration »"
 
 thecomparisons = do

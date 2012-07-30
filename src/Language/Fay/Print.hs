@@ -1,9 +1,8 @@
 {-# OPTIONS -fno-warn-orphans #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE RecordWildCards      #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
 
 -- | Simple code (non-pretty) printing.
 --
@@ -16,13 +15,13 @@
 
 module Language.Fay.Print where
 
-import Language.Fay.Types
+import           Language.Fay.Types
 
-import Data.List
-import Data.String
-import Language.Haskell.Exts.Syntax
-import Prelude hiding (exp)
-import Text.JSON
+import           Data.List
+import           Data.String
+import           Language.Haskell.Exts.Syntax
+import           Prelude                      hiding (exp)
+import           Text.JSON
 
 --------------------------------------------------------------------------------
 -- Printing
@@ -123,9 +122,9 @@ instance Printable JsExp where
   printJS (JsSequence exprs) =
     intercalate "," (map (printJS) exprs)
   printJS (JsName name) = printJS name
-  printJS (JsApp op args) = 
+  printJS (JsApp op args) =
     printJS (if isFunc op then JsParen op else op) ++
-    "(" ++ 
+    "(" ++
     intercalate "," (map (printJS) args) ++
     ")"
      where isFunc JsFun{..} = True; isFunc _ = False
@@ -136,14 +135,14 @@ instance Printable JsExp where
            , (printJS conseq) ++ " : "
            , (printJS alt)]
   printJS (JsList exps) =
-    "[" ++ 
+    "[" ++
     intercalate "," (map (printJS) exps) ++
     "]"
   printJS (JsNew name args) =
     "new " ++ printJS (JsApp (JsName name) args)
   printJS (JsInstanceOf exp classname) =
     printJS exp ++ " instanceof " ++ printJS classname
-  printJS (JsIndex i exp) = 
+  printJS (JsIndex i exp) =
     "(" ++ printJS exp ++ ")[" ++ show i ++ "]"
   printJS (JsEq exp1 exp2) =
     printJS exp1 ++ " === " ++ printJS exp2
@@ -176,7 +175,7 @@ jsEncodeName name =
   if isPrefixOf "$_" name
      then name
      else concat . map encode $ name
-       
+
   where
     encode c | elem c allowed = [c]
              | otherwise      = escapeChar c
@@ -184,7 +183,7 @@ jsEncodeName name =
     escapeChar c = "$" ++ charId c ++ "$"
     charId c = show (fromEnum c)
 
--- | Helpful for writing qualified symbols (Fay.*). 
+-- | Helpful for writing qualified symbols (Fay.*).
 instance IsString ModuleName where
   fromString = ModuleName
 

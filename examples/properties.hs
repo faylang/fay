@@ -1,10 +1,10 @@
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls    #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Dom where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 main :: Fay ()
 main = addEventListener "load" updateBody False
@@ -24,7 +24,7 @@ alert' = ffi "console['log'](%1)" FayNone
 -- | Alert using window.alert.
 alert :: Foreign a => a -> Fay ()
 alert = ffi "console['log'](%1)" FayNone
-  
+
 addEventListener :: String -> Fay () -> Bool -> Fay ()
 addEventListener = ffi "window['addEventListener'](%1,%2,%3)" FayNone
 

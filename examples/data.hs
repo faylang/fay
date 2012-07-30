@@ -1,5 +1,5 @@
 -- Generate Show value.
--- 
+--
 -- $ fay -autorun examples/data.hs
 -- $ node examples/data.js
 -- (Foo { x = 123, y = "abc", z = (Bar) })
@@ -8,8 +8,8 @@
 
 module Data where
 
-import Language.Fay.Prelude
-import Language.Fay.FFI
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 data Foo = Foo { x :: Double, y :: String, z :: Foo } | Bar
   deriving (Show)

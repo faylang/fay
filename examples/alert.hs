@@ -2,8 +2,8 @@
 
 module Alert where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 main :: Fay ()
 main = alert "Hello, World!"

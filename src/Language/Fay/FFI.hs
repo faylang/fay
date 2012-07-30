@@ -1,11 +1,11 @@
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls       #-}
+{-# LANGUAGE NoImplicitPrelude    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 
 module Language.Fay.FFI where
 
-import Language.Fay.Types (Fay,FayReturnType(..))
-import Prelude (Bool,String,Double,Char,error)
+import           Language.Fay.Types (Fay, FayReturnType(..))
+import           Prelude            (Bool, Char, Double, String, error)
 
 data JsPtr a
 

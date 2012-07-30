@@ -108,7 +108,7 @@ function Fay$$serialize(type,obj){
         str += obj.car;
         obj = _(obj.cdr);
       }
-      return str;      
+      return str;
     } else if(type == "FunctionType" || typeof obj == 'function'){
       return function(){
         var out = obj;
@@ -119,20 +119,20 @@ function Fay$$serialize(type,obj){
           out = out(arguments[i]);
         }
         return _(out,true);
-      };    
+      };
     } else if(type == "ListType" || (obj instanceof Fay$$Cons)){
       var arr = [];
       while(obj instanceof Fay$$Cons) {
         arr.push(Fay$$serialize(null,obj.car));
         obj = _(obj.cdr);
       }
-      return arr;      
+      return arr;
     } // else if(type == "BoolType || obj == _(True) || obj == _(False)) {
     //   return obj == _(True);
-    // } 
+    // }
     else {
       return obj;
-    }      
+    }
   }
 }
 
@@ -360,4 +360,3 @@ function Fay$$date(str){
 /*******************************************************************************
 * Application code.
 */
-

@@ -1,12 +1,14 @@
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ViewPatterns          #-}
+
 module Language.Fay.Compiler where
 
-import Control.Exception  (throw)
-import Language.Fay (compileViaStr,compileModule)
-import Language.Fay.Types
-import Language.Haskell.Exts.Syntax
-import Paths_fay
+import           Control.Exception            (throw)
+import           Language.Fay                 (compileModule, compileViaStr)
+import           Language.Fay.Types
+import           Language.Haskell.Exts.Syntax
+import           Paths_fay
 
 -- | Compile file program to…
 compileFromTo :: CompileConfig -> Bool -> FilePath -> FilePath -> IO ()
@@ -26,7 +28,7 @@ compileFromTo config autorun filein fileout = do
   case result of
     Right out -> writeFile fileout out
     Left  err -> throw err
-      
+
   where strip = unlines . dropWhile (/="-- START") . lines
 
 -- | Compile the given module to a runnable program.

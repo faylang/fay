@@ -8,8 +8,8 @@
 
 module Tailrecursive where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 main = do
   benchmark

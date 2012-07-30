@@ -5,17 +5,17 @@
 
 module Main where
 
-import Language.Fay.Compiler
+import           Language.Fay.Compiler
 
-import Data.Default
-import Data.List
-import System.Directory
-import System.Exit
-import System.FilePath
-import System.IO
-import System.Process
-import System.Process.Extra
-import Test.HUnit
+import           Data.Default
+import           Data.List
+import           System.Directory
+import           System.Exit
+import           System.FilePath
+import           System.IO
+import           System.Process
+import           System.Process.Extra
+import           Test.HUnit
 
 -- | Main test runner.
 main :: IO ()
@@ -26,7 +26,7 @@ runUnitTests :: IO Counts
 runUnitTests = do
   files <- fmap (map ("tests" </>) . sort . filter dotHs) $ getDirectoryContents "tests"
   runTestTT (makeTests files)
-  
+
     where dotHs = isSuffixOf ".hs"
           makeTests files =
             TestList $ flip map files $ \file -> TestLabel file $ TestCase $ do

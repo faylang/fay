@@ -1,6 +1,6 @@
 module Control.Monad.Extra where
 
-import Data.Maybe
+import           Data.Maybe
 
 ig :: (Monad m) => m a -> m ()
 ig m = m >> return ()

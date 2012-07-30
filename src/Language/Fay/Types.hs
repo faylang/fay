@@ -1,7 +1,7 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 -- | All Fay types and instances.
 
@@ -22,14 +22,14 @@ module Language.Fay.Types
   ,ArgType(..))
   where
 
-import Control.Exception
-import Control.Applicative
-import Control.Monad.Error (Error,ErrorT,MonadError)
-import Control.Monad.Identity (Identity)
-import Control.Monad.State
-import Data.Data
-import Data.Default
-import Language.Haskell.Exts
+import           Control.Applicative
+import           Control.Exception
+import           Control.Monad.Error    (Error, ErrorT, MonadError)
+import           Control.Monad.Identity (Identity)
+import           Control.Monad.State
+import           Data.Data
+import           Data.Default
+import           Language.Haskell.Exts
 
 --------------------------------------------------------------------------------
 -- Compiler types
@@ -124,7 +124,7 @@ data JsStmt
   | JsSetProp JsName JsName JsExp
   | JsContinue
   deriving (Show,Eq)
-  
+
 -- | Expression type.
 data JsExp
   = JsName JsName

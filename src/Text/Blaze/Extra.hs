@@ -1,15 +1,15 @@
 {-# OPTIONS -fno-warn-orphans #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 {-# OPTIONS -fno-warn-name-shadowing -fno-warn-unused-do-bind #-}
 
 module Text.Blaze.Extra where
 
-import Control.Monad
-import Data.Monoid
-import Text.Blaze.Html5            as H hiding (map)
-import Text.Blaze.Html5.Attributes as A
-import Text.Blaze.Internal         (Attributable)
+import           Control.Monad
+import           Data.Monoid
+import           Text.Blaze.Html5            as H hiding (map)
+import           Text.Blaze.Html5.Attributes as A
+import           Text.Blaze.Internal         (Attributable)
 
 (!.) :: (Attributable h) => h -> AttributeValue -> h
 elem !. className = elem ! class_ className

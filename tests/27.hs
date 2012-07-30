@@ -4,8 +4,8 @@
 
 module Fib where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 main = do
   print (sum 100000 0 :: Double)

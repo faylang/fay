@@ -1,12 +1,12 @@
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls    #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 -- | The home page script:
--- 
+--
 --  1) Make sure that the language samples are highlighted.
 --  2) Add a show/hide button for the JS output on all samples.
 --  3) For code samples that are too large, hide them.
--- 
+--
 -- Because dogfood. This is not necessarily a good example, indeed, it
 -- may very well be a very bad example of how to write client
 -- code. But that's the point, really. Even the quick scripts that
@@ -15,8 +15,8 @@
 
 module Home (main) where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 -- | Main entry point.
 main :: Fay ()

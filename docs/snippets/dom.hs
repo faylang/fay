@@ -1,3 +1,5 @@
+{-# LANGUAGE EmptyDataDecls #-}
+
 main = do
   result <- documentGetElements "body"
   print result

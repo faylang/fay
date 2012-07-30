@@ -230,7 +230,7 @@ formatFFI formatstr args = go formatstr where
 serialize :: ArgType -> JsExp -> JsExp
 serialize typ exp =
   case typ of
-    UnknownType -> force exp
+--    UnknownType -> force exp
     _ -> JsApp (JsName (hjIdent "serialize"))
                [JsName (fromString (show typ)),exp]
 

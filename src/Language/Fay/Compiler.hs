@@ -56,6 +56,7 @@ compileProgram config autorun raw with hscode = do
                                               ,"this.$list       = Fay$$list;"
                                               ,"this.$encodeShow = Fay$$encodeShow;"
                                               ,"this.$eval       = Fay$$eval;"
+                                              ,"this.$serialize  = Fay$$serialize;"
                                               ]
                                  else ""
                              ,"};"

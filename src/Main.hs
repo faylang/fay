@@ -37,5 +37,8 @@ helpText = unlines
   ,"  fay [OPTIONS] <hs-input-file> ... "
   ,""
   ,"OPTIONS"
-  ,"  -autorun    automatically call main in generated JavaScript"
+  ,"  -autorun       automatically call main in generated JavaScript"
+  ,"  -inline-force  inline forcing, adds some speed for numbers, blows up code a bit"
+  ,"  -flatten-apps  flatten function application, can be more readable,"
+  ,"                 no noticeable speed difference"
   ]

@@ -21,14 +21,14 @@ import           Control.Monad.Error
 import           Control.Monad.IO
 import           Control.Monad.State
 import           Data.Char
-import           Data.Default (def)
+import           Data.Default               (def)
 import           Data.List
 import           Data.Maybe
 import           Data.String
 import           Language.Haskell.Exts
 import           Safe
-import           System.FilePath ((</>))
-import           System.Directory (doesFileExist)
+import           System.Directory           (doesFileExist)
+import           System.FilePath            ((</>))
 
 import qualified Language.JavaScript.Parser as JS
 import           System.Process.Extra
@@ -144,6 +144,11 @@ compileImport i =
         "The compiler writer was too lazy to support that.\n" ++
         "It was: " ++ show i
 
+appendM :: Monad m => m [a] -> m [a] -> m [a]
+appendM m n = do x <- m
+                 xs <- n
+                 return (x ++ xs)
+
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [Decl] -> Compile [JsStmt]
 compileDecls toplevel decls =
@@ -153,10 +158,6 @@ compileDecls toplevel decls =
                                                       (compileDecls toplevel decls)
     (decl:decls) -> appendM (compileDecl toplevel decl)
                             (compileDecls toplevel decls)
-
-  where appendM m n = do x <- m
-                         xs <- n
-                         return (x ++ xs)
 
 -- | Compile a declaration.
 compileDecl :: Bool -> Decl -> Compile [JsStmt]
@@ -183,8 +184,10 @@ compilePatBind toplevel sig pat =
           Just sig -> compileFFI ident formatstr sig
           Nothing  -> throwError (FfiNeedsTypeSig pat)
         _ -> compileNormalPatBind toplevel ident rhs
-    PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) bdecls ->
-      compileNormalPatBind toplevel ident (Let bdecls rhs)
+
+    PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls bdecls) ->
+      appendM (compileNormalPatBind toplevel ident rhs)
+              (compileDecls toplevel bdecls)
     _ -> throwError (UnsupportedDeclaration pat)
 
   where ffiExp (App (Var (UnQual (Ident "ffi"))) (Lit (String formatstr))) = Just formatstr

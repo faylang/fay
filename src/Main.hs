@@ -17,12 +17,25 @@ main = do
   args <- getArgs
   let files = filter (not . isPrefixOf "-") args
       opts = map (drop 1) $ filter (isPrefixOf "-") args
-  forM_ files $ \file -> do
-    compileFromTo def { configTCO = elem "tco" opts
-                      , configInlineForce = elem "inline-force" opts
-                      , configFlattenApps = elem "flatten-apps" opts
-                      , configExportBuiltins = not (elem "no-export-builtins" opts)
-                      }
-                  (elem "autorun" opts)
-                  file
-                  (toJsName file)
+  if (elem "help" opts) || null files
+    then putStrLn helpText
+    else forM_ files $ \file -> do
+      compileFromTo def { configTCO = elem "tco" opts
+                        , configInlineForce = elem "inline-force" opts
+                        , configFlattenApps = elem "flatten-apps" opts
+                        , configExportBuiltins = not (elem "no-export-builtins" opts)
+                        }
+        (elem "autorun" opts)
+        file
+        (toJsName file)
+
+
+helpText = unlines
+  ["fay -- compiler from (a proper subset of) Haskell to JavaScript"
+  ,""
+  ,"USAGE"
+  ,"  fay [OPTIONS] <hs-input-file> ... "
+  ,""
+  ,"OPTIONS"
+  ,"  -autorun    automatically call main in generated JavaScript"
+  ]

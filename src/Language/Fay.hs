@@ -392,7 +392,17 @@ prettyPrintFile file = fmap (either id id) (readAllFromProcess "js-beautify" fil
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp
 compileRhs (UnGuardedRhs exp) = compileExp exp
-compileRhs rhs                = throwError (UnsupportedRhs rhs)
+compileRhs (GuardedRhss rhss) = compileGuards rhss
+
+-- | Compile guards
+compileGuards :: [GuardedRhs] -> Compile JsExp
+compileGuards [] = return . JsThrowExp . JsLit . JsStr $ "Non-exhaustive guards"
+compileGuards ((GuardedRhs _ (Qualifier (Var (UnQual (Ident "otherwise"))):_) exp):_) = compileExp exp
+compileGuards ((GuardedRhs _ (Qualifier guard:_) exp):rest) =
+  JsTernaryIf <$> fmap force (compileExp guard)
+              <*> compileExp exp
+              <*> compileGuards rest
+compileGuards rhss = throwError . UnsupportedRhs . GuardedRhss $ rhss
 
 -- | Compile a pattern match binding.
 compileFunMatch :: Bool -> Match -> Compile [JsStmt]

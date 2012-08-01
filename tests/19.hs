@@ -8,4 +8,4 @@ foo (Person "Chris" "Done" 14) = "Hello!"
 foo _ = "World!"
 
 print :: String -> Fay ()
-print = ffi "console.log(%1)" FayNone
+print = ffi "console.log(%1)"

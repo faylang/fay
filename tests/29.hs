@@ -16,10 +16,13 @@ matchNested :: (a, [b]) -> ([b],b,[b])
 matchNested (a,b@(x:xs)) = (b,x,xs)
 
 print :: String -> Fay ()
-print = ffi "console.log(%1)" FayNone
+print = ffi "console.log(%1)"
 
 main :: Fay ()
 main = do
   print $ show $ matchSame [1,2,3]
   print $ show $ matchSplit [1,2,3]
   print $ show $ matchNested (1, [1,2,3])
+
+show :: Foreign a => a -> String
+show = ffi "JSON.stringify(%1)"

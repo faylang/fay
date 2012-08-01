@@ -18,8 +18,7 @@ module Language.Fay.Types
   ,Fay
   ,CompileConfig(..)
   ,CompileState(..)
-  ,FayReturnType(..)
-  ,ArgType(..))
+  ,FundamentalType(..))
   where
 
 import           Control.Applicative
@@ -158,13 +157,21 @@ data JsLit
   | JsBool Bool
   deriving (Show,Eq)
 
-data FayReturnType = FayArray | FayList | FayString | FayBool | FayNone
-  deriving (Read,Show,Eq)
-
 -- | These are the data types that are serializable directly to native
 -- JS data types. Strings, floating points and arrays. The others are:
 -- actiosn in the JS monad, which are thunks that shouldn't be forced
 -- when serialized but wrapped up as JS zero-arg functions, and
 -- unknown types can't be converted but should at least be forced.
-data ArgType = FunctionType | JsType | StringType | DoubleType | ListType | BoolType | UnknownType
-  deriving (Show,Eq)
+data FundamentalType
+   -- Recursive types.
+ = FunctionType [FundamentalType]
+ | JsType FundamentalType
+ | ListType FundamentalType
+ -- Simple types.
+ | DateType
+ | StringType
+ | DoubleType
+ | BoolType
+ -- | Unknown.
+ | UnknownType
+   deriving (Show,Eq)

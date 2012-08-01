@@ -8,5 +8,5 @@ import           Language.Fay.Prelude
 main = print "Hello, World!"
 
 -- | Print using console.log.
-print :: Foreign a => a -> Fay ()
-print = ffi "console.log(%1)" FayNone
+print :: String -> Fay ()
+print = ffi "console.log(%1)"

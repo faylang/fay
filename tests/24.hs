@@ -5,4 +5,4 @@ main = print (case [1,2,3,4,5] of
   _           -> "Broken.")
 
 print :: String -> Fay ()
-print = ffi "console.log(%1)" FayNone
+print = ffi "console.log(%1)"

@@ -159,26 +159,22 @@ compilePatBind toplevel sig pat = do
   case pat of
     PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
       case ffiExp rhs of
-        Just (formatstr,typ) -> case sig of
-          Just sig -> compileFFI ident formatstr typ sig
+        Just formatstr -> case sig of
+          Just sig -> compileFFI ident formatstr sig
           Nothing  -> throwError (FfiNeedsTypeSig pat)
         _ -> compileNormalPatBind toplevel ident rhs
     _ -> throwError (UnsupportedDeclaration pat)
 
-  where ffiExp (App (App (Var (UnQual (Ident "ffi")))
-                         (Lit (String formatstr)))
-                    (Con (UnQual (Ident (reads -> [(typ,"")])))))
-          = Just (formatstr,typ)
+  where ffiExp (App (Var (UnQual (Ident "ffi"))) (Lit (String formatstr))) = Just formatstr
         ffiExp _ = Nothing
 
 -- | Compile an FFI call.
-compileFFI :: Name             -- ^ Name of the to-be binding.
-           -> String           -- ^ The format string.
-           -> FayReturnType    -- ^ The return type.
-           -> Type             -- ^ Type signature.
+compileFFI :: Name   -- ^ Name of the to-be binding.
+           -> String -- ^ The format string.
+           -> Type   -- ^ Type signature.
            -> Compile [JsStmt]
-compileFFI name formatstr returnType sig = do
-  inner <- formatFFI formatstr (zip params funcArgTypes)
+compileFFI name formatstr sig = do
+  inner <- formatFFI formatstr (zip params funcFundamentalTypes)
   case JS.parse (printJS (wrapReturn inner)) (prettyPrint name) of
     Left err -> throwError (FfiFormatInvalidJavaScript inner err)
     Right{}  -> fmap return (bindToplevel True (UnQual name) (body inner))
@@ -187,19 +183,18 @@ compileFFI name formatstr returnType sig = do
         wrapParam name inner = JsFun [name] [] (Just inner)
         params = zipWith const uniqueNames [1..typeArity sig]
         wrapReturn inner = thunk $
-          case lastMay funcArgTypes of
-            -- Fay action:
-            Just JsType -> monad (unserialize returnType (JsRawExp inner))
+          case lastMay funcFundamentalTypes of
             -- Returns a “pure” value;
             Just{} -> unserialize returnType (JsRawExp inner)
             -- Base case:
             Nothing -> JsRawExp inner
-        funcArgTypes = functionTypeArgs sig
+        funcFundamentalTypes = functionTypeArgs sig
+        returnType = last funcFundamentalTypes
 
 -- | Format the FFI format string with the given arguments.
-formatFFI :: String              -- ^ The format string.
-          -> [(JsParam,ArgType)] -- ^ Arguments.
-          -> Compile String      -- ^ The JS code.
+formatFFI :: String                      -- ^ The format string.
+          -> [(JsParam,FundamentalType)] -- ^ Arguments.
+          -> Compile String              -- ^ The JS code.
 formatFFI formatstr args = go formatstr where
   go ('%':'*':xs) = do
     these <- mapM inject (zipWith const [1..] args)
@@ -227,15 +222,30 @@ formatFFI formatstr args = go formatstr where
         return (printJS (serialize typ (JsName arg)))
 
 -- | Serialize a value to native JS, if possible.
-serialize :: ArgType -> JsExp -> JsExp
+serialize :: FundamentalType -> JsExp -> JsExp
 serialize typ exp =
   case typ of
 --    UnknownType -> force exp
     _ -> JsApp (JsName (hjIdent "serialize"))
-               [JsName (fromString (show typ)),exp]
+               [typeRep typ,exp]
+
+-- | Get a JS-representation of a fundamental type for encoding/decoding.
+typeRep :: FundamentalType -> JsExp
+typeRep typ =
+  case typ of
+    FunctionType xs -> JsList [JsLit $ JsStr "function",JsList (map typeRep xs)]
+    JsType x        -> JsList [JsLit $ JsStr "action",JsList [typeRep x]]
+    ListType x      -> JsList [JsLit $ JsStr "list",JsList [typeRep x]]
+    typ             -> JsList [JsLit $ JsStr nom]
+      where nom = case typ of
+              StringType -> "string"
+              DoubleType -> "double"
+              BoolType   -> "bool"
+              DateType   -> "date"
+              _          -> "unknown"
 
 -- | Get arg types of a function type.
-functionTypeArgs :: Type -> [ArgType]
+functionTypeArgs :: Type -> [FundamentalType]
 functionTypeArgs t =
   case t of
     TyForall _ _ i -> functionTypeArgs i
@@ -244,15 +254,15 @@ functionTypeArgs t =
     r              -> [argType r]
 
 -- | Convert a Haskell type to an internal FFI representation.
-argType :: Type -> ArgType
+argType :: Type -> FundamentalType
 argType t =
   case t of
-    TyApp (TyCon "Fay") _ -> JsType
+    TyApp (TyCon "Fay") a -> JsType (argType a)
     TyCon "String"        -> StringType
     TyCon "Double"        -> DoubleType
     TyCon "Bool"          -> BoolType
-    TyFun{}               -> FunctionType
-    TyList _              -> ListType
+    TyFun x xs            -> FunctionType (argType x : functionTypeArgs xs)
+    TyList x              -> ListType (argType x)
     TyParen st            -> argType st
     _                     -> UnknownType
 
@@ -506,7 +516,9 @@ compileInfixApp exp1 op exp2 = do
 compileList :: [Exp] -> Compile JsExp
 compileList xs = do
   exps <- mapM compileExp xs
-  return (JsApp (JsName (hjIdent "list")) [JsList exps])
+  return (makeList exps)
+
+makeList exps = (JsApp (JsName (hjIdent "list")) [JsList exps])
 
 -- | Compile an if.
 compileIf :: Exp -> Exp -> Exp -> Compile JsExp
@@ -783,18 +795,10 @@ monad exp = JsNew (hjIdent "Monad") [exp]
 stmtsThunk :: [JsStmt] -> JsExp
 stmtsThunk stmts = JsNew ":thunk" [JsFun [] stmts Nothing]
 
-unserialize :: FayReturnType -> JsExp -> JsExp
+unserialize :: FundamentalType -> JsExp -> JsExp
 unserialize typ exp =
   JsApp (JsName (hjIdent "unserialize"))
-        [JsLit (JsStr (showReturnType typ)),exp]
-
-  where showReturnType typ =
-          case typ of
-            FayArray -> "array"
-            FayList -> "list"
-            FayString -> "string"
-            FayBool -> "bool"
-            FayNone -> ""
+        [typeRep typ,exp]
 
 -- | Force an expression in a thunk.
 force :: JsExp -> JsExp

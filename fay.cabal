@@ -1,5 +1,5 @@
 name:                fay
-version:             0.4.0.4
+version:             0.5.0.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which can be compiled (type-checked)
                      with GHC, and compiled to JavaScript. It is lazy, pure, with a Fay monad,
@@ -22,7 +22,7 @@ description:         Fay is a proper subset of Haskell which can be compiled (ty
                      .
                      /Release Notes/
                      .
-                     * Added help to the fay compiler executable.
+                     * MAJOR FFI RESTRUCTURING. Please see commit d6c346c320245762432928bc83aa8ca98a426138.
                      .
                      See full history at: <https://github.com/chrisdone/fay/commits>
 homepage:            http://fay-lang.org/
@@ -48,7 +48,8 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      tests/23 tests/23.hs tests/24 tests/24.hs tests/25.hs tests/26 tests/26.hs
                      tests/2.hs tests/3 tests/3.hs tests/4 tests/4.hs tests/5 tests/5.hs tests/6
                      tests/6.hs tests/7 tests/7.hs tests/8 tests/8.hs tests/9 tests/9.hs tests/27
-                     tests/27.hs tests/28 tests/28.hs
+                     tests/27.hs tests/28 tests/28.hs tests/30.hs tests/29 tests/30 tests/29.hs
+                     tests/31.hs tests/31
                      -- Documentation files
                      docs/beautify.js docs/highlight.pack.js docs/home.css docs/home.js docs/jquery.js
                      docs/analytics.js

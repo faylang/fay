@@ -4,7 +4,7 @@
 
 module Language.Fay.FFI where
 
-import           Language.Fay.Types (Fay, FayReturnType(..))
+import           Language.Fay.Types (Fay)
 import           Prelude            (Bool, Char, Double, String, error)
 
 data JsPtr a
@@ -40,6 +40,5 @@ instance (Foreign a,Foreign b) => Foreign (a -> b)
 ffi
   :: Foreign a
   => String        -- ^ The foreign value.
-  -> FayReturnType -- ^ JS return type (if any).
   -> a             -- ^ Bottom.
 ffi = error "Language.Fay.FFI.foreignFay: Used foreign function not in a JS engine context."

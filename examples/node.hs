@@ -22,10 +22,10 @@ main = do
   print $ details
 
 require' :: String -> Fay Sys
-require' = ffi "require(%1)" FayNone
+require' = ffi "require(%1)"
 
 inspect :: Foreign a => Sys -> a -> Fay Details
-inspect = ffi "%1.inspect(%2)" FayNone
+inspect = ffi "%1.inspect(%2)"
 
 print :: (Foreign a,Show a) => a -> Fay ()
-print = ffi "console.log(%1)" FayNone
+print = ffi "console.log(%1)"

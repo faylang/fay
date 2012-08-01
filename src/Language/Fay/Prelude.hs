@@ -2,7 +2,6 @@
 
 module Language.Fay.Prelude
   (Fay
-  ,FayReturnType(..)
   ,Char
   ,String
   ,Integer
@@ -34,7 +33,7 @@ module Language.Fay.Prelude
   where
 
 import           Language.Fay.Stdlib
-import           Language.Fay.Types  (Fay, FayReturnType(..))
+import           Language.Fay.Types  (Fay)
 
 import           GHC.Real            (Ratio)
 import           Prelude             (Bool(..), Char, Double, Integer, Maybe(..), Ord, Read(..),

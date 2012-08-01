@@ -28,10 +28,10 @@ sum 0 acc = acc
 sum n acc = sum (n - 1) (acc + n)
 
 getSeconds :: Fay Double
-getSeconds = foreignFay "new Date" FayNone
+getSeconds = ffi "new Date()"
 
 printD :: Double -> Fay ()
-printD = foreignFay "console.log" FayNone
+printD = ffi "console.log(%1)"
 
 printS :: String -> Fay ()
-printS = foreignFay "console.log" FayNone
+printS = ffi "console.log(%1)"

@@ -55,11 +55,11 @@ instance Eventable Element
 
 -- | Add an event listener to an element.
 addEventListener :: (Foreign a,Eventable a) => a -> String -> Fay () -> Bool -> Fay ()
-addEventListener = ffi "%1['addEventListener'](%2,%3,%4)" FayNone
+addEventListener = ffi "%1['addEventListener'](%2,%3,%4)"
 
 -- | Get an element by its ID.
 getElementById :: String -> Fay Element
-getElementById = ffi "document['getElementById'](%1)" FayNone
+getElementById = ffi "document['getElementById'](%1)"
 
 --------------------------------------------------------------------------------
 -- Images
@@ -70,11 +70,11 @@ instance Eventable Image
 
 -- | Make a new image.
 newImage :: Fay Image
-newImage = ffi "new Image()" FayNone
+newImage = ffi "new Image()"
 
 -- | Make a new image.
 setSrc :: Image -> String -> Fay ()
-setSrc = ffi "%1['src'] = %2" FayNone
+setSrc = ffi "%1['src'] = %2"
 
 --------------------------------------------------------------------------------
 -- Canvas
@@ -85,11 +85,11 @@ instance Foreign Context
 
 -- | Get an element by its ID.
 getContext :: Element -> String -> Fay Context
-getContext = ffi "%1['getContext'](%2)" FayNone
+getContext = ffi "%1['getContext'](%2)"
 
 -- | Draw an image onto a canvas rendering context.
 drawImage :: Context -> Image -> Double -> Double -> Fay ()
-drawImage = ffi "%1['drawImage'](%2,%3,%4)" FayNone
+drawImage = ffi "%1['drawImage'](%2,%3,%4)"
 
 -- | Draw an image onto a canvas rendering context.
 --
@@ -101,15 +101,15 @@ drawImage = ffi "%1['drawImage'](%2,%3,%4)" FayNone
 drawImageSpecific :: Context -> Image
                   -> Double -> Double -> Double -> Double -> Double -> Double -> Double -> Double
                   -> Fay ()
-drawImageSpecific = ffi "%1['drawImage'](%2,%3,%4,%5,%6,%7,%8,%9,%10)" FayNone
+drawImageSpecific = ffi "%1['drawImage'](%2,%3,%4,%5,%6,%7,%8,%9,%10)"
 
 -- | Set the fill style.
 setFillStyle :: Context -> String -> Fay ()
-setFillStyle = ffi "%1['fillStyle']=%2" FayNone
+setFillStyle = ffi "%1['fillStyle']=%2"
 
 -- | Set the fill style.
 setFillRect :: Context -> Double -> Double -> Double -> Double -> Fay ()
-setFillRect = ffi "%1['fillRect'](%2,%3,%4,%5)" FayNone
+setFillRect = ffi "%1['fillRect'](%2,%3,%4,%5)"
 
 --------------------------------------------------------------------------------
 -- Ref
@@ -120,35 +120,35 @@ instance Foreign a => Foreign (Ref a)
 
 -- | Make a new mutable reference.
 newRef :: Foreign a => a -> Fay (Ref a)
-newRef = ffi "new Fay$$Ref(%1)" FayNone
+newRef = ffi "new Fay$$Ref(%1)"
 
 -- | Replace the value in the mutable reference.
 writeRef :: Foreign a => Ref a -> a -> Fay ()
-writeRef = ffi "Fay$$writeRef(%1,%2)" FayNone
+writeRef = ffi "Fay$$writeRef(%1,%2)"
 
 -- | Get the referred value from the mutable value.
 readRef :: Foreign a => Ref a -> Fay a
-readRef = ffi "Fay$$readRef(%1)" FayNone
+readRef = ffi "Fay$$readRef(%1)"
 
 --------------------------------------------------------------------------------
 -- Misc
 
 -- | Alert using window.alert.
 alert :: Foreign a => a -> Fay ()
-alert = ffi "window['alert'](%1)" FayNone
+alert = ffi "window['alert'](%1)"
 
 -- | Alert using window.alert.
 print :: Double -> Fay ()
-print = ffi "console['log'](%1)" FayNone
+print = ffi "console['log'](%1)"
 
 -- | Alert using window.alert.
 log :: String -> Fay ()
-log = ffi "console['log'](%1)" FayNone
+log = ffi "console['log'](%1)"
 
 -- | Alert using window.alert.
 sin :: Double -> Double
-sin = ffi "window.Math['sin'](%1)" FayNone
+sin = ffi "window.Math['sin'](%1)"
 
 -- | Alert using window.alert.
 setInterval :: Fay () -> Double -> Fay ()
-setInterval = ffi "window['setInterval'](%1,%2)" FayNone
+setInterval = ffi "window['setInterval'](%1,%2)"

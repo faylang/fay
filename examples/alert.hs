@@ -9,5 +9,5 @@ main :: Fay ()
 main = alert "Hello, World!"
 
 -- | Alert using window.alert.
-alert :: Foreign a => a -> Fay ()
-alert = ffi "window.alert(%1)" FayNone
+alert :: String -> Fay ()
+alert = ffi "window.alert(%1)"

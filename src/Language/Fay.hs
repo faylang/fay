@@ -163,6 +163,8 @@ compilePatBind toplevel sig pat = do
           Just sig -> compileFFI ident formatstr sig
           Nothing  -> throwError (FfiNeedsTypeSig pat)
         _ -> compileNormalPatBind toplevel ident rhs
+    PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) bdecls ->
+      compileNormalPatBind toplevel ident (Let bdecls rhs)
     _ -> throwError (UnsupportedDeclaration pat)
 
   where ffiExp (App (Var (UnQual (Ident "ffi"))) (Lit (String formatstr))) = Just formatstr

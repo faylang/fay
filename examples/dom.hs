@@ -19,6 +19,7 @@ print = ffi "console.log(%1)"
 
 data Element
 instance Foreign Element
+instance Show (Element)
 
 documentGetElements :: String -> Fay [Element]
 documentGetElements = ffi "document.getElementsByTagName(%1)"

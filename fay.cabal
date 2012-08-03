@@ -181,3 +181,16 @@ executable fay-docs
                      data-default,
                      safe,
                      language-javascript
+executable fayc
+  hs-source-dirs:    src
+  ghc-options:       -O2
+  main-is:           Fayc.hs
+  build-depends:     base >= 4 && < 5,
+                     mtl,
+                     haskell-src-exts,
+                     json,
+                     process,
+                     data-default,
+                     safe,
+                     language-javascript,
+                     options >= 0.1

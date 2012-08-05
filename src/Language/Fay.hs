@@ -296,33 +296,59 @@ compileDataDecl toplevel decl constructors = do
   fmap concat $
     forM constructors $ \(QualConDecl _ _ _ condecl) ->
       case condecl of
-        ConDecl (UnQual -> name) types  -> fmap return (makeDataCons name types [])
+        ConDecl (UnQual -> name) types  -> do
+          cons <- makeConstructor name (slots types)
+          func <- makeFunc name (slots types)
+          return [cons, func]
         RecDecl (UnQual -> name) fields -> do
-          cons <- makeDataCons name (map snd fields) (map fst fields)
-          funs <- makeAccessors (zip [1..] (map fst fields))
-          return (cons : funs)
+          cons <- makeConstructor name $ map (head . fst) fields
+          func <- makeFunc name $ map (head . fst) fields
+          funs <- makeAccessors (map fst fields)
+          return (cons : func : funs)
         _ -> throwError (UnsupportedDeclaration decl)
 
-  where makeDataCons name types fields = do
-          let slots = (map (fromString . ("slot"++) . show . fst)
-                           (zip [1 :: Integer ..] types))
+  where
+    slots :: [a] -> [Name]
+    slots = map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..]
+
+    constructorName = fromString . (++ "_RecConstr") . qname
+
+    -- Creates a constructor R_RecConstr for a Record
+    makeConstructor name fields = do
+          let fieldParams = map (fromString . unname) fields
+          -- this._fields = [fieldName1, fieldName2, ..]
+          let setFields = JsSetProp (fromString ":this") (fromString "_fields")
+                 (JsList . flip map fields $ \(Ident field) -> JsLit . JsStr $ field)
+
           return $
-            JsVar name
-                  (foldr (\slot inner -> JsFun [slot] [] (Just inner))
-                         (thunk (JsList ((JsNew (hjIdent "Constructor")
-                                                (JsLit (JsStr (qname name)) :
-                                                 concat (map (map (JsLit . JsStr . unname)) fields)))
-                                         : map JsName slots)))
-                         slots)
-        makeAccessors fields = do
+            JsVar (constructorName name) $
+              JsFun fieldParams
+                (setFields :
+                  (flip map fields $
+                     \field@(Ident s) ->
+                       JsSetProp (fromString ":this") (UnQual field) (JsName (fromString s))))
+                Nothing
+
+    -- Creates a function to initialize the record by regular application
+    makeFunc name fields = do
+          let fieldParams = map (\(Ident s) -> fromString s) fields
+          let fieldExps = map (JsName . UnQual) fields
+          return $
+            JsVar name $
+              foldr (\slot inner -> JsFun [slot] [] (Just inner))
+                (thunk $ JsNew (constructorName name) fieldExps)
+                fieldParams
+
+    -- Creates getters for a RecDecl's values
+    makeAccessors fields = do
           fmap concat $
-            forM fields $ \(i,field) ->
-              forM field $ \name ->
+            forM fields $ \field ->
+              forM field $ \name@(Ident nameStr) ->
                 bindToplevel toplevel
                              (UnQual name)
                              (JsFun ["x"]
                                     []
-                                    (Just (thunk (JsIndex i (force (JsName "x"))))))
+                                    (Just (thunk (JsGetProp (force (JsName "x")) (UnQual (Ident nameStr))))))
 
 -- | Extract the string from a qname.
 qname :: QName -> String
@@ -474,11 +500,13 @@ compileExp exp =
                                         t <- compileExp i'
                                         return (JsApp (JsApp (JsName "enumFromTo") [f])
                                                       [t])
+    RecConstr name fieldUpdates -> compileRecConstr name fieldUpdates
     ExpTypeSig _ e _ -> compileExp e
 
     exp -> throwError (UnsupportedExpression exp)
 
 instance CompilesTo Exp JsExp where compileTo = compileExp
+
 
 -- | Compile simple application.
 compileApp :: Exp -> Exp -> Compile JsExp
@@ -633,10 +661,23 @@ compilePLit exp literal body = do
                body
                []]
 
+-- | Compile as binding in pattern match
 compilePAsPat :: JsExp -> Name -> Pat -> [JsStmt] -> Compile [JsStmt]
 compilePAsPat exp name pat body = do
-  x <- compilePat exp pat body;
+  x <- compilePat exp pat body
   return ([JsVar (UnQual name) exp] ++ x ++ body)
+
+-- | Compile a record construction with named fields
+-- | GHC will warn on uninitialized fields, they will be undefined in JS.
+compileRecConstr :: QName -> [FieldUpdate] -> Compile JsExp
+compileRecConstr name fieldUpdates = do
+    let o = UnQual (Ident (map toLower (qname name)))
+    -- var obj = new Type_RecConstr()
+    let record = JsVar o (JsNew (UnQual (Ident ((qname name) ++ "_RecConstr"))) [])
+    setFields <- forM fieldUpdates $
+           -- obj.field = value
+           \(FieldUpdate (UnQual field) value) -> JsSetProp o (UnQual field) <$> compileExp value
+    return $ JsApp (JsFun [] (record:setFields) (Just (JsName o))) []
 
 -- | Equality test for two expressions, with some optimizations.
 equalExps :: JsExp -> JsExp -> JsExp
@@ -656,18 +697,19 @@ isConstant _       = False
 compilePApp :: QName -> [Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
 compilePApp cons pats exp body = do
   let forcedExp = force exp
-  substmts <- foldM (\body (i,pat) -> compilePat (JsIndex i forcedExp) pat body)
+  substmts <- foldM (\body (fieldIndex,pat) ->
+                       -- r[r._fields[N]]
+                       compilePat (JsLookup forcedExp
+                                   (JsIndex fieldIndex
+                                    (JsGetProp forcedExp "_fields"))) pat body)
                     body
-                    (reverse (zip [1..] pats))
-  let constructor = JsIndex 0 forcedExp
-      compareConstructorNames
+                    (reverse (zip [0..] pats))
+  let compareConstructorNames
         -- Special-casing on the booleans.
         | cons == "True" = JsEq forcedExp (JsLit (JsBool True))
         | cons == "False" = JsEq forcedExp (JsLit (JsBool False))
         -- Everything else, generic:
-        | otherwise =
-            JsEq (JsGetProp constructor "name")
-                 (JsLit (JsStr (qname cons)))
+        | otherwise = forcedExp `JsInstanceOf` (UnQual (Ident ((qname cons) ++ "_RecConstr")))
   return [JsIf compareConstructorNames
                substmts
                []]

@@ -22,6 +22,7 @@ import           Control.Monad.Error
 import           Control.Monad.IO
 import           Control.Monad.State
 import           Data.Char
+import           Data.Default (def)
 import           Data.List
 import           Data.Maybe
 import           Data.String
@@ -90,6 +91,11 @@ printCompile config with from = do
     Right (ok,_) -> do writeFile "/tmp/x.js" ok
                        prettyPrintFile "/tmp/x.js" >>= putStr
 
+-- | Compile a String of Fay and print it as beautified JavaScript.
+printTestCompile :: String -> IO ()
+printTestCompile = printCompile def compileModule
+
+
 --------------------------------------------------------------------------------
 -- Compilers
 
@@ -116,7 +122,7 @@ compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) =
   cfg <- config id
   result <- liftIO $ compileToAst cfg compileModule contents
   case result of
-    Right (stmts,state) -> return stmts
+    Right (stmts,_) -> return stmts
     Left err -> throwError err
     where replace c r = map (\x -> if x == c then r else x)
 compileImport i =
@@ -397,9 +403,14 @@ expand (JsApp (JsName (UnQual (Ident "_"))) xs) = do
   fmap concat (mapM flatten xs)
 expand _ = Nothing
 
--- -- | Run a JS file.
+-- | Format a JS file using "js-beautify", or return the JS as-is if
+--   "js-beautify" is unavailable
 prettyPrintFile :: String -> IO String
-prettyPrintFile file = fmap (either id id) (readAllFromProcess "js-beautify" file)
+prettyPrintFile file =
+  (readAllFromProcess "js-beautify" file)
+  >>= (either
+       (\_ -> (readFile file) >>= (\js -> return $ js ++ "\n"))
+       return)
 
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp
@@ -520,6 +531,7 @@ compileList xs = do
   exps <- mapM compileExp xs
   return (makeList exps)
 
+makeList :: [JsExp] -> JsExp
 makeList exps = (JsApp (JsName (hjIdent "list")) [JsList exps])
 
 -- | Compile an if.

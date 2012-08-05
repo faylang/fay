@@ -13,7 +13,20 @@ import           Options
 import           System.Environment
 
 defineOptions "FayCompilerOptions" $ do
-  boolOption "optStdout" "stdout" False ""
+  option "optStdout" (\o -> o
+        { optionLongFlags = ["stdout"]
+        , optionShortFlags = ['s']
+        , optionDefault = "false"
+        , optionType = optionTypeBool
+        , optionDescription = "Output to stdout"
+                            })
+  option "optQuiet" (\o -> o
+        { optionLongFlags = ["quiet"]
+        , optionShortFlags = ['q']
+        , optionDefault = "false"
+        , optionType = optionTypeBool
+        , optionDescription = "Whether to be quiet."
+        })
 
 -- | Main entry point.
 main :: IO ()

@@ -148,6 +148,8 @@ instance Printable JsExp where
     printJS exp1 ++ " === " ++ printJS exp2
   printJS (JsGetProp exp prop) =
     printJS exp ++ "." ++ printJS prop
+  printJS (JsLookup exp1 exp2) =
+    printJS exp1 ++ "[" ++ printJS exp2 ++ "]"
   printJS (JsUpdateProp name prop expr) =
     (concat ["(",printJS name,".",printJS prop," = ",printJS expr,")"])
   printJS (JsInfix op x y) =

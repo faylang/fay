@@ -136,6 +136,7 @@ data JsExp
   | JsSequence [JsExp]
   | JsParen JsExp
   | JsGetProp JsExp JsName
+  | JsLookup JsExp JsExp
   | JsUpdateProp JsExp JsName JsExp
   | JsGetPropExtern JsExp JsName
   | JsUpdatePropExtern JsExp JsName JsExp

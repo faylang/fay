@@ -666,7 +666,7 @@ compilePApp cons pats exp body = do
         | cons == "False" = JsEq forcedExp (JsLit (JsBool False))
         -- Everything else, generic:
         | otherwise =
-            JsEq (JsLookup constructor (JsLit (JsStr "name")))
+            JsEq (JsGetProp constructor "name")
                  (JsLit (JsStr (qname cons)))
   return [JsIf compareConstructorNames
                substmts

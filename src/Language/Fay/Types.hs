@@ -51,7 +51,8 @@ data CompileState = CompileState
   , stateExports    :: [Name]
   , stateExportAll  :: Bool
   , stateModuleName :: ModuleName
-  } deriving (Show)
+  , stateRecords :: [(Name,[Name])] -- records with field names
+} deriving (Show)
 
 -- | Compile monad.
 newtype Compile a = Compile { unCompile :: StateT CompileState (ErrorT CompileError IO) a }

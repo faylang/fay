@@ -46,6 +46,7 @@ runCompile config m = runErrorT (runStateT (unCompile m) state) where
                        , stateExports = []
                        , stateModuleName = "Main"
                        , stateExportAll = True
+                       , stateRecords = []
                        }
 
 -- | Compile a Haskell source string to a JavaScript source string.
@@ -297,36 +298,36 @@ compileDataDecl toplevel decl constructors = do
     forM constructors $ \(QualConDecl _ _ _ condecl) ->
       case condecl of
         ConDecl (UnQual -> name) types  -> do
-          cons <- makeConstructor name (slots types)
-          func <- makeFunc name (slots types)
+          let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
+          addRecordState name fields
+          cons <- makeConstructor name fields
+          func <- makeFunc name fields
           return [cons, func]
-        RecDecl (UnQual -> name) fields -> do
-          cons <- makeConstructor name $ map (head . fst) fields
-          func <- makeFunc name $ map (head . fst) fields
-          funs <- makeAccessors (map fst fields)
+        RecDecl (UnQual -> name) fields' -> do
+          let fields = map (head . fst) fields'
+          addRecordState name fields
+          cons <- makeConstructor name fields
+          func <- makeFunc name fields
+          funs <- makeAccessors (map fst fields')
           return (cons : func : funs)
         _ -> throwError (UnsupportedDeclaration decl)
 
   where
-    slots :: [a] -> [Name]
-    slots = map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..]
-
     constructorName = fromString . (++ "_RecConstr") . qname
+
+    addRecordState :: QName -> [Name] -> Compile ()
+    addRecordState name fields = modify $ \s -> s { stateRecords = (Ident (qname name), fields) : stateRecords s }
 
     -- Creates a constructor R_RecConstr for a Record
     makeConstructor name fields = do
           let fieldParams = map (fromString . unname) fields
-          -- this._fields = [fieldName1, fieldName2, ..]
-          let setFields = JsSetProp (fromString ":this") (fromString "_fields")
-                 (JsList . flip map fields $ \(Ident field) -> JsLit . JsStr $ field)
 
           return $
             JsVar (constructorName name) $
               JsFun fieldParams
-                (setFields :
                   (flip map fields $
                      \field@(Ident s) ->
-                       JsSetProp (fromString ":this") (UnQual field) (JsName (fromString s))))
+                       JsSetProp (fromString ":this") (UnQual field) (JsName (fromString s)))
                 Nothing
 
     -- Creates a function to initialize the record by regular application
@@ -697,22 +698,24 @@ isConstant _       = False
 compilePApp :: QName -> [Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
 compilePApp cons pats exp body = do
   let forcedExp = force exp
-  substmts <- foldM (\body (fieldIndex,pat) ->
-                       -- r[r._fields[N]]
-                       compilePat (JsLookup forcedExp
-                                   (JsIndex fieldIndex
-                                    (JsGetProp forcedExp "_fields"))) pat body)
-                    body
-                    (reverse (zip [0..] pats))
-  let compareConstructorNames
-        -- Special-casing on the booleans.
-        | cons == "True" = JsEq forcedExp (JsLit (JsBool True))
-        | cons == "False" = JsEq forcedExp (JsLit (JsBool False))
-        -- Everything else, generic:
-        | otherwise = forcedExp `JsInstanceOf` (UnQual (Ident ((qname cons) ++ "_RecConstr")))
-  return [JsIf compareConstructorNames
-               substmts
-               []]
+  let boolIf b = return [JsIf (JsEq forcedExp (JsLit (JsBool b))) body []]
+  case cons of
+    -- Special-casing on the booleans.
+    "True" -> boolIf True
+    "False" -> boolIf False
+    -- Everything else, generic:
+    _ -> do
+      rf <- lookup (Ident (qname cons)) <$> gets stateRecords
+      recordFields <- return $ case rf of
+        Just x -> x
+        Nothing -> error "Record name was not found in stateRecords, should be impossible"
+      substmts <- foldM (\body (Ident field,pat) ->
+                             compilePat (JsGetProp forcedExp (fromString field)) pat body)
+                  body
+                  (reverse (zip recordFields pats))
+      return [JsIf (forcedExp `JsInstanceOf` (UnQual (Ident ((qname cons) ++ "_RecConstr"))))
+                   substmts
+                   []]
 
 -- | Compile a pattern list.
 compilePList :: [Pat] -> [JsStmt] -> JsExp -> Compile [JsStmt]

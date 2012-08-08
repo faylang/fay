@@ -1,0 +1,7 @@
+{ _fields: [ 'i', 'c' ], i: 1, c: 'a' }
+1
+"a"
+{ _fields: [ 'i', 'c' ], i: 2, c: 'b' }
+{ _fields: [ 'i', 'c' ], i: undefined, c: 'b' }
+{ _fields: [ 'i', 'c' ], i: 3, c: 'c' }
+{ _fields: [ 'slot1', 'slot2' ], slot1: 1, slot2: 'a' }

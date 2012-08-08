@@ -114,7 +114,9 @@ function Fay$$serialize(type,fayObj){
             if (len > 1) {
                 // Apply to all the arguments.
                 fayObj = _(fayObj,true);
-                for (var i = 0, len = len; i < len - 1; i++) {
+                // TODO: Perhaps we should throw an error when JS
+                // passes more arguments than Haskell accepts.
+                for (var i = 0, len = len; i < len - 1 && fayObj instanceof Function; i++) {
                     // Unserialize the JS values to Fay for the Fay callback.
                     fayObj = _(fayObj(Fay$$unserialize(args[i],arguments[i])),true);
                 }

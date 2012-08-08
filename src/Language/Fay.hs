@@ -304,11 +304,11 @@ compileDataDecl toplevel decl constructors = do
           func <- makeFunc name fields
           return [cons, func]
         RecDecl (UnQual -> name) fields' -> do
-          let fields = map (head . fst) fields'
+          let fields = concatMap fst fields'
           addRecordState name fields
           cons <- makeConstructor name fields
           func <- makeFunc name fields
-          funs <- makeAccessors (map fst fields')
+          funs <- makeAccessors fields
           return (cons : func : funs)
         _ -> throwError (UnsupportedDeclaration decl)
 
@@ -321,35 +321,30 @@ compileDataDecl toplevel decl constructors = do
     -- Creates a constructor R_RecConstr for a Record
     makeConstructor name fields = do
           let fieldParams = map (fromString . unname) fields
-
           return $
             JsVar (constructorName name) $
               JsFun fieldParams
-                  (flip map fields $
-                     \field@(Ident s) ->
-                       JsSetProp (fromString ":this") (UnQual field) (JsName (fromString s)))
+                  (flip map fields $ \field@(Ident s) ->
+                     JsSetProp (fromString ":this") (UnQual field) (JsName (fromString s)))
                 Nothing
 
     -- Creates a function to initialize the record by regular application
     makeFunc name fields = do
           let fieldParams = map (\(Ident s) -> fromString s) fields
           let fieldExps = map (JsName . UnQual) fields
-          return $
-            JsVar name $
-              foldr (\slot inner -> JsFun [slot] [] (Just inner))
-                (thunk $ JsNew (constructorName name) fieldExps)
-                fieldParams
+          return $ JsVar name $
+            foldr (\slot inner -> JsFun [slot] [] (Just inner))
+              (thunk $ JsNew (constructorName name) fieldExps)
+              fieldParams
 
     -- Creates getters for a RecDecl's values
     makeAccessors fields = do
-          fmap concat $
-            forM fields $ \field ->
-              forM field $ \name@(Ident nameStr) ->
-                bindToplevel toplevel
-                             (UnQual name)
-                             (JsFun ["x"]
-                                    []
-                                    (Just (thunk (JsGetProp (force (JsName "x")) (UnQual (Ident nameStr))))))
+      forM fields $ \(Ident name) ->
+           bindToplevel toplevel
+                        (fromString name)
+                        (JsFun ["x"]
+                               []
+                               (Just (thunk (JsGetProp (force (JsName "x")) (fromString name)))))
 
 -- | Extract the string from a qname.
 qname :: QName -> String

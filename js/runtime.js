@@ -108,28 +108,29 @@ function Fay$$serialize(type,fayObj){
     case "function": {
         // A proper function.
         jsObj = function(){
+            var fayFunc = fayObj;
             var return_type = args[args.length-1];
             var len = args.length;
             // If some arguments.
             if (len > 1) {
                 // Apply to all the arguments.
-                fayObj = _(fayObj,true);
+                fayFunc = _(fayFunc,true);
                 // TODO: Perhaps we should throw an error when JS
                 // passes more arguments than Haskell accepts.
-                for (var i = 0, len = len; i < len - 1 && fayObj instanceof Function; i++) {
+                for (var i = 0, len = len; i < len - 1 && fayFunc instanceof Function; i++) {
                     // Unserialize the JS values to Fay for the Fay callback.
-                    fayObj = _(fayObj(Fay$$unserialize(args[i],arguments[i])),true);
+                    fayFunc = _(fayFunc(Fay$$unserialize(args[i],arguments[i])),true);
                 }
                 // Finally, serialize the Fay return value back to JS.
                 var return_base = return_type[0];
                 var return_args = return_type[1];
                 // If it's a monadic return value, get the value instead.
                 if(return_base == "action") {
-                    return Fay$$serialize(return_args[0],fayObj.value);
+                    return Fay$$serialize(return_args[0],fayFunc.value);
                 }
                 // Otherwise just serialize the value direct.
                 else {
-                    return Fay$$serialize(return_type,fayObj);
+                    return Fay$$serialize(return_type,fayFunc);
                 }
             } else {
                 throw new Error("Nullary function?");
@@ -213,6 +214,11 @@ function Fay$$unserialize(type,jsObj){
     }
     case "unknown": {
         // Any unknown values can be left as-is.
+        fayObj = jsObj;
+        break;
+    }
+    case "bool": {
+        // Bools are unboxed.
         fayObj = jsObj;
         break;
     }

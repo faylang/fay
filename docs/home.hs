@@ -34,6 +34,7 @@ indentAndHighlight = do
     let sample = wrap this
     in do text <- getText sample
           setText sample (beautify text 2)
+          return True
   setTabReplace hljs "    "
   initHighlightingOnLoad hljs
 
@@ -61,7 +62,7 @@ setupExpanders = do
     toggleButton
     panel <- getFind left ".panel"
     prepend panel toggle
-    return ()
+    return True
 
 -- | Generate a table of contents.
 setupTableOfContents :: Fay ()
@@ -83,21 +84,7 @@ setupTableOfContents = do
           attr a "href" ("#" ++ anchor)
           -- For the indentation.
           getTagName heading >>= addClass li
-
---------------------------------------------------------------------------------
--- Window object
-
--- | Print something.
-print :: Show a => a -> Fay ()
-print = consolelog . show
-
--- | Console log.
-consolelog :: String -> Fay ()
-consolelog = ffi "console.log(%1)" FayNone
-
--- | Pop-up an alert.
-alert :: String -> Fay ()
-alert = ffi "window.alert(%1)" FayNone
+          return True
 
 --------------------------------------------------------------------------------
 -- DOM
@@ -108,11 +95,11 @@ instance Show Element
 
 -- | The document.
 thedocument :: Element
-thedocument = ffi "window.document" FayNone
+thedocument = ffi "window.document"
 
 -- | Get the size of the given jquery array.
 getTagName :: Element -> Fay String
-getTagName = ffi "%1['tagName']" FayString
+getTagName = ffi "%1['tagName']"
 
 --------------------------------------------------------------------------------
 -- jQuery
@@ -123,47 +110,47 @@ instance Show JQuery
 
 -- | Make a jQuery object out of an element.
 wrap :: Element -> JQuery
-wrap = ffi "window['jQuery'](%1)" FayNone
+wrap = ffi "window['jQuery'](%1)"
 
 -- | Bind a handler for when the element is ready.
 ready :: JQuery -> Fay () -> Fay ()
-ready = ffi "%1['ready'](%2)" FayNone
+ready = ffi "%1['ready'](%2)"
 
 -- | Bind a handler for when the element is ready.
-each :: JQuery -> (Double -> Element -> Fay ()) -> Fay ()
-each = ffi "%1['each'](%2)" FayNone
+each :: JQuery -> (Double -> Element -> Fay Bool) -> Fay ()
+each = ffi "%1['each'](%2)"
 
 -- | Query for elements.
 query :: String -> Fay JQuery
-query = ffi "window['jQuery'](%1)" FayNone
+query = ffi "window['jQuery'](%1)"
 
 -- | Set the text of the given object.
 setText :: JQuery -> String -> Fay ()
-setText = ffi "%1['text'](%2)" FayNone
+setText = ffi "%1['text'](%2)"
 
 -- | Set the text of the given object.
 attr :: JQuery -> String -> String -> Fay ()
-attr = ffi "%1['attr'](%2,%3)" FayNone
+attr = ffi "%1['attr'](%2,%3)"
 
 -- | Set the click of the given object.
 setClick :: JQuery -> Fay () -> Fay ()
-setClick = ffi "%1['click'](%2)" FayNone
+setClick = ffi "%1['click'](%2)"
 
 -- | Toggle the visibility of an element, faded.
 fadeToggle :: JQuery -> Fay () -> Fay ()
-fadeToggle = ffi "%1['fadeToggle'](%2)" FayNone
+fadeToggle = ffi "%1['fadeToggle'](%2)"
 
 -- | Hide an element.
 hide :: JQuery -> Fay ()
-hide = ffi "%1['hide']()" FayNone
+hide = ffi "%1['hide']()"
 
 -- | Add a class to the given object.
 addClass :: JQuery -> String -> Fay ()
-addClass = ffi "%1['addClass'](%2)" FayNone
+addClass = ffi "%1['addClass'](%2)"
 
 -- | Remove a class from the given object.
 removeClass :: JQuery -> String -> Fay ()
-removeClass = ffi "%1['removeClass'](%2)" FayNone
+removeClass = ffi "%1['removeClass'](%2)"
 
 -- | Swap the given classes on the object.
 swapClasses :: JQuery -> String -> String -> Fay ()
@@ -173,51 +160,51 @@ swapClasses obj addme removeme = do
 
 -- | Get the text of the given object.
 getText :: JQuery -> Fay String
-getText = ffi "%1['text']()" FayString
+getText = ffi "%1['text']()"
 
 -- | Get the text of the given object.
 getIs :: JQuery -> String -> Fay Bool
-getIs = ffi "%1['is'](%2)" FayBool
+getIs = ffi "%1['is'](%2)"
 
 -- | Get the size of the given jquery array.
 getSize :: JQuery -> Fay Double
-getSize = ffi "%1['length']" FayNone
+getSize = ffi "%1['length']"
 
 -- | Get the next of the given object.
 getNext :: JQuery -> Fay JQuery
-getNext = ffi "%1['next']()" FayNone
+getNext = ffi "%1['next']()"
 
 -- | Get the first of the given object.
 getFirst :: JQuery -> Fay JQuery
-getFirst = ffi "%1['first']()" FayNone
+getFirst = ffi "%1['first']()"
 
 -- | Get the find of the given object.
 getFind :: JQuery -> String -> Fay JQuery
-getFind = ffi "%1['find'](%2)" FayNone
+getFind = ffi "%1['find'](%2)"
 
 -- | Prepend an element to this one.
 prepend :: JQuery -> JQuery -> Fay JQuery
-prepend = ffi "%1['prepend'](%2)" FayNone
+prepend = ffi "%1['prepend'](%2)"
 
 -- | Append an element /after/ this one.
 after :: JQuery -> JQuery -> Fay JQuery
-after = ffi "%2['after'](%1)" FayNone
+after = ffi "%2['after'](%1)"
 
 -- | Append an element to this one.
 append :: JQuery -> JQuery -> Fay JQuery
-append = ffi "%1['append'](%2)" FayNone
+append = ffi "%1['append'](%2)"
 
 -- | Append this to an element.
 appendTo :: JQuery -> JQuery -> Fay JQuery
-appendTo = ffi "%2['appendTo'](%1)" FayNone
+appendTo = ffi "%2['appendTo'](%1)"
 
 -- | Make a new element.
 makeElement :: String -> Fay JQuery
-makeElement = ffi "window['jQuery'](%1)" FayNone
+makeElement = ffi "window['jQuery'](%1)"
 
 -- | Get the width of the given object.
 getWidth :: JQuery -> Fay Double
-getWidth = ffi "%1['width']()" FayNone
+getWidth = ffi "%1['width']()"
 
 --------------------------------------------------------------------------------
 -- Pretty printing / highlighting
@@ -226,19 +213,19 @@ getWidth = ffi "%1['width']()" FayNone
 beautify :: String -- ^ The JS code.
          -> Double -- ^ The indentation level.
          -> String -- ^ The reformatted JS code.
-beautify = ffi "$jsBeautify(%1,%2)" FayString
+beautify = ffi "$jsBeautify(%1,%2)"
 
 data Highlighter
 instance Foreign Highlighter
 
 -- | Get the highlighter.
 hljs :: Highlighter
-hljs = ffi "window['hljs']" FayNone
+hljs = ffi "window['hljs']"
 
 -- | Init syntax highlighting on load.
 initHighlightingOnLoad :: Highlighter -> Fay ()
-initHighlightingOnLoad = ffi "%1['initHighlightingOnLoad']()" FayNone
+initHighlightingOnLoad = ffi "%1['initHighlightingOnLoad']()"
 
 -- | Init syntax highlighting on load.
 setTabReplace :: Highlighter -> String -> Fay ()
-setTabReplace = ffi "%1['tabReplace']=%2" FayNone
+setTabReplace = ffi "%1['tabReplace']=%2"

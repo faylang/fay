@@ -21,6 +21,11 @@ r3 = R 3 'c'
 s1 :: S
 s1 = S 1 'a'
 
+-- Multiple fields with the same type
+data X = X { _x1, _x2 :: Int }
+x1 = X 1 2
+x2 = X { _x1 = 1, _x2 = 2 }
+
 main = do
   print r1
   printS (show (i r1))
@@ -29,6 +34,8 @@ main = do
   print r'
   print r3
   print s1
+  print x1
+  print x2
 
 printS :: String -> Fay ()
 printS = ffi "console.log(%1)"

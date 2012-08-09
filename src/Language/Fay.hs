@@ -324,7 +324,7 @@ compileDataDecl toplevel decl constructors = do
         _ -> throwError (UnsupportedDeclaration decl)
 
   where
-    constructorName = fromString . (++ "_RecConstr") . qname
+    constructorName = fromString . ("$_"++) . qname
 
     addRecordState :: QName -> [Name] -> Compile ()
     addRecordState name fields = modify $ \s -> s { stateRecords = (Ident (qname name), fields) : stateRecords s }

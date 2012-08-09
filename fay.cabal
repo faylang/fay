@@ -68,7 +68,7 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
 
 library
   hs-source-dirs:    src
-  exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude, Language.Fay.Show
+  exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude, Language.Fay.Show, Language.Fay.Compiler
   other-modules:     Language.Fay.Print, Control.Monad.IO, Language.Fay.Stdlib, System.Process.Extra, Paths_fay
   ghc-options:       -O2
   build-depends:     base >= 4 && < 5,
@@ -102,7 +102,9 @@ executable fay
                      process,
                      data-default,
                      safe,
-                     language-javascript
+                     language-javascript,
+                     directory,
+                     filepath
 
 executable fay-tests
   hs-source-dirs:    src

@@ -6,6 +6,7 @@ module Main where
 import           Language.Fay.Compiler
 import           Language.Fay.Types
 
+import           Control.Arrow
 import           Control.Monad
 import           Data.Default
 import           Data.List
@@ -16,7 +17,8 @@ main :: IO ()
 main = do
   args <- getArgs
   let files = filter (not . isPrefixOf "-") args
-      opts = map (drop 1) $ filter (isPrefixOf "-") args
+      paramOpts = map ((drop 2 *** drop 1) . break (== '=')) $ filter (isPrefixOf "--") args
+      opts = map (drop 1) $ filter (\v -> isPrefixOf "-" v && not (isPrefixOf "--" v)) args
   if (elem "help" opts) || null files
     then putStrLn helpText
     else forM_ files $ \file -> do
@@ -24,11 +26,16 @@ main = do
                         , configInlineForce = elem "inline-force" opts
                         , configFlattenApps = elem "flatten-apps" opts
                         , configExportBuiltins = not (elem "no-export-builtins" opts)
+                        , configDirectoryIncludes = maybe [] (split ',') (lookup "include" paramOpts)
                         }
         (elem "autorun" opts)
         file
         (toJsName file)
-
+    where
+      -- | "12,34,5" => ["12","34","5"]
+      split :: Eq a => a -> [a] -> [[a]]
+      split _ [] = []
+      split a as = takeWhile (/= a) as : split a (drop 1 $ dropWhile (/= a) as)
 
 helpText = unlines
   ["fay -- compiler from (a proper subset of) Haskell to JavaScript"

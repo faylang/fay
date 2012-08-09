@@ -10,6 +10,7 @@ import           Control.Arrow
 import           Control.Monad
 import           Data.Default
 import           Data.List
+import           Data.Maybe
 import           System.Environment
 
 -- | Main entry point.
@@ -30,7 +31,7 @@ main = do
                         }
         (elem "autorun" opts)
         file
-        (toJsName file)
+        (fromMaybe (toJsName file) $ lookup "output" paramOpts)
     where
       -- | "12,34,5" => ["12","34","5"]
       split :: Eq a => a -> [a] -> [[a]]

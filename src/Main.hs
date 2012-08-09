@@ -49,4 +49,7 @@ helpText = unlines
   ,"  -inline-force  inline forcing, adds some speed for numbers, blows up code a bit"
   ,"  -flatten-apps  flatten function application, can be more readable,"
   ,"                 no noticeable speed difference"
+  ,"  --include=dir1[, ..]"
+  ,"                 looks in these additional directories for imports"
+  ,"  --output=file  places the resulting file in this location"
   ]

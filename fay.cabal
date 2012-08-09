@@ -102,7 +102,9 @@ executable fay
                      process,
                      data-default,
                      safe,
-                     language-javascript
+                     language-javascript,
+                     directory,
+                     filepath
 
 executable fay-tests
   hs-source-dirs:    src

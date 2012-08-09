@@ -28,6 +28,8 @@ import           Data.Maybe
 import           Data.String
 import           Language.Haskell.Exts
 import           Safe
+import           System.FilePath ((</>))
+import           System.Directory (doesFileExist)
 
 import qualified Language.JavaScript.Parser as JS
 import           System.Process.Extra
@@ -114,18 +116,30 @@ compileModule mod = throwError (UnsupportedModuleSyntax mod)
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
 
+findImport :: [FilePath] -> String -> IO String
+findImport (dir:dirs) name = do
+  exists <- doesFileExist path
+  if exists
+    then readFile path
+    else findImport dirs name
+  where
+    path = dir </> replace '.' '/' name ++ ".hs"
+    replace c r = map (\x -> if x == c then r else x)
+findImport [] name =
+  error $ "Could not find import: " ++ name
+
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]
 compileImport (ImportDecl _ (ModuleName name) _ _ _ _ _)
   | elem name ["Language.Fay.Prelude","Language.Fay.FFI","Language.Fay.Types"] || name == "Prelude" = return []
 compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
-  contents <- io (readFile (replace '.' '/' name ++ ".hs"))
+  dirs <- configDirectoryIncludes <$> gets stateConfig
+  contents <- io (findImport dirs name)
   cfg <- config id
   result <- liftIO $ compileToAst cfg compileModule contents
   case result of
     Right (stmts,_) -> return stmts
     Left err -> throwError err
-    where replace c r = map (\x -> if x == c then r else x)
 compileImport i =
   error $ "Import syntax not supported. " ++
         "The compiler writer was too lazy to support that.\n" ++

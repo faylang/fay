@@ -1,3 +1,3 @@
-[[1,2,3],[1,2,3]]
-[[1,2,3],1,[2,3]]
-[[1,2,3],1,[2,3]]
+{"car":{"car":1,"cdr":{"car":2,"cdr":{"car":3,"cdr":null}}},"cdr":{"car":{"car":1,"cdr":{"car":2,"cdr":{"car":3,"cdr":null}}},"cdr":null}}
+{"car":{"car":1,"cdr":{"car":2,"cdr":{"car":3,"cdr":null}}},"cdr":{"car":1,"cdr":{"car":{"car":2,"cdr":{"car":3,"cdr":null}},"cdr":null}}}
+{"car":{"car":1,"cdr":{"car":2,"cdr":{"car":3,"cdr":null}}},"cdr":{"car":1,"cdr":{"car":{"car":2,"cdr":{"car":3,"cdr":null}},"cdr":null}}}

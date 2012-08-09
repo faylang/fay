@@ -12,9 +12,9 @@ main = addEventListener "load" printBody False
 printBody :: Fay ()
 printBody = do
   result <- documentGetElements "body"
-  print (show result)
+  print result
 
-print :: String -> Fay ()
+print :: Foreign a => [a] -> Fay ()
 print = ffi "console.log(%1)"
 
 data Element

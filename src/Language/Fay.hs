@@ -208,7 +208,7 @@ compileFFI name formatstr sig = do
         wrapReturn inner = thunk $
           case lastMay funcFundamentalTypes of
             -- Returns a “pure” value;
-            Just{} -> unserialize returnType (JsRawExp inner)
+            Just{} -> jsToFay returnType (JsRawExp inner)
             -- Base case:
             Nothing -> JsRawExp inner
         funcFundamentalTypes = functionTypeArgs sig
@@ -242,15 +242,12 @@ formatFFI formatstr args = go formatstr where
     case listToMaybe (drop (n-1) args) of
       Nothing -> throwError (FfiFormatNoSuchArg n)
       Just (arg,typ) -> do
-        return (printJS (serialize typ (JsName arg)))
+        return (printJS (fayToJs typ (JsName arg)))
 
--- | Serialize a value to native JS, if possible.
-serialize :: FundamentalType -> JsExp -> JsExp
-serialize typ exp =
-  case typ of
---    UnknownType -> force exp
-    _ -> JsApp (JsName (hjIdent "serialize"))
-               [typeRep typ,exp]
+-- | Translate: Fay → JS.
+fayToJs :: FundamentalType -> JsExp -> JsExp
+fayToJs typ exp = JsApp (JsName (hjIdent "fayToJs"))
+                        [typeRep typ,exp]
 
 -- | Get a JS-representation of a fundamental type for encoding/decoding.
 typeRep :: FundamentalType -> JsExp
@@ -863,10 +860,10 @@ monad exp = JsNew (hjIdent "Monad") [exp]
 stmtsThunk :: [JsStmt] -> JsExp
 stmtsThunk stmts = JsNew ":thunk" [JsFun [] stmts Nothing]
 
-unserialize :: FundamentalType -> JsExp -> JsExp
-unserialize typ exp =
-  JsApp (JsName (hjIdent "unserialize"))
-        [typeRep typ,exp]
+-- | Translate: JS → Fay.
+jsToFay :: FundamentalType -> JsExp -> JsExp
+jsToFay typ exp = JsApp (JsName (hjIdent "jsToFay"))
+                        [typeRep typ,exp]
 
 -- | Force an expression in a thunk.
 force :: JsExp -> JsExp

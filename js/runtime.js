@@ -37,15 +37,6 @@ $.prototype.force = function(nocache){
         : (this.forced = true, this.value = this.value());
 };
 
-/*******************************************************************************
- * Constructors.
- */
-
-// A constructor.
-function Fay$$Constructor(){
-    this.name = arguments[0];
-    this.fields = Array.prototype.slice.call(arguments,1);
-}
 
 // Eval in the context of the Haskell bindings.
 function Fay$$eval(str){
@@ -88,11 +79,12 @@ function Fay$$return(a){
 }
 
 /*******************************************************************************
- * FFI.
+ * Serialization.
+ * Fay <-> JS. Should be bijective.
  */
 
 // Serialize a Fay object to JS.
-function Fay$$serialize(type,fayObj){
+function Fay$$fayToJs(type,fayObj){
     var base = type[0];
     var args = type[1];
     var jsObj;
@@ -101,7 +93,7 @@ function Fay$$serialize(type,fayObj){
         // A nullary monadic action. Should become a nullary JS function.
         // Fay () -> function(){ return ... }
         jsObj = function(){
-            return Fay$$serialize(args[0],_(fayObj,true).value);
+            return Fay$$fayToJs(args[0],_(fayObj,true).value);
         };
         break;
     }
@@ -119,18 +111,18 @@ function Fay$$serialize(type,fayObj){
                 // passes more arguments than Haskell accepts.
                 for (var i = 0, len = len; i < len - 1 && fayFunc instanceof Function; i++) {
                     // Unserialize the JS values to Fay for the Fay callback.
-                    fayFunc = _(fayFunc(Fay$$unserialize(args[i],arguments[i])),true);
+                    fayFunc = _(fayFunc(Fay$$jsToFay(args[i],arguments[i])),true);
                 }
                 // Finally, serialize the Fay return value back to JS.
                 var return_base = return_type[0];
                 var return_args = return_type[1];
                 // If it's a monadic return value, get the value instead.
                 if(return_base == "action") {
-                    return Fay$$serialize(return_args[0],fayFunc.value);
+                    return Fay$$fayToJs(return_args[0],fayFunc.value);
                 }
                 // Otherwise just serialize the value direct.
                 else {
-                    return Fay$$serialize(return_type,fayFunc);
+                    return Fay$$fayToJs(return_type,fayFunc);
                 }
             } else {
                 throw new Error("Nullary function?");
@@ -154,7 +146,7 @@ function Fay$$serialize(type,fayObj){
         var arr = [];
         fayObj = _(fayObj);
         while(fayObj instanceof Fay$$Cons) {
-            arr.push(Fay$$serialize(args[0],fayObj.car));
+            arr.push(Fay$$fayToJs(args[0],fayObj.car));
             fayObj = _(fayObj.cdr);
         }
         jsObj = arr;
@@ -175,20 +167,20 @@ function Fay$$serialize(type,fayObj){
         jsObj = fayObj;
         break;
     }
-    default: throw new Error("Unhandled serialize type: " + base);
+    default: throw new Error("Unhandled Fay->JS translation type: " + base);
     }
     return jsObj;
 }
 
 // Unserialize an object from JS to Fay.
-function Fay$$unserialize(type,jsObj){
+function Fay$$jsToFay(type,jsObj){
     var base = type[0];
     var args = type[1];
     var fayObj;
     switch(base){
     case "action": {
         // Unserialize a "monadic" JavaScript return value into a monadic value.
-        fayObj = Fay$$return(Fay$$unserialize(args[0],jsObj));
+        fayObj = Fay$$return(Fay$$jsToFay(args[0],jsObj));
         break;
     }
     case "string": {
@@ -201,7 +193,7 @@ function Fay$$unserialize(type,jsObj){
         var serializedList = [];
         for (var i = 0, len = jsObj.length; i < len; i++) {
             // Unserialize each JS value into a Fay value, too.
-            serializedList.push(Fay$$unserialize(args[0],jsObj[i]));
+            serializedList.push(Fay$$jsToFay(args[0],jsObj[i]));
         }
         // Pop it all in a Fay list.
         fayObj = Fay$$list(serializedList);
@@ -222,42 +214,9 @@ function Fay$$unserialize(type,jsObj){
         fayObj = jsObj;
         break;
     }
-    default: throw new Error("Unhandled unserialize type: " + base);
+    default: throw new Error("Unhandled JS->Fay translation type: " + base);
     }
     return fayObj;
-}
-
-// Encode a value to a Show representation
-function Fay$$encodeShow(x){
-    if (x instanceof $) x = _(x);
-    if (x instanceof Array) {
-        if (x.length == 0) {
-            return "[]";
-        } else {
-            if (x[0] instanceof Fay$$Constructor) {
-                if(x[0].fields.length > 0) {
-                    var args = x.slice(1);
-                    var fieldNames = x[0].fields;
-                    return "(" + x[0].name + " { " + args.map(function(x,i){
-                        return fieldNames[i] + ' = ' + Fay$$encodeShow(x);
-                    }).join(", ") + " })";
-                } else {
-                    var args = x.slice(1);
-                    return "(" + [x[0].name].concat(args.map(Fay$$encodeShow)).join(" ") + ")";
-                }
-            } else {
-                return "[" + x.map(Fay$$encodeShow).join(",") + "]";
-            }
-        }
-    } else if (typeof x == 'string') {
-        return JSON.stringify(x);
-    } else if(x instanceof Fay$$Cons) {
-        return Fay$$encodeShow(Fay$$serialize(["list",[["unknown"]]],x));
-    } else if(x == null) {
-        return '[]';
-    } else {
-        return x.toString();
-    }
 }
 
 /*******************************************************************************

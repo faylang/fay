@@ -25,6 +25,9 @@ print = ffi "console.log(%1)"
 
 main :: Fay ()
 main = do
-  print $ show $ (isPositive 1, isPositive 0)
-  print $ show $ (threeConds 3, threeConds 1, threeConds 0)
-  print $ show $ (withOtherwise 2, withOtherwise 0)
+  print $ showList $ (isPositive 1, isPositive 0)
+  print $ showList $ (threeConds 3, threeConds 1, threeConds 0)
+  print $ showList $ (withOtherwise 2, withOtherwise 0)
+
+showList :: Foreign a => [a] -> String
+showList = ffi "JSON.stringify(%1)"

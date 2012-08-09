@@ -50,20 +50,18 @@ compileProgram config autorun raw with hscode = do
                              ,"// Exports"
                              ,unlines (map printExport exports)
                              ,"// Built-ins"
-                             ,"this.$force      = _;"
+                             ,"this._ = _;"
                              ,if configExportBuiltins config
                                  then unlines ["this.$           = $;"
-                                              ,"this.$list       = Fay$$list;"
-                                              ,"this.$encodeShow = Fay$$encodeShow;"
-                                              ,"this.$eval       = Fay$$eval;"
-                                              ,"this.$serialize  = Fay$$serialize;"
+                                              ,"this.$fayToJs    = Fay$$fayToJs;"
+                                              ,"this.$jsToFay    = Fay$$jsToFay;"
                                               ]
                                  else ""
                              ,"};"
                              ,if autorun
                                  then unlines [";"
                                               ,"var main = new " ++ modulename ++ "();"
-                                              ,"main.$force(main.main);"
+                                              ,"main._(main.main);"
                                               ]
                                  else ""
                              ]))

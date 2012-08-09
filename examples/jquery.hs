@@ -11,7 +11,7 @@ main = do
   ready $ do
     print (showDouble 123)
     body <- select "body"
-    print (show body)
+    printArg body
     addClassWith (\i s -> do print ("i… " ++ showDouble i)
                              print ("s… " ++ showString s)
                              return "abc")

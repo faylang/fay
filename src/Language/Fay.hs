@@ -680,7 +680,7 @@ compileRecConstr :: QName -> [FieldUpdate] -> Compile JsExp
 compileRecConstr name fieldUpdates = do
     let o = UnQual (Ident (map toLower (qname name)))
     -- var obj = new Type_RecConstr()
-    let record = JsVar o (JsNew (UnQual (Ident ((qname name) ++ "_RecConstr"))) [])
+    let record = JsVar o (JsNew (fromString ("$_" ++ (qname name))) [])
     setFields <- forM fieldUpdates $
            -- obj.field = value
            \(FieldUpdate (UnQual field) value) -> JsSetProp o (UnQual field) <$> compileExp value
@@ -719,7 +719,7 @@ compilePApp cons pats exp body = do
                              compilePat (JsGetProp forcedExp (fromString field)) pat body)
                   body
                   (reverse (zip recordFields pats))
-      return [JsIf (forcedExp `JsInstanceOf` (UnQual (Ident ((qname cons) ++ "_RecConstr"))))
+      return [JsIf (forcedExp `JsInstanceOf` (fromString ("$_" ++ qname cons)))
                    substmts
                    []]
 

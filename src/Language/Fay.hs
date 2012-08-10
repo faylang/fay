@@ -324,8 +324,6 @@ compileDataDecl toplevel decl constructors = do
         _ -> throwError (UnsupportedDeclaration decl)
 
   where
-    constructorName = fromString . ("$_"++) . qname
-
     addRecordState :: QName -> [Name] -> Compile ()
     addRecordState name fields = modify $ \s -> s { stateRecords = (Ident (qname name), fields) : stateRecords s }
 
@@ -366,6 +364,9 @@ qname _ = error "qname: Expected unqualified ident." -- FIXME:
 unname :: Name -> String
 unname (Ident str) = str
 unname _ = error "Expected ident from uname." -- FIXME:
+
+constructorName :: QName -> QName
+constructorName = fromString . (++ "$_") . qname
 
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]
@@ -679,8 +680,8 @@ compilePAsPat exp name pat body = do
 compileRecConstr :: QName -> [FieldUpdate] -> Compile JsExp
 compileRecConstr name fieldUpdates = do
     let o = UnQual (Ident (map toLower (qname name)))
-    -- var obj = new Type_RecConstr()
-    let record = JsVar o (JsNew (fromString ("$_" ++ (qname name))) [])
+    -- var obj = new $_Type()
+    let record = JsVar o (JsNew (constructorName name) [])
     setFields <- forM fieldUpdates $
            -- obj.field = value
            \(FieldUpdate (UnQual field) value) -> JsSetProp o (UnQual field) <$> compileExp value
@@ -719,7 +720,7 @@ compilePApp cons pats exp body = do
                              compilePat (JsGetProp forcedExp (fromString field)) pat body)
                   body
                   (reverse (zip recordFields pats))
-      return [JsIf (forcedExp `JsInstanceOf` (fromString ("$_" ++ qname cons)))
+      return [JsIf (forcedExp `JsInstanceOf` (constructorName cons))
                    substmts
                    []]
 

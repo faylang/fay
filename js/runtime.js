@@ -170,6 +170,10 @@ function Fay$$fayToJs(type,fayObj){
         jsObj = fayObj;
         break;
     }
+    case "user": {
+        jsObj = Fay$$fayToJsUserDefined(type,fayObj);
+        break;
+    }
     default: throw new Error("Unhandled Fay->JS translation type: " + base);
     }
     return jsObj;
@@ -215,6 +219,10 @@ function Fay$$jsToFay(type,jsObj){
     case "bool": {
         // Bools are unboxed.
         fayObj = jsObj;
+        break;
+    }
+    case "user": {
+        fayObj = Fay$$jsToFayUserDefined(type,jsObj);
         break;
     }
     default: throw new Error("Unhandled JS->Fay translation type: " + base);

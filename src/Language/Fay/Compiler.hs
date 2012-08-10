@@ -7,7 +7,7 @@ module Language.Fay.Compiler where
 import           Control.Applicative
 import           Control.Exception            (throw)
 import           Control.Monad
-import           Language.Fay                 (compileModule, compileViaStr, prettyPrintString)
+import           Language.Fay                 (compileToplevelModule, compileViaStr, prettyPrintString)
 import           Language.Fay.Types
 import           Language.Haskell.Exts.Syntax
 import           System.FilePath
@@ -43,7 +43,7 @@ compileFile config filein = do
   hscode <- readFile filein
   compileProgram config
                  raw
-                 compileModule
+                 compileToplevelModule
                  (hscode ++ "\n" ++ stdlib ++ "\n" ++ strip stdlibprelude)
 
   where strip = unlines . dropWhile (/="-- START") . lines

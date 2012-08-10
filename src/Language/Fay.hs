@@ -49,6 +49,8 @@ runCompile config m = runErrorT (runStateT (unCompile m) state) where
                        , stateModuleName = "Main"
                        , stateExportAll = True
                        , stateRecords = []
+                       , stateFayToJs = []
+                       , stateJsToFay = []
                        }
 
 -- | Compile a Haskell source string to a JavaScript source string.
@@ -95,11 +97,19 @@ printCompile config with from = do
 
 -- | Compile a String of Fay and print it as beautified JavaScript.
 printTestCompile :: String -> IO ()
-printTestCompile = printCompile def compileModule
+printTestCompile = printCompile def compileToplevelModule
 
 
 --------------------------------------------------------------------------------
 -- Compilers
+
+-- | Compile the top-level Haskell module.
+compileToplevelModule :: Module -> Compile [JsStmt]
+compileToplevelModule mod = do
+  stmts <- compileModule mod
+  fay2js <- gets (fayToJsDispatcher . stateFayToJs)
+  js2fay <- gets (jsToFayDispatcher . stateJsToFay)
+  return (stmts ++ [fay2js,js2fay])
 
 -- | Compile Haskell module.
 compileModule :: Module -> Compile [JsStmt]
@@ -240,22 +250,26 @@ formatFFI formatstr args = go formatstr where
   inject n =
     case listToMaybe (drop (n-1) args) of
       Nothing -> throwError (FfiFormatNoSuchArg n)
-      Just (arg,typ) ->
-        return (printJS (fayToJs typ (JsName arg)))
+      Just (arg,typ) -> do
+        return (printJS (fayToJs (typeRep typ) (JsName arg)))
 
 -- | Translate: Fay → JS.
-fayToJs :: FundamentalType -> JsExp -> JsExp
+fayToJs :: JsExp -> JsExp -> JsExp
 fayToJs typ exp = JsApp (JsName (hjIdent "fayToJs"))
-                        [typeRep typ,exp]
+                        [typ,exp]
 
 -- | Get a JS-representation of a fundamental type for encoding/decoding.
 typeRep :: FundamentalType -> JsExp
 typeRep typ =
   case typ of
-    FunctionType xs -> JsList [JsLit $ JsStr "function",JsList (map typeRep xs)]
-    JsType x        -> JsList [JsLit $ JsStr "action",JsList [typeRep x]]
-    ListType x      -> JsList [JsLit $ JsStr "list",JsList [typeRep x]]
-    typ             -> JsList [JsLit $ JsStr nom]
+    FunctionType xs     -> JsList [JsLit $ JsStr "function",JsList (map typeRep xs)]
+    JsType x            -> JsList [JsLit $ JsStr "action",JsList [typeRep x]]
+    ListType x          -> JsList [JsLit $ JsStr "list",JsList [typeRep x]]
+    UserDefined name xs -> JsList [JsLit $ JsStr "user"
+                                  ,JsLit $ JsStr (unname name)
+                                  ,JsList (map typeRep xs)]
+    typ -> JsList [JsLit $ JsStr nom]
+
       where nom = case typ of
               StringType -> "string"
               DoubleType -> "double"
@@ -276,14 +290,27 @@ functionTypeArgs t =
 argType :: Type -> FundamentalType
 argType t =
   case t of
-    TyApp (TyCon "Fay") a -> JsType (argType a)
     TyCon "String"        -> StringType
     TyCon "Double"        -> DoubleType
     TyCon "Bool"          -> BoolType
+    TyApp (TyCon "Fay") a -> JsType (argType a)
     TyFun x xs            -> FunctionType (argType x : functionTypeArgs xs)
     TyList x              -> ListType (argType x)
     TyParen st            -> argType st
+    TyApp op arg          -> userDefined (reverse (arg : expandApp op))
+    TyCon (UnQual user)   -> UserDefined user []
     _                     -> UnknownType
+
+-- | Generate a user-defined type.
+userDefined :: [Type] -> FundamentalType
+userDefined (TyCon (UnQual name):typs) = UserDefined name (map argType typs)
+userDefined _ = UnknownType
+
+-- | Expand a type application.
+expandApp :: Type -> [Type]
+expandApp (TyParen t) = expandApp t
+expandApp (TyApp op arg) = arg : expandApp op
+expandApp x = [x]
 
 -- | Get the arity of a type.
 typeArity :: Type -> Int
@@ -319,6 +346,8 @@ compileDataDecl toplevel decl constructors =
           cons <- makeConstructor name fields
           func <- makeFunc name fields
           funs <- makeAccessors fields
+          emitFayToJs name fields'
+          emitJsToFay name fields'
           return (cons : func : funs)
         _ -> throwError (UnsupportedDeclaration decl)
 
@@ -352,7 +381,94 @@ compileDataDecl toplevel decl constructors =
                         (fromString name)
                         (JsFun ["x"]
                                []
-                               (Just (thunk (JsGetProp (force (JsName "x")) (fromString name)))))
+                               (Just (thunk (JsGetProp (force (JsName "x"))
+                                                       (fromString name)))))
+
+fayToJsDispatcher :: [JsStmt] -> JsStmt
+fayToJsDispatcher cases =
+  JsVar (hjIdent "fayToJsUserDefined")
+        (JsFun ["type",transcodingObj]
+               (decl ++ cases ++ [baseCase])
+               Nothing)
+
+  where decl = [JsVar transcodingObjForced
+                      (force (JsName transcodingObj))
+               ,JsVar "argTypes"
+                      (JsLookup (JsName "type")
+                                (JsLit (JsInt 2)))]
+        baseCase =
+          JsEarlyReturn (JsName transcodingObj)
+          -- JsThrow (JsNew "Error"
+          --                [JsLit (JsStr "No handler for translating this Fay value to a JS value.")])
+
+-- Make a Fay→JS encoder.
+emitFayToJs :: QName -> [([Name], BangType)] -> Compile ()
+emitFayToJs name (explodeFields -> fieldTypes) =
+  modify $ \s -> s { stateFayToJs = translator : stateFayToJs s }
+
+  where
+    translator = JsIf (JsInstanceOf (JsName transcodingObjForced) (constructorName name))
+                      [JsEarlyReturn (JsObj (("instance",JsLit (JsStr (qname name)))
+                                                     : zipWith declField [0..] fieldTypes))]
+                      []
+    -- Declare/encode Fay→JS field
+    declField :: Int -> (Name,BangType) -> (String,JsExp)
+    declField _i (name,typ) =
+      (unname name
+      ,fayToJs (case argType (bangType typ) of
+                 -- UnknownType -> JsLookup (JsName "argTypes")
+                 --                         (JsLit (JsInt i))
+                 known -> typeRep known)
+               (force (JsGetPropExtern (JsName transcodingObjForced)
+                                       (printJS name))))
+
+jsToFayDispatcher :: [JsStmt] -> JsStmt
+jsToFayDispatcher cases =
+  JsVar (hjIdent "jsToFayUserDefined")
+        (JsFun ["type",transcodingObj]
+               (cases ++ [baseCase])
+               Nothing)
+
+  where baseCase =
+          JsEarlyReturn (JsName transcodingObj)
+          -- JsThrow (JsNew "Error"
+          --                [JsLit (JsStr "No handler for translating this JS value to a Fay value.")])
+
+-- Make a JS→Fay decoder
+emitJsToFay ::  QName -> [([Name], BangType)] -> Compile ()
+emitJsToFay name (explodeFields -> fieldTypes) =
+  modify $ \s -> s { stateJsToFay = translator : stateJsToFay s }
+
+  where
+    translator =
+      JsIf (JsEq (JsGetProp (JsName transcodingObj) "instance")
+                 (JsLit (JsStr (qname name))))
+           [JsEarlyReturn (JsNew (constructorName name)
+                                 (map decodeField fieldTypes))]
+           []
+    -- Decode JS→Fay field
+    decodeField :: (Name,BangType) -> JsExp
+    decodeField (name,typ) =
+      jsToFay (argType (bangType typ))
+              (JsGetPropExtern (JsName transcodingObj)
+                               (unname name))
+
+explodeFields :: [([a], t)] -> [(a, t)]
+explodeFields = concatMap $ \(names,typ) -> map (,typ) names
+
+transcodingObj :: JsName
+transcodingObj = "obj"
+
+transcodingObjForced :: JsName
+transcodingObjForced = "_obj"
+
+-- | Extract the type.
+bangType :: BangType -> Type
+bangType typ =
+  case typ of
+    BangedTy ty   -> ty
+    UnBangedTy ty -> ty
+    UnpackedTy ty -> ty
 
 -- | Extract the string from a qname.
 qname :: QName -> String
@@ -365,7 +481,7 @@ unname (Ident str) = str
 unname _ = error "Expected ident from uname." -- FIXME:
 
 constructorName :: QName -> QName
-constructorName = fromString . (++ "$_") . qname
+constructorName = fromString . ("$_" ++) . qname
 
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]

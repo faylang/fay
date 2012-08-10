@@ -51,11 +51,13 @@ instance Default CompileConfig where
 
 -- | State of the compiler.
 data CompileState = CompileState
-  { stateConfig     :: CompileConfig
-  , stateExports    :: [Name]
-  , stateExportAll  :: Bool
-  , stateModuleName :: ModuleName
-  , stateRecords :: [(Name,[Name])] -- records with field names
+  { stateConfig      :: CompileConfig
+  , stateExports     :: [Name]
+  , stateExportAll   :: Bool
+  , stateModuleName  :: ModuleName
+  , stateRecords     :: [(Name,[Name])] -- records with field names
+  , stateFayToJs     :: [JsStmt]
+  , stateJsToFay     :: [JsStmt]
 } deriving (Show)
 
 -- | Compile monad.
@@ -127,6 +129,7 @@ data JsStmt
   | JsUpdate JsName JsExp
   | JsSetProp JsName JsName JsExp
   | JsContinue
+  | JsBlock [JsStmt]
   deriving (Show,Eq)
 
 -- | Expression type.
@@ -143,7 +146,7 @@ data JsExp
   | JsGetProp JsExp JsName
   | JsLookup JsExp JsExp
   | JsUpdateProp JsExp JsName JsExp
-  | JsGetPropExtern JsExp JsName
+  | JsGetPropExtern JsExp String
   | JsUpdatePropExtern JsExp JsName JsExp
   | JsList [JsExp]
   | JsNew JsName [JsExp]
@@ -152,6 +155,7 @@ data JsExp
   | JsIndex Int JsExp
   | JsEq JsExp JsExp
   | JsInfix String JsExp JsExp -- Used to optimize *, /, +, etc
+  | JsObj [(String,JsExp)]
   deriving (Show,Eq)
 
 -- | Literal value type.
@@ -173,6 +177,7 @@ data FundamentalType
  = FunctionType [FundamentalType]
  | JsType FundamentalType
  | ListType FundamentalType
+ | UserDefined Name [FundamentalType]
  -- Simple types.
  | DateType
  | StringType

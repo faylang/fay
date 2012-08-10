@@ -76,6 +76,8 @@ instance Printable [JsStmt] where
 
 -- | Print a single statement.
 instance Printable JsStmt where
+  printJS (JsBlock stmts) =
+    "{ " ++ unwords (map printJS stmts) ++ "}"
   printJS (JsVar name expr) =
     unwords ["var",printJS name,"=",printJS expr ++ ";"]
   printJS (JsUpdate name expr) =
@@ -156,9 +158,14 @@ instance Printable JsExp where
     printJS x ++ " " ++ op ++ " " ++ printJS y
   -- Externs: Careful, here be dragons! Or at least warm lizards.
   printJS (JsGetPropExtern exp prop) =
-    printJS exp ++ "['" ++ printJS prop ++ "']"
+    printJS exp ++ "[" ++ printJS (JsLit (JsStr prop)) ++ "]"
   printJS (JsUpdatePropExtern name prop expr) =
     concat ["(",printJS name,"['",printJS prop,"'] = ",printJS expr,")"]
+  printJS (JsObj assoc) =
+    concat ["{"
+           ,intercalate "," (map cons assoc)
+           ,"}"]
+     where cons (key,value) = "\"" ++ key ++ "\": " ++ printJS value
 
 --------------------------------------------------------------------------------
 -- Utilities

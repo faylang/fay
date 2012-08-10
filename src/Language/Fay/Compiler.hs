@@ -13,6 +13,13 @@ import           Paths_fay
 -- | Compile file program to…
 compileFromTo :: CompileConfig -> Bool -> FilePath -> FilePath -> IO ()
 compileFromTo config autorun filein fileout = do
+  result <- compileFile config autorun filein
+  case result of
+    Right out -> writeFile fileout out
+    Left  err -> throw err
+
+compileFile :: CompileConfig -> Bool -> FilePath -> IO (Either CompileError String)
+compileFile config autorun filein = do
   runtime <- getDataFileName "js/runtime.js"
   stdlibpath <- getDataFileName "hs/stdlib.hs"
   stdlibpathprelude <- getDataFileName "src/Language/Fay/Stdlib.hs"
@@ -20,14 +27,11 @@ compileFromTo config autorun filein fileout = do
   stdlib <- readFile stdlibpath
   stdlibprelude <- readFile stdlibpathprelude
   hscode <- readFile filein
-  result <- compileProgram config
-                           autorun
-                           raw
-                           compileModule
-                           (hscode ++ "\n" ++ stdlib ++ "\n" ++ strip stdlibprelude)
-  case result of
-    Right out -> writeFile fileout out
-    Left  err -> throw err
+  compileProgram config
+                 autorun
+                 raw
+                 compileModule
+                 (hscode ++ "\n" ++ stdlib ++ "\n" ++ strip stdlibprelude)
 
   where strip = unlines . dropWhile (/="-- START") . lines
 

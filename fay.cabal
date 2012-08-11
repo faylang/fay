@@ -96,6 +96,10 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      docs/snippets/tail.hs
                      docs/home.hs
 
+Flag devel
+  Description:       Whether to build fay-tests and fay-docs
+  Default:           False
+
 library
   hs-source-dirs:    src
   exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude, Language.Fay.Show, Language.Fay.Compiler
@@ -137,6 +141,8 @@ executable fay
                      filepath
 
 executable fay-tests
+  if !flag(devel)
+    buildable:       False
   hs-source-dirs:    src
   ghc-options:       -O2
   main-is:           Tests.hs
@@ -154,6 +160,8 @@ executable fay-tests
                      language-javascript
 
 executable fay-docs
+  if !flag(devel)
+    buildable:       False
   hs-source-dirs:    src
   ghc-options:       -O2
   main-is:           Docs.hs

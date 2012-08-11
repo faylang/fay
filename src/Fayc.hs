@@ -15,14 +15,15 @@ import Options
 import System.Environment
 import System.Exit
 import System.IO
+import System.IO.Error
 import System.Process
 
 defineOptions "FayCompilerOptions" $ do
-  boolOption "optTCO" "tco" False ""
-  boolOption "optAutoRun" "autorun" False ""
-  boolOption "optInlineForce" "inline-force" False ""
-  boolOption "optFlattenApps" "flatten-apps" False ""
-  boolOption "optExportBuiltins" "export-builtins" True ""
+  -- boolOption "optTCO" "tco" False ""
+  boolOption "optAutoRun" "autorun" False "automatically call main in generated JavaScript"
+  boolOption "optInlineForce" "inline-force" False "inline forcing, adds some speed for numbers, blows up code a bit"
+  boolOption "optFlattenApps" "flatten-apps" False "flatten function applicaton"
+  -- boolOption "optExportBuiltins" "export-builtins" True ""
   option "optStdout" (\o -> o
         { optionLongFlags = ["stdout"]
         , optionShortFlags = ['s']
@@ -49,10 +50,10 @@ helpTxt = unlines [
 
 main :: IO ()
 main = runCommandHelp helpTxt $ \opts files -> do
-    let config = def { configTCO = optTCO opts
+    let config = def { configTCO = False --optTCO opts
                      , configInlineForce = optInlineForce opts
                      , configFlattenApps = optFlattenApps opts
-                     , configExportBuiltins = optExportBuiltins opts
+                     , configExportBuiltins = True -- optExportBuiltins opts
                      }
     let compile' = compile config (optAutoRun opts)
     case files of
@@ -104,9 +105,6 @@ prettyCompile config with from = do
     Right (ok,_) -> beautify ok
                       
 beautify :: String -> IO (String)
-beautify js = do
-    (Just hin, Just hout, _, _) <-
-       createProcess (proc "js-beautify" ["-"]){ std_in = CreatePipe, std_out = CreatePipe }
-    hPutStrLn hin js
-    hClose hin
-    hGetContents hout
+beautify js = catchIOError (readProcess "js-beautify" ["-"] js) $ \err ->
+         return $ js ++ "\n\n/* ERROR couldn't run js-beautify:\n   " ++ (show err) ++ "\n*/"
+    

@@ -19,10 +19,10 @@ main = do
   args <- getArgs
   let files = filter (not . isPrefixOf "-") args
       paramOpts = map ((drop 2 *** drop 1) . break (== '=')) $ filter (isPrefixOf "--") args
-      opts = map (drop 1) $ filter (\v -> isPrefixOf "-" v && not (isPrefixOf "--" v)) args
-  if (elem "help" opts) || null files
+      opts = map (drop 1) $ filter (\v -> isPrefixOf "-" v && not ("--" `isPrefixOf` v)) args
+  if "help" `elem` opts || null files
     then putStrLn helpText
-    else forM_ files $ \file -> do
+    else forM_ files $ \file ->
       compileFromTo def { configTCO = elem "tco" opts
                         , configInlineForce = elem "inline-force" opts
                         , configFlattenApps = elem "flatten-apps" opts

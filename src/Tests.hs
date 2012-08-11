@@ -7,6 +7,7 @@ module Main where
 
 import           Language.Fay.Compiler
 
+import           Control.Monad
 import           Data.Default
 import           Data.List
 import           System.Directory
@@ -19,7 +20,7 @@ import           Test.HUnit
 
 -- | Main test runner.
 main :: IO ()
-main = runUnitTests >> return ()
+main = void runUnitTests
 
 -- | Run the case-by-case unit tests.
 runUnitTests :: IO Counts

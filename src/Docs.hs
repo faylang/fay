@@ -60,8 +60,8 @@ generateJs = do
   compileFromTo def True inp out
 
   where docs = ("docs" </>)
-        inp = (docs "home.hs")
-        out = (docs "home.js")
+        inp = docs "home.hs"
+        out = docs "home.js"
 
 page now analytics examples = do
   docType

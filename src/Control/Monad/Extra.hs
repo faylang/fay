@@ -2,9 +2,6 @@ module Control.Monad.Extra where
 
 import           Data.Maybe
 
-ig :: (Monad m) => m a -> m ()
-ig m = m >> return ()
-
 bind :: (Monad m) => (a -> m b) -> m a -> m b
 bind = flip (>>=)
 

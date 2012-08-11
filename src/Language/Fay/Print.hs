@@ -72,28 +72,28 @@ instance Printable Name where
 
 -- | Print a list of statements.
 instance Printable [JsStmt] where
-  printJS = concat . map (printJS)
+  printJS = concatMap printJS
 
 -- | Print a single statement.
 instance Printable JsStmt where
   printJS (JsVar name expr) =
-    (unwords ["var",printJS name,"=",printJS expr ++ ";"])
+    unwords ["var",printJS name,"=",printJS expr ++ ";"]
   printJS (JsUpdate name expr) =
-    (unwords [printJS name,"=",printJS expr ++ ";"])
+    unwords [printJS name,"=",printJS expr ++ ";"]
   printJS (JsSetProp name prop expr) =
-    (concat [printJS name,".",printJS prop," = ",printJS expr ++ ";"])
+    concat [printJS name,".",printJS prop," = ",printJS expr ++ ";"]
   printJS (JsIf exp thens elses) =
     concat
       [("if (" ++ printJS exp ++ ") {")
       ,printJS thens] ++
-      if (length elses > 0)
+      if length elses > 0
          then concat ["} else {"
                      ,printJS elses ++ "}"]
          else "}"
   printJS (JsEarlyReturn exp) =
-    ("return " ++ printJS exp ++ ";")
+    "return " ++ printJS exp ++ ";"
   printJS (JsThrow exp) =
-    ("throw " ++ printJS exp ++ ";")
+    "throw " ++ printJS exp ++ ";"
   printJS (JsWhile cond stmts) =
     unwords ["while (" ++ printJS cond ++ ") {"
             ,printJS stmts
@@ -120,7 +120,7 @@ instance Printable JsExp where
       Nothing -> "}"
   printJS JsNull = "null"
   printJS (JsSequence exprs) =
-    intercalate "," (map (printJS) exprs)
+    intercalate "," (map printJS exprs)
   printJS (JsName name) = printJS name
   printJS (JsApp op args) =
     printJS (if isFunc op then JsParen op else op) ++
@@ -132,11 +132,11 @@ instance Printable JsExp where
   printJS (JsParen exp) = "(" ++ printJS exp ++ ")"
   printJS (JsTernaryIf cond conseq alt) =
     concat [printJS cond ++ " ? "
-           , (printJS conseq) ++ " : "
-           , (printJS alt)]
+           , printJS conseq ++ " : "
+           , printJS alt]
   printJS (JsList exps) =
     "[" ++
-    intercalate "," (map (printJS) exps) ++
+    intercalate "," (map printJS exps) ++
     "]"
   printJS (JsNew name args) =
     "new " ++ printJS (JsApp (JsName name) args)
@@ -151,14 +151,14 @@ instance Printable JsExp where
   printJS (JsLookup exp1 exp2) =
     printJS exp1 ++ "[" ++ printJS exp2 ++ "]"
   printJS (JsUpdateProp name prop expr) =
-    (concat ["(",printJS name,".",printJS prop," = ",printJS expr,")"])
+    concat ["(",printJS name,".",printJS prop," = ",printJS expr,")"]
   printJS (JsInfix op x y) =
     printJS x ++ " " ++ op ++ " " ++ printJS y
   -- Externs: Careful, here be dragons! Or at least warm lizards.
   printJS (JsGetPropExtern exp prop) =
     printJS exp ++ "['" ++ printJS prop ++ "']"
   printJS (JsUpdatePropExtern name prop expr) =
-    (concat ["(",printJS name,"['",printJS prop,"'] = ",printJS expr,")"])
+    concat ["(",printJS name,"['",printJS prop,"'] = ",printJS expr,")"]
 
 --------------------------------------------------------------------------------
 -- Utilities
@@ -174,12 +174,12 @@ jsEncodeName "null" = "_$null"
 jsEncodeName "this" = "_$this"
 -- Anything else.
 jsEncodeName name =
-  if isPrefixOf "$_" name
+  if "$_" `isPrefixOf` name
      then name
-     else concat . map encode $ name
+     else concatMap encode name
 
   where
-    encode c | elem c allowed = [c]
+    encode c | c `elem` allowed = [c]
              | otherwise      = escapeChar c
     allowed = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
     escapeChar c = "$" ++ charId c ++ "$"

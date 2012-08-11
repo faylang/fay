@@ -1,6 +1,5 @@
 {-# OPTIONS -fno-warn-orphans #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 {-# OPTIONS -fno-warn-name-shadowing -fno-warn-unused-do-bind #-}
 
 module Text.Blaze.Extra where

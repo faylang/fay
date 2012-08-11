@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE ViewPatterns          #-}
@@ -79,7 +78,7 @@ compileToAst config with from =
 compileFromStr :: (Parseable a, MonadError CompileError m) => (a -> m a1) -> String -> m a1
 compileFromStr with from =
   parseResult (throwError . uncurry ParseError)
-              (with)
+              with
               (parse from)
 
 printCompile :: (Show from,Show to,CompilesTo from to)
@@ -90,7 +89,7 @@ printCompile :: (Show from,Show to,CompilesTo from to)
 printCompile config with from = do
   result <- compileViaStr config with from
   case result of
-    Left err -> putStrLn $ show err
+    Left err -> print err
     Right (ok,_) -> do writeFile "/tmp/x.js" ok
                        prettyPrintFile "/tmp/x.js" >>= putStr
 
@@ -147,7 +146,7 @@ compileImport i =
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [Decl] -> Compile [JsStmt]
-compileDecls toplevel decls = do
+compileDecls toplevel decls =
   case decls of
     [] -> return []
     (TypeSig _ _ sig:bind@PatBind{}:decls) -> appendM (compilePatBind toplevel (Just sig) bind)
@@ -176,7 +175,7 @@ compileDecl toplevel decl =
 
 -- | Compile a top-level pattern bind.
 compilePatBind :: Bool -> Maybe Type -> Decl -> Compile [JsStmt]
-compilePatBind toplevel sig pat = do
+compilePatBind toplevel sig pat =
   case pat of
     PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
       case ffiExp rhs of
@@ -227,7 +226,7 @@ formatFFI formatstr args = go formatstr where
     rest <- go xs
     return ('%' : rest)
   go ['%'] = throwError FfiFormatIncompleteArg
-  go ('%':(span isDigit -> (op,xs))) = do
+  go ('%':(span isDigit -> (op,xs))) =
     case readMay op of
      Nothing -> throwError (FfiFormatBadChars op)
      Just n -> do
@@ -241,7 +240,7 @@ formatFFI formatstr args = go formatstr where
   inject n =
     case listToMaybe (drop (n-1) args) of
       Nothing -> throwError (FfiFormatNoSuchArg n)
-      Just (arg,typ) -> do
+      Just (arg,typ) ->
         return (printJS (fayToJs typ (JsName arg)))
 
 -- | Translate: Fay → JS.
@@ -304,7 +303,7 @@ compileNormalPatBind toplevel ident rhs = do
 
 -- | Compile a data declaration.
 compileDataDecl :: Bool -> Decl -> [QualConDecl] -> Compile [JsStmt]
-compileDataDecl toplevel decl constructors = do
+compileDataDecl toplevel decl constructors =
   fmap concat $
     forM constructors $ \(QualConDecl _ _ _ condecl) ->
       case condecl of
@@ -347,7 +346,7 @@ compileDataDecl toplevel decl constructors = do
               fieldParams
 
     -- Creates getters for a RecDecl's values
-    makeAccessors fields = do
+    makeAccessors fields =
       forM fields $ \(Ident name) ->
            bindToplevel toplevel
                         (fromString name)
@@ -377,8 +376,8 @@ compileFunCase toplevel matches@(Match _ name argslen _ _ _:_) = do
     unless (noBinds wheres) $ do _ <- throwError (UnsupportedWhereInMatch match) -- TODO: Support `where'.
                                  return ()
     exp <- compileRhs rhs
-    foldM (\inner (arg,pat) -> do
-             compilePat (JsName arg) pat inner)
+    foldM (\inner (arg,pat) ->
+            compilePat (JsName arg) pat inner)
           [JsEarlyReturn exp]
           (zip args pats)
   bind <- bindToplevel toplevel
@@ -433,7 +432,7 @@ flatten _ = Nothing
 
 -- | Expand a forced value into the value.
 expand :: JsExp -> Maybe [JsExp]
-expand (JsApp (JsName (UnQual (Ident "_"))) xs) = do
+expand (JsApp (JsName (UnQual (Ident "_"))) xs) =
   fmap concat (mapM flatten xs)
 expand _ = Nothing
 
@@ -441,10 +440,10 @@ expand _ = Nothing
 --   "js-beautify" is unavailable
 prettyPrintFile :: String -> IO String
 prettyPrintFile file =
-  (readAllFromProcess "js-beautify" file)
-  >>= (either
-       (\_ -> (readFile file) >>= (\js -> return $ js ++ "\n"))
-       return)
+  readAllFromProcess "js-beautify" file
+  >>= either
+       (\_ -> readFile file >>= (\js -> return $ js ++ "\n"))
+       return
 
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp
@@ -455,7 +454,7 @@ compileRhs (GuardedRhss rhss) = compileGuards rhss
 compileGuards :: [GuardedRhs] -> Compile JsExp
 compileGuards [] = return . JsThrowExp . JsLit . JsStr $ "Non-exhaustive guards"
 compileGuards ((GuardedRhs _ (Qualifier (Var (UnQual (Ident "otherwise"))):_) exp):_) = compileExp exp
-compileGuards ((GuardedRhs _ (Qualifier guard:_) exp):rest) =
+compileGuards (GuardedRhs _ (Qualifier guard:_) exp : rest) =
   JsTernaryIf <$> fmap force (compileExp guard)
               <*> compileExp exp
               <*> compileGuards rest
@@ -599,12 +598,12 @@ compileCase exp alts = do
   exp <- compileExp exp
   pats <- fmap optimizePatConditions $ mapM (compilePatAlt (JsName (tmpName exp))) alts
   return $
-    (JsApp (JsFun [tmpName exp]
-                  (concat pats)
-                  (if any isWildCardAlt alts
-                      then Nothing
-                      else Just (throwExp "unhandled case" (JsName (tmpName exp)))))
-           [exp])
+    JsApp (JsFun [tmpName exp]
+                 (concat pats)
+                 (if any isWildCardAlt alts
+                     then Nothing
+                     else Just (throwExp "unhandled case" (JsName (tmpName exp)))))
+          [exp]
 
 -- | Compile a do block.
 compileDoBlock :: [Stmt] -> Compile JsExp
@@ -635,7 +634,7 @@ compileStmt inner stmt =
             RecStmt{} -> throwError RecursiveDoUnsupported
 
         compileGenerator srcloc pat inner exp = do
-          let body = (Lambda srcloc [pat] inner)
+          let body = Lambda srcloc [pat] inner
           return (Just (InfixApp exp
                                  (QVarOp (UnQual (Symbol ">>=")))
                                  body))
@@ -648,9 +647,9 @@ compilePatAlt exp (Alt _ pat rhs _) = do
 
 -- | Compile the given pattern against the given expression.
 compilePat :: JsExp -> Pat -> [JsStmt] -> Compile [JsStmt]
-compilePat exp pat body = do
+compilePat exp pat body =
   case pat of
-    PVar name       -> return ([JsVar (UnQual name) exp] ++ body)
+    PVar name       -> return $ JsVar (UnQual name) exp : body
     PApp cons pats  -> compilePApp cons pats exp body
     PLit literal    -> compilePLit exp literal body
     PParen pat      -> compilePat exp pat body
@@ -713,14 +712,13 @@ compilePApp cons pats exp body = do
     -- Everything else, generic:
     _ -> do
       rf <- lookup (Ident (qname cons)) <$> gets stateRecords
-      recordFields <- return $ case rf of
-        Just x -> x
-        Nothing -> error "Record name was not found in stateRecords, should be impossible"
+      recordFields <- return $ fromMaybe
+                        (error "Record name was not found in stateRecords, should be impossible") rf
       substmts <- foldM (\body (Ident field,pat) ->
                              compilePat (JsGetProp forcedExp (fromString field)) pat body)
                   body
                   (reverse (zip recordFields pats))
-      return [JsIf (forcedExp `JsInstanceOf` (constructorName cons))
+      return [JsIf (forcedExp `JsInstanceOf` constructorName cons)
                    substmts
                    []]
 
@@ -730,13 +728,12 @@ compilePList [] body exp =
   return [JsIf (JsEq (force exp) JsNull) body []]
 compilePList pats body exp = do
   let forcedExp = force exp
-  substmts <- foldM (\body (i,pat) -> compilePat (JsApp (JsApp (JsName (hjIdent "index"))
-                                                               [JsLit (JsInt i)])
-                                                        [forcedExp])
-                                                 pat body)
-                    body
-                    (reverse (zip [0..] pats))
-  return substmts
+  foldM (\body (i,pat) -> compilePat (JsApp (JsApp (JsName (hjIdent "index"))
+                                                   [JsLit (JsInt i)])
+                                            [forcedExp])
+                                     pat body)
+        body
+        (reverse (zip [0..] pats))
 
 -- | Compile an infix pattern (e.g. cons and tuples.)
 compileInfixPat :: JsExp -> Pat -> [JsStmt] -> Compile [JsStmt]
@@ -744,8 +741,8 @@ compileInfixPat exp pat@(PInfixApp left (Special cons) right) body =
   case cons of
     Cons -> do
       let forcedExp = JsName (tmpName exp)
-          x = (JsGetProp forcedExp "car")
-          xs = (JsGetProp forcedExp "cdr")
+          x = JsGetProp forcedExp "car"
+          xs = JsGetProp forcedExp "cdr"
       rightMatch <- compilePat xs right body
       leftMatch <- compilePat x left rightMatch
       return [JsVar (tmpName exp) (force exp)
@@ -802,7 +799,7 @@ uniqueNames = map (fromString . ("$_" ++))
 
 -- | Optimize pattern matching conditions by merging conditions in common.
 optimizePatConditions :: [[JsStmt]] -> [[JsStmt]]
-optimizePatConditions = concat . map merge . groupBy sameIf where
+optimizePatConditions = concatMap merge . groupBy sameIf where
   sameIf [JsIf cond1 _ _] [JsIf cond2 _ _] = cond1 == cond2
   sameIf _ _ = False
   merge xs@([JsIf cond _ _]:_) =

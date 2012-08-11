@@ -22,7 +22,7 @@ showToFay a = case reify a of
           Tuple xs -> "Fay$$tuple([" ++ intercalate "," (map convert xs) ++ "])"
           List xs -> "Fay$$list([" ++ intercalate "," (map convert xs) ++ "])"
           -- Not great:
-          Neg v -> "-" ++ convert v
+          Neg v -> '-' : convert v
           Ratio x y -> convert x ++ "/" ++ convert y
           Integer x -> x
           Float x -> x

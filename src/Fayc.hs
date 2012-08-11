@@ -43,8 +43,8 @@ helpTxt = unlines [
           "fayc -- The fay compiler from (a proper subset of) Haskell to Javascript"
         , "USAGE"
         , "  fayc [OPTIONS] [- | <hs-file>...]"
-        , "fayc - takes input on stdin and pretty prints to stdout. Requires js-beautify"
-        , "fayc <hs-file>... processes each .hs file"
+        , "  fayc - takes input on stdin and pretty prints to stdout. Requires js-beautify"
+        , "  fayc <hs-file>... processes each .hs file"
         ]
 
 main :: IO ()

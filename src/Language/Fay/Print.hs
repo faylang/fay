@@ -163,20 +163,30 @@ instance Printable JsExp where
 --------------------------------------------------------------------------------
 -- Utilities
 
+-- Words reserved in haskell as well are not needed here:
+-- case, class, do, else, if, import, in, let
+reservedWords :: [String]
+reservedWords = [
+  "break", "catch", "continue", "debugger", "delete", "enum", "export",
+  "extends", "finally", "for", "function", "implements", "instanceof",
+  "interface", "new", "null", "package", "private", "protected", "public",
+  "static", "super", "switch", "this", "throw", "try", "typeof", "undefined",
+  "var", "void", "while", "with", "yield"]
+
 -- | Encode a Haskell name to JavaScript.
 jsEncodeName :: String -> String
 -- Special symbols:
 jsEncodeName ":tmp" = "$tmp"
 jsEncodeName ":thunk" = "$"
 jsEncodeName ":this" = "this"
+-- jsEncodeName ":return" = "return"
 -- Used keywords:
-jsEncodeName "null" = "_$null"
-jsEncodeName "this" = "_$this"
+jsEncodeName name
+  | "$_" `isPrefixOf` name = name
+  | name `elem` reservedWords = "$_" ++ name
 -- Anything else.
 jsEncodeName name =
-  if "$_" `isPrefixOf` name
-     then name
-     else concatMap encode name
+  concatMap encode name
 
   where
     encode c | c `elem` allowed = [c]

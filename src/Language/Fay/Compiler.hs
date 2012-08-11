@@ -5,18 +5,31 @@
 module Language.Fay.Compiler where
 
 import           Control.Exception            (throw)
+import           Control.Monad
 import           Language.Fay                 (compileModule, compileViaStr)
 import           Language.Fay.Types
 import           Language.Haskell.Exts.Syntax
+import           System.FilePath
 import           Paths_fay
 
 -- | Compile file program to…
-compileFromTo :: CompileConfig -> Bool -> FilePath -> FilePath -> IO ()
-compileFromTo config autorun filein fileout = do
+compileFromTo :: CompileConfig -> Bool -> Bool -> FilePath -> FilePath -> IO ()
+compileFromTo config autorun htmlWrapper filein fileout = do
   result <- compileFile config autorun filein
   case result of
-    Right out -> writeFile fileout out
-    Left  err -> throw err
+    Right out -> do
+      writeFile fileout out
+      when htmlWrapper $
+        writeFile (replaceExtension fileout "html") $ unlines [
+            "<html>"
+          , "  <head>"
+          , "    <script type=\"text/javascript\" src=\"" ++ relativeJsPath ++ "\">"
+          , "    </script>"
+          , "  </head>"
+          , "  <body>"
+          , "  </body>"
+          , "</html>"] where relativeJsPath = makeRelative (dropFileName fileout) fileout
+    Left err -> throw err
 
 compileFile :: CompileConfig -> Bool -> FilePath -> IO (Either CompileError String)
 compileFile config autorun filein = do

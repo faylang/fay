@@ -57,7 +57,7 @@ generate = do
 
 generateJs = do
   putStrLn $ "Compiling " ++ inp ++ " to " ++ out ++ " ..."
-  compileFromTo def True inp out
+  compileFromTo def True False inp out
 
   where docs = ("docs" </>)
         inp = docs "home.hs"

@@ -40,11 +40,12 @@ data CompileConfig = CompileConfig
   , configFlattenApps       :: Bool
   , configExportBuiltins    :: Bool
   , configDirectoryIncludes :: [FilePath]
+  , configHtmlWrapper       :: Bool
   } deriving (Show)
 
 -- | Default configuration.
 instance Default CompileConfig where
-  def = CompileConfig False False False True []
+  def = CompileConfig False False False True [] False
 
 -- | State of the compiler.
 data CompileState = CompileState

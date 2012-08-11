@@ -29,10 +29,11 @@ main = do
                         , configExportBuiltins = not (elem "no-export-builtins" opts)
                         , configDirectoryIncludes = maybe [] (split ',') (lookup "include" paramOpts)
                         }
-        (elem "autorun" opts)
+        ("autorun" `elem` opts)
+        ("html-wrapper" `elem` opts)
         file
         (fromMaybe (toJsName file) $ lookup "output" paramOpts)
-    where
+  where
       -- | "12,34,5" => ["12","34","5"]
       split :: Eq a => a -> [a] -> [[a]]
       split _ [] = []
@@ -49,6 +50,8 @@ helpText = unlines
   ,"  -inline-force  inline forcing, adds some speed for numbers, blows up code a bit"
   ,"  -flatten-apps  flatten function application, can be more readable,"
   ,"                 no noticeable speed difference"
+  ,"  -html-wrapper  creates a html file in the same directory as the output that loads"
+  ,"                 the compiled file"
   ,"  --include=dir1[, ..]"
   ,"                 looks in these additional directories for imports"
   ,"  --output=file  places the resulting file in this location"

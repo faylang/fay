@@ -2,6 +2,7 @@
 
 module System.Process.Extra where
 
+import           Control.Monad
 import           System.Exit
 import           System.IO
 import           System.Process
@@ -14,3 +15,10 @@ readAllFromProcess program file = do
   case code of
     ExitSuccess -> fmap Right (hGetContents out)
     ExitFailure _ -> fmap Left (hGetContents err)
+
+readAllFromProcess' :: FilePath -> [String] -> String -> IO (Either String String)
+readAllFromProcess' program flags input = do
+  (code,out,err) <- readProcessWithExitCode program flags input
+  case code of
+    ExitSuccess -> return $ Right out
+    ExitFailure _ -> return $ Left err

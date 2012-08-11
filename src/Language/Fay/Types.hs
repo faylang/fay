@@ -40,7 +40,7 @@ data CompileConfig = CompileConfig
   , configFlattenApps       :: Bool
   , configExportBuiltins    :: Bool
   , configDirectoryIncludes :: [FilePath]
-  , configHtmlWrapper       :: Bool
+  , configPrettyPrint       :: Bool
   } deriving (Show)
 
 -- | Default configuration.

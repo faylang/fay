@@ -4,18 +4,19 @@
 
 module Language.Fay.Compiler where
 
+import           Control.Applicative
 import           Control.Exception            (throw)
 import           Control.Monad
-import           Language.Fay                 (compileModule, compileViaStr)
+import           Language.Fay                 (compileModule, compileViaStr, prettyPrintString)
 import           Language.Fay.Types
 import           Language.Haskell.Exts.Syntax
 import           System.FilePath
 import           Paths_fay
 
 -- | Compile file program to…
-compileFromTo :: CompileConfig -> Bool -> Bool -> FilePath -> FilePath -> IO ()
-compileFromTo config autorun htmlWrapper filein fileout = do
-  result <- compileFile config autorun filein
+compileFromTo :: CompileConfig -> Bool -> Bool -> Bool -> FilePath -> FilePath -> IO ()
+compileFromTo config autorun htmlWrapper prettyPrint filein fileout = do
+  result <- compileFile config autorun prettyPrint filein
   case result of
     Right out -> do
       writeFile fileout out
@@ -31,8 +32,8 @@ compileFromTo config autorun htmlWrapper filein fileout = do
           , "</html>"] where relativeJsPath = makeRelative (dropFileName fileout) fileout
     Left err -> throw err
 
-compileFile :: CompileConfig -> Bool -> FilePath -> IO (Either CompileError String)
-compileFile config autorun filein = do
+compileFile :: CompileConfig -> Bool -> Bool -> FilePath -> IO (Either CompileError String)
+compileFile config autorun prettyPrint filein = do
   runtime <- getDataFileName "js/runtime.js"
   stdlibpath <- getDataFileName "hs/stdlib.hs"
   stdlibpathprelude <- getDataFileName "src/Language/Fay/Stdlib.hs"
@@ -42,6 +43,7 @@ compileFile config autorun filein = do
   hscode <- readFile filein
   compileProgram config
                  autorun
+                 prettyPrint
                  raw
                  compileModule
                  (hscode ++ "\n" ++ stdlib ++ "\n" ++ strip stdlibprelude)
@@ -50,16 +52,16 @@ compileFile config autorun filein = do
 
 -- | Compile the given module to a runnable program.
 compileProgram :: (Show from,Show to,CompilesTo from to)
-               => CompileConfig -> Bool -> String -> (from -> Compile to) -> String
+               => CompileConfig -> Bool -> Bool -> String -> (from -> Compile to) -> String
                -> IO (Either CompileError String)
-compileProgram config autorun raw with hscode = do
+compileProgram config autorun prettyPrint raw with hscode = do
   result <- compileViaStr config with hscode
   case result of
     Left err -> return (Left err)
     Right (jscode,state) -> do
       let (ModuleName modulename) = stateModuleName state
           exports                 = stateExports state
-      return (Right (unlines ["/** @constructor"
+      let result = (Right (unlines ["/** @constructor"
                              ,"*/"
                              ,"var " ++ modulename ++ " = function(){"
                              ,raw
@@ -82,6 +84,11 @@ compileProgram config autorun raw with hscode = do
                                               ]
                                  else ""
                              ]))
+      case result of
+        l@(Left _) -> return l
+        Right s -> if prettyPrint
+                     then Right <$> prettyPrintString s
+                     else return $ Right s
 
 -- | Print an this.x = x; export out.
 printExport :: Name -> String

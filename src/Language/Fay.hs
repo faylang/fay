@@ -29,9 +29,10 @@ import           Language.Haskell.Exts
 import           Safe
 import           System.FilePath ((</>))
 import           System.Directory (doesFileExist)
+import           System.Exit
+import           System.Process
 
 import qualified Language.JavaScript.Parser as JS
-import           System.Process.Extra
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -90,8 +91,7 @@ printCompile config with from = do
   result <- compileViaStr config with from
   case result of
     Left err -> print err
-    Right (ok,_) -> do writeFile "/tmp/x.js" ok
-                       prettyPrintFile "/tmp/x.js" >>= putStr
+    Right (ok,_) -> prettyPrintString ok >>= putStr
 
 -- | Compile a String of Fay and print it as beautified JavaScript.
 printTestCompile :: String -> IO ()
@@ -436,14 +436,14 @@ expand (JsApp (JsName (UnQual (Ident "_"))) xs) =
   fmap concat (mapM flatten xs)
 expand _ = Nothing
 
--- | Format a JS file using "js-beautify", or return the JS as-is if
+-- | Format a JS string using "js-beautify", or return the JS as-is if
 --   "js-beautify" is unavailable
-prettyPrintFile :: String -> IO String
-prettyPrintFile file =
-  readAllFromProcess "js-beautify" file
-  >>= either
-       (\_ -> readFile file >>= (\js -> return $ js ++ "\n"))
-       return
+prettyPrintString :: String -> IO String
+prettyPrintString contents = do
+  (code,out,_) <- readProcessWithExitCode "js-beautify"  ["--stdin"] contents
+  case code of
+    ExitSuccess -> return out
+    ExitFailure _ -> return $ contents ++ "\n"
 
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp

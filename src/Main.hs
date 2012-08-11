@@ -28,9 +28,11 @@ main = do
                         , configFlattenApps = elem "flatten-apps" opts
                         , configExportBuiltins = not (elem "no-export-builtins" opts)
                         , configDirectoryIncludes = maybe [] (split ',') (lookup "include" paramOpts)
+                        , configPrettyPrint = elem "pretty" opts
                         }
         ("autorun" `elem` opts)
         ("html-wrapper" `elem` opts)
+        ("pretty" `elem` opts)
         file
         (fromMaybe (toJsName file) $ lookup "output" paramOpts)
   where
@@ -52,6 +54,7 @@ helpText = unlines
   ,"                 no noticeable speed difference"
   ,"  -html-wrapper  creates a html file in the same directory as the output that loads"
   ,"                 the compiled file"
+  ,"  -pretty        pretty prints the file using js-beautify if it's available"
   ,"  --include=dir1[, ..]"
   ,"                 looks in these additional directories for imports"
   ,"  --output=file  places the resulting file in this location"

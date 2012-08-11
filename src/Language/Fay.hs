@@ -485,7 +485,8 @@ compileExp :: Exp -> Compile JsExp
 compileExp exp =
   case exp of
     Paren exp                     -> compileExp exp
-    Var (UnQual (Ident "return")) -> return (JsName (hjIdent "return"))
+-- Commented out: See #59
+--    Var (UnQual (Ident "return")) -> return (JsName (hjIdent "return"))
     Var qname                     -> return (JsName qname)
     Lit lit                       -> compileLit lit
     App exp1 exp2                 -> compileApp exp1 exp2

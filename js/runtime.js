@@ -77,6 +77,9 @@ var Fay$$unit = null;
 function Fay$$return(a){
     return new Fay$$Monad(a);
 }
+// FIXME: Define from Fay instead, in case we change the encoding of
+// names (e.g. from $_return to $$$_return or w/e). See #59.
+var $_return = Fay$$return;
 
 /*******************************************************************************
  * Serialization.

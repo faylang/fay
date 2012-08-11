@@ -171,7 +171,7 @@ reservedWords = [
   "extends", "finally", "for", "function", "implements", "instanceof",
   "interface", "new", "null", "package", "private", "protected", "public",
   "static", "super", "switch", "this", "throw", "try", "typeof", "undefined",
-  "var", "void", "while", "with", "yield"]
+  "var", "void", "while", "with", "yield", "return"]
 
 -- | Encode a Haskell name to JavaScript.
 jsEncodeName :: String -> String

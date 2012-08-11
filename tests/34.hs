@@ -1,4 +1,6 @@
 main = do
+  let return = "return" in printS return
+  let null = "null" in printS null
   let break = "break" in printS break
   let catch = "catch" in printS catch
   let continue = "continue" in printS continue

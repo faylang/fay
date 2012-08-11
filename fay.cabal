@@ -189,6 +189,8 @@ executable fayc
   main-is:           Fayc.hs
   build-depends:     base >= 4 && < 5,
                      fay,
+                     filepath,
+                     directory,
                      mtl,
                      haskell-src-exts,
                      json,

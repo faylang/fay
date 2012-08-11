@@ -8,6 +8,7 @@ module Main where
 
 import           Language.Fay                (compileModule, compileViaStr)
 import           Language.Fay.Compiler       (compileFromTo)
+import           Language.Fay.Types          (CompileConfig (..))
 
 import           Control.Exception
 import           Control.Monad
@@ -57,7 +58,7 @@ generate = do
 
 generateJs = do
   putStrLn $ "Compiling " ++ inp ++ " to " ++ out ++ " ..."
-  compileFromTo def True False False inp out
+  compileFromTo def { configAutorun = True } inp out
 
   where docs = ("docs" </>)
         inp = docs "home.hs"

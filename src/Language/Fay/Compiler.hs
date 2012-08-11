@@ -14,13 +14,13 @@ import           System.FilePath
 import           Paths_fay
 
 -- | Compile file program to…
-compileFromTo :: CompileConfig -> Bool -> Bool -> Bool -> FilePath -> FilePath -> IO ()
-compileFromTo config autorun htmlWrapper prettyPrint filein fileout = do
-  result <- compileFile config autorun prettyPrint filein
+compileFromTo :: CompileConfig -> FilePath -> FilePath -> IO ()
+compileFromTo config filein fileout = do
+  result <- compileFile config filein
   case result of
     Right out -> do
       writeFile fileout out
-      when htmlWrapper $
+      when (configHtmlWrapper config) $
         writeFile (replaceExtension fileout "html") $ unlines [
             "<html>"
           , "  <head>"
@@ -32,8 +32,8 @@ compileFromTo config autorun htmlWrapper prettyPrint filein fileout = do
           , "</html>"] where relativeJsPath = makeRelative (dropFileName fileout) fileout
     Left err -> throw err
 
-compileFile :: CompileConfig -> Bool -> Bool -> FilePath -> IO (Either CompileError String)
-compileFile config autorun prettyPrint filein = do
+compileFile :: CompileConfig -> FilePath -> IO (Either CompileError String)
+compileFile config filein = do
   runtime <- getDataFileName "js/runtime.js"
   stdlibpath <- getDataFileName "hs/stdlib.hs"
   stdlibpathprelude <- getDataFileName "src/Language/Fay/Stdlib.hs"
@@ -42,8 +42,6 @@ compileFile config autorun prettyPrint filein = do
   stdlibprelude <- readFile stdlibpathprelude
   hscode <- readFile filein
   compileProgram config
-                 autorun
-                 prettyPrint
                  raw
                  compileModule
                  (hscode ++ "\n" ++ stdlib ++ "\n" ++ strip stdlibprelude)
@@ -52,9 +50,9 @@ compileFile config autorun prettyPrint filein = do
 
 -- | Compile the given module to a runnable program.
 compileProgram :: (Show from,Show to,CompilesTo from to)
-               => CompileConfig -> Bool -> Bool -> String -> (from -> Compile to) -> String
+               => CompileConfig -> String -> (from -> Compile to) -> String
                -> IO (Either CompileError String)
-compileProgram config autorun prettyPrint raw with hscode = do
+compileProgram config raw with hscode = do
   result <- compileViaStr config with hscode
   case result of
     Left err -> return (Left err)
@@ -77,7 +75,7 @@ compileProgram config autorun prettyPrint raw with hscode = do
                                               ]
                                  else ""
                              ,"};"
-                             ,if autorun
+                             ,if configAutorun config
                                  then unlines [";"
                                               ,"var main = new " ++ modulename ++ "();"
                                               ,"main._(main.main);"
@@ -86,7 +84,7 @@ compileProgram config autorun prettyPrint raw with hscode = do
                              ]))
       case result of
         l@(Left _) -> return l
-        Right s -> if prettyPrint
+        Right s -> if configPrettyPrint config
                      then Right <$> prettyPrintString s
                      else return $ Right s
 

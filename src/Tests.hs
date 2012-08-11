@@ -6,6 +6,7 @@
 module Main where
 
 import           Language.Fay.Compiler
+import           Language.Fay.Types
 
 import           Control.Monad
 import           Data.Default
@@ -34,7 +35,7 @@ runUnitTests = do
               let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
                   out = toJsName file
               outExists <- doesFileExist root
-              compileFromTo def True False False file out
+              compileFromTo def { configAutorun = True } file out
               result <- runJavaScriptFile out
               if outExists
                  then do output <- readFile root

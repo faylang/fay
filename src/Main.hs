@@ -29,10 +29,9 @@ main = do
                         , configExportBuiltins = not (elem "no-export-builtins" opts)
                         , configDirectoryIncludes = maybe [] (split ',') (lookup "include" paramOpts)
                         , configPrettyPrint = elem "pretty" opts
+                        , configAutorun = elem "autorun" opts
+                        , configHtmlWrapper = elem "html-wrapper" opts
                         }
-        ("autorun" `elem` opts)
-        ("html-wrapper" `elem` opts)
-        ("pretty" `elem` opts)
         file
         (fromMaybe (toJsName file) $ lookup "output" paramOpts)
   where

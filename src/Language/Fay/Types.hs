@@ -41,11 +41,13 @@ data CompileConfig = CompileConfig
   , configExportBuiltins    :: Bool
   , configDirectoryIncludes :: [FilePath]
   , configPrettyPrint       :: Bool
+  , configHtmlWrapper       :: Bool
+  , configAutorun           :: Bool
   } deriving (Show)
 
 -- | Default configuration.
 instance Default CompileConfig where
-  def = CompileConfig False False False True [] False
+  def = CompileConfig False False False True [] False False False
 
 -- | State of the compiler.
 data CompileState = CompileState

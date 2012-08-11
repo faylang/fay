@@ -123,7 +123,9 @@ library
                      blaze-html,
                      blaze-markup,
                      bytestring,
-                     time
+                     time,
+                     options >= 0.1,
+                     transformers
 
 executable fay
   hs-source-dirs:    src
@@ -181,3 +183,20 @@ executable fay-docs
                      data-default,
                      safe,
                      language-javascript
+executable fayc
+  hs-source-dirs:    src
+  ghc-options:       -O2
+  main-is:           Fayc.hs
+  build-depends:     base >= 4 && < 5,
+                     fay,
+                     filepath,
+                     directory,
+                     mtl,
+                     haskell-src-exts,
+                     json,
+                     process,
+                     data-default,
+                     safe,
+                     language-javascript,
+                     options >= 0.1,
+                     transformers

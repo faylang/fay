@@ -9,8 +9,11 @@ import           Control.Monad
 import           Language.Fay                 (compileModule, compileViaStr)
 import           Language.Fay.Types
 import           Language.Haskell.Exts.Syntax
-import           System.FilePath
 import           Paths_fay
+import           System.FilePath
+
+type Writer = String -> IO ()
+type Reader = IO String
 
 -- | Compile file program to…
 compileFromTo :: CompileConfig -> Bool -> Bool -> FilePath -> FilePath -> IO ()
@@ -45,6 +48,33 @@ compileFile config autorun filein = do
                  raw
                  compileModule
                  (hscode ++ "\n" ++ stdlib ++ "\n" ++ strip stdlibprelude)
+
+
+  where strip = unlines . dropWhile (/="-- START") . lines
+
+-- =======
+-- compileFromTo :: CompileConfig -> Bool -> FilePath -> FilePath -> IO ()
+-- compileFromTo config autorun filein fileout = compile config autorun reader writer
+--   where writer = writeFile fileout
+--         reader = readFile filein
+
+compile :: CompileConfig -> Bool -> Reader -> Writer -> IO ()
+compile config autorun reader writer = do
+  runtime <- getDataFileName "js/runtime.js"
+  stdlibpath <- getDataFileName "hs/stdlib.hs"
+  stdlibpathprelude <- getDataFileName "src/Language/Fay/Stdlib.hs"
+  raw <- readFile runtime
+  stdlib <- readFile stdlibpath
+  stdlibprelude <- readFile stdlibpathprelude
+  hscode <- reader
+  result <- compileProgram config
+                           autorun
+                           raw
+                           compileModule
+                           (hscode ++ "\n" ++ stdlib ++ "\n" ++ strip stdlibprelude)
+  case result of
+    Right out -> writer out
+    Left  err -> throw err
 
   where strip = unlines . dropWhile (/="-- START") . lines
 

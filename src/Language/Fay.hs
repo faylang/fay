@@ -147,7 +147,11 @@ compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) =
   cfg <- config id
   result <- liftIO $ compileToAst cfg compileModule contents
   case result of
-    Right (stmts,_) -> return stmts
+    Right (stmts,state) -> do
+      -- Merges the state gotten from compiling an imported module with the current state.
+      -- We can assume no duplicate records exist since GHC would pick that up.
+      modify $ \s -> s { stateRecords = stateRecords state ++ stateRecords s }
+      return stmts
     Left err -> throwError err
 compileImport i =
   error $ "Import syntax not supported. " ++
@@ -829,8 +833,11 @@ compilePApp cons pats exp body = do
     -- Everything else, generic:
     _ -> do
       rf <- lookup (Ident (qname cons)) <$> gets stateRecords
-      recordFields <- return $ fromMaybe
-                        (error "Record name was not found in stateRecords, should be impossible") rf
+      let recordFields =
+            fromMaybe
+              (error $ "Constructor '" ++ qname cons ++
+                       "' was not found in stateRecords, did you try running this through GHC first?")
+              rf
       substmts <- foldM (\body (Ident field,pat) ->
                              compilePat (JsGetProp forcedExp (fromString field)) pat body)
                   body

@@ -1,8 +1,14 @@
+{-# LANGUAGE EmptyDataDecls    #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+
+import Language.Fay.FFI
+import Language.Fay.Prelude
+
 main = do
-  let return = "return" in printS return
-  let null = "null" in printS null
+  -- All reserved words
   let break = "break" in printS break
   let catch = "catch" in printS catch
+  let const = "const" in printS const
   let continue = "continue" in printS continue
   let debugger = "debugger" in printS debugger
   let delete = "delete" in printS delete
@@ -16,10 +22,12 @@ main = do
   let instanceof = "instanceof" in printS instanceof
   let interface = "interface" in printS interface
   let new = "new" in printS new
+  let null = "null" in printS null
   let package = "package" in printS package
   let private = "private" in printS private
   let protected = "protected" in printS protected
   let public = "public" in printS public
+  let return = "return" in printS return
   let static = "static" in printS static
   let super = "super" in printS super
   let switch = "switch" in printS switch
@@ -34,5 +42,8 @@ main = do
   let with = "with" in printS with
   let yield = "yield" in printS yield
 
+  printS ""
+  -- Stdlib functions that need to be encoded
+  printS $ const "stdconst" 2
 printS :: String -> Fay ()
 printS = ffi "console.log(%1)"

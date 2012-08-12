@@ -31,7 +31,8 @@ module Language.Fay.Stdlib
   ,intercalate
   ,forM_
   ,mapM_
-  ,when)
+  ,when
+  ,const)
   where
 
 import           Prelude (Bool(..), Maybe(..), Ord, return, (+), (<), (==), (>), (>>), (||))
@@ -158,3 +159,6 @@ forM_ []     _ = return ()
 
 mapM_ m (x:xs) = m x >> mapM_ m xs
 mapM_ _ []     = return ()
+
+const :: a -> b -> a
+const a _ = a

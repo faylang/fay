@@ -174,11 +174,11 @@ instance Printable JsExp where
 -- case, class, do, else, if, import, in, let
 reservedWords :: [String]
 reservedWords = [
-  "break", "catch", "continue", "debugger", "delete", "enum", "export",
+  "break", "catch", "const", "continue", "debugger", "delete", "enum", "export",
   "extends", "finally", "for", "function", "implements", "instanceof",
-  "interface", "new", "null", "package", "private", "protected", "public",
+  "interface", "new", "null", "package", "private", "protected", "public", "return",
   "static", "super", "switch", "this", "throw", "try", "typeof", "undefined",
-  "var", "void", "while", "with", "yield", "return"]
+  "var", "void", "while", "with", "yield"]
 
 -- | Encode a Haskell name to JavaScript.
 jsEncodeName :: String -> String

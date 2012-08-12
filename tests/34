@@ -1,7 +1,6 @@
-return
-null
 break
 catch
+const
 continue
 debugger
 delete
@@ -15,10 +14,12 @@ implements
 instanceof
 interface
 new
+null
 package
 private
 protected
 public
+return
 static
 super
 switch
@@ -32,3 +33,5 @@ void
 while
 with
 yield
+
+stdconst

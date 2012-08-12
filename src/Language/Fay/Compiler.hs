@@ -11,6 +11,7 @@ import           Language.Fay                 (compileToplevelModule, compileVia
 import           Language.Fay.Types
 import           Language.Haskell.Exts.Syntax
 import           System.FilePath
+import           Text.Groom
 import           Paths_fay
 
 -- | Compile file program to…
@@ -30,7 +31,7 @@ compileFromTo config filein fileout = do
           , "  <body>"
           , "  </body>"
           , "</html>"] where relativeJsPath = makeRelative (dropFileName fileout) fileout
-    Left err -> throw err
+    Left err -> error . groom $ err
 
 compileFile :: CompileConfig -> FilePath -> IO (Either CompileError String)
 compileFile config filein = do

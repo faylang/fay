@@ -1,4 +1,5 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell  #-}
 -- | Main compiler executable.
 
 module Main where
@@ -8,18 +9,19 @@ import           Language.Fay.Compiler
 import           Language.Fay.Types
 
 import           Control.Arrow
+import qualified Control.Exception     as E
 import           Control.Monad
 import           Control.Monad.Error
 import           Control.Monad.IO
 import           Data.Default
 import           Data.List
 import           Data.Maybe
+import           GHC.IO.Exception      (userError)
 import           Options
 import           System.Environment
 import           System.Exit
 import           System.FilePath
 import           System.IO
-import           System.IO.Error
 import           System.Process
 
 -- / Options and help
@@ -57,18 +59,17 @@ defineOptions "FayCompilerOptions" $ do
                              , optionDescription = "Run javascript through js-beautify"
                                                  })
 
-helpTxt :: String
-helpTxt = unlines [
-          "fayc -- The fay compiler from (a proper subset of) Haskell to Javascript"
-        , "USAGE"
-        , "  fayc [OPTIONS] [- | <hs-file>...]"
-        , "  fayc - takes input on stdin and prints to stdout. Runs through js-beautify if available"
-        , "  fayc <hs-file>... processes each .hs file"
-        ]
+
+helpTxt = [ "fayc -- The fay compiler from (a proper subset of) Haskell to Javascript"
+          , "USAGE"
+          , "  fayc [OPTIONS] [- | <hs-file>...]"
+          , "  fayc - takes input on stdin and prints to stdout. Runs through js-beautify if available"
+          , "  fayc <hs-file>... processes each .hs file"
+          ]
 
 -- | Main entry point.
 main :: IO ()
-main = runCommandHelp helpTxt $ \opts files -> do
+main = runCommandHelp (unlines helpTxt) $ \opts files -> do
   let config = def { configTCO = False --optTCO opts
                    , configInlineForce = optInlineForce opts
                    , configFlattenApps = optFlattenApps opts
@@ -79,11 +80,14 @@ main = runCommandHelp helpTxt $ \opts files -> do
                    , configAutorun = optAutoRun opts
                    , configHtmlWrapper =  optHTMLWrapper opts
                    }
+  
+  E.catch (incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible")
+          errorUsage
 
   case files of
        ["-"] -> do
                hGetContents stdin >>= printCompile config compileModule
-
+       [] -> errorUsage $ userError "No files specified"
        otherwise -> forM_ files $ \file -> do
              if optStdout opts
                then compileReadWrite config file stdout
@@ -99,6 +103,12 @@ main = runCommandHelp helpTxt $ \opts files -> do
 
       outPutFile :: FayCompilerOptions -> String -> FilePath
       outPutFile opts file = fromMaybe (toJsName file) $ optOutput opts
+      
+      errorUsage :: IOError -> IO a
+      errorUsage e = do
+          putStrLn $ "ERROR: \n  " ++ (show e)
+          args <- getArgs
+          usageMsg args $ unlines $ drop 1 helpTxt
 
 runCommandHelp :: (MonadIO m, Options opts) => String -> (opts -> [String] -> m a) -> m a
 runCommandHelp help io = do
@@ -106,16 +116,30 @@ runCommandHelp help io = do
 	let parsed = parseOptions argv
 	case parsedOptions parsed of
 		Just opts -> io opts (parsedArguments parsed)
-		Nothing -> liftIO $ do
-                        putStrLn help
-                        case parsedError parsed of
-			    Just err -> do
-			    	hPutStrLn stderr (parsedHelp parsed)
-			    	hPutStrLn stderr err
-			    	exitFailure
-			    Nothing -> do
-			    	hPutStr stdout (parsedHelp parsed)
-			    	exitSuccess
+		Nothing -> liftIO $ usageMsg argv help
+
+usageMsg :: [String] -> String -> IO a
+usageMsg argv help = do
+    putStrLn help
+    let parsed = parseOptions argv :: ParsedOptions FayCompilerOptions
+    case parsedError parsed of
+        Just err -> do
+            hPutStrLn stderr (parsedHelp parsed)
+            hPutStrLn stderr err
+            exitFailure
+	Nothing -> do
+	    hPutStr stdout (parsedHelp parsed)
+	    exitSuccess
+
+htmlAndStdout :: FayCompilerOptions -> Bool
+htmlAndStdout opts = optHTMLWrapper opts && optStdout opts
+
+incompatible :: Monad m => (FayCompilerOptions -> Bool)
+                        -> FayCompilerOptions -> String -> m Bool
+incompatible test opts message = case test opts of
+             True -> E.throw $ userError message
+             False -> return True
+
 instance Writer Handle where
   writeout = hPutStr
 

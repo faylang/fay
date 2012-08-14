@@ -1,5 +1,7 @@
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE ViewPatterns          #-}
 
 module Language.Fay.Compiler where
@@ -10,10 +12,22 @@ import           Control.Monad
 import           Language.Fay                 (compileToplevelModule, compileViaStr, prettyPrintString)
 import           Language.Fay.Types
 import           Language.Haskell.Exts.Syntax
+import           Paths_fay
 import           System.FilePath
 import           Text.Groom
-import           Paths_fay
 
+
+class Writer a where
+  writeout :: a -> String -> IO ()
+
+class Reader a where
+  readin :: a -> IO String
+
+instance Writer FilePath where
+  writeout = writeFile
+
+instance Reader FilePath where
+  readin = readFile
 -- | Compile file program to…
 compileFromTo :: CompileConfig -> FilePath -> FilePath -> IO ()
 compileFromTo config filein fileout = do
@@ -33,7 +47,15 @@ compileFromTo config filein fileout = do
           , "</html>"] where relativeJsPath = makeRelative (dropFileName fileout) fileout
     Left err -> error . groom $ err
 
-compileFile :: CompileConfig -> FilePath -> IO (Either CompileError String)
+compileReadWrite :: (Reader r, Writer w) => CompileConfig -> r -> w -> IO ()
+compileReadWrite config reader writer = do
+  result <- compileFile config reader
+  case result of
+    Right out -> do
+      writeout writer out
+    Left err -> error . groom $ err
+
+compileFile :: (Reader r) => CompileConfig -> r -> IO (Either CompileError String)
 compileFile config filein = do
   runtime <- getDataFileName "js/runtime.js"
   stdlibpath <- getDataFileName "hs/stdlib.hs"
@@ -41,7 +63,7 @@ compileFile config filein = do
   raw <- readFile runtime
   stdlib <- readFile stdlibpath
   stdlibprelude <- readFile stdlibpathprelude
-  hscode <- readFile filein
+  hscode <- readin filein
   compileProgram config
                  raw
                  compileToplevelModule

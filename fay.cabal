@@ -124,7 +124,8 @@ library
                      blaze-markup,
                      bytestring,
                      time,
-                     groom
+                     groom,
+                     options
 
 executable fay
   hs-source-dirs:    src
@@ -140,7 +141,8 @@ executable fay
                      language-javascript,
                      directory,
                      filepath,
-                     groom
+                     groom,
+                     options
 
 executable fay-tests
   if !flag(devel)

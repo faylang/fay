@@ -2,7 +2,7 @@
 
 module System.Process.Extra where
 
-import           Control.Monad
+
 import           System.Exit
 import           System.IO
 import           System.Process

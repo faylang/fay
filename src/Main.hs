@@ -1,3 +1,5 @@
+{-# OPTIONS -fno-warn-orphans #-}
+{-# OPTIONS -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell  #-}
 -- | Main compiler executable.
@@ -8,24 +10,17 @@ import           Language.Fay
 import           Language.Fay.Compiler
 import           Language.Fay.Types
 
-import           Control.Arrow
 import qualified Control.Exception     as E
 import           Control.Monad
 import           Control.Monad.Error
-import           Control.Monad.IO
 import           Data.Default
-import           Data.List
 import           Data.Maybe
-import           GHC.IO.Exception      (userError)
 import           Options
 import           System.Environment
 import           System.Exit
-import           System.FilePath
 import           System.IO
-import           System.Process
 
--- / Options and help
-
+-- | Options and help.
 defineOptions "FayCompilerOptions" $ do
 
   -- boolOption "optExportBuiltins" "export-builtins" True ""
@@ -59,18 +54,20 @@ defineOptions "FayCompilerOptions" $ do
                              , optionDescription = "Run javascript through js-beautify"
                                                  })
 
-
-helpTxt = [ "fayc -- The fay compiler from (a proper subset of) Haskell to Javascript"
-          , "USAGE"
-          , "  fayc [OPTIONS] [- | <hs-file>...]"
-          , "  fayc - takes input on stdin and prints to stdout. Runs through js-beautify if available"
-          , "  fayc <hs-file>... processes each .hs file"
-          ]
+-- | The basic help text.
+helpTxt :: [String]
+helpTxt =
+  ["fay -- The fay compiler from (a proper subset of) Haskell to Javascript"
+  ,"USAGE"
+  ,"  fay [OPTIONS] [- | <hs-file>...]"
+  ,"  fay - takes input on stdin and prints to stdout. Runs through js-beautify if available"
+  ,"  fay <hs-file>... processes each .hs file"
+  ]
 
 -- | Main entry point.
 main :: IO ()
 main = runCommandHelp (unlines helpTxt) $ \opts files -> do
-  let config = def { configTCO = False --optTCO opts
+  let config = def { configTCO = False -- optTCO opts
                    , configInlineForce = optInlineForce opts
                    , configFlattenApps = optFlattenApps opts
                    , configExportBuiltins = True -- optExportBuiltins opts
@@ -80,35 +77,30 @@ main = runCommandHelp (unlines helpTxt) $ \opts files -> do
                    , configAutorun = optAutoRun opts
                    , configHtmlWrapper =  optHTMLWrapper opts
                    }
-  
-  E.catch (incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible")
-          errorUsage
+
+  _ <- E.catch (incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible")
+               errorUsage
 
   case files of
        ["-"] -> do
                hGetContents stdin >>= printCompile config compileModule
        [] -> errorUsage $ userError "No files specified"
-       otherwise -> forM_ files $ \file -> do
-             if optStdout opts
-               then compileReadWrite config file stdout
-               else
-                  compileFromTo config file $ outPutFile opts file
+       _  -> forM_ files $ \file -> do
+               if optStdout opts
+                 then compileReadWrite config file stdout
+                 else
+                    compileFromTo config file $ outPutFile opts file
 
 
   where
-      -- | "12,34,5" => ["12","34","5"]
-      split :: Eq a => a -> [a] -> [[a]]
-      split _ [] = []
-      split a as = takeWhile (/= a) as : split a (drop 1 $ dropWhile (/= a) as)
+    outPutFile :: FayCompilerOptions -> String -> FilePath
+    outPutFile opts file = fromMaybe (toJsName file) $ optOutput opts
 
-      outPutFile :: FayCompilerOptions -> String -> FilePath
-      outPutFile opts file = fromMaybe (toJsName file) $ optOutput opts
-      
-      errorUsage :: IOError -> IO a
-      errorUsage e = do
-          putStrLn $ "ERROR: \n  " ++ (show e)
-          args <- getArgs
-          usageMsg args $ unlines $ drop 1 helpTxt
+    errorUsage :: IOError -> IO a
+    errorUsage e = do
+        putStrLn $ "ERROR: \n  " ++ (show e)
+        args <- getArgs
+        usageMsg args $ unlines $ drop 1 helpTxt
 
 runCommandHelp :: (MonadIO m, Options opts) => String -> (opts -> [String] -> m a) -> m a
 runCommandHelp help io = do

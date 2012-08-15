@@ -12,10 +12,10 @@ import           Control.Monad
 import           Data.Default
 import           Data.List
 import           System.Directory
-import           System.Exit
+
 import           System.FilePath
-import           System.IO
-import           System.Process
+
+
 import           System.Process.Extra
 import           Test.HUnit
 

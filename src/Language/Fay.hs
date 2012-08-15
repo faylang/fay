@@ -10,7 +10,16 @@
 -- | The Haskell→Javascript compiler.
 
 module Language.Fay
-
+  (compile
+  ,runCompile
+  ,compileViaStr
+  ,compileToAst
+  ,compileFromStr
+  ,compileModule
+  ,printCompile
+  ,printTestCompile
+  ,compileToplevelModule
+  ,prettyPrintString)
   where
 
 import           Language.Fay.Print         ()
@@ -98,7 +107,6 @@ printCompile config with from = do
 -- | Compile a String of Fay and print it as beautified JavaScript.
 printTestCompile :: String -> IO ()
 printTestCompile = printCompile def compileToplevelModule
-
 
 --------------------------------------------------------------------------------
 -- Compilers
@@ -302,8 +310,12 @@ argType t =
     TyList x              -> ListType (argType x)
     TyParen st            -> argType st
     TyApp op arg          -> userDefined (reverse (arg : expandApp op))
-    TyCon (UnQual user)   -> UserDefined user []
-    _                     -> UnknownType
+    _                     ->
+      -- No semantic point to this, merely to avoid GHC's broken
+      -- warning.
+      case t of
+        TyCon (UnQual user)   -> UserDefined user []
+        _ -> UnknownType
 
 -- | Generate a user-defined type.
 userDefined :: [Type] -> FundamentalType
@@ -579,26 +591,6 @@ compileGuards (GuardedRhs _ (Qualifier guard:_) exp : rest) =
               <*> compileExp exp
               <*> compileGuards rest
 compileGuards rhss = throwError . UnsupportedRhs . GuardedRhss $ rhss
-
--- | Compile a pattern match binding.
-compileFunMatch :: Bool -> Match -> Compile [JsStmt]
-compileFunMatch toplevel match =
-  case match of
-    (Match _ name args Nothing (UnGuardedRhs rhs) _) -> do
-      body <- compileExp rhs
-      args <- mapM patToArg args
-      bind <- bindToplevel toplevel
-                           (UnQual name)
-                           (foldr (\arg inner -> JsFun [arg] [] (Just inner))
-                                  (thunk body)
-                                  args)
-      return [bind]
-    match -> throwError (UnsupportedMatchSyntax match)
-
-  where patToArg (PVar name) = return (UnQual name)
-        patToArg _           = throwError (UnsupportedMatchSyntax match)
-
-instance CompilesTo Decl [JsStmt] where compileTo = compileDecl False
 
 -- | Compile Haskell expression.
 compileExp :: Exp -> Compile JsExp
@@ -973,10 +965,6 @@ thunk exp =
     JsApp fun@JsFun{} [] -> JsNew ":thunk" [fun]
     -- Otherwise make a regular thunk.
     _ -> JsNew ":thunk" [JsFun [] [] (Just exp)]
-
--- | Wrap an expression in a thunk.
-monad :: JsExp -> JsExp
-monad exp = JsNew (hjIdent "Monad") [exp]
 
 -- | Wrap an expression in a thunk.
 stmtsThunk :: [JsStmt] -> JsExp

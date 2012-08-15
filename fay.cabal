@@ -104,7 +104,7 @@ library
   hs-source-dirs:    src
   exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude, Language.Fay.Show, Language.Fay.Compiler
   other-modules:     Language.Fay.Print, Control.Monad.IO, Language.Fay.Stdlib, System.Process.Extra, Paths_fay
-  ghc-options:       -O2
+  ghc-options:       -O2 -Wall
   build-depends:     base >= 4 && < 5,
                      mtl,
                      haskell-src-exts,
@@ -129,7 +129,7 @@ library
 
 executable fay
   hs-source-dirs:    src
-  ghc-options:       -O2
+  ghc-options:       -O2 -Wall
   main-is:           Main.hs
   build-depends:     base >= 4 && < 5,
                      mtl,
@@ -148,7 +148,7 @@ executable fay-tests
   if !flag(devel)
     buildable:       False
   hs-source-dirs:    src
-  ghc-options:       -O2
+  ghc-options:       -O2 -Wall
   main-is:           Tests.hs
   other-modules:     Language.Fay.Compiler
   build-depends:     base >= 4 && < 5,
@@ -168,7 +168,7 @@ executable fay-docs
   if !flag(devel)
     buildable:       False
   hs-source-dirs:    src
-  ghc-options:       -O2
+  ghc-options:       -O2 -Wall
   main-is:           Docs.hs
   other-modules:     Text.Blaze.Extra
   build-depends:     base >= 4 && < 5,

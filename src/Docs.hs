@@ -15,10 +15,10 @@ import           Control.Monad
 import qualified Data.ByteString.Lazy        as L
 import           Data.Char
 import           Data.Default
-import           Data.List                   (isSuffixOf, sort)
+
 import           Data.Time
 import           Prelude                     hiding (div, head)
-import           System.Directory
+
 import           System.FilePath
 import           Text.Blaze.Extra
 import           Text.Blaze.Html5            as H hiding (contents, map, style)
@@ -47,7 +47,7 @@ generate = do
           putStrLn $ "Compiling " ++ file ++ " ..."
           result <- compileViaStr def compileModule contents
           case result of
-            Right (javascript,state) -> return javascript
+            Right (javascript,_) -> return javascript
             Left err -> throw err
         titlize = takeWhile (/='.') . upperize . takeFileName
           where upperize (x:xs) = toUpper x : xs

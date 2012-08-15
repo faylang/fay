@@ -6,15 +6,15 @@
 
 module Language.Fay.Compiler where
 
-import           Control.Applicative
-import           Control.Exception            (throw)
-import           Control.Monad
-import           Language.Fay                 (compileToplevelModule, compileViaStr, prettyPrintString)
-import           Language.Fay.Types
-import           Language.Haskell.Exts.Syntax
-import           Paths_fay
-import           System.FilePath
-import           Text.Groom
+import Language.Fay                 (compileToplevelModule,compileViaStr,prettyPrintString)
+import Language.Fay.Types
+
+
+import Control.Monad
+import Language.Haskell.Exts.Syntax
+import Paths_fay
+import System.FilePath
+import Text.Groom
 
 
 class Writer a where
@@ -37,7 +37,8 @@ compileFromTo config filein fileout = do
       writeFile fileout out
       when (configHtmlWrapper config) $
         writeFile (replaceExtension fileout "html") $ unlines [
-            "<html>"
+            "<doctype !html>"
+          , "<html>"
           , "  <head>"
           , "    <script type=\"text/javascript\" src=\"" ++ relativeJsPath ++ "\">"
           , "    </script>"
@@ -79,37 +80,36 @@ compileProgram config raw with hscode = do
   result <- compileViaStr config with hscode
   case result of
     Left err -> return (Left err)
-    Right (jscode,state) -> do
-      let (ModuleName modulename) = stateModuleName state
-          exports                 = stateExports state
-      let result = (Right (unlines ["/** @constructor"
-                             ,"*/"
-                             ,"var " ++ modulename ++ " = function(){"
-                             ,raw
-                             ,jscode
-                             ,"// Exports"
-                             ,unlines (map printExport exports)
-                             ,"// Built-ins"
-                             ,"this._ = _;"
-                             ,if configExportBuiltins config
-                                 then unlines ["this.$           = $;"
-                                              ,"this.$fayToJs    = Fay$$fayToJs;"
-                                              ,"this.$jsToFay    = Fay$$jsToFay;"
-                                              ]
-                                 else ""
-                             ,"};"
-                             ,if configAutorun config
-                                 then unlines [";"
-                                              ,"var main = new " ++ modulename ++ "();"
-                                              ,"main._(main.main);"
-                                              ]
-                                 else ""
-                             ]))
-      case result of
-        l@(Left _) -> return l
-        Right s -> if configPrettyPrint config
-                     then Right <$> prettyPrintString s
-                     else return $ Right s
+    Right (jscode,state) -> fmap Right $
+      let out = generate jscode (stateExports state) (stateModuleName state)
+      in if configPrettyPrint config
+            then prettyPrintString out
+            else return out
+
+  where generate jscode exports (ModuleName modulename) = unlines
+          ["/** @constructor"
+          ,"*/"
+          ,"var " ++ modulename ++ " = function(){"
+          ,raw
+          ,jscode
+          ,"// Exports"
+          ,unlines (map printExport exports)
+          ,"// Built-ins"
+          ,"this._ = _;"
+          ,if configExportBuiltins config
+              then unlines ["this.$           = $;"
+                           ,"this.$fayToJs    = Fay$$fayToJs;"
+                           ,"this.$jsToFay    = Fay$$jsToFay;"
+                           ]
+              else ""
+          ,"};"
+          ,if configAutorun config
+              then unlines [";"
+                           ,"var main = new " ++ modulename ++ "();"
+                           ,"main._(main.main);"
+                           ]
+              else ""
+          ]
 
 -- | Print an this.x = x; export out.
 printExport :: Name -> String

@@ -1,58 +1,67 @@
 module Language.Fay.Stdlib
   (($)
-  ,snd
-  ,fst
-  ,find
-  ,any
-  ,filter
-  ,not
-  ,null
-  ,map
-  ,nub
-  ,elem
-  ,Ordering(..)
-  ,sort
-  ,compare
-  ,sortBy
-  ,insertBy
-  ,enumFrom
-  ,zipWith
-  ,zip
-  ,flip
-  ,maybe
-  ,(.)
   ,(++)
+  ,(.)
+  ,Ordering(..)
+  ,any
+  ,compare
   ,concat
-  ,foldr
+  ,const
+  ,elem
+  ,enumFrom
+  ,enumFromTo
+  ,filter
+  ,find
+  ,flip
   ,foldl
-  ,lookup
-  ,intersperse
-  ,prependToAll
-  ,intercalate
+  ,foldr
   ,forM_
+  ,fst
+  ,insertBy
+  ,intercalate
+  ,intersperse
+  ,lookup
+  ,map
   ,mapM_
+  ,maybe
+  ,not
+  ,nub
+  ,null
+  ,prependToAll
+  ,snd
+  ,sort
+  ,sortBy
   ,when
-  ,const)
+  ,zip
+  ,zipWith)
   where
 
-import           Prelude (Bool(..), Maybe(..), Ord, return, (+), (<), (==), (>), (>>), (||))
+import Prelude (Bool(..),Maybe(..),Ord((>),(<)),Eq(..),Monad(..),Num(..),(||))
 
 -- START
 
+snd :: (t, t1) -> t1
 snd (_,x) = x
+
+fst :: (t, t1) -> t
 fst (x,_) = x
 
+find :: (a -> Bool) -> [a] -> Maybe a
 find p (x:xs) = if p x then Just x else find p xs
-find p [] = Nothing
+find _ [] = Nothing
 
+any :: (t -> Bool) -> [t] -> Bool
 any p (x:xs) = if p x then True else any p xs
-any p [] = False
+any _ [] = False
 
+filter :: (a -> Bool) -> [a] -> [a]
 filter p (x:xs) = if p x then x : filter p xs else filter p xs
 filter _ []     = []
 
+not :: Bool -> Bool
 not p = if p then False else True
 
+null :: [t] -> Bool
 null [] = True
 null _ = False
 
@@ -60,22 +69,26 @@ map :: (a -> b) -> [a] -> [b]
 map _ []     = []
 map f (x:xs) = f x : map f xs
 
+nub :: Eq a => [a] -> [a]
 nub ls = nub' ls []
 
+nub' :: Eq a => [a] -> [a] -> [a]
 nub' []     _ = []
 nub' (x:xs) ls =
   if elem x ls
      then nub' xs ls
      else x : nub' xs (x : ls)
 
+elem :: Eq a => a -> [a] -> Bool
 elem x (y:ys)   = x == y || elem x ys
 elem _ []       = False
 
 data Ordering = GT | LT | EQ
 
-sort :: (Ord a) => [a] -> [a]
+sort :: Ord a => [a] -> [a]
 sort = sortBy compare
 
+compare :: Ord a => a -> a -> Ordering
 compare x y =
   if x > y
      then GT
@@ -83,21 +96,27 @@ compare x y =
              then LT
              else EQ
 
+
+sortBy :: (t -> t -> Ordering) -> [t] -> [t]
 sortBy cmp = foldr (insertBy cmp) []
 
 insertBy :: (a -> a -> Ordering) -> a -> [a] -> [a]
 insertBy _   x [] = [x]
 insertBy cmp x ys =
   case ys of
+    [] -> [x]
     y:ys' ->
       case cmp x y of
          GT -> y : insertBy cmp x ys'
          _  -> x : ys
 
+when :: Monad m => Bool -> m a -> m ()
 when p m = if p then m >> return () else return ()
 
+enumFrom :: Num a => a -> [a]
 enumFrom i = i : enumFrom (i + 1)
 
+enumFromTo :: (Eq t, Num t) => t -> t -> [t]
 enumFromTo i n =
   if i == n
      then [i]
@@ -111,16 +130,21 @@ zip :: [a] -> [b] -> [(a,b)]
 zip (a:as) (b:bs) = (a,b) : zip as bs
 zip _      _      = []
 
+flip :: (t1 -> t2 -> t) -> t2 -> t1 -> t
 flip f x y = f y x
 
-maybe m f Nothing = m
-maybe m f (Just x) = f x
+maybe :: t -> (t1 -> t) -> Maybe t1 -> t
+maybe m _ Nothing = m
+maybe _ f (Just x) = f x
 
+(.) :: (t1 -> t) -> (t2 -> t1) -> t2 -> t
 (f . g) x = f (g x)
 
+(++) :: [a] -> [a] -> [a]
 x ++ y = conc x y
 infixr 5 ++
 
+($) :: (t1 -> t) -> t1 -> t
 f $ x = f x
 infixr 0 $
 
@@ -129,34 +153,41 @@ conc :: [a] -> [a] -> [a]
 conc (x:xs) ys = x : conc xs ys
 conc []     ys = ys
 
+concat :: [[a]] -> [a]
 concat = foldr conc []
 
-foldr f z []     = z
+foldr :: (t -> t1 -> t1) -> t1 -> [t] -> t1
+foldr _ z []     = z
 foldr f z (x:xs) = f x (foldr f z xs)
 
-foldl f z []     = z
+foldl :: (t1 -> t -> t1) -> t1 -> [t] -> t1
+foldl _ z []     = z
 foldl f z (x:xs) = foldl f (f z x) xs
 
+lookup :: Eq a1 => a1 -> [(a1, a)] -> Maybe a
 lookup _key []          =  Nothing
 lookup  key ((x,y):xys) =
   if key == x
      then Just y
      else lookup key xys
 
-intersperse             :: a -> [a] -> [a]
+intersperse :: a -> [a] -> [a]
 intersperse _   []      = []
 intersperse sep (x:xs)  = x : prependToAll sep xs
 
-prependToAll            :: a -> [a] -> [a]
+prependToAll :: a -> [a] -> [a]
 prependToAll _   []     = []
 prependToAll sep (x:xs) = sep : x : prependToAll sep xs
 
 intercalate :: [a] -> [[a]] -> [a]
 intercalate xs xss = concat (intersperse xs xss)
 
+forM_ :: Monad m => [t] -> (t -> m a) -> m ()
 forM_ (x:xs) m = m x >> forM_ xs m
 forM_ []     _ = return ()
 
+
+mapM_ :: Monad m => (a -> m b) -> [a] -> m ()
 mapM_ m (x:xs) = m x >> mapM_ m xs
 mapM_ _ []     = return ()
 

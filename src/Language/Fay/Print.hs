@@ -193,11 +193,11 @@ jsEncodeName name
   | name `elem` reservedWords = "$_" ++ name
 -- Anything else.
 jsEncodeName name =
-  concatMap encode name
+  concatMap encodeChar name
 
   where
-    encode c | c `elem` allowed = [c]
-             | otherwise      = escapeChar c
+    encodeChar c | c `elem` allowed = [c]
+                 | otherwise      = escapeChar c
     allowed = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
     escapeChar c = "$" ++ charId c ++ "$"
     charId c = show (fromEnum c)

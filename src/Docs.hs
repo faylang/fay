@@ -228,7 +228,7 @@ thesetup = do
   pre $ code "$ cabal install fay"
   h3 "From Github"
   p "If you want to hack on the compiler, you can download the Git repo: "
-  pre $ code "$ git clone git://github.com/chrisdone/fay.git"
+  pre $ code "$ git clone git://github.com/faylang/fay.git"
   p "And then install from the directory: "
   pre $ code "$ cabal install"
   h3 "Running"

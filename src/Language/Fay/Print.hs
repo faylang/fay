@@ -15,13 +15,14 @@
 
 module Language.Fay.Print where
 
-import           Language.Fay.Types
+import Language.Fay.Types
 
-import           Data.List
-import           Data.String
-import           Language.Haskell.Exts.Syntax
-import           Prelude                      hiding (exp)
-import           Text.JSON
+import Data.Aeson.Encode
+import qualified Data.ByteString.Lazy.UTF8 as UTF8
+import Data.List
+import Data.String
+import Language.Haskell.Exts.Syntax
+import Prelude                      hiding (exp)
 
 --------------------------------------------------------------------------------
 -- Printing
@@ -29,10 +30,10 @@ import           Text.JSON
 -- | Print literals. These need some special encoding for
 -- JS-format literals. Could use the Text.JSON library.
 instance Printable JsLit where
-  printJS (JsChar char)    = encode [char] -- FIXME:
-  printJS (JsStr str)      = encode str  -- FIXME:
-  printJS (JsInt int)      = show int  -- FIXME:
-  printJS (JsFloating rat) = show rat  -- FIXME:
+  printJS (JsChar char)    = UTF8.toString (encode (UTF8.fromString [char]))
+  printJS (JsStr str)      = UTF8.toString (encode (UTF8.fromString str))
+  printJS (JsInt int)      = show int
+  printJS (JsFloating rat) = show rat
   printJS (JsBool b)       = if b then "true" else "false"
 
 -- | Print (and properly encode to JS) a qualified name.

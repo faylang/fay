@@ -1,1 +1,1 @@
-dist/build/fay/fay -autorun docs/home.hs
+dist/build/fay/fay --autorun docs/home.hs

@@ -7,6 +7,7 @@ module Language.Fay.FFI where
 import           Language.Fay.Types (Fay)
 import           Prelude            (Bool, Char, Double, String, error)
 
+-- | In case you want to distinguish values with a JsPtr.
 data JsPtr a
 
 -- | Contains allowed foreign function types.

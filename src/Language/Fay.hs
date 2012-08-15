@@ -93,6 +93,7 @@ compileFromStr with from =
               with
               (parse from)
 
+-- | Compile the given input and print the output out prettily.
 printCompile :: (Show from,Show to,CompilesTo from to)
               => CompileConfig
               -> (from -> Compile to)

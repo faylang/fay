@@ -9,25 +9,28 @@ module Language.Fay.Compiler where
 import Language.Fay                 (compileToplevelModule,compileViaStr,prettyPrintString)
 import Language.Fay.Types
 
-
 import Control.Monad
 import Language.Haskell.Exts.Syntax
 import Paths_fay
 import System.FilePath
 import Text.Groom
 
-
+-- | A result of something the compiler writes.
 class Writer a where
   writeout :: a -> String -> IO ()
 
+-- | Something to feed into the compiler.
 class Reader a where
   readin :: a -> IO String
 
+-- | Simple file writer.
 instance Writer FilePath where
   writeout = writeFile
 
+-- | Simple file reader.
 instance Reader FilePath where
   readin = readFile
+
 -- | Compile file program to…
 compileFromTo :: CompileConfig -> FilePath -> FilePath -> IO ()
 compileFromTo config filein fileout = do
@@ -48,6 +51,7 @@ compileFromTo config filein fileout = do
           , "</html>"] where relativeJsPath = makeRelative (dropFileName fileout) fileout
     Left err -> error . groom $ err
 
+-- | Compile readable/writable values.
 compileReadWrite :: (Reader r, Writer w) => CompileConfig -> r -> w -> IO ()
 compileReadWrite config reader writer = do
   result <- compileFile config reader
@@ -56,6 +60,7 @@ compileReadWrite config reader writer = do
       writeout writer out
     Left err -> error . groom $ err
 
+-- | Compile the given file.
 compileFile :: (Reader r) => CompileConfig -> r -> IO (Either CompileError String)
 compileFile config filein = do
   runtime <- getDataFileName "js/runtime.js"

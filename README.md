@@ -32,7 +32,7 @@ To generate documentation (from within this directory):
 
 Try it out:
 
-    $ fay -autorun examples/console.hs
+    $ fay --autorun examples/console.hs
     $ node examples/console.js
     Hello, World!
 
@@ -42,6 +42,6 @@ Cabal-dev also works:
     $ cabal-dev/bin/fay-tests
     $ cabal-dev/bin/fay-docs
 
-    $ cabal-dev/bin/fay -autorun examples/console.hs
+    $ cabal-dev/bin/fay --autorun examples/console.hs
     $ node examples/console.js
     Hello, World!

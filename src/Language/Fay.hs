@@ -159,7 +159,10 @@ compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) =
     Right (stmts,state) -> do
       -- Merges the state gotten from compiling an imported module with the current state.
       -- We can assume no duplicate records exist since GHC would pick that up.
-      modify $ \s -> s { stateRecords = stateRecords state ++ stateRecords s }
+      modify $ \s -> s { stateRecords = stateRecords state ++ stateRecords s
+                       , stateFayToJs = stateFayToJs state ++ stateFayToJs s
+                       , stateJsToFay = stateJsToFay state ++ stateJsToFay s
+                       }
       return stmts
     Left err -> throwError err
 compileImport i =

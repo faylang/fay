@@ -160,16 +160,12 @@ function Fay$$fayToJs(type,fayObj){
         jsObj = _(fayObj);
         break;
     }
-    case "unknown": {
-        // Just force unknown values to WHNF.
-        jsObj = _(fayObj);
-        break;
-    }
     case "bool": {
         // Bools are unboxed.
         jsObj = fayObj;
         break;
     }
+    case "unknown":
     case "user": {
         jsObj = Fay$$fayToJsUserDefined(type,fayObj);
         break;
@@ -211,18 +207,17 @@ function Fay$$jsToFay(type,jsObj){
         fayObj = jsObj;
         break;
     }
-    case "unknown": {
-        // Any unknown values can be left as-is.
-        fayObj = jsObj;
-        break;
-    }
     case "bool": {
         // Bools are unboxed.
         fayObj = jsObj;
         break;
     }
+    case "unknown":
     case "user": {
-        fayObj = Fay$$jsToFayUserDefined(type,jsObj);
+        if (jsObj && jsObj.instance)
+            fayObj = Fay$$jsToFayUserDefined(type,jsObj);
+        else
+            fayObj = jsObj;
         break;
     }
     default: throw new Error("Unhandled JS->Fay translation type: " + base);

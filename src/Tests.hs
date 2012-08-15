@@ -7,6 +7,7 @@ module Main where
 
 import           Language.Fay.Compiler
 import           Language.Fay.Types
+import           Language.Fay.Show
 
 import           Control.Monad
 import           Data.Default
@@ -21,7 +22,11 @@ import           Test.HUnit
 
 -- | Main test runner.
 main :: IO ()
-main = void runUnitTests
+main = do
+  putStrLn "Running compiler tests ..."
+  void runUnitTests
+  putStrLn "Running serialization tests ..."
+  void (runShowToFayTests False)
 
 -- | Run the case-by-case unit tests.
 runUnitTests :: IO Counts

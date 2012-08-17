@@ -30,6 +30,9 @@ import qualified Text.Show.Pretty    as Show
 showToFay :: Show a => a -> Maybe Value
 showToFay = Show.reify >=> convert where
   convert value = case value of
+    -- Special cases
+    Show.Con "True" _    -> return (Bool True)
+    Show.Con "False" _   -> return (Bool False)
     -- Objects/records
     Show.Con name values -> fmap (Object . Map.fromList . (("instance",string name) :))
                                  (slots values)

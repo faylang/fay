@@ -72,7 +72,7 @@ compileViaStr config with from =
   runCompile config
              (parseResult (throwError . uncurry ParseError)
                           (fmap printJS . with)
-                          (parse from))
+                          (parseFay from))
 
 -- | Compile a Haskell source string to a JavaScript source string.
 compileToAst :: (Show from,Show to,CompilesTo from to)
@@ -84,14 +84,22 @@ compileToAst config with from =
   runCompile config
              (parseResult (throwError . uncurry ParseError)
                           with
-                          (parse from))
+                          (parseFay from))
 
 -- | Compile from a string.
 compileFromStr :: (Parseable a, MonadError CompileError m) => (a -> m a1) -> String -> m a1
 compileFromStr with from =
   parseResult (throwError . uncurry ParseError)
               with
-              (parse from)
+              (parseFay from)
+
+-- | Parse some Fay code.
+parseFay :: Parseable ast => String -> ParseResult ast
+parseFay = parseWithMode parseMode
+
+-- | The parse mode for Fay.
+parseMode :: ParseMode
+parseMode = defaultParseMode { extensions = [GADTs,StandaloneDeriving,EmptyDataDecls] }
 
 -- | Compile the given input and print the output out prettily.
 printCompile :: (Show from,Show to,CompilesTo from to)
@@ -191,12 +199,14 @@ compileDecl toplevel decl =
     pat@PatBind{} -> compilePatBind toplevel Nothing pat
     FunBind matches -> compileFunCase toplevel matches
     DataDecl _ DataType _ _ _ constructors _ -> compileDataDecl toplevel decl constructors
+    GDataDecl _ DataType _l _i _v _n decls _ -> compileDataDecl toplevel decl (map convertGADT decls)
     -- Just ignore type aliases and signatures.
     TypeDecl{} -> return []
     TypeSig{} -> return []
     InfixDecl{} -> return []
     ClassDecl{} -> return []
     InstDecl{} -> return [] -- FIXME: Ignore.
+    DerivDecl{} -> return []
     _ -> throwError (UnsupportedDeclaration decl)
 
 -- | Compile a top-level pattern bind.
@@ -348,6 +358,18 @@ compileNormalPatBind toplevel ident rhs = do
   bind <- bindToplevel toplevel (UnQual ident) (thunk body)
   return [bind]
 
+convertGADT :: GadtDecl -> QualConDecl
+convertGADT d =
+  case d of
+    GadtDecl srcloc name typ -> QualConDecl srcloc tyvars context
+                                            (ConDecl name (convertFunc typ))
+  where tyvars = []
+        context = []
+        convertFunc (TyCon _) = []
+        convertFunc (TyFun x xs) = UnBangedTy x : convertFunc xs
+        convertFunc (TyParen x) = convertFunc x
+        convertFunc _ = []
+
 -- | Compile a data declaration.
 compileDataDecl :: Bool -> Decl -> [QualConDecl] -> Compile [JsStmt]
 compileDataDecl toplevel decl constructors =
@@ -356,9 +378,12 @@ compileDataDecl toplevel decl constructors =
       case condecl of
         ConDecl (UnQual -> name) types  -> do
           let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
+              fields' = (zip (map return fields) types)
           addRecordState name fields
           cons <- makeConstructor name fields
           func <- makeFunc name fields
+          emitFayToJs name fields'
+          emitJsToFay name fields'
           return [cons, func]
         RecDecl (UnQual -> name) fields' -> do
           let fields = concatMap fst fields'

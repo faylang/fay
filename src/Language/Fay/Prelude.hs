@@ -10,6 +10,8 @@ module Language.Fay.Prelude
   ,Show(show)
   ,Read
   ,Maybe(..)
+  ,Typeable(..)
+  ,Data(..)
   ,read
   ,fromInteger
   ,fromRational
@@ -32,11 +34,13 @@ module Language.Fay.Prelude
   ,module Language.Fay.Stdlib)
   where
 
-import           Language.Fay.Stdlib
-import           Language.Fay.Types  (Fay)
+import Language.Fay.Stdlib
+import Language.Fay.Types  (Fay)
 
-import           GHC.Real            (Ratio)
-import           Prelude             (Bool(..), Char, Double, Integer, Maybe(..), Ord, Read(..),
+import Data.Data
+
+import GHC.Real            (Ratio)
+import Prelude             (Bool(..), Char, Double, Integer, Maybe(..), Ord, Read(..),
  Show(..), String, error, read, (&&), (*), (+), (-), (/), (/=), (<),
  (<=), (==), (>), (>=), (||))
 

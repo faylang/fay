@@ -119,6 +119,7 @@ library
                      data-default,
                      safe,
                      language-javascript,
+                     syb,
 
                      -- Requirements for the executables which
                      -- `cabal-dev ghci' needs.

@@ -7,7 +7,7 @@ module Main where
 
 import           Language.Fay.Compiler
 import           Language.Fay.Types
-import           Language.Fay.Show
+import           Language.Fay.Convert
 
 import           Control.Monad
 import           Data.Default

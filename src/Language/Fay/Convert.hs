@@ -1,11 +1,13 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS -fno-warn-type-defaults #-}
 
 -- | Convert a Haskell value to a (JSON representation of a) Fay value.
 
-module Language.Fay.Show
-  (showToFay,runShowToFayTests)
+module Language.Fay.Convert
+  (showToFay
+  ,runShowToFayTests)
   where
 
 import           Control.Applicative
@@ -26,6 +28,9 @@ import           Safe
 import           Test.HUnit
 import qualified Text.Show.Pretty    as Show
 
+--------------------------------------------------------------------------------
+-- The conversion functions.
+
 -- | Convert a Haskell value to a J.value representing a Fay value.
 showToFay :: Show a => a -> Maybe Value
 showToFay = Show.reify >=> convert where
@@ -33,6 +38,7 @@ showToFay = Show.reify >=> convert where
     -- Special cases
     Show.Con "True" _    -> return (Bool True)
     Show.Con "False" _   -> return (Bool False)
+
     -- Objects/records
     Show.Con name values -> fmap (Object . Map.fromList . (("instance",string name) :))
                                  (slots values)
@@ -96,9 +102,9 @@ runShowToFayTests ghci = runThoseTests makeTests where
     let label = show value
     in TestLabel label $ TestCase $
          assertEqual label output (encode (showToFay value))
-  putter = PutText (\str _bool st -> putStrLn str) ()
-  runThoseTests tests | ghci = fmap fst (runTestText putter tests) >>= putStrLn . showCounts
-                      | otherwise = void (runTestTT tests)
+  putter = PutText (\str _bool _st -> putStrLn str) ()
+  runThoseTests ts | ghci = fmap fst (runTestText putter ts) >>= putStrLn . showCounts
+                   | otherwise = void (runTestTT ts)
 
 --------------------------------------------------------------------------------
 -- Tests
@@ -118,7 +124,8 @@ tests =
   -- Data records
   ,NullaryConstructor → "{\"instance\":\"NullaryConstructor\"}"
   ,NAryConstructor 123 4.5 → "{\"slot1\":123,\"slot2\":4.5,\"instance\":\"NAryConstructor\"}"
-  ,LabelledRecord 123 4.5 → "{\"barDouble\":4.5,\"barInt\":123,\"instance\":\"LabelledRecord\"}"
+  ,LabelledRecord { barInt = 123, barDouble = 4.5 }
+     → "{\"barDouble\":4.5,\"barInt\":123,\"instance\":\"LabelledRecord\"}"
   -- Unicode
   ,"¡ ¢ £ ¤ ¥ " → "\"¡ ¢ £ ¤ ¥ \""
   ,"Ā ā Ă ă Ą " → "\"Ā ā Ă ă Ą \""

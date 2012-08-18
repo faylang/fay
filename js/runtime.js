@@ -162,7 +162,7 @@ function Fay$$fayToJs(type,fayObj){
     }
     case "bool": {
         // Bools are unboxed.
-        jsObj = fayObj;
+        jsObj = _(fayObj);
         break;
     }
     case "unknown":

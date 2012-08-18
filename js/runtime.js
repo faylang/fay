@@ -167,6 +167,8 @@ function Fay$$fayToJs(type,fayObj){
     }
     case "unknown":
     case "user": {
+        if(fayObj instanceof $)
+            fayObj = _(fayObj);
         jsObj = Fay$$fayToJsUserDefined(type,fayObj);
         break;
     }

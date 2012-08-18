@@ -216,8 +216,9 @@ function Fay$$jsToFay(type,jsObj){
     }
     case "unknown":
     case "user": {
-        if (jsObj && jsObj.instance)
+        if (jsObj && jsObj['instance']) {
             fayObj = Fay$$jsToFayUserDefined(type,jsObj);
+        }
         else
             fayObj = jsObj;
         break;

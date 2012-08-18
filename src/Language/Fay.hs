@@ -461,11 +461,9 @@ emitFayToJs name (explodeFields -> fieldTypes) =
     declField _i (name,typ) =
       (unname name
       ,fayToJs (case argType (bangType typ) of
-                 -- UnknownType -> JsLookup (JsName "argTypes")
-                 --                         (JsLit (JsInt i))
                  known -> typeRep known)
-               (force (JsGetPropExtern (JsName transcodingObjForced)
-                                       (printJS name))))
+               (force (JsGetProp (JsName transcodingObjForced)
+                                 (UnQual name))))
 
 jsToFayDispatcher :: [JsStmt] -> JsStmt
 jsToFayDispatcher cases =
@@ -486,7 +484,7 @@ emitJsToFay name (explodeFields -> fieldTypes) =
 
   where
     translator =
-      JsIf (JsEq (JsGetProp (JsName transcodingObj) "instance")
+      JsIf (JsEq (JsGetPropExtern (JsName transcodingObj) "instance")
                  (JsLit (JsStr (qname name))))
            [JsEarlyReturn (JsNew (constructorName name)
                                  (map decodeField fieldTypes))]

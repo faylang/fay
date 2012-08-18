@@ -1,5 +1,5 @@
-data R = R { i :: Integer, c :: Char }
-data S = S Integer Char
+data R = R { i :: Double, c :: Char }
+data S = S Double Char
 
 -- RecDecl
 r1 :: R

@@ -1,9 +1,9 @@
-{ i: 1, c: 'a' }
+{ instance: 'R', i: 1, c: 'a' }
 1
 "a"
-{ i: 2, c: 'b' }
-{ i: undefined, c: 'b' }
-{ i: 3, c: 'c' }
-{ slot1: 1, slot2: 'a' }
-{ _x1: 1, _x2: 2 }
-{ _x1: 1, _x2: 2 }
+{ instance: 'R', i: 2, c: 'b' }
+{ instance: 'R', i: undefined, c: 'b' }
+{ instance: 'R', i: 3, c: 'c' }
+{ instance: 'S', slot1: 1, slot2: 'a' }
+{ instance: 'X', _x1: 1, _x2: 2 }
+{ instance: 'X', _x1: 1, _x2: 2 }

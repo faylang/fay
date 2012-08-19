@@ -300,26 +300,31 @@ function Fay$$div(x){
  */
 
 // Are two values equal?
-function Fay$$equal(lit1,lit2){
+function Fay$$equal(lit1, lit2) {
     // Simple case
     lit1 = _(lit1);
     lit2 = _(lit2);
-    if(lit1 === lit2) {
+    if (lit1 === lit2) {
         return true;
     }
     // General case
-    if(lit1 instanceof Array) {
-        if(lit1.length!=lit2.length) return false;
-        for(var len = lit1.length, i = 0; i < len; i++) {
-            if(!Fay$$equal(lit1[i],lit2[i]))
-                return false;
+    if (lit1 instanceof Array) {
+        if (lit1.length != lit2.length) return false;
+        for (var len = lit1.length, i = 0; i < len; i++) {
+            if (!Fay$$equal(lit1[i], lit2[i])) return false;
         }
         return true;
     } else if (lit1 instanceof Fay$$Cons) {
-        while(lit1 instanceof Fay$$Cons && lit2 instanceof Fay$$Cons && Fay$$equal(lit1.car,lit2.car))
-            lit1 = lit1.cdr, lit2 = lit2.cdr;
-        return (lit1 === null && lit2 === null);
-    } else return false;
+        do {
+            if (!Fay$$equal(lit1.car,lit2.car))
+                return false;
+            lit1 = _(lit1.cdr), lit2 = _(lit2.cdr);
+            if (lit1 === null || lit2 === null)
+                return lit1 === lit2;
+        } while (true);
+    } else {
+        return false;
+    }
 }
 
 // Built-in ==.

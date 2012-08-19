@@ -1,4 +1,4 @@
-cabal-dev/
+cabal-dev
 dist/
 examples/*.js
 tests/*.js

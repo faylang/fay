@@ -99,7 +99,7 @@ parseFay = parseWithMode parseMode
 
 -- | The parse mode for Fay.
 parseMode :: ParseMode
-parseMode = defaultParseMode { extensions = [GADTs,StandaloneDeriving,EmptyDataDecls] }
+parseMode = defaultParseMode { extensions = [GADTs,StandaloneDeriving,EmptyDataDecls,TypeOperators] }
 
 -- | Compile the given input and print the output out prettily.
 printCompile :: (Show from,Show to,CompilesTo from to)
@@ -1035,8 +1035,6 @@ resolveOpToVar op =
       | symbol == "<="  -> return (Var (hjIdent "lte"))
       | symbol == "&&"  -> return (Var (hjIdent "and"))
       | symbol == "||"  -> return (Var (hjIdent "or"))
-      | symbol == ">>=" -> return (Var (hjIdent "bind"))
-      | symbol == ">>"  -> return (Var (hjIdent "then"))
       | otherwise       -> return (Var (fromString symbol))
     Special Cons        -> return (Var (hjIdent "cons"))
     _                   -> throwError (UnsupportedOperator op)

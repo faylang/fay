@@ -52,7 +52,9 @@ function Fay$$Monad(value){
 }
 
 // >>
-function Fay$$then(a){
+// encode_fay_to_js(">>=") → $62$$62$
+// This is used directly from Fay, but can be rebound or shadowed.
+function $62$$62$(a){
     return function(b){
         return new $(function(){
             _(a,true);
@@ -62,7 +64,9 @@ function Fay$$then(a){
 }
 
 // >>=
-function Fay$$bind(m){
+// encode_fay_to_js(">>=") → $62$$62$$61$
+// This is used directly from Fay, but can be rebound or shadowed.
+function $62$$62$$61$(m){
     return function(f){
         return new $(function(){
             var monad = _(m,true);
@@ -71,15 +75,12 @@ function Fay$$bind(m){
     };
 }
 
-var Fay$$unit = null;
-
-// return
-function Fay$$return(a){
+// This is used directly from Fay, but can be rebound or shadowed.
+function $_return(a){
     return new Fay$$Monad(a);
 }
-// FIXME: Define from Fay instead, in case we change the encoding of
-// names (e.g. from $_return to $$$_return or w/e). See #59.
-var $_return = Fay$$return;
+
+var Fay$$unit = null;
 
 /*******************************************************************************
  * Serialization.
@@ -185,7 +186,7 @@ function Fay$$jsToFay(type,jsObj){
     switch(base){
     case "action": {
         // Unserialize a "monadic" JavaScript return value into a monadic value.
-        fayObj = Fay$$return(Fay$$jsToFay(args[0],jsObj));
+        fayObj = new Fay$$Monad(Fay$$jsToFay(args[0],jsObj));
         break;
     }
     case "string": {

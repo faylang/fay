@@ -12,6 +12,7 @@ module Language.Fay.Prelude
   ,Maybe(..)
   ,Typeable(..)
   ,Data(..)
+  ,Monad
   ,read
   ,fromInteger
   ,fromRational
@@ -42,7 +43,7 @@ import Data.Data
 import GHC.Real            (Ratio)
 import Prelude             (Bool(..), Char, Double, Integer, Maybe(..), Ord, Read(..),
  Show(..), String, error, read, (&&), (*), (+), (-), (/), (/=), (<),
- (<=), (==), (>), (>=), (||))
+ (<=), (==), (>), (>=), (||),Monad)
 
 -- | Just to satisfy GHC.
 fromInteger :: Integer -> Double

@@ -314,7 +314,7 @@ function Fay$$equal(lit1, lit2) {
             if (!Fay$$equal(lit1[i], lit2[i])) return false;
         }
         return true;
-    } else if (lit1 instanceof Fay$$Cons) {
+    } else if (lit1 instanceof Fay$$Cons && lit2 instanceof Fay$$Cons) {
         do {
             if (!Fay$$equal(lit1.car,lit2.car))
                 return false;

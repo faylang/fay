@@ -17,7 +17,6 @@ module Language.Fay.Convert
 import           Control.Applicative
 import           Control.Arrow
 import           Control.Monad
-
 import           Data.Aeson
 import           Data.Attoparsec.Number
 import qualified Data.ByteString.Lazy as Bytes
@@ -25,11 +24,10 @@ import qualified Data.ByteString.Lazy.UTF8 as UTF8
 import           Data.Char
 import           Data.Data
 import           Data.Function
-
-import           Data.List
-
 import qualified Data.HashMap.Strict as Map
+import           Data.List
 import           Data.Maybe
+import           Data.Ord
 import           Data.Ratio
 import qualified Data.Text           as Text
 import qualified Data.Vector         as Vector
@@ -123,10 +121,12 @@ readFromFay value = result where
     _ -> Nothing
 
   readData name obj = do
-    fields <- forM (filter ((/="instance").fst) (Map.toList obj)) $ \(_,v) -> do
+    fields <- forM assocs $ \(_,v) -> do
       cvalue <- convert v
       return cvalue
     return (intercalate " " (Text.unpack name : fields))
+      where assocs = sortBy (comparing fst)
+                            (filter ((/="instance").fst) (Map.toList obj))
 
   readRecord name (Map.toList -> assocs) = go (dataTypeConstrs typ)
     where go (cons:conses) =
@@ -193,6 +193,7 @@ readTests =
   ,ReadTest $ NAryConstructor 123 66.6
   ,ReadTest $ LabelledRecord { barInt = 123, barDouble = 66.6 }
   ,ReadTest $ LabelledRecord2 { bar = 123, bob = 66.6 }
+  ,ReadTest $ FooBar "Tinkie Winkie" "Humanzee" Zot
   ]
 
 -- | Test cases.
@@ -247,3 +248,12 @@ data NAryConstructor = NAryConstructor Int Double
 data LabelledRecord = LabelledRecord { barInt :: Int, barDouble :: Double }
                     | LabelledRecord2 { bar :: Int, bob :: Double }
   deriving (Show,Data,Typeable,Read,Eq)
+
+-- | Order matters in unlabelled constructors.
+data SomeThing =
+  FooBar String String Zot
+  deriving (Read,Data,Typeable,Show,Eq)
+
+-- | This triggers order difference. Go figure.
+data Zot = Zot
+  deriving (Read,Data,Typeable,Show,Eq)

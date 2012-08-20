@@ -72,7 +72,7 @@ main = runCommandHelp (unlines helpTxt) $ \opts files -> do
                    , configFlattenApps = optFlattenApps opts
                    , configExportBuiltins = True -- optExportBuiltins opts
 
-                   , configDirectoryIncludes = optInclude opts
+                   , configDirectoryIncludes = "." : optInclude opts
                    , configPrettyPrint = optPretty opts
                    , configAutorun = optAutoRun opts
                    , configHtmlWrapper =  optHTMLWrapper opts

@@ -9,13 +9,13 @@ import           Control.Monad
 import           Data.Default
 import           Data.List
 import           Language.Fay.Compiler
-import           Language.Fay.Convert
 import           Language.Fay.Types
 import           System.Directory
 import           System.FilePath
 import           System.Process.Extra
 import qualified Test.Api              as Api
 import qualified Test.CommandLine      as Cmd
+import qualified Test.Convert          as C
 import           Test.HUnit
 
 -- | Main test runner.
@@ -28,7 +28,7 @@ main = do
   putStrLn "Running compiler tests ..."
   void runUnitTests
   putStrLn "Running serialization tests ..."
-  void (runShowToFayTests False)
+  void (C.runShowToFayTests False)
 
 -- | Run the case-by-case unit tests.
 runUnitTests :: IO Counts

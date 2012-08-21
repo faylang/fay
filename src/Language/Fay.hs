@@ -41,8 +41,10 @@ import           System.FilePath ((</>))
 import           System.Directory (doesFileExist)
 import           System.Exit
 import           System.Process
+import           System.IO.Error (isEOFError)
 
 import qualified Language.ECMAScript3.Parser as JS
+import qualified Control.Exception as E
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -600,10 +602,11 @@ expand _ = Nothing
 --   "js-beautify" is unavailable
 prettyPrintString :: String -> IO String
 prettyPrintString contents = do
-  (code,out,_) <- readProcessWithExitCode "js-beautify"  ["--stdin"] contents
-  case code of
-    ExitSuccess -> return out
-    ExitFailure _ -> return $ contents ++ "\n"
+    (code,out,_) <- readProcessWithExitCode "js-beautify"  ["--stdin"] contents
+    case code of
+      ExitSuccess -> return out
+      ExitFailure _ -> return $ contents ++ "\n"
+  `E.catch` (\e -> if isEOFError e then return $ contents ++ "\n" else E.throw e)
 
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp

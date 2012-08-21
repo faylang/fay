@@ -5,24 +5,26 @@
 
 module Main where
 
-import           Language.Fay.Compiler
-import           Language.Fay.Types
-import           Language.Fay.Convert
-
 import           Control.Monad
 import           Data.Default
 import           Data.List
+import           Language.Fay.Compiler
+import           Language.Fay.Convert
+import           Language.Fay.Types
 import           System.Directory
-
 import           System.FilePath
-
-
 import           System.Process.Extra
+import qualified Test.Api              as Api
+import qualified Test.CommandLine      as Cmd
 import           Test.HUnit
 
 -- | Main test runner.
 main :: IO ()
 main = do
+  putStrLn "Running API tests ..."
+  void $ runTestTT Api.tests
+  putStrLn "Running command line tests ..."
+  void $ runTestTT Cmd.tests
   putStrLn "Running compiler tests ..."
   void runUnitTests
   putStrLn "Running serialization tests ..."

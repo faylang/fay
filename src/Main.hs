@@ -16,6 +16,7 @@ import           Control.Monad.Error
 import           Data.Default
 import           Data.Maybe
 import           Options
+import           System.Console.Haskeline
 import           System.Environment
 import           System.Exit
 import           System.IO
@@ -84,7 +85,7 @@ main = runCommandHelp (unlines helpTxt) $ \opts files -> do
   case files of
        ["-"] -> do
                hGetContents stdin >>= printCompile config compileModule
-       [] -> errorUsage $ userError "No files specified"
+       [] -> runInteractive
        _  -> forM_ files $ \file -> do
                if optStdout opts
                  then compileReadWrite config file stdout
@@ -101,6 +102,22 @@ main = runCommandHelp (unlines helpTxt) $ \opts files -> do
         putStrLn $ "ERROR: \n  " ++ (show e)
         args <- getArgs
         usageMsg args $ unlines $ drop 1 helpTxt
+
+runInteractive :: IO ()
+runInteractive =
+    runInputT defaultSettings loop
+  where
+    loop = do
+        minput <- getInputLine "> "
+        case minput of
+            Nothing -> return ()
+            Just "" -> loop
+            Just input -> do
+                result <- liftIO $ compileViaStr def compileExp input
+                case result of
+                    Left err -> outputStrLn . show $ err
+                    Right (ok,_) -> liftIO (prettyPrintString ok) >>= outputStr
+                loop
 
 runCommandHelp :: (MonadIO m, Options opts) => String -> (opts -> [String] -> m a) -> m a
 runCommandHelp help io = do

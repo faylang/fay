@@ -156,7 +156,8 @@ executable fay
                      directory,
                      filepath,
                      groom,
-                     options
+                     options,
+                     haskeline
 
 executable fay-tests
   if !flag(devel)

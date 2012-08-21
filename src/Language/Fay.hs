@@ -41,7 +41,7 @@ import           System.Directory (doesFileExist)
 import           System.Exit
 import           System.Process
 
-import qualified Language.JavaScript.Parser as JS
+import qualified Language.ECMAScript3.Parser as JS
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -233,8 +233,8 @@ compileFFI :: Name   -- ^ Name of the to-be binding.
            -> Compile [JsStmt]
 compileFFI name formatstr sig = do
   inner <- formatFFI formatstr (zip params funcFundamentalTypes)
-  case JS.parse (printJS (wrapReturn inner)) (prettyPrint name) of
-    Left err -> throwError (FfiFormatInvalidJavaScript inner err)
+  case JS.parse JS.parseExpression (prettyPrint name) (printJS (wrapReturn inner)) of
+    Left err -> throwError (FfiFormatInvalidJavaScript inner (show err))
     Right{}  -> fmap return (bindToplevel True (UnQual name) (body inner))
 
   where body inner = foldr wrapParam (wrapReturn inner) params

@@ -16,6 +16,7 @@ module Language.Fay
   ,compileToAst
   ,compileFromStr
   ,compileModule
+  ,compileExp
   ,printCompile
   ,printTestCompile
   ,compileToplevelModule

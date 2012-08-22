@@ -40,7 +40,7 @@ compileFromTo config filein fileout = do
       writeFile fileout out
       when (configHtmlWrapper config) $
         writeFile (replaceExtension fileout "html") $ unlines [
-            "<doctype !html>"
+            "<!doctype html>"
           , "<html>"
           , "  <head>"
           , "    <script type=\"text/javascript\" src=\"" ++ relativeJsPath ++ "\">"

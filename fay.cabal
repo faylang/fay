@@ -158,6 +158,7 @@ executable fay
                      groom,
                      options,
                      haskeline
+  Extra-libraries:   tinfo
 
 executable fay-tests
   if !flag(devel)

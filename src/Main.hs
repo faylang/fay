@@ -32,7 +32,8 @@ defineOptions "FayCompilerOptions" $ do
   boolOption     "optFlattenApps" "flatten-apps" False "flatten function applicaton"
   boolOption     "optHTMLWrapper" "html-wrapper" False "Create an html file that loads the javascript"
   stringsOption  "optInclude"     "include"      []    "dir1[, ..] additional directories for include"
-
+  stringsOption  "optJSInclude"   "js-include"   []    "file1[ , ..] javascript files to add to <head> if using option html-wrapper"
+  
   option         "optStdout" (\o -> o
                               { optionLongFlags = ["stdout"]
                               , optionShortFlags = ['s']

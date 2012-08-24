@@ -43,12 +43,17 @@ compileFromTo config filein fileout = do
             "<!doctype html>"
           , "<html>"
           , "  <head>"
-          , "    <script type=\"text/javascript\" src=\"" ++ relativeJsPath ++ "\">"
+          , unlines . map ("    "++) . map makeScriptTagSrc $ configHtmlJSLibs config
+          , "    " ++ makeScriptTagSrc relativeJsPath
           , "    </script>"
           , "  </head>"
           , "  <body>"
           , "  </body>"
-          , "</html>"] where relativeJsPath = makeRelative (dropFileName fileout) fileout
+          , "</html>"]
+            where relativeJsPath = makeRelative (dropFileName fileout) fileout
+                  makeScriptTagSrc :: FilePath -> String
+                  makeScriptTagSrc = \s ->
+                    "<script type=\"text/javascript\" src=\"" ++ s ++ "\"></script>"
     Left err -> error . groom $ err
 
 -- | Compile readable/writable values.

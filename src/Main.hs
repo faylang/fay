@@ -30,9 +30,12 @@ defineOptions "FayCompilerOptions" $ do
   boolOption     "optAutoRun"     "autorun"      False "automatically call main in generated JavaScript"
   boolOption     "optInlineForce" "inline-force" False "inline forcing, adds some speed for numbers, blows up code a bit"
   boolOption     "optFlattenApps" "flatten-apps" False "flatten function applicaton"
-  boolOption     "optHTMLWrapper" "html-wrapper" False "Create an html file that loads the javascript"
-  stringsOption  "optInclude"     "include"      []    "dir1[, ..] additional directories for include"
 
+  boolOption     "optHTMLWrapper" "html-wrapper" False "Create an html file that loads the javascript"
+  stringsOption  "optHTMLJSLibs"   "html-js-lib"  []    "file1[, ..] javascript files to add to <head> if using option html-wrapper"
+
+  stringsOption  "optInclude"     "include"      []    "dir1[, ..] additional directories for include"
+  
   option         "optStdout" (\o -> o
                               { optionLongFlags = ["stdout"]
                               , optionShortFlags = ['s']
@@ -77,6 +80,7 @@ main = runCommandHelp (unlines helpTxt) $ \opts files -> do
                    , configPrettyPrint = optPretty opts
                    , configAutorun = optAutoRun opts
                    , configHtmlWrapper =  optHTMLWrapper opts
+                   , configHtmlJSLibs = optHTMLJSLibs opts
                    }
 
   _ <- E.catch (incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible")

@@ -31,39 +31,31 @@ import           Control.Monad.Error
 import           Control.Monad.IO
 import           Control.Monad.State
 import           Data.Char
-import           Data.Default (def)
+import           Data.Default                (def)
 import           Data.List
 import           Data.Maybe
 import           Data.String
 import           Language.Haskell.Exts
 import           Safe
-import           System.FilePath ((</>))
-import           System.Directory (doesFileExist)
+import           System.Directory            (doesFileExist)
 import           System.Exit
+import           System.FilePath             ((</>))
+import           System.IO.Error             (isEOFError)
 import           System.Process
-import           System.IO.Error (isEOFError)
 
+import qualified Control.Exception           as E
 import qualified Language.ECMAScript3.Parser as JS
-import qualified Control.Exception as E
 
 --------------------------------------------------------------------------------
 -- Top level entry points
 
 -- | Compile something that compiles to something else.
 compile :: CompilesTo from to => CompileConfig -> from -> IO (Either CompileError (to,CompileState))
-compile config = runCompile config . compileTo
+compile config = runCompile (defaultCompileState config) . compileTo
 
 -- | Run the compiler.
-runCompile :: CompileConfig -> Compile a -> IO (Either CompileError (a,CompileState))
-runCompile config m = runErrorT (runStateT (unCompile m) state) where
-  state = CompileState { stateConfig  = config
-                       , stateExports = []
-                       , stateModuleName = "Main"
-                       , stateExportAll = True
-                       , stateRecords = [("Nothing",[]),("Just",["slot1"])]
-                       , stateFayToJs = []
-                       , stateJsToFay = []
-                       }
+runCompile :: CompileState -> Compile a -> IO (Either CompileError (a,CompileState))
+runCompile state m = runErrorT (runStateT (unCompile m) state) where
 
 -- | Compile a Haskell source string to a JavaScript source string.
 compileViaStr :: (Show from,Show to,CompilesTo from to)
@@ -72,19 +64,19 @@ compileViaStr :: (Show from,Show to,CompilesTo from to)
               -> String
               -> IO (Either CompileError (String,CompileState))
 compileViaStr config with from =
-  runCompile config
+  runCompile (defaultCompileState config)
              (parseResult (throwError . uncurry ParseError)
                           (fmap printJS . with)
                           (parseFay from))
 
 -- | Compile a Haskell source string to a JavaScript source string.
 compileToAst :: (Show from,Show to,CompilesTo from to)
-              => CompileConfig
+              => CompileState
               -> (from -> Compile to)
               -> String
               -> IO (Either CompileError (to,CompileState))
-compileToAst config with from =
-  runCompile config
+compileToAst state with from =
+  runCompile state
              (parseResult (throwError . uncurry ParseError)
                           with
                           (parseFay from))
@@ -121,15 +113,89 @@ printTestCompile :: String -> IO ()
 printTestCompile = printCompile def compileToplevelModule
 
 --------------------------------------------------------------------------------
--- Compilers
+-- Compilation
 
 -- | Compile the top-level Haskell module.
 compileToplevelModule :: Module -> Compile [JsStmt]
 compileToplevelModule mod = do
+  initialPass mod
   stmts <- compileModule mod
   fay2js <- gets (fayToJsDispatcher . stateFayToJs)
   js2fay <- gets (jsToFayDispatcher . stateJsToFay)
   return (stmts ++ [fay2js,js2fay])
+
+--------------------------------------------------------------------------------
+-- Initial pass-through collecting record definitions
+
+initialPass :: Module -> Compile ()
+initialPass (Module _ _ _ Nothing _ imports decls) = do
+  mapM_ initialPass_import imports
+  mapM_ (initialPass_decl True) decls
+
+initialPass mod = throwError (UnsupportedModuleSyntax mod)
+
+initialPass_import :: ImportDecl -> Compile ()
+initialPass_import (ImportDecl _ (ModuleName name) _ _ _ _ _)
+  | elem name ["Language.Fay.Prelude","Language.Fay.FFI","Language.Fay.Types"] || name == "Prelude" = return ()
+initialPass_import (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
+  dirs <- configDirectoryIncludes <$> gets stateConfig
+  contents <- io (findImport dirs name)
+  cs <- gets id
+  result <- liftIO $ initialPass_records cs initialPass contents
+  case result of
+    Right ((),state) -> do
+      -- Merges the state gotten from passing through an imported
+      -- module with the current state. We can assume no duplicate
+      -- records exist since GHC would pick that up.
+      modify $ \s -> s { stateRecords = stateRecords state ++ stateRecords s }
+    Left err -> throwError err
+
+
+initialPass_import i =
+  error $ "Initial pass: Import syntax not supported. " ++
+        "The compiler writer was too lazy to support that.\n" ++
+        "It was: " ++ show i
+
+initialPass_records :: (Show from,Parseable from)
+              => CompileState
+              -> (from -> Compile ())
+              -> String
+              -> IO (Either CompileError ((),CompileState))
+initialPass_records compileState with from =
+  runCompile compileState
+             (parseResult (throwError . uncurry ParseError)
+                          with
+                          (parseFay from))
+
+initialPass_decl :: Bool -> Decl -> Compile ()
+initialPass_decl toplevel decl =
+  case decl of
+    DataDecl _ DataType _ _ _ constructors _ -> initialPass_dataDecl toplevel decl constructors
+    GDataDecl _ DataType _l _i _v _n decls _ -> initialPass_dataDecl toplevel decl (map convertGADT decls)
+    _ -> return ()
+
+-- | Collect record definitions and store record name and field names.
+-- A ConDecl will have fields named slot1..slotN
+initialPass_dataDecl :: Bool -> Decl -> [QualConDecl] -> Compile ()
+initialPass_dataDecl _ decl constructors =
+  forM_ constructors $ \(QualConDecl _ _ _ condecl) ->
+    case condecl of
+      ConDecl (UnQual -> name) types  -> do
+        let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
+        addRecordState name fields
+      RecDecl (UnQual -> name) fields' -> do
+        let fields = concatMap fst fields'
+        addRecordState name fields
+      _ -> throwError (UnsupportedDeclaration decl)
+
+  where
+    addRecordState :: QName -> [Name] -> Compile ()
+    addRecordState name fields = modify $ \s -> s { stateRecords = (Ident (qname name), fields) : stateRecords s }
+
+
+--------------------------------------------------------------------------------
+-- Compilers
+
 
 -- | Compile Haskell module.
 compileModule :: Module -> Compile [JsStmt]
@@ -164,20 +230,17 @@ compileImport (ImportDecl _ (ModuleName name) _ _ _ _ _)
 compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
   dirs <- configDirectoryIncludes <$> gets stateConfig
   contents <- io (findImport dirs name)
-  cfg <- config id
-  result <- liftIO $ compileToAst cfg compileModule contents
+  state <- gets id
+  result <- liftIO $ compileToAst state compileModule contents
   case result of
     Right (stmts,state) -> do
-      -- Merges the state gotten from compiling an imported module with the current state.
-      -- We can assume no duplicate records exist since GHC would pick that up.
-      modify $ \s -> s { stateRecords = stateRecords state ++ stateRecords s
-                       , stateFayToJs = stateFayToJs state ++ stateFayToJs s
+      modify $ \s -> s { stateFayToJs = stateFayToJs state ++ stateFayToJs s
                        , stateJsToFay = stateJsToFay state ++ stateJsToFay s
                        }
       return stmts
     Left err -> throwError err
 compileImport i =
-  error $ "Import syntax not supported. " ++
+  error $ "compileImport: Import syntax not supported. " ++
         "The compiler writer was too lazy to support that.\n" ++
         "It was: " ++ show i
 
@@ -382,7 +445,6 @@ compileDataDecl toplevel decl constructors =
         ConDecl (UnQual -> name) types  -> do
           let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
               fields' = (zip (map return fields) types)
-          addRecordState name fields
           cons <- makeConstructor name fields
           func <- makeFunc name fields
           emitFayToJs name fields'
@@ -390,7 +452,6 @@ compileDataDecl toplevel decl constructors =
           return [cons, func]
         RecDecl (UnQual -> name) fields' -> do
           let fields = concatMap fst fields'
-          addRecordState name fields
           cons <- makeConstructor name fields
           func <- makeFunc name fields
           funs <- makeAccessors fields
@@ -400,9 +461,6 @@ compileDataDecl toplevel decl constructors =
         _ -> throwError (UnsupportedDeclaration decl)
 
   where
-    addRecordState :: QName -> [Name] -> Compile ()
-    addRecordState name fields = modify $ \s -> s { stateRecords = (Ident (qname name), fields) : stateRecords s }
-
     -- Creates a constructor R_RecConstr for a Record
     makeConstructor name fields = do
           let fieldParams = map (fromString . unname) fields

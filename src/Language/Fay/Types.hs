@@ -18,6 +18,7 @@ module Language.Fay.Types
   ,Fay
   ,CompileConfig(..)
   ,CompileState(..)
+  ,defaultCompileState
   ,FundamentalType(..))
   where
 
@@ -59,6 +60,17 @@ data CompileState = CompileState
   , stateFayToJs     :: [JsStmt]
   , stateJsToFay     :: [JsStmt]
 } deriving (Show)
+
+defaultCompileState :: CompileConfig -> CompileState
+defaultCompileState config = CompileState {
+    stateConfig = config
+  , stateExports = []
+  , stateExportAll = True
+  , stateModuleName = ModuleName "Main"
+  , stateRecords = [(Ident "Nothing",[]),(Ident "Just",[Ident "slot1"])]
+  , stateFayToJs = []
+  , stateJsToFay = []
+  }
 
 -- | Compile monad.
 newtype Compile a = Compile { unCompile :: StateT CompileState (ErrorT CompileError IO) a }

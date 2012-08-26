@@ -120,18 +120,20 @@ library
                      safe,
                      language-ecmascript,
                      syb,
-
-                     -- Requirements for the executables which
-                     -- `cabal-dev ghci' needs.
-                     HUnit,
                      process,
                      filepath,
                      directory,
+                     groom
+
+  if flag(devel)
+    build-depends:
+                     -- Requirements for the executables which
+                     -- `cabal-dev ghci' needs.
+                     HUnit,
                      blaze-html,
                      blaze-markup,
                      bytestring,
                      time,
-                     groom,
                      options,
                      test-framework,
                      test-framework-hunit,
@@ -169,7 +171,8 @@ executable fay-tests
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   main-is:           Tests.hs
   other-modules:     Language.Fay.Compiler
-  build-depends:     base >= 4 && < 5,
+  if flag(devel)
+    build-depends:   base >= 4 && < 5,
                      mtl,
                      haskell-src-exts,
                      aeson,
@@ -199,7 +202,8 @@ executable fay-docs
   ghc-options:       -O2 -Wall
   main-is:           Docs.hs
   other-modules:     Text.Blaze.Extra
-  build-depends:     base >= 4 && < 5,
+  if flag(devel)
+    build-depends:   base >= 4 && < 5,
                      mtl,
                      haskell-src-exts,
                      aeson,

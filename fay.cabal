@@ -142,6 +142,7 @@ library
 executable fay
   hs-source-dirs:    src
   ghc-options:       -O2 -Wall
+  ghc-prof-options:  -fprof-auto
   main-is:           Main.hs
   build-depends:     base >= 4 && < 5,
                      mtl,
@@ -169,6 +170,7 @@ executable fay-tests
     buildable:       False
   hs-source-dirs:    src
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
+  ghc-prof-options:  -fprof-auto
   main-is:           Tests.hs
   other-modules:     Language.Fay.Compiler
   if flag(devel)

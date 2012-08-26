@@ -29,6 +29,7 @@ main = do
   void runUnitTests
   putStrLn "Running serialization tests ..."
   void (C.runShowToFayTests False)
+  void (C.runReadFromFayTests False)
 
 -- | Run the case-by-case unit tests.
 runUnitTests :: IO Counts

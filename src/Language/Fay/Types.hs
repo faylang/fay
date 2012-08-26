@@ -43,12 +43,13 @@ data CompileConfig = CompileConfig
   , configDirectoryIncludes :: [FilePath]
   , configPrettyPrint       :: Bool
   , configHtmlWrapper       :: Bool
+  , configHtmlJSLibs        :: [FilePath]
   , configAutorun           :: Bool
   } deriving (Show)
 
 -- | Default configuration.
 instance Default CompileConfig where
-  def = CompileConfig False False False True [] False False False
+  def = CompileConfig False False False True [] False False [] False
 
 -- | State of the compiler.
 data CompileState = CompileState

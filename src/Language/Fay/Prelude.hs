@@ -13,13 +13,12 @@ module Language.Fay.Prelude
   ,Typeable(..)
   ,Data(..)
   ,Monad
+  ,Eq(..)
   ,read
   ,fromInteger
   ,fromRational
   ,(>>)
   ,(>>=)
-  ,(==)
-  ,(/=)
   ,(+)
   ,(*)
   ,(-)
@@ -41,7 +40,7 @@ import Language.Fay.Types  (Fay)
 import Data.Data
 
 import GHC.Real            (Ratio)
-import Prelude             (Bool(..), Char, Double, Integer, Maybe(..), Ord, Read(..),
+import Prelude             (Bool(..), Eq(..), Char, Double, Integer, Maybe(..), Ord, Read(..),
  Show(..), String, error, read, (&&), (*), (+), (-), (/), (/=), (<),
  (<=), (==), (>), (>=), (||),Monad)
 

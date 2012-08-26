@@ -1,16 +1,31 @@
 {-# LANGUAGE DeriveDataTypeable        #-}
 {-# LANGUAGE ExistentialQuantification #-}
 
-module Test.Convert (runShowToFayTests, runReadFromFayTests) where
+module Test.Convert (tests) where
 
-import           Control.Monad
 import           Data.Aeson
 import qualified Data.ByteString.Lazy      as Bytes
 import qualified Data.ByteString.Lazy.UTF8 as UTF8
 import           Data.Data
 import           Data.Ratio
 import           Language.Fay.Convert
-import           Test.HUnit
+import           Test.HUnit (assertEqual)
+import           Test.Framework
+import           Test.Framework.Providers.HUnit
+
+tests :: Test
+tests = testGroup "Test.Convert" [reading, showing]
+  where reading = testGroup "reading" $ 
+          flip map readTests $ \(ReadTest value) ->
+            let label = show value
+            in testCase label $
+                 assertEqual label (Just value) (showToFay value >>= readFromFay)
+        showing = testGroup "showing" $
+          flip map showTests $ \(Testcase value output) ->
+            let label = show value
+            in testCase label $
+                 assertEqual label output (encode (showToFay value))
+
 
 --------------------------------------------------------------------------------
 -- Test cases
@@ -20,28 +35,6 @@ data Testcase = forall x. Show x => Testcase x Bytes.ByteString
 
 -- | A read test.
 data ReadTest = forall x. (Data x,Show x,Eq x,Read x) => ReadTest x
-
--- | Run the tests.
-runShowToFayTests :: Bool -> IO ()
-runShowToFayTests ghci = runThoseTests makeTests where
-  makeTests = TestList $ flip map showTests $ \(Testcase value output) ->
-    let label = show value
-    in TestLabel label $ TestCase $
-         assertEqual label output (encode (showToFay value))
-  putter = PutText (\str _bool _st -> putStrLn str) ()
-  runThoseTests ts | ghci = fmap fst (runTestText putter ts) >>= putStrLn . showCounts
-                   | otherwise = void (runTestTT ts)
-
--- | Run the tests.
-runReadFromFayTests :: Bool -> IO ()
-runReadFromFayTests ghci = runThoseTests makeTests where
-  makeTests = TestList $ flip map readTests $ \(ReadTest value) ->
-    let label = show value
-    in TestLabel label $ TestCase $
-         assertEqual label (Just value) (showToFay value >>= readFromFay)
-  putter = PutText (\str _bool _st -> putStrLn str) ()
-  runThoseTests ts | ghci = fmap fst (runTestText putter ts) >>= putStrLn . showCounts
-                   | otherwise = void (runTestTT ts)
 
 
 -- | Tests

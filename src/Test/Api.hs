@@ -1,12 +1,20 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Test.Api (tests) where
 
 import           Data.Default
 import           Language.Fay.Compiler
 import           Language.Fay.Types
-import           Test.HUnit
+import           Test.HUnit (Assertion, assertBool)
 import           Test.Util
+import           Test.Framework
+import           Test.Framework.Providers.HUnit
+import           Test.Framework.TH
 
 tests :: Test
-tests = TestList [TestCase $ do
+tests = $testGroupGenerator
+
+case_imports :: Assertion
+case_imports = do
   res <- compileFile def { configDirectoryIncludes = ["tests"] } "tests/RecordImport_Import.hs"
-  assertBool "Could not compile file with imports" (isRight res)]
+  assertBool "Could not compile file with imports" (isRight res)

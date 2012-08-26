@@ -5,7 +5,6 @@
 
 module Main where
 
-import           Control.Monad
 import           Data.Default
 import           Data.List
 import           Language.Fay.Compiler
@@ -16,39 +15,32 @@ import           System.Process.Extra
 import qualified Test.Api              as Api
 import qualified Test.CommandLine      as Cmd
 import qualified Test.Convert          as C
-import           Test.HUnit
+import           Test.HUnit (assertEqual)
+import           Test.Framework
+import           Test.Framework.Providers.HUnit
 
 -- | Main test runner.
 main :: IO ()
 main = do
-  putStrLn "Running API tests ..."
-  void $ runTestTT Api.tests
-  putStrLn "Running command line tests ..."
-  void $ runTestTT Cmd.tests
-  putStrLn "Running compiler tests ..."
-  void runUnitTests
-  putStrLn "Running serialization tests ..."
-  void (C.runShowToFayTests False)
-  void (C.runReadFromFayTests False)
+  compiler <- makeCompilerTests
+  defaultMain [Api.tests, Cmd.tests, compiler, C.tests]
 
--- | Run the case-by-case unit tests.
-runUnitTests :: IO Counts
-runUnitTests = do
+-- | Make the case-by-case unit tests.
+makeCompilerTests :: IO Test
+makeCompilerTests = do
   files <- fmap (map ("tests" </>) . sort . filter dotHs) $ getDirectoryContents "tests"
-  runTestTT (makeTests files)
-
-    where dotHs = isSuffixOf ".hs"
-          makeTests files =
-            TestList $ flip map files $ \file -> TestLabel file $ TestCase $ do
-              let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
-                  out = toJsName file
-              outExists <- doesFileExist root
-              compileFromTo def { configAutorun = True, configDirectoryIncludes = ["tests/"] } file out
-              result <- runJavaScriptFile out
-              if outExists
-                 then do output <- readFile root
-                         assertEqual file output (either show id result)
-                 else assertEqual file True (either (const True) (const False) result)
+  return $ testGroup "Tests" $ flip map files $ \file ->
+    testCase file $ do
+      let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
+          out = toJsName file
+      outExists <- doesFileExist root
+      compileFromTo def { configAutorun = True, configDirectoryIncludes = ["tests/"] } file out
+      result <- runJavaScriptFile out
+      if outExists
+         then do output <- readFile root
+                 assertEqual file output (either show id result)
+         else assertEqual file True (either (const True) (const False) result)
+  where dotHs = isSuffixOf ".hs"
 
 -- | Run a JS file.
 runJavaScriptFile :: String -> IO (Either String String)

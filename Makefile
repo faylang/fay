@@ -12,7 +12,7 @@ PATH := $(PWD)/cabal-dev/bin:$(PATH)
 all: build
 
 configure install:
-	$(CABAL) $@ -fdevel --enable-executable-profiling --enable-library-profiling
+	$(CABAL) $@ -fdevel --enable-executable-profiling --enable-library-profiling --force-reinstalls
 
 build: configure
 	$(CABAL) build

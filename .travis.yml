@@ -1,0 +1,6 @@
+language: "haskell"
+install: "cabal install -fdevel"
+script: "fay-tests --plain"
+notifications:
+  irc: "irc.freenode.net#fay"
+  email: false

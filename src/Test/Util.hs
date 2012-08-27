@@ -11,10 +11,10 @@ fayPath = do
   if cabalDev
     then return (Just cabalDevPath)
     else do
-      dist <- doesFileExist "./cabal-dev/bin/fay"
+      dist <- doesFileExist distPath
       if dist
         then return (Just distPath)
-        else either (const Nothing) Just <$> readAllFromProcess' "which" ["fay"] ""
+        else either (const Nothing) (Just . concat . lines) <$> readAllFromProcess' "which" ["fay"] ""
   where
     cabalDevPath = "./cabal-dev/bin/fay"
     distPath = "./dist/build/fay/fay"

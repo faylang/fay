@@ -2,5 +2,7 @@ language: "haskell"
 install: "cabal install -fdevel"
 script: "fay-tests --plain"
 notifications:
-  irc: "irc.freenode.net#fay"
+  irc:
+    channels: "irc.freenode.net#fay"
+    skip_join: true
   email: false

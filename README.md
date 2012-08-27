@@ -1,5 +1,7 @@
 # Fay programming language
 
+[![Build Status](https://secure.travis-ci.org/faylang/fay.png?branch=master)](http://travis-ci.org/faylang/fay)
+
 See [the Fay web site for documentation](http://fay-lang.org/).
 
 ## Introduction

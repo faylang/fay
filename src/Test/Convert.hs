@@ -3,9 +3,10 @@
 
 module Test.Convert (tests) where
 
-import           Data.Aeson
-import qualified Data.ByteString.Lazy      as Bytes
-import qualified Data.ByteString.Lazy.UTF8 as UTF8
+import qualified Data.Aeson.Parser    as Aeson
+import           Data.Attoparsec.ByteString
+import qualified Data.ByteString      as Bytes
+import qualified Data.ByteString.UTF8 as UTF8
 import           Data.Data
 import           Data.Ratio
 import           Language.Fay.Convert
@@ -24,7 +25,9 @@ tests = testGroup "Test.Convert" [reading, showing]
           flip map showTests $ \(Testcase value output) ->
             let label = show value
             in testCase label $
-                 assertEqual label output (encode (showToFay value))
+                 assertEqual label
+                   (either (const Nothing) Just $ parseOnly Aeson.value output)
+                   (showToFay value)
 
 
 --------------------------------------------------------------------------------

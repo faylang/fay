@@ -26,7 +26,7 @@ tests = testGroup "Test.Convert" [reading, showing]
             let label = show value
             in testCase label $
                  assertEqual label
-                   (either (const Nothing) Just $ parseOnly Aeson.value output)
+                   (either error Just $ parseOnly Aeson.value output)
                    (showToFay value)
 
 

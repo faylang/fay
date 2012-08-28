@@ -1,5 +1,7 @@
 language: "haskell"
-install: "cabal install -fdevel"
+install:
+  - "cabal install"          # make sure it builds without -fdevel too!
+  - "cabal install -fdevel"  # but we need -fdevel to run the tests
 script: "fay-tests --plain"
 notifications:
   irc:

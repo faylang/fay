@@ -13,6 +13,7 @@ module Language.Fay
   (compile
   ,runCompile
   ,compileViaStr
+  ,compileForDocs
   ,compileToAst
   ,compileFromStr
   ,compileModule
@@ -112,10 +113,15 @@ printCompile config with from = do
 printTestCompile :: String -> IO ()
 printTestCompile = printCompile def compileToplevelModule
 
---------------------------------------------------------------------------------
--- Compilation
+-- | Compile the given Fay code for the documentation. This is
+-- specialised because the documentation isn't really “real”
+-- compilation.
+compileForDocs :: Module -> Compile [JsStmt]
+compileForDocs mod = do
+  initialPass mod
+  compileModule mod
 
--- | Compile the top-level Haskell module.
+-- | Compile the top-level Fay module.
 compileToplevelModule :: Module -> Compile [JsStmt]
 compileToplevelModule mod = do
   initialPass mod

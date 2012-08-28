@@ -6,7 +6,7 @@
 
 module Main where
 
-import           Language.Fay                (compileModule, compileViaStr)
+import           Language.Fay                (compileForDocs, compileViaStr)
 import           Language.Fay.Compiler       (compileFromTo)
 import           Language.Fay.Types          (CompileConfig (..))
 
@@ -44,8 +44,8 @@ generate = do
 
   where compile file = do
           contents <- readFile file
-          putStrLn $ "Compiling " ++ file ++ " ..."
-          result <- compileViaStr def compileModule contents
+          putStrLn $ "Generating " ++ file ++ " ..."
+          result <- compileViaStr def { configFlattenApps = True, configTCO = True } compileForDocs contents
           case result of
             Right (javascript,_) -> return javascript
             Left err -> throw err
@@ -58,7 +58,7 @@ generate = do
 
 generateJs = do
   putStrLn $ "Compiling " ++ inp ++ " to " ++ out ++ " ..."
-  compileFromTo def { configAutorun = True } inp out
+  compileFromTo def { configAutorun = True, configFlattenApps = True } inp out
 
   where docs = ("docs" </>)
         inp = docs "home.hs"

@@ -9,12 +9,14 @@ module Main where
 import           Language.Fay
 import           Language.Fay.Compiler
 import           Language.Fay.Types
+import           Paths_fay                (version)
 
-import qualified Control.Exception     as E
+import qualified Control.Exception        as E
 import           Control.Monad
 import           Control.Monad.Error
 import           Data.Default
 import           Data.Maybe
+import           Data.Version             (showVersion)
 import           Options
 import           System.Console.Haskeline
 import           System.Environment
@@ -32,16 +34,23 @@ defineOptions "FayCompilerOptions" $ do
   boolOption     "optFlattenApps" "flatten-apps" False "flatten function applicaton"
 
   boolOption     "optHTMLWrapper" "html-wrapper" False "Create an html file that loads the javascript"
-  stringsOption  "optHTMLJSLibs"   "html-js-lib"  []    "file1[, ..] javascript files to add to <head> if using option html-wrapper"
+  stringsOption  "optHTMLJSLibs"  "html-js-lib"  []    "file1[, ..] javascript files to add to <head> if using option html-wrapper"
 
   stringsOption  "optInclude"     "include"      []    "dir1[, ..] additional directories for include"
-  
+
   option         "optStdout" (\o -> o
                               { optionLongFlags = ["stdout"]
                               , optionShortFlags = ['s']
                               , optionDefault = "false"
                               , optionType = optionTypeBool
                               , optionDescription = "Output to stdout"
+                                                  })
+  option         "optVersion" (\o -> o
+                              { optionLongFlags = ["version"]
+                              , optionShortFlags = ['v']
+                              , optionDefault = "false"
+                              , optionType = optionTypeBool
+                              , optionDescription = "Output version number"
                                                   })
   option         "optOutput" (\o -> o
                               { optionLongFlags = ["output"]
@@ -70,7 +79,11 @@ helpTxt =
 
 -- | Main entry point.
 main :: IO ()
-main = runCommandHelp (unlines helpTxt) $ \opts files -> do
+main =
+  runCommandHelp (unlines helpTxt) $ \opts files ->
+    if optVersion opts
+      then runCommandVersion
+      else (do
   let config = def { configTCO = False -- optTCO opts
                    , configInlineForce = optInlineForce opts
                    , configFlattenApps = optFlattenApps opts
@@ -82,9 +95,8 @@ main = runCommandHelp (unlines helpTxt) $ \opts files -> do
                    , configHtmlWrapper =  optHTMLWrapper opts
                    , configHtmlJSLibs = optHTMLJSLibs opts
                    }
-
-  _ <- E.catch (incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible")
-               errorUsage
+  void $ E.catch (incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible")
+                 errorUsage
 
   case files of
        ["-"] -> do
@@ -94,7 +106,7 @@ main = runCommandHelp (unlines helpTxt) $ \opts files -> do
                if optStdout opts
                  then compileReadWrite config file stdout
                  else
-                    compileFromTo config file $ outPutFile opts file
+                    compileFromTo config file $ outPutFile opts file)
 
 
   where
@@ -130,6 +142,11 @@ runCommandHelp help io = do
 	case parsedOptions parsed of
 		Just opts -> io opts (parsedArguments parsed)
 		Nothing -> liftIO $ usageMsg argv help
+
+runCommandVersion :: IO ()
+runCommandVersion = putStrLn $ "fay " ++ showVersion version
+
+
 
 usageMsg :: [String] -> String -> IO a
 usageMsg argv help = do

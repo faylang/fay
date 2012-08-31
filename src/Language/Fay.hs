@@ -38,12 +38,11 @@ import           Data.Maybe
 import           Data.String
 import           Language.Haskell.Exts
 import           Safe
-import           System.Directory            (doesFileExist)
+import           System.Directory            (doesFileExist, findExecutable)
 import           System.Exit
 import           System.FilePath             ((</>))
 import           System.Process
 
-import qualified Control.Exception           as E
 import qualified Language.ECMAScript3.Parser as JS
 
 --------------------------------------------------------------------------------
@@ -662,16 +661,17 @@ expand (JsApp (JsName (UnQual (Ident "_"))) xs) =
 expand _ = Nothing
 
 -- | Format a JS string using "js-beautify", or return the JS as-is if
---   "js-beautify" is unavailable
+--   "js-beautify" is unavailable.
 prettyPrintString :: String -> IO String
 prettyPrintString contents = do
-    (code,out,_) <- readProcessWithExitCode "js-beautify"  ["--stdin"] contents
-    case code of
-      ExitSuccess -> return out
-      ExitFailure _ -> return $ contents ++ "\n"
-  `E.catch` errorHandler
-  where errorHandler :: IOError -> IO String
-        errorHandler = const . return $ contents ++ "\n"
+    mexe <- findExecutable "js-beautify"
+    case mexe of
+      Nothing -> return $ contents ++ "\n"
+      Just exe -> do
+        (code,out,_) <- readProcessWithExitCode exe ["--stdin"] contents
+        case code of
+          ExitSuccess -> return out
+          ExitFailure _ -> return $ contents ++ "\n"
 
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp

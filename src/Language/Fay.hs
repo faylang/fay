@@ -41,7 +41,6 @@ import           Safe
 import           System.Directory            (doesFileExist)
 import           System.Exit
 import           System.FilePath             ((</>))
-import           System.IO.Error             (isEOFError)
 import           System.Process
 
 import qualified Control.Exception           as E
@@ -670,7 +669,9 @@ prettyPrintString contents = do
     case code of
       ExitSuccess -> return out
       ExitFailure _ -> return $ contents ++ "\n"
-  `E.catch` (\e -> if isEOFError e then return $ contents ++ "\n" else E.throw e)
+  `E.catch` errorHandler
+  where errorHandler :: IOError -> IO String
+        errorHandler = const . return $ contents ++ "\n"
 
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp

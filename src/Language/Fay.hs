@@ -24,7 +24,7 @@ module Language.Fay
   ,prettyPrintString)
   where
 
-import           Language.Fay.Print         ()
+import           Language.Fay.Print          ()
 import           Language.Fay.Types
 
 import           Control.Applicative
@@ -41,6 +41,7 @@ import           Safe
 import           System.Directory            (doesFileExist, findExecutable)
 import           System.Exit
 import           System.FilePath             ((</>))
+import           System.IO
 import           System.Process
 
 import qualified Language.ECMAScript3.Parser as JS
@@ -203,7 +204,8 @@ initialPass_dataDecl _ decl constructors =
 
 -- | Compile Haskell module.
 compileModule :: Module -> Compile [JsStmt]
-compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
+compileModule (Module _ modulename pragmas Nothing exports imports decls) = do
+  checkModulePragmas pragmas
   modify $ \s -> s { stateModuleName = modulename
                    , stateExportAll = isNothing exports
                    }
@@ -212,6 +214,15 @@ compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
   current <- compileDecls True decls
   return (imported ++ current)
 compileModule mod = throwError (UnsupportedModuleSyntax mod)
+
+checkModulePragmas :: [ModulePragma] -> Compile ()
+checkModulePragmas pragmas =
+  when (not $ any noImplicitPrelude pragmas) $
+    liftIO $ hPutStrLn stderr "Warning: NoImplicitPrelude not specified"
+  where
+    noImplicitPrelude :: ModulePragma -> Bool
+    noImplicitPrelude (LanguagePragma _ names) = any (== (Ident "NoImplicitPrelude")) names
+    noImplicitPrelude _ = False
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
 

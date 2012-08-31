@@ -3,8 +3,8 @@ module Test where
 
 -- | As pattern matches
 
-import Language.Fay.Prelude
-import Language.Fay.FFI
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 isPositive :: Double -> Bool
 isPositive x | x > 0 = True

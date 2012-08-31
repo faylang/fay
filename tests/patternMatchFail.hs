@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = print ((\a 'a' -> "OK.") 0 'b')
 
 print :: String -> Fay ()

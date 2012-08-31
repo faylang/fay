@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = print 1
 
 print :: Double -> Fay ()

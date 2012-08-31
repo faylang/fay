@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = print (5 * 3 / 2)
 
 print :: Double -> Fay ()

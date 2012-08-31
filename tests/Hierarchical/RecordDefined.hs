@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 module RecordDefined where
 
 data Callback a = Callback Integer

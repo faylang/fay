@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 data R = R { i :: Double, c :: Char }
 data S = S Double Char
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = print (case True of
                True -> "Hello!"
                False -> "Ney!")

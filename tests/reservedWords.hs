@@ -1,8 +1,8 @@
 {-# LANGUAGE EmptyDataDecls    #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 main = do
   -- All reserved words

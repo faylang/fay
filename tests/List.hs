@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = print (showList (take 5 (let ns = 1 : map (\x -> x + 1) ns in ns)))
 
 take 0 _      = []

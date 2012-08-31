@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = print (concat ["Hello, ","World!"])
 
 concat = foldr append []

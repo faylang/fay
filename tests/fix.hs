@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = print (head (tail (fix (\xs -> 123 : xs))))
 
 print :: Double -> Fay ()

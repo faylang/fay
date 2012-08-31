@@ -1,10 +1,11 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+
 module Test where
 
 -- | As pattern matches
 
-import Language.Fay.Prelude
-import Language.Fay.FFI
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 matchSame :: [a] -> ([a],[a])
 matchSame x@y = (x,y)

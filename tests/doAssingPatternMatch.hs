@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = do
   [1,2] <- return [1,2]
   print "OK."

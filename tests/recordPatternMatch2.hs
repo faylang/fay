@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 data Person = Person String String Int
 
 main = print (case Person "Chris" "Done" 14 of

@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = print (showList (take 5 (let ns = 1 : map (foo 123) ns in ns)))
 
 foo x y = x * y / 2

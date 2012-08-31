@@ -1,13 +1,13 @@
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE EmptyDataDecls    #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE RankNTypes        #-}
 
 -- | Monads test.
 
 module Monads where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 main :: Fay ()
 main = do

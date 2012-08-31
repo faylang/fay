@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+
 module Test where
 
 import           Language.Fay.FFI

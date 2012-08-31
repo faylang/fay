@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = print $ "Hello " ++ friends ++ family
   where friends = "my friends"
         family = " and family"

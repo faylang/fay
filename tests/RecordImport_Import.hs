@@ -2,10 +2,10 @@
 
 module RecordImport_Import where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
-import RecordImport_Export
+import           RecordImport_Export
 
 f :: R -> R
 f (R i) = R i

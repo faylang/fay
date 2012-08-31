@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = do print "Hello,"; print "World!"
 
 print :: String -> Fay ()

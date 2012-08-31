@@ -1,3 +1,4 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 main = print (2 * 4 / 2)
 
 print :: Double -> Fay ()

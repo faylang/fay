@@ -1,4 +1,6 @@
-import Hierarchical.RecordDefined
+{-# LANGUAGE NoImplicitPrelude #-}
+
+import           Hierarchical.RecordDefined
 
 f :: R -> Integer
 f (R i) = i

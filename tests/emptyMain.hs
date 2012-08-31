@@ -1,1 +1,3 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = return ()

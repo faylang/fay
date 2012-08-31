@@ -1,3 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 main = do
   x <- return "Hello, World!" >>= return
   print x

@@ -804,7 +804,7 @@ compileIf cond conseq alt =
   where conseq' = do
           c <- compileExp conseq
           case c of
-            JsSequence s -> return $ JsParen c
+            JsSequence _ -> return $ JsParen c
             _ -> return c
 
 -- | Compile a lambda.

@@ -773,7 +773,7 @@ compileInfixApp exp1 op exp2 = do
           e1 <- compileExp exp1
           e2 <- compileExp exp2
           return (JsInfix symbol (forceInlinable config e1) (forceInlinable config e2))
-      | symbol == ">>" -> do
+      | configOptimizeMonad config && symbol == ">>" -> do
           e1 <- compileExp exp1
           e2 <- compileExp exp2
           case e2 of

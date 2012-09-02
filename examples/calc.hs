@@ -67,6 +67,7 @@ main = do
 
 --------------------------------------------------------------------------------
 -- JQuery bindings
+-- These are provided in the fay-jquery package.
 
 data JQuery
 instance Foreign JQuery
@@ -107,10 +108,11 @@ onClick = ffi "%2['click'](%1)"
 instance (Foreign a) => Foreign (Maybe a)
 
 parseDouble :: Int -> String -> Double
-parseDouble = ffi "parseFloat(%2,%1)"
+parseDouble = ffi "parseFloat(%2,%1) || 0"
 
 --------------------------------------------------------------------------------
 -- Refs
+-- This will be provided in the fay package by default.
 
 data Ref a
 instance Show (Ref a)

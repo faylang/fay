@@ -182,6 +182,7 @@ reservedWords = [
   "var", "void", "while", "window", "with", "yield"]
 
 -- | Encode a Haskell name to JavaScript.
+-- TODO: Fix this hack.
 jsEncodeName :: String -> String
 -- Special symbols:
 jsEncodeName ":tmp" = "$tmp"
@@ -190,10 +191,14 @@ jsEncodeName ":this" = "this"
 -- jsEncodeName ":return" = "return"
 -- Used keywords:
 jsEncodeName name
-  | "$_" `isPrefixOf` name = name
-  | name `elem` reservedWords = "$_" ++ name
+  | "$_" `isPrefixOf` name = normalize name
+  | name `elem` reservedWords = "$_" ++ normalize name
 -- Anything else.
-jsEncodeName name =
+jsEncodeName name = normalize name
+
+-- | Normalize the given name to JavaScript-valid names.
+normalize :: [Char] -> [Char]
+normalize name =
   concatMap encodeChar name
 
   where

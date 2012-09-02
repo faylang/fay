@@ -24,7 +24,7 @@ module Language.Fay
   ,prettyPrintString)
   where
 
-import           Language.Fay.Print          ()
+import           Language.Fay.Print          (jsEncodeName)
 import           Language.Fay.Types
 
 import           Control.Applicative
@@ -188,10 +188,11 @@ initialPass_dataDecl _ decl constructors =
       ConDecl (UnQual -> name) types  -> do
         let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
         addRecordState name fields
+      InfixConDecl t1 (UnQual -> name) t2 ->
+        addRecordState name ["slot1", "slot2"]
       RecDecl (UnQual -> name) fields' -> do
         let fields = concatMap fst fields'
         addRecordState name fields
-      _ -> throwError (UnsupportedDeclaration decl)
 
   where
     addRecordState :: QName -> [Name] -> Compile ()
@@ -465,6 +466,14 @@ compileDataDecl toplevel decl constructors =
           emitFayToJs name fields'
           emitJsToFay name fields'
           return [cons, func]
+        InfixConDecl t1 (UnQual -> name) t2 -> do
+          let slots = [Ident "slot1", Ident "slot2"]
+              fields = zip (map return slots) [t1, t2]
+          cons <- makeConstructor name slots
+          func <- makeFunc name slots
+          emitFayToJs name fields
+          emitJsToFay name fields
+          return [cons, func]
         RecDecl (UnQual -> name) fields' -> do
           let fields = concatMap fst fields'
           cons <- makeConstructor name fields
@@ -473,7 +482,6 @@ compileDataDecl toplevel decl constructors =
           emitFayToJs name fields'
           emitJsToFay name fields'
           return (cons : func : funs)
-        _ -> throwError (UnsupportedDeclaration decl)
 
   where
     -- Creates a constructor R_RecConstr for a Record
@@ -592,7 +600,8 @@ bangType typ =
 -- | Extract the string from a qname.
 qname :: QName -> String
 qname (UnQual (Ident str)) = str
-qname _ = error "qname: Expected unqualified ident." -- FIXME:
+qname (UnQual (Symbol sym)) = jsEncodeName sym
+qname i = error $ "qname: Expected unqualified ident, found: " ++ show i -- FIXME:
 
 -- | Extra the string from an ident.
 unname :: Name -> String
@@ -1116,6 +1125,7 @@ resolveOpToVar op =
       | symbol == "&&"  -> return (Var (hjIdent "and"))
       | symbol == "||"  -> return (Var (hjIdent "or"))
       | otherwise       -> return (Var (fromString symbol))
+    n@(UnQual Ident{})  -> return (Var n)
     Special Cons        -> return (Var (hjIdent "cons"))
     _                   -> throwError (UnsupportedOperator op)
 

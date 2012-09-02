@@ -1,5 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+module Fix where
+
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
+
 main = print (head (tail (fix (\xs -> 123 : xs))))
 
 print :: Double -> Fay ()

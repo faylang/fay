@@ -3,7 +3,7 @@
 
 -- | Monads test.
 
-module Monads where
+module Monad where
 
 import           Language.Fay.FFI
 import           Language.Fay.Prelude

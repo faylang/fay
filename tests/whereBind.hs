@@ -1,6 +1,11 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-main :: IO ()
+module WhereBind where
+
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
+
+main :: Fay ()
 main =
     let x = 10
     in print $ show (x + y)

@@ -1,5 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+module RecCon where
+
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
+
 data Bool = True | False
 
 main = print (head (fix (\xs -> 123 : xs)))

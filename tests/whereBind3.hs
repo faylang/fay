@@ -1,5 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+module WhereBind3 where
+
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
+
 f :: String -> String
 f x = friends ++ family
   where friends = x

@@ -1,6 +1,8 @@
 {-# LANGUAGE EmptyDataDecls    #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
+module ReservedWords where
+
 import           Language.Fay.FFI
 import           Language.Fay.Prelude
 

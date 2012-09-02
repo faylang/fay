@@ -1,6 +1,9 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Main where
+module HierarchicalImport where
+
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 import           Hierarchical.Export
 

@@ -3,7 +3,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TupleSections         #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE ViewPatterns          #-}
 {-# OPTIONS -Wall -fno-warn-name-shadowing -fno-warn-orphans #-}
 
@@ -26,6 +25,7 @@ module Language.Fay
 
 import           Language.Fay.Print          (jsEncodeName)
 import           Language.Fay.Types
+import           System.Process.Extra
 
 import           Control.Applicative
 import           Control.Monad.Error
@@ -36,6 +36,7 @@ import           Data.Default                (def)
 import           Data.List
 import           Data.Maybe
 import           Data.String
+import qualified Language.ECMAScript3.Parser as JS
 import           Language.Haskell.Exts
 import           Safe
 import           System.Directory            (doesFileExist, findExecutable)
@@ -43,8 +44,6 @@ import           System.Exit
 import           System.FilePath             ((</>))
 import           System.IO
 import           System.Process
-
-import qualified Language.ECMAScript3.Parser as JS
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -122,7 +121,10 @@ compileForDocs mod = do
 
 -- | Compile the top-level Fay module.
 compileToplevelModule :: Module -> Compile [JsStmt]
-compileToplevelModule mod = do
+compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
+  compileConfig <- gets stateConfig
+  liftIO $ typecheck (configDirectoryIncludes compileConfig)
+             (fromMaybe modulename $ configFilePath compileConfig)
   initialPass mod
   stmts <- compileModule mod
   fay2js <- gets (fayToJsDispatcher . stateFayToJs)
@@ -198,6 +200,13 @@ initialPass_dataDecl _ _decl constructors =
     addRecordState :: QName -> [Name] -> Compile ()
     addRecordState name fields = modify $ \s -> s { stateRecords = (Ident (qname name), fields) : stateRecords s }
 
+--------------------------------------------------------------------------------
+-- Typechecking
+
+typecheck :: [FilePath] -> FilePath -> IO ()
+typecheck includeDirs fp = do
+  res <- readAllFromProcess' "ghc" (["-fno-code", "-package fay", "-Wall", fp] ++ map ("-i" ++) includeDirs) ""
+  either error (const $ return ()) res
 
 --------------------------------------------------------------------------------
 -- Compilers

@@ -1,5 +1,7 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-module Test where
+
+module PatternGuards where
 
 -- | As pattern matches
 
@@ -20,14 +22,13 @@ withOtherwise x | x > 1 = True
 -- Not called, throws "non-exhaustive guard"
 nonExhaustive x | x > 1 = True
 
-print :: String -> Fay ()
-print = ffi "console.log(%1)"
+printD :: [Double] -> Fay ()
+printD = ffi "console.log(%1)"
+printB :: [Bool] -> Fay ()
+printB = ffi "console.log(%1)"
 
 main :: Fay ()
 main = do
-  print $ showList $ (isPositive 1, isPositive 0)
-  print $ showList $ (threeConds 3, threeConds 1, threeConds 0)
-  print $ showList $ (withOtherwise 2, withOtherwise 0)
-
-showList :: Foreign a => [a] -> String
-showList = ffi "JSON.stringify(%1)"
+  printB [isPositive 1, isPositive 0]
+  printD [threeConds 3, threeConds 1, threeConds 0]
+  printB [withOtherwise 2, withOtherwise 0]

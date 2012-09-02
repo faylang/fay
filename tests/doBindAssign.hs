@@ -1,5 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+module DoBindAssign where
+
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
+
 main = do
   x <- return "Hello, World!" >>= return
   print x

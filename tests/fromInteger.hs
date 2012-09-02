@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Test where
+module FromInteger where
 
 import           Language.Fay.FFI
 import           Language.Fay.Prelude

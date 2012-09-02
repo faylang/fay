@@ -6,14 +6,14 @@
 
 module Language.Fay.Compiler where
 
-import Language.Fay                 (compileToplevelModule,compileViaStr,prettyPrintString)
-import Language.Fay.Types
+import           Language.Fay                 (compileToplevelModule, compileViaStr, prettyPrintString)
+import           Language.Fay.Types
 
-import Control.Monad
-import Language.Haskell.Exts.Syntax
-import Paths_fay
-import System.FilePath
-import Text.Groom
+import           Control.Monad
+import           Language.Haskell.Exts.Syntax
+import           Paths_fay
+import           System.FilePath
+import           Text.Groom
 
 -- | A result of something the compiler writes.
 class Writer a where
@@ -34,7 +34,7 @@ instance Reader FilePath where
 -- | Compile file program to…
 compileFromTo :: CompileConfig -> FilePath -> FilePath -> IO ()
 compileFromTo config filein fileout = do
-  result <- compileFile config filein
+  result <- compileFile config { configFilePath = Just filein } filein
   case result of
     Right out -> do
       writeFile fileout out

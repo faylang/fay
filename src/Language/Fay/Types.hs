@@ -46,11 +46,12 @@ data CompileConfig = CompileConfig
   , configHtmlJSLibs        :: [FilePath]
   , configAutorun           :: Bool
   , configWarn              :: Bool
+  , configFilePath          :: Maybe FilePath
   } deriving (Show)
 
 -- | Default configuration.
 instance Default CompileConfig where
-  def = CompileConfig False False False True [] False False [] False True
+  def = CompileConfig False False False True [] False False [] False True Nothing
 
 -- | State of the compiler.
 data CompileState = CompileState

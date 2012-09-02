@@ -12,12 +12,12 @@ import           Language.Fay.Types
 import           System.Directory
 import           System.FilePath
 import           System.Process.Extra
-import qualified Test.Api              as Api
-import qualified Test.CommandLine      as Cmd
-import qualified Test.Convert          as C
-import           Test.HUnit (assertEqual)
+import qualified Test.Api                       as Api
+import qualified Test.CommandLine               as Cmd
+import qualified Test.Convert                   as C
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
+import           Test.HUnit                     (assertEqual)
 
 -- | Main test runner.
 main :: IO ()

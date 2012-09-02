@@ -1,5 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+module Records where
+
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
+
 data Person1 = Person1 String String Int
 data Person2 = Person2 { fname :: String, sname :: String, age :: Int }
 data Person3 = Person3 { slot3 :: String, slot2 :: String, slot1 :: Int }

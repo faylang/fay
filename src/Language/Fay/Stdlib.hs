@@ -30,6 +30,7 @@ module Language.Fay.Stdlib
   ,not
   ,nub
   ,null
+  ,otherwise
   ,prependToAll
   ,snd
   ,sort
@@ -41,8 +42,9 @@ module Language.Fay.Stdlib
   ,min)
   where
 
-import Language.Fay.FFI
-import Prelude (Double,Int,Bool(..),Maybe(..),Ord((>),(<)),Eq(..),Monad(..),Num(..),(||))
+import           Language.Fay.FFI
+import           Prelude          (Bool(..), Double, Eq(..), Int, Maybe(..), Monad(..), Num(..),
+ Ord((>), (<)), (||))
 
 -- START
 
@@ -192,7 +194,6 @@ forM_ :: Monad m => [t] -> (t -> m a) -> m ()
 forM_ (x:xs) m = m x >> forM_ xs m
 forM_ []     _ = return ()
 
-
 mapM_ :: Monad m => (a -> m b) -> [a] -> m ()
 mapM_ m (x:xs) = m x >> mapM_ m xs
 mapM_ _ []     = return ()
@@ -215,3 +216,6 @@ max = ffi "Math.max(%1,%2)"
 
 fromIntegral :: Int -> Double
 fromIntegral = ffi "%1"
+
+otherwise :: Bool
+otherwise = True

@@ -1,11 +1,16 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-main = print (concat ["Hello, ","World!"])
+module BasicFunctions where
 
-concat = foldr append []
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
-foldr f z []     = z
-foldr f z (x:xs) = f x (foldr f z xs)
+main = print (concat' ["Hello, ","World!"])
+
+concat' = foldr' append []
+
+foldr' f z []     = z
+foldr' f z (x:xs) = f x (foldr f z xs)
 
 append (x:xs) ys = x : append xs ys
 append []     ys = ys

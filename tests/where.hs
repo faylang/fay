@@ -1,5 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+module Where where
+
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
+
 main = print $ "Hello " ++ friends ++ family
   where friends = "my friends"
         family = " and family"

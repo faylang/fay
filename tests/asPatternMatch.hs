@@ -1,8 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Test where
-
--- | As pattern matches
+module AsPatternMatch where
 
 import           Language.Fay.FFI
 import           Language.Fay.Prelude

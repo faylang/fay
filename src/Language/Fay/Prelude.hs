@@ -35,15 +35,15 @@ module Language.Fay.Prelude
   ,module Language.Fay.Stdlib)
   where
 
-import Language.Fay.Stdlib
-import Language.Fay.Types  (Fay)
+import           Language.Fay.Stdlib
+import           Language.Fay.Types  (Fay)
 
-import Data.Data
+import           Data.Data
 
-import GHC.Real            (Ratio)
-import Prelude             (Bool(..), Eq(..), Char, Double, Int, Integer, Maybe(..), Ord, Read(..),
- Show(..), String, error, read, (&&), (*), (+), (-), (/), (/=), (<),
- (<=), (==), (>), (>=), (||),Monad)
+import           GHC.Real            (Ratio)
+import           Prelude             (Bool(..), Char, Double, Eq(..), Int, Integer, Maybe(..), Monad,
+ Ord, Read(..), Show(..), String, error, read, (&&), (*), (+), (-),
+ (/), (/=), (<), (<=), (==), (>), (>=), (||))
 
 -- | Just to satisfy GHC.
 fromInteger :: Integer -> Double

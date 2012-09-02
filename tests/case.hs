@@ -1,5 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+module Case where
+
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
+
 main = print (case True of
                True -> "Hello!"
                False -> "Ney!")

@@ -1,5 +1,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+module RecordPatternMatch2 where
+
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
+
 data Person = Person String String Int
 
 main = print (case Person "Chris" "Done" 14 of

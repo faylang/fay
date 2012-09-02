@@ -3,7 +3,7 @@
 {-# LANGUAGE EmptyDataDecls    #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Ref where
+module MutableReference where
 
 import           Language.Fay.FFI
 import           Language.Fay.Prelude

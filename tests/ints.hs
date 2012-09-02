@@ -2,8 +2,8 @@
 
 module Ints where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
 main = do
   print 123

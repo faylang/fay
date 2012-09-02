@@ -859,7 +859,7 @@ compileStmt inner stmt =
             Qualifier exp -> return (Just (InfixApp exp
                                                     (QVarOp (UnQual (Symbol ">>")))
                                                     inner))
-            LetStmt{} -> throwError LetUnsupported
+            LetStmt (BDecls binds) -> return (Just (Let (BDecls binds) inner))
             RecStmt{} -> throwError RecursiveDoUnsupported
 
         compileGenerator srcloc pat inner exp = do

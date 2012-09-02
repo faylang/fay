@@ -20,10 +20,10 @@ main = do
   appendMore <- newRef False
 
   let buttons =
-        [[enter 7, enter 8, enter 9, ("/",operator (\x y -> x / y))]
-        ,[enter 4, enter 5, enter 6, ("*",operator (\x y -> x * y))]
-        ,[enter 1, enter 2, enter 3, ("-",operator (\x y -> x - y))]
-        ,[("C",clear), enter 0, ("=",calculate), ("+",operator (\x y -> x + y))]]
+        [[enter 7, enter 8, enter 9, ("/",operator (/))]
+        ,[enter 4, enter 5, enter 6, ("*",operator (*))]
+        ,[enter 1, enter 2, enter 3, ("-",operator (-))]
+        ,[("C",clear), enter 0, ("=",calculate), ("+",operator (+))]]
       enter n = (show n,do current <- getVal display
                            addit <- readRef appendMore
                            if addit

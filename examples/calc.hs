@@ -39,6 +39,7 @@ main = do
         writeRef operation (Just (op num))
       clear = do
         setVal "0" display
+        writeRef operation Nothing
         calculate
       calculate = do
         op <- readRef operation

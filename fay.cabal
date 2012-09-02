@@ -1,5 +1,5 @@
 name:                fay
-version:             0.7.1.0
+version:             0.9.1.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which can be compiled (type-checked)
                      with GHC, and compiled to JavaScript. It is lazy, pure, with a Fay monad,
@@ -12,7 +12,7 @@ description:         Fay is a proper subset of Haskell which can be compiled (ty
                      .
                      > $ cabal unpack fay
                      > $ cd fay-*
-                     > $ cabal install
+                     > $ cabal install -fdevel
                      > $ dist/build/fay-docs/fay-docs
                      .
                      .
@@ -22,37 +22,21 @@ description:         Fay is a proper subset of Haskell which can be compiled (ty
                      .
                      /Release Notes/
                      .
-                     * Added Compiler.compileFile to compile a file without writing to disk
+                     * Infix constructor applications and infix operator constructors.
                      .
-                     * abstracted out constructorName function
+                     * Warn when NoImplicitPrelude isn't specified.
                      .
-                     * fix fixed RecConstr
+                     * Added fay --version.
                      .
-                     * Fix RecConstr to avoid name conflicts.
+                     * Html wrapper enhancements.
                      .
-                     * BREAKING CHANGES, READ THIS COMMIT.
+                     * Initial pass-through to collect record information. This means records can now be used before they're defined.
                      .
-                     * Added the new flags to the cmdline docs
+                     * Expose more prelude functions.
                      .
-                     * --output=file to specify where the result should be placed
+                     * Fixed doctype typo in HTML wrappers.
                      .
-                     * Exporting Language.Fay.Compiler
-                     .
-                     * Added the cmdline flag -include=dir1[,..dirN] which will look in the specified directories for imports
-                     .
-                     * CompileConfig now contains configDirectoryIncludes allowing imports to be located separately from where the base file
-                     .
-                     * Add Paths_fay to cabal.
-                     .
-                     * Update docs and fix runtime regressions.
-                     .
-                     * Fix FFI callbacks when too many arguments are provided.
-                     .
-                     * Fix patterns snippet.
-                     .
-                     * Fixed a bug where  would produce invalid code. And some minor refactorings.
-                     .
-                     * Records are now stored in CompileState, _fields dropped from record representation
+                     * Basic interactive shell
                      .
                      See full history at: <https://github.com/chrisdone/fay/commits>
 homepage:            http://fay-lang.org/

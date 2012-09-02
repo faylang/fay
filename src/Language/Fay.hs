@@ -182,13 +182,13 @@ initialPass_decl toplevel decl =
 -- | Collect record definitions and store record name and field names.
 -- A ConDecl will have fields named slot1..slotN
 initialPass_dataDecl :: Bool -> Decl -> [QualConDecl] -> Compile ()
-initialPass_dataDecl _ decl constructors =
+initialPass_dataDecl _ _decl constructors =
   forM_ constructors $ \(QualConDecl _ _ _ condecl) ->
     case condecl of
       ConDecl (UnQual -> name) types  -> do
         let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
         addRecordState name fields
-      InfixConDecl t1 (UnQual -> name) t2 ->
+      InfixConDecl _t1 (UnQual -> name) _t2 ->
         addRecordState name ["slot1", "slot2"]
       RecDecl (UnQual -> name) fields' -> do
         let fields = concatMap fst fields'
@@ -454,7 +454,7 @@ convertGADT d =
 
 -- | Compile a data declaration.
 compileDataDecl :: Bool -> Decl -> [QualConDecl] -> Compile [JsStmt]
-compileDataDecl toplevel decl constructors =
+compileDataDecl toplevel _decl constructors =
   fmap concat $
     forM constructors $ \(QualConDecl _ _ _ condecl) ->
       case condecl of
@@ -860,6 +860,7 @@ compileStmt inner stmt =
                                                     (QVarOp (UnQual (Symbol ">>")))
                                                     inner))
             LetStmt (BDecls binds) -> return (Just (Let (BDecls binds) inner))
+            LetStmt _ -> throwError LetUnsupported
             RecStmt{} -> throwError RecursiveDoUnsupported
 
         compileGenerator srcloc pat inner exp = do

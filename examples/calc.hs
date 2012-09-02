@@ -34,7 +34,6 @@ main = do
       getInput = getVal display >>= return . parseDouble 10
       operator op = do
         calculate
-        writeRef appendMore False
         num <- getInput
         writeRef operation (Just (op num))
       clear = do

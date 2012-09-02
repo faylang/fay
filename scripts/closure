@@ -1,0 +1,2 @@
+closure --compilation_level=ADVANCED_OPTIMIZATIONS docs/home.js > docs/home.min.js
+sed 's/home\.js/home.min.js/' -i docs/index.html

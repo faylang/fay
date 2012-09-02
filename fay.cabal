@@ -71,15 +71,71 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      examples/tailrecursive.hs examples/data.hs examples/canvaswater.hs
                      examples/canvaswater.html examples/haskell.png
                      -- Test cases
-                     tests/10 tests/10.hs tests/11 tests/11.hs tests/12 tests/12.hs tests/13
-                     tests/13.hs tests/14 tests/14.hs tests/15 tests/15.hs tests/16 tests/16.hs
-                     tests/17 tests/17.hs tests/18 tests/18.hs tests/19 tests/19.hs
-                     tests/2 tests/20 tests/20.hs tests/21 tests/21.hs tests/22 tests/22.hs
-                     tests/23 tests/23.hs tests/24 tests/24.hs tests/25.hs tests/26 tests/26.hs
-                     tests/2.hs tests/3 tests/3.hs tests/4 tests/4.hs tests/5 tests/5.hs tests/6
-                     tests/6.hs tests/7 tests/7.hs tests/8 tests/8.hs tests/9 tests/9.hs tests/27
-                     tests/27.hs tests/28 tests/28.hs tests/30.hs tests/29 tests/30 tests/29.hs
-                     tests/31.hs tests/31
+                      tests/asPatternMatch tests/caseList.hs
+                      tests/Double2.hs tests/fromInteger tests/List.hs
+                      tests/RecCon tests/recordPatternMatch
+                      tests/String.hs tests/asPatternMatch.hs
+                      tests/caseList.js tests/Double2.js
+                      tests/fromInteger.hs tests/List.js
+                      tests/RecCon.hs tests/recordPatternMatch2
+                      tests/String.js tests/asPatternMatch.js
+                      tests/caseWildcard tests/Double3
+                      tests/fromInteger.js tests/Monad tests/RecCon.js
+                      tests/recordPatternMatch2.hs tests/tailRecursion
+                      tests/basicFunctions tests/caseWildcard.hs
+                      tests/Double3.hs
+                      tests/Monad2 tests/RecDecl
+                      tests/recordPatternMatch2.js
+                      tests/tailRecursion.hs tests/basicFunctions.hs
+                      tests/caseWildcard.js tests/Double3.js
+                      tests/HierarchicalImport tests/Monad2.hs
+                      tests/RecDecl.hs tests/recordPatternMatch.hs
+                      tests/tailRecursion.js tests/basicFunctions.js
+                      tests/do tests/Double4
+                      tests/Monad2.js
+                      tests/RecDecl.js tests/recordPatternMatch.js
+                      tests/then tests/Bool tests/doAssingPatternMatch
+                      tests/Double4.hs tests/HierarchicalImport.hs
+                      tests/Monad.hs
+                      tests/records tests/then.hs tests/Bool.hs
+                      tests/doAssingPatternMatch.hs tests/Double4.js
+                      tests/Monad.js
+                      tests/recordFunctionPatternMatch
+                      tests/records.hs tests/then.js tests/Bool.js
+                      tests/doAssingPatternMatch.js tests/Double.hs
+                      tests/HierarchicalImport.js
+                      tests/mutableReference
+                      tests/recordFunctionPatternMatch.hs
+                      tests/records.js tests/utf8 tests/case
+                      tests/doBindAssign tests/Double.js
+                      tests/infixDataConst tests/mutableReference.hs
+                      tests/recordFunctionPatternMatch.js
+                      tests/recordUseBeforeDefine tests/utf8.hs
+                      tests/case2 tests/doBindAssign.hs
+                      tests/emptyMain tests/infixDataConst.hs
+                      tests/mutableReference.js
+                      tests/RecordImport_Export
+                      tests/recordUseBeforeDefine.hs tests/utf8.js
+                      tests/case2.hs tests/doBindAssign.js
+                      tests/emptyMain.hs tests/infixDataConst.js
+                      tests/patternGuards tests/RecordImport_Export.hs
+                      tests/recordUseBeforeDefine.js tests/where
+                      tests/case2.js tests/do.hs tests/emptyMain.js
+                      tests/List tests/patternGuards.hs
+                      tests/RecordImport_Export.js tests/reservedWords
+                      tests/where.hs tests/case.hs tests/do.js
+                      tests/fix tests/List2 tests/patternGuards.js
+                      tests/RecordImport_Import tests/reservedWords.hs
+                      tests/where.js tests/case.js tests/Double
+                      tests/fix.hs tests/List2.hs
+                      tests/patternMatchFail.hs
+                      tests/RecordImport_Import.hs
+                      tests/reservedWords.js tests/caseList
+                      tests/Double2 tests/fix.js tests/List2.js
+                      tests/patternMatchFail.js
+                      tests/RecordImport_Import.js tests/String
+                      tests/Hierarchical/Export.hs
+                      tests/Hierarchical/RecordDefined.hs
                      -- Documentation files
                      docs/beautify.js docs/highlight.pack.js docs/home.css docs/home.js docs/jquery.js
                      docs/analytics.js
@@ -172,7 +228,7 @@ executable fay-tests
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   ghc-prof-options:  -fprof-auto
   main-is:           Tests.hs
-  other-modules:     Language.Fay.Compiler
+  other-modules:     Language.Fay.Compiler Test.Convert Test.Api Test.CommandLine Test.Util
   if flag(devel)
     build-depends:   base >= 4 && < 5,
                      mtl,

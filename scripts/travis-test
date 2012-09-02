@@ -1,0 +1,1 @@
+dist/build/fay-tests/fay-tests --plain && scripts/test-sdist

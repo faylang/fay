@@ -9,3 +9,4 @@ docs/home.js
 *.hi
 *.o
 *.hcr
+hackage-test/

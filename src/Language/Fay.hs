@@ -305,9 +305,9 @@ compilePatBind toplevel sig pat =
         Just formatstr -> case sig of
           Just sig -> compileFFI ident formatstr sig
           Nothing  -> throwError (FfiNeedsTypeSig pat)
-        _ -> compileNormalPatBind toplevel ident rhs
+        _ -> compileUnguardedRhs toplevel ident rhs
     PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) bdecls ->
-      compileNormalPatBind toplevel ident (Let bdecls rhs)
+      compileUnguardedRhs toplevel ident (Let bdecls rhs)
     _ -> throwError (UnsupportedDeclaration pat)
 
   where ffiExp (App (Var (UnQual (Ident "ffi"))) (Lit (String formatstr))) = Just formatstr
@@ -441,8 +441,8 @@ typeArity t =
     _              -> 0
 
 -- | Compile a normal simple pattern binding.
-compileNormalPatBind :: Bool -> Name -> Exp -> Compile [JsStmt]
-compileNormalPatBind toplevel ident rhs = do
+compileUnguardedRhs :: Bool -> Name -> Exp -> Compile [JsStmt]
+compileUnguardedRhs toplevel ident rhs = do
   body <- compileExp rhs
   bind <- bindToplevel toplevel (UnQual ident) (thunk body)
   return [bind]

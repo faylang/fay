@@ -33,6 +33,8 @@ defineOptions "FayCompilerOptions" $ do
   boolOption     "optInlineForce" "inline-force" False "inline forcing, adds some speed for numbers, blows up code a bit"
   boolOption     "optFlattenApps" "flatten-apps" False "flatten function applicaton"
 
+  boolOption     "optOptimizeMonad" "optimize-monad" False "optimize >> operation on monads for speed. use with caution - may break >> operations on some monads"
+
   boolOption     "optHTMLWrapper" "html-wrapper" False "Create an html file that loads the javascript"
   stringsOption  "optHTMLJSLibs"  "html-js-lib"  []    "file1[, ..] javascript files to add to <head> if using option html-wrapper"
 
@@ -94,6 +96,8 @@ main =
                    , configAutorun = optAutoRun opts
                    , configHtmlWrapper =  optHTMLWrapper opts
                    , configHtmlJSLibs = optHTMLJSLibs opts
+
+                   , configOptimizeMonad = optOptimizeMonad opts
                    }
   void $ E.catch (incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible")
                  errorUsage

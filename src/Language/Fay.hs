@@ -782,6 +782,12 @@ compileInfixApp exp1 op exp2 = do
           e1 <- compileExp exp1
           e2 <- compileExp exp2
           return (JsInfix symbol (forceInlinable config e1) (forceInlinable config e2))
+      | configOptimizeMonad config && symbol == ">>" -> do
+          e1 <- compileExp exp1
+          e2 <- compileExp exp2
+          case e2 of
+            (JsSequence s) -> return $ JsSequence (force e1 : s)
+            _ -> return $ JsSequence [force e1, e2]
     _ -> do
       var <- resolveOpToVar op
       compileExp (App (App var exp1) exp2)
@@ -802,8 +808,13 @@ makeList exps = (JsApp (JsName (hjIdent "list")) [JsList exps])
 compileIf :: Exp -> Exp -> Exp -> Compile JsExp
 compileIf cond conseq alt =
   JsTernaryIf <$> fmap force (compileExp cond)
-              <*> compileExp conseq
+              <*> conseq'
               <*> compileExp alt
+  where conseq' = do
+          c <- compileExp conseq
+          case c of
+            JsSequence _ -> return $ JsParen c
+            _ -> return c
 
 -- | Compile a lambda.
 compileLambda :: [Pat] -> Exp -> Compile JsExp

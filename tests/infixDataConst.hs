@@ -4,16 +4,18 @@ import Language.Fay.FFI
 import Language.Fay.Prelude
 
 
-data Ty = Integer `InfixConst1` Integer
-        | Bool `InfixConst2` Integer
+data Ty1 = Integer `InfixConst1` Integer
     deriving Show
 
-t1 = 123 `InfixConst1` 123
-t2 = False `InfixConst2` 123
+data Ty2 = Bool `InfixConst2` Bool
+    deriving Show
+
+data Ty3 = Ty1 :=> Ty2
+
+t = (123 `InfixConst1` 123) :=> (False `InfixConst2` True)
 
 main = do
-  print $ show t1
-  print $ show t2
+  print (show t)
 
 print :: String -> Fay ()
 print = ffi "console.log(%1)"

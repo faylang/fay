@@ -24,7 +24,7 @@ module Language.Fay
   ,prettyPrintString)
   where
 
-import           Language.Fay.Print          ()
+import           Language.Fay.Print          (jsEncodeName)
 import           Language.Fay.Types
 
 import           Control.Applicative
@@ -600,6 +600,7 @@ bangType typ =
 -- | Extract the string from a qname.
 qname :: QName -> String
 qname (UnQual (Ident str)) = str
+qname (UnQual (Symbol sym)) = jsEncodeName sym
 qname i = error $ "qname: Expected unqualified ident, found: " ++ show i -- FIXME:
 
 -- | Extra the string from an ident.

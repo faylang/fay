@@ -6,6 +6,7 @@ module Language.Fay.Prelude
   ,String
   ,Integer
   ,Double
+  ,Int
   ,Bool(..)
   ,Show(show)
   ,Read
@@ -40,7 +41,7 @@ import Language.Fay.Types  (Fay)
 import Data.Data
 
 import GHC.Real            (Ratio)
-import Prelude             (Bool(..), Eq(..), Char, Double, Integer, Maybe(..), Ord, Read(..),
+import Prelude             (Bool(..), Eq(..), Char, Double, Int, Integer, Maybe(..), Ord, Read(..),
  Show(..), String, error, read, (&&), (*), (+), (-), (/), (/=), (<),
  (<=), (==), (>), (>=), (||),Monad)
 

@@ -10,6 +10,7 @@ module Language.Fay.Stdlib
   ,elem
   ,enumFrom
   ,enumFromTo
+  ,fromIntegral
   ,filter
   ,find
   ,flip
@@ -41,7 +42,7 @@ module Language.Fay.Stdlib
   where
 
 import Language.Fay.FFI
-import Prelude (Double,Bool(..),Maybe(..),Ord((>),(<)),Eq(..),Monad(..),Num(..),(||))
+import Prelude (Double,Int,Bool(..),Maybe(..),Ord((>),(<)),Eq(..),Monad(..),Num(..),(||))
 
 -- START
 
@@ -199,7 +200,8 @@ mapM_ _ []     = return ()
 const :: a -> b -> a
 const a _ = a
 
-length (x:xs) = 1 + length xs
+length :: [a] -> Int
+length (_:xs) = 1 + length xs
 length [] = 0
 
 mod :: Double -> Double -> Double
@@ -210,3 +212,6 @@ min = ffi "Math.min(%1,%2)"
 
 max :: Double -> Double -> Double
 max = ffi "Math.max(%1,%2)"
+
+fromIntegral :: Int -> Double
+fromIntegral = ffi "%1"

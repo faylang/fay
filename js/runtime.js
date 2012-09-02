@@ -161,6 +161,11 @@ function Fay$$fayToJs(type,fayObj){
         jsObj = _(fayObj);
         break;
     }
+    case "int": {
+        // Serialize int, just force the argument. Ints are unboxed.
+        jsObj = _(fayObj);
+        break;
+    }
     case "bool": {
         // Bools are unboxed.
         jsObj = _(fayObj);
@@ -208,6 +213,14 @@ function Fay$$jsToFay(type,jsObj){
     case "double": {
         // Doubles are unboxed, so there's nothing to do.
         fayObj = jsObj;
+        break;
+    }
+    case "int": {
+        // Int are unboxed, so there's no forcing to do.
+        // But we can do validation that the int has no decimal places.
+        // E.g. Math.round(x)!=x? throw "NOT AN INTEGER, GET OUT!"
+        fayObj = Math.round(jsObj);
+        if(fayObj!==jsObj) throw "Argument " + jsObj + " is not an integer!"
         break;
     }
     case "bool": {

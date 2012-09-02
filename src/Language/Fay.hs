@@ -381,6 +381,7 @@ typeRep typ =
       where nom = case typ of
               StringType -> "string"
               DoubleType -> "double"
+              IntType    -> "int"
               BoolType   -> "bool"
               DateType   -> "date"
               _          -> "unknown"
@@ -400,6 +401,7 @@ argType t =
   case t of
     TyCon "String"        -> StringType
     TyCon "Double"        -> DoubleType
+    TyCon "Int"           -> IntType
     TyCon "Bool"          -> BoolType
     TyApp (TyCon "Fay") a -> JsType (argType a)
     TyFun x xs            -> FunctionType (argType x : functionTypeArgs xs)

@@ -195,6 +195,7 @@ data FundamentalType
  | DateType
  | StringType
  | DoubleType
+ | IntType
  | BoolType
  -- | Unknown.
  | UnknownType

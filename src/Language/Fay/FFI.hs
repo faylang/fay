@@ -5,7 +5,7 @@
 module Language.Fay.FFI where
 
 import           Language.Fay.Types (Fay)
-import           Prelude            (Bool, Char, Double, String, error)
+import           Prelude            (Bool, Char, Double, String, Int, error)
 
 -- | In case you want to distinguish values with a JsPtr.
 data JsPtr a
@@ -18,6 +18,9 @@ instance Foreign ()
 
 -- | All numbers in JS are double.
 instance Foreign Double
+
+-- | Some numbers in JS are int.
+instance Foreign Int
 
 -- | Characters are OK.
 instance Foreign Char

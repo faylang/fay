@@ -43,6 +43,7 @@ compileFromTo config filein fileout = do
             "<!doctype html>"
           , "<html>"
           , "  <head>"
+          ,"    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>"
           , unlines . map ("    "++) . map makeScriptTagSrc $ configHtmlJSLibs config
           , "    " ++ makeScriptTagSrc relativeJsPath
           , "    </script>"

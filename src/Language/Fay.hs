@@ -110,7 +110,7 @@ printCompile config with from = do
 
 -- | Compile a String of Fay and print it as beautified JavaScript.
 printTestCompile :: String -> IO ()
-printTestCompile = printCompile def compileToplevelModule
+printTestCompile = printCompile def { configWarn = False } compileToplevelModule
 
 -- | Compile the given Fay code for the documentation. This is
 -- specialised because the documentation isn't really “real”
@@ -216,10 +216,15 @@ compileModule (Module _ modulename pragmas Nothing exports imports decls) = do
   return (imported ++ current)
 compileModule mod = throwError (UnsupportedModuleSyntax mod)
 
+warn :: String -> Compile ()
+warn w = do
+  shouldWarn <- configWarn <$> gets stateConfig
+  when shouldWarn $ liftIO . hPutStrLn stderr $ "Warning: " ++ w
+
 checkModulePragmas :: [ModulePragma] -> Compile ()
 checkModulePragmas pragmas =
   when (not $ any noImplicitPrelude pragmas) $
-    liftIO $ hPutStrLn stderr "Warning: NoImplicitPrelude not specified"
+    warn "Warning: NoImplicitPrelude not specified"
   where
     noImplicitPrelude :: ModulePragma -> Bool
     noImplicitPrelude (LanguagePragma _ names) = any (== (Ident "NoImplicitPrelude")) names

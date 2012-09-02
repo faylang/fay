@@ -137,7 +137,7 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                       tests/Hierarchical/Export.hs
                       tests/Hierarchical/RecordDefined.hs
                      -- Documentation files
-                     docs/beautify.js docs/highlight.pack.js docs/home.css docs/home.js docs/jquery.js
+                     docs/beautify.js docs/highlight.pack.js docs/home.css docs/jquery.js
                      docs/analytics.js
                      -- Documentation snippets
                      docs/snippets/conditions.hs

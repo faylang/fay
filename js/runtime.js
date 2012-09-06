@@ -29,14 +29,13 @@ function $(value){
 }
 
 // Force the thunk.
-$.prototype.force = function(nocache){
-    return nocache
-        ? this.value()
-        : this.forced
-        ? this.value
-        : (this.forced = true, this.value = this.value());
+$.prototype.force = function(nocache) {
+  return nocache ?
+    this.value() :
+    (this.forced ?
+     this.value :
+     (this.value = this.value(), this.forced = true, this.value));
 };
-
 
 // Eval in the context of the Haskell bindings.
 function Fay$$eval(str){

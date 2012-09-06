@@ -631,44 +631,44 @@ constructorName = fromString . ("$_" ++) . qname
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]
 compileFunCase _toplevel [] = return []
 compileFunCase toplevel matches@(Match _ name argslen _ _ _:_) = do
-    tco  <- config configTCO
-    pats <- fmap optimizePatConditions (mapM compileCase matches)
-    bind <- bindToplevel toplevel
-                         (UnQual name)
-                         (foldr (\arg inner -> JsFun [arg] [] (Just inner))
-                                (stmtsThunk (let stmts = (concat pats ++ basecase)
-                                             in if tco
-                                                    then optimizeTailCalls args name stmts
-                                                    else stmts))
-                                args)
-    return [bind]
-    where args = zipWith const uniqueNames argslen
+  tco  <- config configTCO
+  pats <- fmap optimizePatConditions (mapM compileCase matches)
+  bind <- bindToplevel toplevel
+                       (UnQual name)
+                       (foldr (\arg inner -> JsFun [arg] [] (Just inner))
+                              (stmtsThunk (let stmts = (concat pats ++ basecase)
+                                           in if tco
+                                                  then optimizeTailCalls args name stmts
+                                                  else stmts))
+                              args)
+  return [bind]
+  where args = zipWith const uniqueNames argslen
 
-          isWildCardMatch (Match _ _ pats _ _ _) = all isWildCardPat pats
+        isWildCardMatch (Match _ _ pats _ _ _) = all isWildCardPat pats
 
-          compileCase :: Match -> Compile [JsStmt]
-          compileCase match@(Match _ _ pats _ rhs _) = do
-            whereDecls' <- whereDecls match
-            exp  <- compileRhs rhs
-            body <- if null whereDecls'
-                      then return exp
-                      else do
-                          binds <- mapM compileLetDecl whereDecls'
-                          return (JsApp (JsFun [] (concat binds) (Just exp)) [])
-            foldM (\inner (arg,pat) ->
-                    compilePat (JsName arg) pat inner)
-                  [JsEarlyReturn body]
-                  (zip args pats)
+        compileCase :: Match -> Compile [JsStmt]
+        compileCase match@(Match _ _ pats _ rhs _) = do
+          whereDecls' <- whereDecls match
+          exp  <- compileRhs rhs
+          body <- if null whereDecls'
+                    then return exp
+                    else do
+                        binds <- mapM compileLetDecl whereDecls'
+                        return (JsApp (JsFun [] (concat binds) (Just exp)) [])
+          foldM (\inner (arg,pat) ->
+                  compilePat (JsName arg) pat inner)
+                [JsEarlyReturn body]
+                (zip args pats)
 
-          whereDecls :: Match -> Compile [Decl]
-          whereDecls (Match _ _ _ _ _ (BDecls decls)) = return decls
-          whereDecls match = throwError (UnsupportedWhereInMatch match)
+        whereDecls :: Match -> Compile [Decl]
+        whereDecls (Match _ _ _ _ _ (BDecls decls)) = return decls
+        whereDecls match = throwError (UnsupportedWhereInMatch match)
 
-          basecase :: [JsStmt]
-          basecase = if any isWildCardMatch matches
-                        then []
-                        else [throw ("unhandled case in " ++ show name)
-                                    (JsList (map JsName args))]
+        basecase :: [JsStmt]
+        basecase = if any isWildCardMatch matches
+                      then []
+                      else [throw ("unhandled case in " ++ show name)
+                                  (JsList (map JsName args))]
 
 -- | Optimize functions in tail-call form.
 optimizeTailCalls :: [JsParam] -- ^ The function parameters.

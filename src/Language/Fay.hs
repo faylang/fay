@@ -638,8 +638,8 @@ compileFunCase toplevel matches@(Match _ name argslen _ _ _:_) = do
                        (foldr (\arg inner -> JsFun [arg] [] (Just inner))
                               (stmtsThunk (let stmts = (concat pats ++ basecase)
                                            in if tco
-                                                 then optimizeTailCalls args name stmts
-                                                 else stmts))
+                                                  then optimizeTailCalls args name stmts
+                                                  else stmts))
                               args)
   return [bind]
   where args = zipWith const uniqueNames argslen

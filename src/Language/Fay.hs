@@ -136,25 +136,25 @@ initialPass :: Module -> Compile ()
 initialPass (Module _ _ _ Nothing _ imports decls) = do
   mapM_ initialPass_import imports
   mapM_ (initialPass_decl True) decls
+  modify $ \s -> s { stateImported = stateImported (defaultCompileState def) }
 
 initialPass mod = throwError (UnsupportedModuleSyntax mod)
 
 initialPass_import :: ImportDecl -> Compile ()
-initialPass_import (ImportDecl _ (ModuleName name) _ _ _ _ _)
-  | elem name ["Language.Fay.Prelude","Language.Fay.FFI","Language.Fay.Types"] || name == "Prelude" = return ()
 initialPass_import (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
-  dirs <- configDirectoryIncludes <$> gets stateConfig
-  contents <- io (findImport dirs name)
-  cs <- gets id
-  result <- liftIO $ initialPass_records cs initialPass contents
-  case result of
-    Right ((),state) -> do
-      -- Merges the state gotten from passing through an imported
-      -- module with the current state. We can assume no duplicate
-      -- records exist since GHC would pick that up.
-      modify $ \s -> s { stateRecords = stateRecords state ++ stateRecords s }
-    Left err -> throwError err
-
+  void $ unlessImported name $ do
+    dirs <- configDirectoryIncludes <$> gets stateConfig
+    contents <- io (findImport dirs name)
+    cs <- gets id
+    result <- liftIO $ initialPass_records cs initialPass contents
+    case result of
+      Right ((),state) -> do
+        -- Merges the state gotten from passing through an imported
+        -- module with the current state. We can assume no duplicate
+        -- records exist since GHC would pick that up.
+        modify $ \s -> s { stateRecords = stateRecords state ++ stateRecords s }
+      Left err -> throwError err
+    return []
 
 initialPass_import i =
   error $ "Initial pass: Import syntax not supported. " ++
@@ -246,24 +246,33 @@ findImport [] name =
 
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]
-compileImport (ImportDecl _ (ModuleName name) _ _ _ _ _)
-  | elem name ["Language.Fay.Prelude","Language.Fay.FFI","Language.Fay.Types"] || name == "Prelude" = return []
 compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
-  dirs <- configDirectoryIncludes <$> gets stateConfig
-  contents <- io (findImport dirs name)
-  state <- gets id
-  result <- liftIO $ compileToAst state compileModule contents
-  case result of
-    Right (stmts,state) -> do
-      modify $ \s -> s { stateFayToJs = stateFayToJs state ++ stateFayToJs s
-                       , stateJsToFay = stateJsToFay state ++ stateJsToFay s
-                       }
-      return stmts
-    Left err -> throwError err
+  unlessImported name $ do
+    dirs <- configDirectoryIncludes <$> gets stateConfig
+    contents <- io (findImport dirs name)
+    state <- gets id
+    result <- liftIO $ compileToAst state compileModule contents
+    case result of
+      Right (stmts,state) -> do
+        modify $ \s -> s { stateFayToJs = stateFayToJs state ++ stateFayToJs s
+                         , stateJsToFay = stateJsToFay state ++ stateJsToFay s
+                         }
+        return stmts
+      Left err -> throwError err
 compileImport i =
   error $ "compileImport: Import syntax not supported. " ++
         "The compiler writer was too lazy to support that.\n" ++
         "It was: " ++ show i
+
+-- | Don't re-import the same modules.
+unlessImported :: String -> Compile [JsStmt] -> Compile [JsStmt]
+unlessImported name importIt = do
+  imported <- gets stateImported
+  if elem name imported
+     then return []
+     else do
+       modify $ \s -> s { stateImported = name : imported }
+       importIt
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [Decl] -> Compile [JsStmt]

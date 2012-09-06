@@ -61,6 +61,7 @@ data CompileState = CompileState
   , stateRecords     :: [(Name,[Name])] -- records with field names
   , stateFayToJs     :: [JsStmt]
   , stateJsToFay     :: [JsStmt]
+  , stateImported    :: [String] -- ^ Names of imported modules so far.
 } deriving (Show)
 
 defaultCompileState :: CompileConfig -> CompileState
@@ -72,6 +73,7 @@ defaultCompileState config = CompileState {
   , stateRecords = [(Ident "Nothing",[]),(Ident "Just",[Ident "slot1"])]
   , stateFayToJs = []
   , stateJsToFay = []
+  , stateImported = ["Language.Fay.Prelude","Language.Fay.FFI","Language.Fay.Types","Prelude"]
   }
 
 -- | Compile monad.

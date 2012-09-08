@@ -1,3 +1,6 @@
+{ instance: 'R', i: 10, c: 'a' }
+{ instance: 'R', i: 20, c: 'a' }
+{ instance: 'R', i: 123, c: 'b' }
 { instance: 'R', i: 1, c: 'a' }
 1
 "a"

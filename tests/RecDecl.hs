@@ -1,5 +1,8 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
+import Language.Fay.FFI
+import Language.Fay.Prelude
+
 data R = R { i :: Double, c :: Char }
 data S = S Double Char
 
@@ -28,7 +31,17 @@ data X = X { _x1, _x2 :: Int }
 x1 = X 1 2
 x2 = X { _x1 = 1, _x2 = 2 }
 
+-- Record updates
+r1' = r1{ i = 10 }
+r2' = r2{ c = 'a', i = 20 }
+r'' = r'{ i = 123 }
+
 main = do
+  -- print updated records first to show that old records are preserved
+  print r1'
+  print r2'
+  print r''
+
   print r1
   printS (show (i r1))
   printS (show (c r1))

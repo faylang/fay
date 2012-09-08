@@ -764,6 +764,7 @@ compileExp exp =
                                         return (JsApp (JsApp (JsName "enumFromTo") [f])
                                                       [t])
     RecConstr name fieldUpdates -> compileRecConstr name fieldUpdates
+    RecUpdate rec  fieldUpdates -> updateRec rec fieldUpdates
     ExpTypeSig _ e _ -> compileExp e
 
     exp -> throwError (UnsupportedExpression exp)
@@ -942,6 +943,17 @@ compileRecConstr name fieldUpdates = do
            -- obj.field = value
            \(FieldUpdate (UnQual field) value) -> JsSetProp o (UnQual field) <$> compileExp value
     return $ JsApp (JsFun [] (record:setFields) (Just (JsName o))) []
+
+updateRec :: Exp -> [FieldUpdate] -> Compile JsExp
+updateRec rec fieldUpdates = do
+    record <- force <$> compileExp rec
+    let copyName = UnQual (Ident "$_record_to_update")
+        copy = JsVar copyName
+                     (JsRawExp ("Object.create(" ++ printJS record ++ ")"))
+    setFields <- forM fieldUpdates $
+        \(FieldUpdate (UnQual field) value) ->
+            JsSetProp copyName (UnQual field) <$> compileExp value
+    return $ JsApp (JsFun [] (copy:setFields) (Just (JsName copyName))) []
 
 -- | Equality test for two expressions, with some optimizations.
 equalExps :: JsExp -> JsExp -> JsExp

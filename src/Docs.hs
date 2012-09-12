@@ -155,14 +155,8 @@ theintro = do
     li $ "Has fundamental data types (Double, String, etc.) based upon what JS can support"
     li $ "Outputs minifier-aware code for small compressed size"
     li $ "Has a trivial foreign function interface to JavaScript"
-  p $ do "Because Fay is intended to be small and simple, it relies on GHC, the Haskell compiler, "
-         "for static checking. So the workflow when working with Fay is: "
-  pre $ do
-    "$ ghc hello.hs\n"
-    "$ fay hello.hs"
-  p $ do "The "; code "ghc"; " call will compile the Fay (really, Haskell) code and run the type system, "
-         "and the call to "; code "fay"
-         " will actually generate JavaScript code under "; code "hello.js"; "."
+    li $ "Typechecks using GHC"
+
   p $ a ! href "#examples" $ "Go to examples »"
 
 thejsproblem = do

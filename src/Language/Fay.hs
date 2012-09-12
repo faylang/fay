@@ -205,9 +205,10 @@ initialPass_dataDecl _ _decl constructors =
 -- Typechecking
 
 typecheck :: [FilePath] -> [String] -> Bool -> String -> Compile ()
-typecheck includeDirs ghcFlags wall fp = liftIO $ do
-  res <- readAllFromProcess' "ghc" (["-fno-code", "-package fay", fp] ++ map ("-i" ++) includeDirs ++ ghcFlags ++ wallF) ""
-  either error (hPutStrLn stderr . fst) res
+typecheck includeDirs ghcFlags wall fp = do
+  res <- liftIO $ readAllFromProcess' "ghc" (
+    ["-fno-code", "-package fay", fp] ++ map ("-i" ++) includeDirs ++ ghcFlags ++ wallF) ""
+  either error (warn . fst) res
   where
     wallF | wall = ["-Wall"]
           | otherwise = []
@@ -230,14 +231,15 @@ compileModule (Module _ modulename pragmas Nothing exports imports decls) = do
 compileModule mod = throwError (UnsupportedModuleSyntax mod)
 
 warn :: String -> Compile ()
+warn "" = return ()
 warn w = do
   shouldWarn <- configWarn <$> gets stateConfig
-  when shouldWarn $ liftIO . hPutStrLn stderr $ "Warning: " ++ w
+  when shouldWarn . liftIO . hPutStrLn stderr $ "Warning: " ++ w
 
 checkModulePragmas :: [ModulePragma] -> Compile ()
 checkModulePragmas pragmas =
   when (not $ any noImplicitPrelude pragmas) $
-    warn "Warning: NoImplicitPrelude not specified"
+    warn "NoImplicitPrelude not specified"
   where
     noImplicitPrelude :: ModulePragma -> Bool
     noImplicitPrelude (LanguagePragma _ names) = any (== (Ident "NoImplicitPrelude")) names

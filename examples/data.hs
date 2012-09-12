@@ -1,6 +1,6 @@
 -- Generate Show value.
 --
--- $ fay -autorun examples/data.hs
+-- $ fay examples/data.hs
 -- $ node examples/data.js
 -- (Foo { x = 123, y = "abc", z = (Bar) })
 

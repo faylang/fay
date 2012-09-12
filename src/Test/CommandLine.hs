@@ -29,5 +29,5 @@ case_executable = do
 
 case_compile :: Assertion
 case_compile = do
-  res <- compileFile ["--autorun", "--include=tests", "tests/RecordImport_Import.hs"]
+  res <- compileFile ["--include=tests", "tests/RecordImport_Import.hs"]
   assertBool (fromLeft res) (isRight res)

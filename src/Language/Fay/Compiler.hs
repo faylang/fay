@@ -114,7 +114,7 @@ compileProgram config raw with hscode = do
                            ]
               else ""
           ,"};"
-          ,if configAutorun config
+          ,if not (configLibrary config)
               then unlines [";"
                            ,"var main = new " ++ modulename ++ "();"
                            ,"main._(main.main);"

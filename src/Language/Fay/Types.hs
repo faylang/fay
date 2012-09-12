@@ -44,7 +44,7 @@ data CompileConfig = CompileConfig
   , configPrettyPrint       :: Bool
   , configHtmlWrapper       :: Bool
   , configHtmlJSLibs        :: [FilePath]
-  , configAutorun           :: Bool
+  , configLibrary           :: Bool
   , configWarn              :: Bool
   , configFilePath          :: Maybe FilePath
   , configTypecheck         :: Bool

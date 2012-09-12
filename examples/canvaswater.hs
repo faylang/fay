@@ -1,4 +1,4 @@
--- | Compile with: dist/build/fay/fay -autorun examples/canvaswater.hs
+-- | Compile with: fay examples/canvaswater.hs
 
 {-# LANGUAGE EmptyDataDecls    #-}
 {-# LANGUAGE NoImplicitPrelude #-}

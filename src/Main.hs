@@ -29,7 +29,7 @@ defineOptions "FayCompilerOptions" $ do
   -- boolOption "optExportBuiltins" "export-builtins" True ""
   -- boolOption "optTCO" "tco" False ""
 
-  boolOption     "optAutoRun"     "autorun"      False "automatically call main in generated JavaScript"
+  boolOption     "optLibrary"     "library"      False "Don't automatically call main in generated JavaScript"
   boolOption     "optInlineForce" "inline-force" False "inline forcing, adds some speed for numbers, blows up code a bit"
   boolOption     "optFlattenApps" "flatten-apps" False "flatten function applicaton"
 
@@ -94,7 +94,7 @@ main =
 
                    , configDirectoryIncludes = "." : optInclude opts
                    , configPrettyPrint = optPretty opts
-                   , configAutorun = optAutoRun opts
+                   , configLibrary = optLibrary opts
                    , configHtmlWrapper =  optHTMLWrapper opts
                    , configHtmlJSLibs = optHTMLJSLibs opts
                    , configTypecheck = not $ optNoGHC opts

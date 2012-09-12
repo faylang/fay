@@ -1,7 +1,7 @@
 -- | Calculator based on http://trelford.com/PitCalculatorApp.htm
 --
 -- Compile with
--- $ fay --autorun -p --html-wrapper --html-js-lib jquery.min.js examples/calc.hs
+-- $ fay -p --html-wrapper --html-js-lib jquery.min.js examples/calc.hs
 --
 
 {-# OPTIONS -fno-warn-orphans -fno-warn-type-defaults -fno-warn-unused-do-bind #-}

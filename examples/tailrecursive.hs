@@ -2,7 +2,7 @@
 -- the JavaScript stack.
 --
 -- See the ticket about optimizing tail-recursive functions for future
--- work <https://github.com/chrisdone/fay/issues/19>
+-- work <https://github.com/faylang/fay/issues/19>
 
 {-# LANGUAGE NoImplicitPrelude #-}
 

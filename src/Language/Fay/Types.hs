@@ -47,11 +47,13 @@ data CompileConfig = CompileConfig
   , configAutorun           :: Bool
   , configWarn              :: Bool
   , configFilePath          :: Maybe FilePath
+  , configTypecheck         :: Bool
+  , configWall              :: Bool
   } deriving (Show)
 
 -- | Default configuration.
 instance Default CompileConfig where
-  def = CompileConfig False False False True [] False False [] False True Nothing
+  def = CompileConfig False False False True [] False False [] False True Nothing True False
 
 -- | State of the compiler.
 data CompileState = CompileState

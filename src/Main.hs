@@ -38,6 +38,9 @@ defineOptions "FayCompilerOptions" $ do
 
   stringsOption  "optInclude"     "include"      []    "dir1[, ..] additional directories for include"
 
+  boolOption     "optWall"        "Wall"         False "Typecheck with -Wall"
+  boolOption     "optNoGHC"       "no-ghc"       False "Don't typecheck, specify when not working with files"
+
   option         "optStdout" (\o -> o
                               { optionLongFlags = ["stdout"]
                               , optionShortFlags = ['s']
@@ -94,6 +97,8 @@ main =
                    , configAutorun = optAutoRun opts
                    , configHtmlWrapper =  optHTMLWrapper opts
                    , configHtmlJSLibs = optHTMLJSLibs opts
+                   , configTypecheck = not $ optNoGHC opts
+                   , configWall = optWall opts
                    }
   void $ E.catch (incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible")
                  errorUsage

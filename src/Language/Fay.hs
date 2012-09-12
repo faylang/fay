@@ -122,9 +122,10 @@ compileForDocs mod = do
 -- | Compile the top-level Fay module.
 compileToplevelModule :: Module -> Compile [JsStmt]
 compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
-  compileConfig <- gets stateConfig
-  liftIO $ typecheck (configDirectoryIncludes compileConfig)
-             (fromMaybe modulename $ configFilePath compileConfig)
+  cfg <- gets stateConfig
+  when (configTypecheck cfg) $
+    typecheck (configDirectoryIncludes cfg) [] (configWall cfg) $
+      fromMaybe modulename $ configFilePath cfg
   initialPass mod
   stmts <- compileModule mod
   fay2js <- gets (fayToJsDispatcher . stateFayToJs)
@@ -203,10 +204,13 @@ initialPass_dataDecl _ _decl constructors =
 --------------------------------------------------------------------------------
 -- Typechecking
 
-typecheck :: [FilePath] -> FilePath -> IO ()
-typecheck includeDirs fp = do
-  res <- readAllFromProcess' "ghc" (["-fno-code", "-package fay", "-Wall", fp] ++ map ("-i" ++) includeDirs) ""
-  either error (const $ return ()) res
+typecheck :: [FilePath] -> [String] -> Bool -> String -> Compile ()
+typecheck includeDirs ghcFlags wall fp = liftIO $ do
+  res <- readAllFromProcess' "ghc" (["-fno-code", "-package fay", fp] ++ map ("-i" ++) includeDirs ++ ghcFlags ++ wallF) ""
+  either error (hPutStrLn stderr . fst) res
+  where
+    wallF | wall = ["-Wall"]
+          | otherwise = []
 
 --------------------------------------------------------------------------------
 -- Compilers

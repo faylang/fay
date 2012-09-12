@@ -5,11 +5,11 @@ module Test.CommandLine (tests) where
 import           Control.Applicative
 import           Data.Maybe
 import           System.Process.Extra
-import           Test.HUnit (Assertion, assertBool)
-import           Test.Util
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Test.Framework.TH
+import           Test.HUnit                     (Assertion, assertBool)
+import           Test.Util
 
 tests :: Test
 tests = $testGroupGenerator
@@ -17,7 +17,10 @@ tests = $testGroupGenerator
 compileFile :: [String] -> IO (Either String String)
 compileFile flags = do
   fay <- fromJust <$> fayPath
-  readAllFromProcess' fay flags ""
+  r <- readAllFromProcess' fay flags ""
+  return $ case r of
+    Left l -> Left l
+    Right t -> Right $ snd t
 
 case_executable :: Assertion
 case_executable = do

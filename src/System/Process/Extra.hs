@@ -16,9 +16,9 @@ readAllFromProcess program file = do
     ExitSuccess -> fmap Right (hGetContents out)
     ExitFailure _ -> fmap Left (hGetContents err)
 
-readAllFromProcess' :: FilePath -> [String] -> String -> IO (Either String String)
+readAllFromProcess' :: FilePath -> [String] -> String -> IO (Either String (String,String))
 readAllFromProcess' program flags input = do
   (code,out,err) <- readProcessWithExitCode program flags input
-  case code of
-    ExitSuccess -> return $ Right out
-    ExitFailure _ -> return $ Left err
+  return $ case code of
+    ExitFailure _ -> Left err
+    ExitSuccess   -> Right (err, out)

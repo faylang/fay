@@ -339,8 +339,16 @@ function Fay$$equal(lit1, lit2) {
             if (lit1 === null || lit2 === null)
                 return lit1 === lit2;
         } while (true);
+    } else if (typeof lit1 == 'object' && typeof lit2 == 'object' && lit1 && lit2 &&
+              lit1.constructor === lit2.constructor) {
+      for(var x in lit1) {
+        if(!(lit1.hasOwnProperty(x) && lit2.hasOwnProperty(x) &&
+            Fay$$equal(lit1[x],lit2[x])))
+          return false;
+      }
+      return true;
     } else {
-        return false;
+      return false;
     }
 }
 

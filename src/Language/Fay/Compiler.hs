@@ -34,6 +34,14 @@ instance Reader FilePath where
 -- | Compile file program to…
 compileFromTo :: CompileConfig -> FilePath -> FilePath -> IO ()
 compileFromTo config filein fileout = do
+  result <- compileFromToReturningStatus config filein fileout
+  case result of
+    Right () -> return ()
+    Left err -> error . groom $ err
+
+-- | Compile file program to…
+compileFromToReturningStatus :: CompileConfig -> FilePath -> FilePath -> IO (Either CompileError ())
+compileFromToReturningStatus config filein fileout = do
   result <- compileFile config { configFilePath = Just filein } filein
   case result of
     Right out -> do
@@ -51,11 +59,12 @@ compileFromTo config filein fileout = do
           , "  <body>"
           , "  </body>"
           , "</html>"]
+      return (Right ())
             where relativeJsPath = makeRelative (dropFileName fileout) fileout
                   makeScriptTagSrc :: FilePath -> String
                   makeScriptTagSrc = \s ->
                     "<script type=\"text/javascript\" src=\"" ++ s ++ "\"></script>"
-    Left err -> error . groom $ err
+    Left err -> return (Left err)
 
 -- | Compile readable/writable values.
 compileReadWrite :: (Reader r, Writer w) => CompileConfig -> r -> w -> IO ()

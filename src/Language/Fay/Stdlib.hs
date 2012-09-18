@@ -32,6 +32,7 @@ module Language.Fay.Stdlib
   ,null
   ,otherwise
   ,prependToAll
+  ,reverse
   ,snd
   ,sort
   ,sortBy
@@ -219,3 +220,7 @@ fromIntegral = ffi "%1"
 
 otherwise :: Bool
 otherwise = True
+
+reverse :: [a] -> [a]
+reverse (x:xs) = reverse xs ++ [x]
+reverse [] = []

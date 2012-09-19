@@ -38,6 +38,7 @@ import           Data.Maybe
 import           Data.String
 import qualified Language.ECMAScript3.Parser as JS
 import           Language.Haskell.Exts
+
 import           Safe
 import           System.Directory            (doesFileExist, findExecutable)
 import           System.Exit
@@ -127,6 +128,7 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
     typecheck (configDirectoryIncludes cfg) [] (configWall cfg) $
       fromMaybe modulename $ configFilePath cfg
   initialPass mod
+  modify $ \s -> s { stateImported = stateImported (defaultCompileState def) }
   stmts <- compileModule mod
   fay2js <- gets (fayToJsDispatcher . stateFayToJs)
   js2fay <- gets (jsToFayDispatcher . stateJsToFay)
@@ -139,7 +141,6 @@ initialPass :: Module -> Compile ()
 initialPass (Module _ _ _ Nothing _ imports decls) = do
   mapM_ initialPass_import imports
   mapM_ (initialPass_decl True) decls
-  modify $ \s -> s { stateImported = stateImported (defaultCompileState def) }
 
 initialPass mod = throwError (UnsupportedModuleSyntax mod)
 
@@ -155,7 +156,9 @@ initialPass_import (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothi
         -- Merges the state gotten from passing through an imported
         -- module with the current state. We can assume no duplicate
         -- records exist since GHC would pick that up.
-        modify $ \s -> s { stateRecords = stateRecords state ++ stateRecords s }
+        modify $ \s -> s { stateRecords = stateRecords state
+                         , stateImported = stateImported state
+                         }
       Left err -> throwError err
     return []
 
@@ -269,8 +272,9 @@ compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) =
     result <- liftIO $ compileToAst state compileModule contents
     case result of
       Right (stmts,state) -> do
-        modify $ \s -> s { stateFayToJs = stateFayToJs state ++ stateFayToJs s
-                         , stateJsToFay = stateJsToFay state ++ stateJsToFay s
+        modify $ \s -> s { stateFayToJs = stateFayToJs state
+                         , stateJsToFay = stateJsToFay state
+                         , stateImported = stateImported state
                          }
         return stmts
       Left err -> throwError err

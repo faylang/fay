@@ -106,7 +106,7 @@ compileProgram config raw with hscode = do
             then prettyPrintString out
             else return out
 
-  where generate jscode exports (ModuleName modulename) = unlines
+  where generate jscode exports (ModuleName (clean -> modulename)) = unlines
           ["/** @constructor"
           ,"*/"
           ,"var " ++ modulename ++ " = function(){"
@@ -130,6 +130,9 @@ compileProgram config raw with hscode = do
                            ]
               else ""
           ]
+        clean ('.':cs) = '$' : clean cs
+        clean (c:cs)   = c : clean cs
+        clean [] = []
 
 -- | Print an this.x = x; export out.
 printExport :: Name -> String

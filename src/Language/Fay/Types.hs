@@ -25,11 +25,11 @@ module Language.Fay.Types
   where
 
 import           Control.Applicative
-import           Control.Exception
+
 import           Control.Monad.Error    (Error, ErrorT, MonadError)
 import           Control.Monad.Identity (Identity)
 import           Control.Monad.State
-import           Data.Data
+
 import           Data.Default
 import           Language.Haskell.Exts
 
@@ -51,7 +51,7 @@ data CompileConfig = CompileConfig
   , configFilePath          :: Maybe FilePath
   , configTypecheck         :: Bool
   , configWall              :: Bool
-  } deriving (Show)
+  }
 
 -- | Default configuration.
 instance Default CompileConfig where
@@ -67,7 +67,7 @@ data CompileState = CompileState
   , stateFayToJs     :: [JsStmt]
   , stateJsToFay     :: [JsStmt]
   , stateImported    :: [String] -- ^ Names of imported modules so far.
-} deriving (Show)
+}
 
 defaultCompileState :: CompileConfig -> CompileState
 defaultCompileState config = CompileState {
@@ -107,7 +107,7 @@ data PrintState = PrintState
   , psMapping      :: [(SrcLoc,SrcLoc)]
   , psIndentLevel  :: Int
   , psOutput       :: [String]
-  } deriving (Show)
+  }
 
 instance Default PrintState where
   def = PrintState 0 0 [] 0 []
@@ -142,10 +142,9 @@ data CompileError
   | FfiFormatBadChars String
   | FfiFormatNoSuchArg Int
   | FfiFormatIncompleteArg
-  | FfiFormatInvalidJavaScript JsExp String
-  deriving (Show,Eq,Data,Typeable)
+  | FfiFormatInvalidJavaScript String String
+  deriving (Show)
 instance Error CompileError
-instance Exception CompileError
 
 -- | The JavaScript FFI interfacing monad.
 newtype Fay a = Fay (Identity a)
@@ -166,7 +165,7 @@ data JsStmt
   | JsSetProp JsName JsName JsExp
   | JsContinue
   | JsBlock [JsStmt]
-  deriving (Show,Eq,Data,Typeable)
+  deriving (Show,Eq)
 
 -- | Expression type.
 data JsExp
@@ -192,7 +191,7 @@ data JsExp
   | JsEq JsExp JsExp
   | JsInfix String JsExp JsExp -- Used to optimize *, /, +, etc
   | JsObj [(String,JsExp)]
-  deriving (Show,Eq,Data,Typeable)
+  deriving (Show,Eq)
 
 -- | Literal value type.
 data JsLit
@@ -201,7 +200,7 @@ data JsLit
   | JsInt Int
   | JsFloating Double
   | JsBool Bool
-  deriving (Show,Eq,Data,Typeable)
+  deriving (Show,Eq)
 
 -- | These are the data types that are serializable directly to native
 -- JS data types. Strings, floating points and arrays. The others are:
@@ -222,4 +221,4 @@ data FundamentalType
  | BoolType
  -- | Unknown.
  | UnknownType
-   deriving (Show,Eq)
+   deriving (Show)

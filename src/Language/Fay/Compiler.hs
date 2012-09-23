@@ -8,6 +8,7 @@ module Language.Fay.Compiler where
 
 import           Language.Fay                 (compileToplevelModule, compileViaStr, prettyPrintString)
 import           Language.Fay.Types
+import           Language.Fay.Print
 
 import           Control.Monad
 import           Language.Haskell.Exts.Syntax
@@ -137,9 +138,9 @@ compileProgram config raw with hscode = do
 -- | Print an this.x = x; export out.
 printExport :: Name -> String
 printExport name =
-  printJS (JsSetProp ":this"
-                     (UnQual name)
-                     (JsName (UnQual name)))
+  printJSString (JsSetProp ":this"
+                           (UnQual name)
+                           (JsName (UnQual name)))
 
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String

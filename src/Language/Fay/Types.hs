@@ -19,7 +19,9 @@ module Language.Fay.Types
   ,CompileConfig(..)
   ,CompileState(..)
   ,defaultCompileState
-  ,FundamentalType(..))
+  ,FundamentalType(..)
+  ,PrintState(..)
+  ,Printer(..))
   where
 
 import           Control.Applicative
@@ -99,9 +101,23 @@ type JsName = QName -- FIXME: Force sanitization at this point.
 class (Parseable from,Printable to) => CompilesTo from to | from -> to where
   compileTo :: from -> Compile to
 
+data PrintState = PrintState
+  { psLine         :: Int
+  , psColumn       :: Int
+  , psMapping      :: [(SrcLoc,SrcLoc)]
+  , psIndentLevel  :: Int
+  , psOutput       :: [String]
+  } deriving (Show)
+
+instance Default PrintState where
+  def = PrintState 0 0 [] 0 []
+
+newtype Printer a = Printer { runPrinter :: State PrintState a }
+  deriving (Monad,Functor,MonadState PrintState)
+
 -- | Print some value.
 class Printable a where
-  printJS :: a -> String
+  printJS :: a -> Printer ()
 
 -- | Error type.
 data CompileError
@@ -126,7 +142,7 @@ data CompileError
   | FfiFormatBadChars String
   | FfiFormatNoSuchArg Int
   | FfiFormatIncompleteArg
-  | FfiFormatInvalidJavaScript String String
+  | FfiFormatInvalidJavaScript JsExp String
   deriving (Show,Eq,Data,Typeable)
 instance Error CompileError
 instance Exception CompileError
@@ -141,6 +157,7 @@ newtype Fay a = Fay (Identity a)
 -- | Statement type.
 data JsStmt
   = JsVar JsName JsExp
+  | JsMappedVar SrcLoc JsName JsExp
   | JsIf JsExp [JsStmt] [JsStmt]
   | JsEarlyReturn JsExp
   | JsThrow JsExp
@@ -149,7 +166,7 @@ data JsStmt
   | JsSetProp JsName JsName JsExp
   | JsContinue
   | JsBlock [JsStmt]
-  deriving (Show,Eq)
+  deriving (Show,Eq,Data,Typeable)
 
 -- | Expression type.
 data JsExp
@@ -175,7 +192,7 @@ data JsExp
   | JsEq JsExp JsExp
   | JsInfix String JsExp JsExp -- Used to optimize *, /, +, etc
   | JsObj [(String,JsExp)]
-  deriving (Show,Eq)
+  deriving (Show,Eq,Data,Typeable)
 
 -- | Literal value type.
 data JsLit
@@ -184,7 +201,7 @@ data JsLit
   | JsInt Int
   | JsFloating Double
   | JsBool Bool
-  deriving (Show,Eq)
+  deriving (Show,Eq,Data,Typeable)
 
 -- | These are the data types that are serializable directly to native
 -- JS data types. Strings, floating points and arrays. The others are:

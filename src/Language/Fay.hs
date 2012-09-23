@@ -23,7 +23,7 @@ module Language.Fay
   ,prettyPrintString)
   where
 
-import           Language.Fay.Print          (jsEncodeName)
+import           Language.Fay.Print          (jsEncodeName,printJSString)
 import           Language.Fay.Types
 import           System.Process.Extra
 
@@ -66,7 +66,7 @@ compileViaStr :: (Show from,Show to,CompilesTo from to)
 compileViaStr config with from =
   runCompile (defaultCompileState config)
              (parseResult (throwError . uncurry ParseError)
-                          (fmap printJS . with)
+                          (fmap printJSString . with)
                           (parseFay from))
 
 -- | Compile a Haskell source string to a JavaScript source string.
@@ -328,29 +328,30 @@ compileDecl toplevel decl =
 compilePatBind :: Bool -> Maybe Type -> Decl -> Compile [JsStmt]
 compilePatBind toplevel sig pat =
   case pat of
-    PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
+    PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
       case ffiExp rhs of
         Just formatstr -> case sig of
-          Just sig -> compileFFI ident formatstr sig
+          Just sig -> compileFFI srcloc ident formatstr sig
           Nothing  -> throwError (FfiNeedsTypeSig pat)
-        _ -> compileUnguardedRhs toplevel ident rhs
-    PatBind _ (PVar ident) Nothing (UnGuardedRhs rhs) bdecls ->
-      compileUnguardedRhs toplevel ident (Let bdecls rhs)
+        _ -> compileUnguardedRhs srcloc toplevel ident rhs
+    PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) bdecls ->
+      compileUnguardedRhs srcloc toplevel ident (Let bdecls rhs)
     _ -> throwError (UnsupportedDeclaration pat)
 
   where ffiExp (App (Var (UnQual (Ident "ffi"))) (Lit (String formatstr))) = Just formatstr
         ffiExp _ = Nothing
 
 -- | Compile an FFI call.
-compileFFI :: Name   -- ^ Name of the to-be binding.
+compileFFI :: SrcLoc -- ^ Location of the original FFI decl.
+           -> Name   -- ^ Name of the to-be binding.
            -> String -- ^ The format string.
            -> Type   -- ^ Type signature.
            -> Compile [JsStmt]
-compileFFI name formatstr sig = do
+compileFFI srcloc name formatstr sig = do
   inner <- formatFFI formatstr (zip params funcFundamentalTypes)
-  case JS.parse JS.parseExpression (prettyPrint name) (printJS (wrapReturn inner)) of
+  case JS.parse JS.parseExpression (prettyPrint name) (printJSString (wrapReturn inner)) of
     Left err -> throwError (FfiFormatInvalidJavaScript inner (show err))
-    Right{}  -> fmap return (bindToplevel True (UnQual name) (body inner))
+    Right{}  -> fmap return (bindToplevel srcloc True (UnQual name) (body inner))
 
   where body inner = foldr wrapParam (wrapReturn inner) params
         wrapParam name inner = JsFun [name] [] (Just inner)
@@ -392,7 +393,7 @@ formatFFI formatstr args = go formatstr where
     case listToMaybe (drop (n-1) args) of
       Nothing -> throwError (FfiFormatNoSuchArg n)
       Just (arg,typ) -> do
-        return (printJS (fayToJs (typeRep typ) (JsName arg)))
+        return (printJSString (fayToJs (typeRep typ) (JsName arg)))
 
 -- | Translate: Fay → JS.
 fayToJs :: JsExp -> JsExp -> JsExp
@@ -469,10 +470,10 @@ typeArity t =
     _              -> 0
 
 -- | Compile a normal simple pattern binding.
-compileUnguardedRhs :: Bool -> Name -> Exp -> Compile [JsStmt]
-compileUnguardedRhs toplevel ident rhs = do
+compileUnguardedRhs :: SrcLoc -> Bool -> Name -> Exp -> Compile [JsStmt]
+compileUnguardedRhs srcloc toplevel ident rhs = do
   body <- compileExp rhs
-  bind <- bindToplevel toplevel (UnQual ident) (thunk body)
+  bind <- bindToplevel srcloc toplevel (UnQual ident) (thunk body)
   return [bind]
 
 convertGADT :: GadtDecl -> QualConDecl
@@ -491,7 +492,7 @@ convertGADT d =
 compileDataDecl :: Bool -> Decl -> [QualConDecl] -> Compile [JsStmt]
 compileDataDecl toplevel _decl constructors =
   fmap concat $
-    forM constructors $ \(QualConDecl _ _ _ condecl) ->
+    forM constructors $ \(QualConDecl srcloc _ _ condecl) ->
       case condecl of
         ConDecl (UnQual -> name) types  -> do
           let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
@@ -513,7 +514,7 @@ compileDataDecl toplevel _decl constructors =
           let fields = concatMap fst fields'
           cons <- makeConstructor name fields
           func <- makeFunc name fields
-          funs <- makeAccessors fields
+          funs <- makeAccessors srcloc fields
           emitFayToJs name fields'
           emitJsToFay name fields'
           return (cons : func : funs)
@@ -539,9 +540,10 @@ compileDataDecl toplevel _decl constructors =
               fieldParams
 
     -- Creates getters for a RecDecl's values
-    makeAccessors fields =
+    makeAccessors srcloc fields =
       forM fields $ \(Ident name) ->
-           bindToplevel toplevel
+           bindToplevel srcloc
+                        toplevel
                         (fromString name)
                         (JsFun ["x"]
                                []
@@ -649,10 +651,11 @@ constructorName = fromString . ("$_" ++) . qname
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]
 compileFunCase _toplevel [] = return []
-compileFunCase toplevel matches@(Match _ name argslen _ _ _:_) = do
+compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
   tco  <- config configTCO
   pats <- fmap optimizePatConditions (mapM compileCase matches)
-  bind <- bindToplevel toplevel
+  bind <- bindToplevel srcloc
+                       toplevel
                        (UnQual name)
                        (foldr (\arg inner -> JsFun [arg] [] (Just inner))
                               (stmtsThunk (let stmts = (concat pats ++ basecase)
@@ -968,7 +971,7 @@ updateRec rec fieldUpdates = do
     record <- force <$> compileExp rec
     let copyName = UnQual (Ident "$_record_to_update")
         copy = JsVar copyName
-                     (JsRawExp ("Object.create(" ++ printJS record ++ ")"))
+                     (JsRawExp ("Object.create(" ++ printJSString record ++ ")"))
     setFields <- forM fieldUpdates $
         \(FieldUpdate (UnQual field) value) ->
             JsSetProp copyName (UnQual field) <$> compileExp value
@@ -1196,11 +1199,11 @@ hjIdent :: String -> QName
 hjIdent = Qual (ModuleName "Fay") . Ident
 
 -- | Make a top-level binding.
-bindToplevel :: Bool -> QName -> JsExp -> Compile JsStmt
-bindToplevel toplevel name exp = do
+bindToplevel :: SrcLoc -> Bool -> QName -> JsExp -> Compile JsStmt
+bindToplevel srcloc toplevel name exp = do
   exportAll <- gets stateExportAll
   when (toplevel && exportAll) $ emitExport (EVar name)
-  return (JsVar name exp)
+  return (JsMappedVar srcloc name exp)
 
 -- | Emit exported names.
 emitExport :: ExportSpec -> Compile ()

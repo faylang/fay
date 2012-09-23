@@ -10,15 +10,13 @@ import           Language.Fay                (compileForDocs, compileViaStr)
 import           Language.Fay.Compiler       (compileFromTo)
 import           Language.Fay.Types          (CompileConfig(..))
 
-import           Control.Exception
+
 import           Control.Monad
 import qualified Data.ByteString.Lazy        as L
 import           Data.Char
 import           Data.Default
-
 import           Data.Time
 import           Prelude                     hiding (div, head)
-
 import           System.FilePath
 import           Text.Blaze.Extra
 import           Text.Blaze.Html5            as H hiding (contents, map, style)
@@ -48,7 +46,7 @@ generate = do
           result <- compileViaStr def { configFlattenApps = True, configTCO = True } compileForDocs contents
           case result of
             Right (javascript,_) -> return javascript
-            Left err -> throw err
+            Left err -> error (show err)
         titlize = takeWhile (/='.') . upperize . takeFileName
           where upperize (x:xs) = toUpper x : xs
                 upperize xs = xs

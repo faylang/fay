@@ -139,7 +139,7 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
 
 Flag devel
   Description:       Whether to build fay-tests and fay-docs
-  Default:           False
+  Default:           True
 
 library
   hs-source-dirs:    src

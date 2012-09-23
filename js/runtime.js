@@ -37,11 +37,6 @@ $.prototype.force = function(nocache) {
      (this.value = this.value(), this.forced = true, this.value));
 };
 
-// Eval in the context of the Haskell bindings.
-function Fay$$eval(str){
-    return eval(str);
-}
-
 /*******************************************************************************
  * Monad.
  */

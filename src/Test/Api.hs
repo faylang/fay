@@ -16,5 +16,5 @@ tests = $testGroupGenerator
 
 case_imports :: Assertion
 case_imports = do
-  res <- compileFile def { configDirectoryIncludes = ["tests"] } "tests/RecordImport_Import.hs"
+  res <- compileFile def { configTypecheck = False, configDirectoryIncludes = ["tests"] } "tests/RecordImport_Import.hs"
   assertBool "Could not compile file with imports" (isRight res)

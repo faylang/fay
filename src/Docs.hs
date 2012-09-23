@@ -43,7 +43,10 @@ generate = do
   where compile file = do
           contents <- readFile file
           putStrLn $ "Generating " ++ file ++ " ..."
-          result <- compileViaStr def { configFlattenApps = True, configTCO = True } compileForDocs contents
+          result <- compileViaStr def { configFlattenApps = True
+                                      , configTCO = True
+                                      , configTypecheck = False }
+                                  compileForDocs contents
           case result of
             Right (javascript,_) -> return javascript
             Left err -> error (show err)
@@ -56,7 +59,7 @@ generate = do
 
 generateJs = do
   putStrLn $ "Compiling " ++ inp ++ " to " ++ out ++ " ..."
-  compileFromTo def { configFlattenApps = True } inp out
+  compileFromTo def { configFlattenApps = True, configTypecheck = False } inp out
 
   where docs = ("docs" </>)
         inp = docs "home.hs"

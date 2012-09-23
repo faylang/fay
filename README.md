@@ -26,10 +26,10 @@ To install:
 
 To run tests (from within this directory):
 
-    $ cabal install -fdevel
+    $ cabal install
     $ fay-tests
 
-To generate documentation (from within this directory, also needs -fdevel):
+To generate documentation (from within this directory):
 
     $ fay-docs
 
@@ -41,7 +41,7 @@ Try it out:
 
 Cabal-dev also works:
 
-    $ cabal-dev install -fdevel
+    $ cabal-dev install
     $ cabal-dev/bin/fay-tests
     $ cabal-dev/bin/fay-docs
 
@@ -72,7 +72,7 @@ to rebase onto it to check whether your work is out of date.
     $ git fetch fay
     $ git rebase fay/master -i
 
-Install with `cabal install -fdevel` and run `fay-tests`. If there are
+Install with `cabal install` and run `fay-tests`. If there are
 no warnings and all tests pass, move on.
 
 If there are any conflicts, resolve them. Install and run `fay-tests`

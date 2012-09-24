@@ -1066,6 +1066,7 @@ compileLetDecl decl =
   case decl of
     decl@PatBind{} -> compileDecls False [decl]
     decl@FunBind{} -> compileDecls False [decl]
+    TypeSig{}      -> return []
     _              -> throwError (UnsupportedLetBinding decl)
 
 -- | Compile Haskell literal.

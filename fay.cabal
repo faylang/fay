@@ -12,7 +12,7 @@ description:         Fay is a proper subset of Haskell which can be compiled (ty
                      .
                      > $ cabal unpack fay
                      > $ cd fay-*
-                     > $ cabal install -fdevel
+                     > $ cabal install
                      > $ dist/build/fay-docs/fay-docs
                      .
                      .
@@ -138,8 +138,8 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      docs/home.hs
 
 Flag devel
-  Description:       Whether to build fay-tests and fay-docs
-  Default:           True
+  Description:       Don't build fay-tests and fay-docs if this flag is supplied
+  Default:           False
 
 library
   hs-source-dirs:    src
@@ -207,15 +207,14 @@ executable fay
                      haskeline
 
 executable fay-tests
-  if !flag(devel)
+  if flag(devel)
     buildable:       False
   hs-source-dirs:    src
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   ghc-prof-options:  -fprof-auto
   main-is:           Tests.hs
   other-modules:     Language.Fay.Compiler Test.Convert Test.Api Test.CommandLine Test.Util
-  if flag(devel)
-    build-depends:   base >= 4 && < 5,
+  build-depends:     base >= 4 && < 5,
                      mtl,
                      haskell-src-exts,
                      aeson,
@@ -239,14 +238,13 @@ executable fay-tests
                      test-framework-th
 
 executable fay-docs
-  if !flag(devel)
+  if flag(devel)
     buildable:       False
   hs-source-dirs:    src
   ghc-options:       -O2 -Wall
   main-is:           Docs.hs
   other-modules:     Text.Blaze.Extra
-  if flag(devel)
-    build-depends:   base >= 4 && < 5,
+  build-depends:     base >= 4 && < 5,
                      mtl,
                      haskell-src-exts,
                      aeson,

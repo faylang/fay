@@ -1,7 +1,7 @@
 language: "haskell"
 install:
-  - "cabal install"          # make sure it builds without -fdevel too!
-  - "cabal install -fdevel"  # but we need -fdevel to run the tests
+  - "cabal install -fdevel"  # build with -fdevel to only generate the fay executable
+  - "cabal install"          # make sure everything builds
 script: "scripts/travis-test"
 notifications:
   irc:

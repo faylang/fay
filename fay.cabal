@@ -171,7 +171,7 @@ library
                      -- Requirements for the executables which
                      -- `cabal-dev ghci' needs.
                      HUnit,
-                     blaze-html,
+                     blaze-html >= 0.5,
                      blaze-markup,
                      bytestring,
                      time,
@@ -261,7 +261,7 @@ executable fay-docs
                      process,
                      filepath,
                      directory,
-                     blaze-html,
+                     blaze-html >= 0.5,
                      blaze-markup,
                      bytestring,
                      time,

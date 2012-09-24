@@ -50,7 +50,7 @@ defineOptions "FayCompilerOptions" $ do
                                                   })
   option         "optVersion" (\o -> o
                               { optionLongFlags = ["version"]
-                              , optionShortFlags = ['v']
+                              , optionShortFlags = []
                               , optionDefault = "false"
                               , optionType = optionTypeBool
                               , optionDescription = "Output version number"

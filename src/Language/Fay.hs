@@ -19,11 +19,14 @@ module Language.Fay
   ,compileExp
   ,printCompile
   ,printTestCompile
+  ,printTestHsAst
+  ,printTestJsAst
+  ,printCompiler
   ,compileToplevelModule
   ,prettyPrintString)
   where
 
-import           Language.Fay.Print          (jsEncodeName,printJSString)
+import           Language.Fay.Print          (jsEncodeName, printJSString)
 import           Language.Fay.Types
 import           System.Process.Extra
 
@@ -38,6 +41,7 @@ import           Data.Maybe
 import           Data.String
 import qualified Language.ECMAScript3.Parser as JS
 import           Language.Haskell.Exts
+import           Text.Show.Pretty            (ppShow)
 
 import           Safe
 import           System.Directory            (doesFileExist, findExecutable)
@@ -111,6 +115,32 @@ printCompile config with from = do
 -- | Compile a String of Fay and print it as beautified JavaScript.
 printTestCompile :: String -> IO ()
 printTestCompile = printCompile def { configWarn = False } compileModule
+
+-- | Pretty print the JS AST
+printTestJsAst :: String -> IO ()
+printTestJsAst src =
+  case parseFay src of
+    ParseOk mod -> do
+      compiled <- runCompile (defaultCompileState def) $ compileModule mod
+      case compiled of
+        Right (js, _) -> putStr (ppShow js) >> putStr "\n"
+        Left err -> print err
+    _ -> error "parseFay error"
+
+-- | Pretty print the HS AST
+printTestHsAst :: String -> IO ()
+printTestHsAst src =
+  case parseFay src of
+    ParseOk (Module _ _ _ _ _ _ decls) -> do
+      putStr (ppShow decls) >> putStr "\n"
+    _ -> error "parseFay error"
+
+printCompiler :: Show a => Compile a -> IO ()
+printCompiler comp = do
+  compiled <- runCompile (defaultCompileState def) comp
+  case compiled of
+    Right (js, _) -> putStr (ppShow js) >> putStr "\n"
+    Left err -> print err
 
 -- | Compile the given Fay code for the documentation. This is
 -- specialised because the documentation isn't really “real”
@@ -336,6 +366,10 @@ compilePatBind toplevel sig pat =
         _ -> compileUnguardedRhs srcloc toplevel ident rhs
     PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) bdecls ->
       compileUnguardedRhs srcloc toplevel ident (Let bdecls rhs)
+
+    PatBind srcloc tup Nothing (UnGuardedRhs rhs) (BDecls []) ->
+      compileLazyPat srcloc toplevel tup rhs
+
     _ -> throwError (UnsupportedDeclaration pat)
 
   where ffiExp (App (Var (UnQual (Ident "ffi"))) (Lit (String formatstr))) = Just formatstr
@@ -475,6 +509,18 @@ compileUnguardedRhs srcloc toplevel ident rhs = do
   body <- compileExp rhs
   bind <- bindToplevel srcloc toplevel (UnQual ident) (thunk body)
   return [bind]
+
+compileLazyPat :: SrcLoc -> Bool -> Pat -> Exp -> Compile [JsStmt]
+compileLazyPat srcloc toplevel (PTuple vars) rhs = do
+  body <- compileExp rhs
+  bind <- bindToplevel srcloc toplevel ident $ thunk body
+  unpacked <- compilePList vars [] $ JsName ident
+  return $ bind:unpacked
+  where bindName = concat . intersperse "_" $ map (\(PVar (Ident nm)) -> nm) vars
+        ident = UnQual $ Ident bindName
+
+compileLazyPat _ _ pat _ = throwError (UnsupportedPattern pat)
+
 
 convertGADT :: GadtDecl -> QualConDecl
 convertGADT d =

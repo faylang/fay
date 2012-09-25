@@ -118,7 +118,6 @@ instance Printable JsExp where
   printJS (JsRawExp name) = write name
   printJS (JsThrowExp exp) = do "(function(){ throw ("; printJS exp; "); })()"
   printJS JsNull = "null"
-  printJS (JsSequence exprs) = intercalateM "," (map printJS exprs)
   printJS (JsName name) = printJS name
   printJS (JsLit lit) = printJS lit
   printJS (JsParen exp) = do "("; printJS exp; ")"

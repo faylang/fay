@@ -176,7 +176,6 @@ data JsExp
   | JsApp JsExp [JsExp]
   | JsTernaryIf JsExp JsExp JsExp
   | JsNull
-  | JsSequence [JsExp]
   | JsParen JsExp
   | JsGetProp JsExp JsName
   | JsLookup JsExp JsExp

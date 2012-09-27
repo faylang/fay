@@ -511,13 +511,21 @@ compileUnguardedRhs srcloc toplevel ident rhs = do
   return [bind]
 
 compileLazyPat :: SrcLoc -> Bool -> Pat -> Exp -> Compile [JsStmt]
-compileLazyPat srcloc toplevel (PTuple vars) rhs = do
+compileLazyPat srcloc toplevel tup@(PTuple vars) rhs = do
   body <- compileExp rhs
   bind <- bindToplevel srcloc toplevel ident $ thunk body
   unpacked <- compilePList vars [] $ JsName ident
-  return $ bind:unpacked
-  where bindName = concat . intersperse "_" $ map (\(PVar (Ident nm)) -> nm) vars
+  return $ bind : map thunkVar unpacked
+  where bindName = concat . intersperse "_" $ genName tup
         ident = UnQual $ Ident bindName
+
+        genName :: Pat -> [String]
+        genName (PVar (Ident nm)) = [nm]
+        genName (PTuple vars) = concatMap genName vars
+        genName _ = ["__"]
+
+        thunkVar (JsVar nm app) = JsVar nm $ thunk app
+        thunkVar _ = undefined
 
 compileLazyPat _ _ pat _ = throwError (UnsupportedPattern pat)
 

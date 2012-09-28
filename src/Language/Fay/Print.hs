@@ -167,7 +167,7 @@ reservedWords = [
   "extends", "finally", "for", "function", "global", "implements", "instanceof",
   "interface", "new", "null", "package", "private", "protected", "public", "return",
   "static", "super", "switch", "this", "throw", "try", "typeof", "undefined",
-  "var", "void", "while", "window", "with", "yield"]
+  "var", "void", "while", "window", "with", "yield","true","false"]
 
 -- | Encode a Haskell name to JavaScript.
 -- TODO: Fix this hack.

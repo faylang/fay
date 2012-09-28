@@ -774,8 +774,8 @@ compileExp exp =
     Tuple xs                      -> compileList xs
     If cond conseq alt            -> compileIf cond conseq alt
     Case exp alts                 -> compileCase exp alts
-    Con (UnQual (Ident "True"))   -> return (JsName "true")
-    Con (UnQual (Ident "False"))  -> return (JsName "false")
+    Con (UnQual (Ident "True"))   -> return (JsLit (JsBool True))
+    Con (UnQual (Ident "False"))  -> return (JsLit (JsBool False))
     Con exp                       -> return (JsName exp)
     Do stmts                      -> compileDoBlock stmts
     Lambda _ pats exp             -> compileLambda pats exp

@@ -175,7 +175,8 @@ library
                      blaze-markup,
                      bytestring,
                      time,
-                     options,
+                     optparse-applicative,
+                     split,
                      test-framework,
                      test-framework-hunit,
                      test-framework-th
@@ -203,7 +204,8 @@ executable fay
                      directory,
                      filepath,
                      groom,
-                     options,
+                     optparse-applicative,
+                     split,
                      haskeline
 
 executable fay-tests

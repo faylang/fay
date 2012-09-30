@@ -1,7 +1,6 @@
 {-# OPTIONS -fno-warn-orphans #-}
 {-# OPTIONS -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TemplateHaskell  #-}
 -- | Main compiler executable.
 
 module Main where
@@ -15,78 +14,71 @@ import qualified Control.Exception        as E
 import           Control.Monad
 import           Control.Monad.Error
 import           Data.Default
+import           Data.List.Split          (wordsBy)
 import           Data.Maybe
 import           Data.Version             (showVersion)
-import           Options
+import           Options.Applicative
 import           System.Console.Haskeline
-import           System.Environment
-import           System.Exit
 import           System.IO
 
 -- | Options and help.
-defineOptions "FayCompilerOptions" $ do
+data FayCompilerOptions = FayCompilerOptions
+    { optLibrary     :: Bool
+    , optInlineForce :: Bool
+    , optFlattenApps :: Bool
+    , optHTMLWrapper :: Bool
+    , optHTMLJSLibs  :: [String]
+    , optInclude     :: [String]
+    , optWall        :: Bool
+    , optNoGHC       :: Bool
+    , optStdout      :: Bool
+    , optVersion     :: Bool
+    , optOutput      :: Maybe String
+    , optPretty      :: Bool
+    , optFiles       :: [String]
+    }
 
-  -- boolOption "optExportBuiltins" "export-builtins" True ""
-  -- boolOption "optTCO" "tco" False ""
+options :: Parser FayCompilerOptions
+options = FayCompilerOptions
+  <$> switch (long "library" & help "Don't automatically call main in generated JavaScript")
+  <*> switch (long "inline-force" & help "inline forcing, adds some speed for numbers, blows up code a bit")
+  <*> switch (long "flatten-apps" & help "flatten function applicaton")
 
-  boolOption     "optLibrary"     "library"      False "Don't automatically call main in generated JavaScript"
-  boolOption     "optInlineForce" "inline-force" False "inline forcing, adds some speed for numbers, blows up code a bit"
-  boolOption     "optFlattenApps" "flatten-apps" False "flatten function applicaton"
+  <*> switch (long "html-wrapper" & help "Create an html file that loads the javascript")
+  <*> strsOption (long "html-js-lib" & metavar "file1[, ..]" & help "javascript files to add to <head> if using option html-wrapper")
 
-  boolOption     "optHTMLWrapper" "html-wrapper" False "Create an html file that loads the javascript"
-  stringsOption  "optHTMLJSLibs"  "html-js-lib"  []    "file1[, ..] javascript files to add to <head> if using option html-wrapper"
+  <*> strsOption (long "include" & metavar "dir1[, ..]" & help "additional directories for include")
 
-  stringsOption  "optInclude"     "include"      []    "dir1[, ..] additional directories for include"
+  <*> switch (long "Wall" & help "Typecheck with -Wall")
+  <*> switch (long "no-ghc" & help "Don't typecheck, specify when not working with files")
 
-  boolOption     "optWall"        "Wall"         False "Typecheck with -Wall"
-  boolOption     "optNoGHC"       "no-ghc"       False "Don't typecheck, specify when not working with files"
+  <*> switch (long "stdout" & short 's' & help "Output to stdout")
+  <*> switch (long "version" & help "Output version number")
+  <*> nullOption (long "output" & short 'o' & reader (Just . Just) & value Nothing & help "Output to specified file")
+  <*> switch (long "pretty" & short 'p' & help "Pretty print the output")
 
-  option         "optStdout" (\o -> o
-                              { optionLongFlags = ["stdout"]
-                              , optionShortFlags = ['s']
-                              , optionDefault = "false"
-                              , optionType = optionTypeBool
-                              , optionDescription = "Output to stdout"
-                                                  })
-  option         "optVersion" (\o -> o
-                              { optionLongFlags = ["version"]
-                              , optionShortFlags = []
-                              , optionDefault = "false"
-                              , optionType = optionTypeBool
-                              , optionDescription = "Output version number"
-                                                  })
-  option         "optOutput" (\o -> o
-                              { optionLongFlags = ["output"]
-                              , optionShortFlags = ['o']
-                              , optionDefault = ""
-                              , optionType = optionTypeMaybe optionTypeString
-                              , optionDescription = "Output to specified file"
-                                                  })
-  option         "optPretty" (\o -> o
-                             { optionLongFlags = ["pretty"]
-                             , optionShortFlags = ['p']
-                             , optionDefault = "false"
-                             , optionType = optionTypeBool
-                             , optionDescription = "Run javascript through js-beautify"
-                                                 })
+  <*> arguments Just (metavar "- | <hs-file>...")
+
+  where
+    strsOption m = nullOption (m & reader (Just . wordsBy (== ',')) & value [])
 
 -- | The basic help text.
-helpTxt :: [String]
-helpTxt =
-  ["fay -- The fay compiler from (a proper subset of) Haskell to Javascript"
-  ,"USAGE"
-  ,"  fay [OPTIONS] [- | <hs-file>...]"
-  ,"  fay - takes input on stdin and prints to stdout. Runs through js-beautify if available"
+helpTxt :: String
+helpTxt = concat
+  ["fay -- The fay compiler from (a proper subset of) Haskell to Javascript\n\n"
+  ,"SYNOPSIS\n"
+  ,"  fay [OPTIONS] [- | <hs-file>...]\n"
+  ,"  fay - takes input on stdin and prints to stdout. Pretty prints\n"
   ,"  fay <hs-file>... processes each .hs file"
   ]
 
 -- | Main entry point.
 main :: IO ()
-main =
-  runCommandHelp (unlines helpTxt) $ \opts files ->
-    if optVersion opts
-      then runCommandVersion
-      else (do
+main = do
+  opts <- execParser parser
+  if optVersion opts
+    then runCommandVersion
+    else (do
   let config = def { configTCO = False -- optTCO opts
                    , configInlineForce = optInlineForce opts
                    , configFlattenApps = optFlattenApps opts
@@ -100,14 +92,13 @@ main =
                    , configTypecheck = not $ optNoGHC opts
                    , configWall = optWall opts
                    }
-  void $ E.catch (incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible")
-                 errorUsage
+  void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
 
-  case files of
+  case optFiles opts of
        ["-"] -> do
                hGetContents stdin >>= printCompile config compileModule
        [] -> runInteractive
-       _  -> forM_ files $ \file -> do
+       files  -> forM_ files $ \file -> do
                if optStdout opts
                  then compileReadWrite config file stdout
                  else
@@ -115,14 +106,10 @@ main =
 
 
   where
+    parser = info (helper <*> options) (fullDesc & header helpTxt)
+
     outPutFile :: FayCompilerOptions -> String -> FilePath
     outPutFile opts file = fromMaybe (toJsName file) $ optOutput opts
-
-    errorUsage :: IOError -> IO a
-    errorUsage e = do
-        putStrLn $ "ERROR: \n  " ++ (show e)
-        args <- getArgs
-        usageMsg args $ unlines $ drop 1 helpTxt
 
 runInteractive :: IO ()
 runInteractive =
@@ -140,31 +127,10 @@ runInteractive =
                     Right (ok,_) -> liftIO (prettyPrintString ok) >>= outputStr
                 loop
 
-runCommandHelp :: (MonadIO m, Options opts) => String -> (opts -> [String] -> m a) -> m a
-runCommandHelp help io = do
-	argv <- liftIO getArgs
-	let parsed = parseOptions argv
-	case parsedOptions parsed of
-		Just opts -> io opts (parsedArguments parsed)
-		Nothing -> liftIO $ usageMsg argv help
-
 runCommandVersion :: IO ()
 runCommandVersion = putStrLn $ "fay " ++ showVersion version
 
 
-
-usageMsg :: [String] -> String -> IO a
-usageMsg argv help = do
-    putStrLn help
-    let parsed = parseOptions argv :: ParsedOptions FayCompilerOptions
-    case parsedError parsed of
-        Just err -> do
-            hPutStrLn stderr (parsedHelp parsed)
-            hPutStrLn stderr err
-            exitFailure
-	Nothing -> do
-	    hPutStr stdout (parsedHelp parsed)
-	    exitSuccess
 
 htmlAndStdout :: FayCompilerOptions -> Bool
 htmlAndStdout opts = optHTMLWrapper opts && optStdout opts

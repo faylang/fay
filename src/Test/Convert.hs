@@ -3,20 +3,20 @@
 
 module Test.Convert (tests) where
 
-import qualified Data.Aeson.Parser    as Aeson
+import qualified Data.Aeson.Parser              as Aeson
 import           Data.Attoparsec.ByteString
-import qualified Data.ByteString      as Bytes
-import qualified Data.ByteString.UTF8 as UTF8
+import qualified Data.ByteString                as Bytes
+import qualified Data.ByteString.UTF8           as UTF8
 import           Data.Data
 import           Data.Ratio
 import           Language.Fay.Convert
-import           Test.HUnit (assertEqual)
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
+import           Test.HUnit                     (assertEqual)
 
 tests :: Test
 tests = testGroup "Test.Convert" [reading, showing]
-  where reading = testGroup "reading" $ 
+  where reading = testGroup "reading" $
           flip map readTests $ \(ReadTest value) ->
             let label = show value
             in testCase label $
@@ -50,6 +50,7 @@ readTests =
   ,ReadTest $ LabelledRecord { barInt = 123, barDouble = 66.6 }
   ,ReadTest $ LabelledRecord2 { bar = 123, bob = 66.6 }
   ,ReadTest $ FooBar "Tinkie Winkie" "Humanzee" Zot
+  ,ReadTest $ Bar $ Foo "one" "two"
   ]
 
 -- | Test cases.
@@ -69,6 +70,7 @@ showTests =
   ,NAryConstructor 123 4.5 → "{\"slot1\":123,\"slot2\":4.5,\"instance\":\"NAryConstructor\"}"
   ,LabelledRecord { barInt = 123, barDouble = 4.5 }
      → "{\"barDouble\":4.5,\"barInt\":123,\"instance\":\"LabelledRecord\"}"
+  ,Bar (Foo "one" "two") → "{\"slot1\":{\"slot1\":\"one\",\"slot2\":\"two\",\"instance\":\"Foo\"},\"instance\":\"Bar\"}"
   -- Unicode
   ,"¡ ¢ £ ¤ ¥ " → "\"¡ ¢ £ ¤ ¥ \""
   ,"Ā ā Ă ă Ą " → "\"Ā ā Ă ă Ą \""
@@ -91,6 +93,11 @@ showTests =
   ]
 
   where x → y = Testcase x (UTF8.fromString y)
+
+data Foo = Foo String String
+  deriving (Show,Data,Typeable,Read,Eq)
+data Bar = Bar Foo
+  deriving (Show,Data,Typeable,Read,Eq)
 
 -- | Nullary constructor.
 data NullaryConstructor = NullaryConstructor

@@ -214,7 +214,7 @@ function Fay$$jsToFay(type,jsObj){
         // But we can do validation that the int has no decimal places.
         // E.g. Math.round(x)!=x? throw "NOT AN INTEGER, GET OUT!"
         fayObj = Math.round(jsObj);
-        if(fayObj!==jsObj) throw "Argument " + jsObj + " is not an integer!"
+        if(fayObj!==jsObj) throw "Argument " + jsObj + " is not an integer!";
         break;
     }
     case "bool": {
@@ -278,7 +278,9 @@ function Fay$$index(index){
 // Built-in *.
 function Fay$$mult(x){
     return function(y){
-        return _(x) * _(y);
+        return new $(function(){
+            return _(x) * _(y);
+        });
     };
 }
 var $42$ = Fay$$mult;
@@ -286,7 +288,9 @@ var $42$ = Fay$$mult;
 // Built-in +.
 function Fay$$add(x){
     return function(y){
-        return _(x) + _(y);
+        return new $(function(){
+            return _(x) + _(y);
+        });
     };
 }
 var $43$ = Fay$$add;
@@ -294,7 +298,9 @@ var $43$ = Fay$$add;
 // Built-in -.
 function Fay$$sub(x){
     return function(y){
-        return _(x) - _(y);
+        return new $(function(){
+            return _(x) - _(y);
+        });
     };
 }
 var $45$ = Fay$$sub;
@@ -302,7 +308,9 @@ var $45$ = Fay$$sub;
 // Built-in /.
 function Fay$$div(x){
     return function(y){
-        return _(x) / _(y);
+        return new $(function(){
+            return _(x) / _(y);
+        });
     };
 }
 var $47$ = Fay$$div;
@@ -350,7 +358,9 @@ function Fay$$equal(lit1, lit2) {
 // Built-in ==.
 function Fay$$eq(x){
     return function(y){
-        return Fay$$equal(x,y);
+        return new $(function(){
+            return Fay$$equal(x,y);
+        });
     };
 }
 var $61$$61$ = Fay$$eq;
@@ -358,7 +368,9 @@ var $61$$61$ = Fay$$eq;
 // Built-in /=.
 function Fay$$neq(x){
     return function(y){
-        return !(Fay$$equal(x,y));
+        return new $(function(){
+            return !(Fay$$equal(x,y));
+        });
     };
 }
 var $47$$61$ = Fay$$neq;
@@ -366,7 +378,9 @@ var $47$$61$ = Fay$$neq;
 // Built-in >.
 function Fay$$gt(x){
     return function(y){
-        return _(x) > _(y);
+        return new $(function(){
+            return _(x) > _(y);
+        });
     };
 }
 var $62$ = Fay$$gt;
@@ -374,7 +388,9 @@ var $62$ = Fay$$gt;
 // Built-in <.
 function Fay$$lt(x){
     return function(y){
-        return _(x) < _(y);
+        return new $(function(){
+            return _(x) < _(y);
+        });
     };
 }
 var $60$ = Fay$$lt;
@@ -382,7 +398,9 @@ var $60$ = Fay$$lt;
 // Built-in >=.
 function Fay$$gte(x){
     return function(y){
-        return _(x) >= _(y);
+        return new $(function(){
+            return _(x) >= _(y);
+        });
     };
 }
 var $62$$61$ = Fay$$gte;
@@ -390,7 +408,9 @@ var $62$$61$ = Fay$$gte;
 // Built-in <=.
 function Fay$$lte(x){
     return function(y){
-        return _(x) <= _(y);
+        return new $(function(){
+            return _(x) <= _(y);
+        });
     };
 }
 var $60$$61$ = Fay$$lte;
@@ -398,7 +418,9 @@ var $60$$61$ = Fay$$lte;
 // Built-in &&.
 function Fay$$and(x){
     return function(y){
-        return _(x) && _(y);
+        return new $(function(){
+            return _(x) && _(y);
+        });
     };
 }
 var $38$$38$ = Fay$$and;
@@ -406,7 +428,9 @@ var $38$$38$ = Fay$$and;
 // Built-in ||.
 function Fay$$or(x){
     return function(y){
-        return _(x) || _(y);
+        return new $(function(){
+            return _(x) || _(y);
+        });
     };
 }
 var $124$$124$ = Fay$$or;

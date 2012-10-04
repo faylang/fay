@@ -23,7 +23,7 @@ module Language.Fay
   ,prettyPrintString)
   where
 
-import           Language.Fay.Print          (jsEncodeName,printJSString)
+import           Language.Fay.Print          (jsEncodeName, printJSString)
 import           Language.Fay.Types
 import           System.Process.Extra
 
@@ -831,7 +831,8 @@ compileInfixApp exp1 op exp2 = do
       | symbol `elem` words "* + - / < > || &&" -> do
           e1 <- compileExp exp1
           e2 <- compileExp exp2
-          return (JsInfix symbol (forceInlinable config e1) (forceInlinable config e2))
+          fn <- resolveOpToVar >=> compileExp $ op
+          return $ JsApp (JsApp (force fn) [(forceInlinable config e1)]) [(forceInlinable config e2)]
     _ -> do
       var <- resolveOpToVar op
       compileExp (App (App var exp1) exp2)

@@ -38,9 +38,10 @@ printJSString x = concat $ reverse $ psOutput $ execState (runPrinter (printJS x
 -- JS-format literals. Could use the Text.JSON library.
 instance Printable JsLit where
   printJS typ = write $
-    case typ of
-      (JsChar char)    -> UTF8.toString (encode (UTF8.fromString [char]))
-      (JsStr str)      -> UTF8.toString (encode (UTF8.fromString str))
+    let u8 = UTF8.toString . encode . UTF8.fromString
+    in case typ of
+      (JsChar char)    -> u8 [char]
+      (JsStr str)      -> u8 str
       (JsInt int)      -> show int
       (JsFloating rat) -> show rat
       (JsBool b)       -> if b then "true" else "false"
@@ -58,17 +59,17 @@ instance Printable QName where
 -- | Print special constructors (tuples, list, etc.)
 instance Printable SpecialCon where
   printJS specialCon =
-    case specialCon of
-      UnitCon          -> printJS (Qual "Fay" (Ident "unit"))
-      ListCon          -> printJS (Qual "Fay" (Ident "emptyList"))
-      FunCon           -> printJS (Qual "Fay" (Ident "funCon"))
-      TupleCon boxed n -> printJS (Qual "Fay"
-                                         (Ident (if boxed == Boxed
-                                                    then "boxed"
-                                                    else "unboxed" ++
-                                                    "TupleOf" ++ show n)))
-      Cons             -> printJS (Qual "Fay" (Ident "cons"))
-      UnboxedSingleCon -> printJS (Qual "Fay" (Ident "unboxedSingleCon"))
+    printJS $ (Qual "Fay" . Ident) $
+      case specialCon of
+        UnitCon          -> "unit"
+        ListCon          -> "emptyList"
+        FunCon           -> "funCon"
+        TupleCon boxed n -> (if boxed == Boxed
+                                then "boxed"
+                                else "unboxed" ++
+                                "TupleOf" ++ show n)
+        Cons             -> "cons"
+        UnboxedSingleCon -> "unboxedSingleCon"
 
 -- | Print module name.
 instance Printable ModuleName where

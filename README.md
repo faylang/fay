@@ -24,7 +24,7 @@ To install:
 
     $ cabal install
 
-To run tests (from within this directory):
+To run tests from within this directory (you need nodejs installed):
 
     $ cabal install
     $ fay-tests

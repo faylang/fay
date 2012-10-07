@@ -15,6 +15,7 @@ import           Control.Arrow
 import           Control.Monad
 import           Data.Aeson
 import           Data.Attoparsec.Number
+
 import           Data.Char
 import           Data.Data
 import           Data.Function
@@ -97,7 +98,7 @@ readFromFay value = result where
     case v of
       Object obj -> do
         name <- Map.lookup "instance" obj >>= getText
-        readRecord name obj <|> readData name obj
+        fmap parens (readRecord name obj <|> readData name obj)
       Array array -> do
         elems <- mapM convert (Vector.toList array)
         return $ concat ["[",intercalate "," elems,"]"]
@@ -133,7 +134,7 @@ readFromFay value = result where
     fields <- forM (constrFields cons) $ \field -> do
       (key,v) <- getField field
       cvalue <- convert v
-      return (intercalate " " [key,"=",cvalue])
+      return (unwords [key,"=",cvalue])
     guard $ not $ null fields
     return (Text.unpack name ++
             if null fields
@@ -143,3 +144,4 @@ readFromFay value = result where
   typ = dataTypeOf $ resType result
   resType :: Maybe a -> a
   resType = undefined
+  parens x = "(" ++ x ++ ")"

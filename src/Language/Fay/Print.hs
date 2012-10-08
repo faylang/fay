@@ -1,7 +1,6 @@
 {-# OPTIONS -fno-warn-orphans #-}
 {-# OPTIONS -fno-warn-unused-do-bind #-}
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE RecordWildCards      #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
@@ -50,16 +49,14 @@ instance Printable JsLit where
 instance Printable QName where
   printJS qname =
     case qname of
-      Qual moduleName name -> do printJS moduleName
-                                 "$$"
-                                 printJS name
+      Qual moduleName name -> moduleName +> "$$" +> name
       UnQual name -> printJS name
       Special con -> printJS con
 
 -- | Print special constructors (tuples, list, etc.)
 instance Printable SpecialCon where
   printJS specialCon =
-    printJS $ (Qual "Fay" . Ident) $
+    printJS $ (Qual (ModuleName "Fay") . Ident) $
       case specialCon of
         UnitCon          -> "unit"
         ListCon          -> "emptyList"
@@ -89,72 +86,83 @@ instance Printable [JsStmt] where
 
 -- | Print a single statement.
 instance Printable JsStmt where
-  printJS (JsBlock stmts) = do
-    "{ "; mapM printJS stmts; "}"
-  printJS (JsVar name expr) = do "var "; printJS name; " = "; printJS expr; ";"
-  printJS (JsUpdate name expr) = do printJS name; " = "; printJS expr; ";"
-  printJS (JsSetProp name prop expr) = do
-    printJS name; "."; printJS prop; " = "; printJS expr; ";"
-  printJS (JsIf exp thens elses) = do
-    "if ("; printJS exp; ") {"
-    printJS thens
-    "}"
-    when (length elses > 0) $ do
-      " else {"
-      printJS elses
-      "}"
-  printJS (JsEarlyReturn exp) = do
-    "return "; printJS exp; ";"
+  printJS (JsBlock stmts) =
+    "{ " +> stmts +> "}"
+  printJS (JsVar name expr) =
+    "var " +> name +> " = " +> expr +> ";"
+  printJS (JsUpdate name expr) =
+    name +> " = " +> expr +> ";"
+  printJS (JsSetProp name prop expr) =
+    name +> "." +> prop +> " = " +> expr +> ";"
+  printJS (JsIf exp thens elses) =
+    "if (" +> exp +> ") {" +> thens +> "}" +>
+    (when (length elses > 0) $ " else {" +> elses +> "}")
+  printJS (JsEarlyReturn exp) =
+    "return " +> exp +> ";"
   printJS (JsThrow exp) = do
-    "throw "; printJS exp; ";"
-  printJS (JsWhile cond stmts) = do
-    "while ("; printJS cond; ") {"
-    printJS stmts
-    "}"
-  printJS JsContinue = "continue;"
-  printJS (JsMappedVar _ name expr) = do "var "; printJS name; " = "; printJS expr; ";"
+    "throw " +> exp +> ";"
+  printJS (JsWhile cond stmts) =
+    "while (" +> cond +> ") {" +> stmts +> "}"
+  printJS JsContinue =
+    printJS "continue;"
+  printJS (JsMappedVar _ name expr) =
+    "var " +> name +> " = " +> expr +> ";"
 
 -- | Print an expression.
 instance Printable JsExp where
-  printJS (JsRawExp name) = write name
-  printJS (JsThrowExp exp) = do "(function(){ throw ("; printJS exp; "); })()"
-  printJS JsNull = "null"
-  printJS (JsName name) = printJS name
-  printJS (JsLit lit) = printJS lit
-  printJS (JsParen exp) = do "("; printJS exp; ")"
-  printJS (JsList exps) = do "["; intercalateM "," (map printJS exps); "]"
-  printJS (JsNew name args) = do "new "; printJS (JsApp (JsName name) args)
-  printJS (JsIndex i exp) = do "("; printJS exp; ")["; write (show i); "]"
-  printJS (JsEq exp1 exp2) = do printJS exp1; " === "; printJS exp2
-  printJS (JsGetProp exp prop) = do printJS exp; "."; printJS prop
-  printJS (JsLookup exp1 exp2) = do printJS exp1; "["; printJS exp2; "]"
-  printJS (JsUpdateProp name prop expr) = do
-    "("; printJS name; "."; printJS prop; " = "; printJS expr; ")"
-  printJS (JsInfix op x y) = do printJS x; " "; write op; " "; printJS y
-  printJS (JsGetPropExtern exp prop) = do
-    printJS exp; "["; printJS (JsLit (JsStr prop)); "]"
-  printJS (JsUpdatePropExtern name prop expr) = do
-    "("; printJS name; "['"; printJS prop; "'] = "; printJS expr; ")"
-  printJS (JsTernaryIf cond conseq alt) = do
-    printJS cond; " ? "; printJS conseq; " : "; printJS alt
-  printJS (JsInstanceOf exp classname) = do
-    printJS exp; " instanceof "; printJS classname
-  printJS (JsObj assoc) = do "{"; intercalateM "," (map cons assoc); "}"
-     where cons (key,value) = do "\""; write key; "\": "; printJS value
-  printJS (JsFun params stmts ret) = do
+  printJS (JsRawExp name) =
+    printJS name
+  printJS (JsThrowExp exp) =
+    "(function(){ throw (" +> exp +> "); })()"
+  printJS JsNull =
+    printJS "null"
+  printJS (JsName name) =
+    printJS name
+  printJS (JsLit lit) =
+    printJS lit
+  printJS (JsParen exp) =
+    "(" +> exp +> ")"
+  printJS (JsList exps) =
+    "[" +> intercalateM "," (map printJS exps) +> printJS "]"
+  printJS (JsNew name args) =
+    "new " +> (JsApp (JsName name) args)
+  printJS (JsIndex i exp) =
+    "(" +> exp +> ")[" +> show i +> "]"
+  printJS (JsEq exp1 exp2) =
+    exp1 +> " === " +> exp2
+  printJS (JsGetProp exp prop) =
+    exp +> "." +> prop
+  printJS (JsLookup exp1 exp2) =
+    exp1 +> "[" +> exp2 +> "]"
+  printJS (JsUpdateProp name prop expr) =
+    "(" +> name +> "." +> prop +> " = " +> expr +> ")"
+  printJS (JsInfix op x y) =
+    x +> " " +> op +> " " +> y
+  printJS (JsGetPropExtern exp prop) =
+    exp +> "[" +> (JsLit . JsStr) prop +> "]"
+  printJS (JsUpdatePropExtern name prop expr) =
+    "(" +> name +> "['" +> prop +> "'] = " +> expr +> ")"
+  printJS (JsTernaryIf cond conseq alt) =
+    cond +> " ? " +> conseq +> " : " +> alt
+  printJS (JsInstanceOf exp classname) =
+    exp +> " instanceof " +> classname
+  printJS (JsObj assoc) =
+    "{" +> (intercalateM "," (map cons assoc)) +> "}"
+      where cons (key,value) = "\"" +> key +> "\": " +> value
+  printJS (JsFun params stmts ret) =
     "function("
-    intercalateM "," (map printJS params)
-    "){"
-    printJS stmts
-    case ret of
-      Just ret' -> do "return "; printJS ret'; ";"
+    +> (intercalateM "," (map printJS params))
+    +> "){"
+    +> stmts
+    +> case ret of
+      Just ret' -> "return " +> ret' +> ";"
       Nothing   -> return ()
-    "}"
-  printJS (JsApp op args) = do
-    printJS (if isFunc op then JsParen op else op)
-    "("
-    intercalateM "," (map (printJS) args)
-    ")"
+    +> "}"
+  printJS (JsApp op args) =
+    (if isFunc op then JsParen op else op)
+    +> "("
+    +> (intercalateM "," (map printJS args))
+    +> ")"
      where isFunc JsFun{..} = True; isFunc _ = False
 
 --------------------------------------------------------------------------------
@@ -220,6 +228,11 @@ instance IsString ModuleName where
 instance IsString JsName where
   fromString = UnQual . Ident
 
--- | For the pretty printer convenience.
-instance IsString (Printer a) where
-  fromString = write
+instance Printable String where
+  printJS = write
+
+instance Printable (Printer ()) where
+  printJS = id
+
+(+>) :: (Printable a, Printable b) => a -> b -> Printer ()
+pa +> pb = printJS pa >> printJS pb

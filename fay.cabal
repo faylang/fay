@@ -60,7 +60,7 @@ description:         Fay is a proper subset of Haskell which can be compiled (ty
                      .
                      * Fix parens in conversion functions.
                      .
-                     See full history at: <https://github.com/chrisdone/fay/commits>
+                     See full history at: <https://github.com/faylang/fay/commits>
 homepage:            http://fay-lang.org/
 license:             BSD3
 license-file:        LICENSE

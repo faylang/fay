@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE ViewPatterns      #-}
@@ -11,18 +12,18 @@ module Language.Fay.Convert
   where
 
 import           Control.Applicative
-import           Control.Arrow
 import           Control.Monad
 import           Data.Aeson
 import           Data.Attoparsec.Number
-
+import           Control.Monad.State
 import           Data.Char
 import           Data.Data
 import           Data.Function
+import           Data.Generics.Aliases
+import           Data.HashMap.Strict    (HashMap)
 import qualified Data.HashMap.Strict    as Map
-import           Data.List
 import           Data.Maybe
-import           Data.Ord
+import           Data.Text              (Text)
 import qualified Data.Text              as Text
 import qualified Data.Vector            as Vector
 import           Numeric
@@ -63,19 +64,19 @@ showToFay = Show.reify >=> convert where
           int = convertInt value
 
   -- Number converters
-  convertDouble = fmap (Number . D) . parseDouble
-  convertInt = fmap (Number . I) . parseInt
+  convertDouble = fmap (Number . D) . pDouble
+  convertInt = fmap (Number . I) . pInt
 
   -- Number parsers
-  parseDouble :: Show.Value -> Maybe Double
-  parseDouble value = case value of
+  pDouble :: Show.Value -> Maybe Double
+  pDouble value = case value of
     Show.Float str   -> getDouble str
-    Show.Ratio x y   -> liftM2 (on (/) fromIntegral) (parseInt x) (parseInt y)
-    Show.Neg str     -> fmap (* (-1)) (parseDouble str)
+    Show.Ratio x y   -> liftM2 (on (/) fromIntegral) (pInt x) (pInt y)
+    Show.Neg str     -> fmap (* (-1)) (pDouble str)
     _ -> Nothing
-  parseInt value = case value of
+  pInt value = case value of
     Show.Integer str -> getInt str
-    Show.Neg str     -> fmap (* (-1)) (parseInt str)
+    Show.Neg str     -> fmap (* (-1)) (pInt str)
     _ -> Nothing
 
   -- Number readers
@@ -90,58 +91,100 @@ showToFay = Show.reify >=> convert where
   slots = zipWithM keyval (map (("slot"++).show) [1::Int ..])
   keyval key val = fmap (Text.pack key,) (convert val)
 
--- | Convert a value representing a Fay value to a Haskell value.
-readFromFay :: (Data a,Read a) => Value -> Maybe a
-readFromFay value = result where
-  result = (convert >=> readMay) value
-  convert v =
-    case v of
-      Object obj -> do
-        name <- Map.lookup "instance" obj >>= getText
-        fmap parens (readRecord name obj <|> readData name obj)
-      Array array -> do
-        elems <- mapM convert (Vector.toList array)
-        return $ concat ["[",intercalate "," elems,"]"]
-      String str -> return (show str)
-      Number num -> return $ case num of
-        I integer -> show integer
-        D double -> show double
-      Bool bool -> return $ show bool
-      Null -> Nothing
+--- | Convert a value representing a Fay value to a Haskell value.
+readFromFay :: Data a => Value -> Maybe a
+readFromFay value = do
+  parseData value
+  `ext1R` parseArray value
+  `extR` parseDouble value
+  `extR` parseInt value
+  `extR` parseBool value
+  `extR` parseString value
 
-  getText i = case i of
-    String s -> return s
-    _ -> Nothing
+-- | Parse a data type or record.
+parseData :: Data a => Value -> Maybe a
+parseData value = result where
+  result = getObject value >>= parseObject typ
+  typ = dataTypeOf (fromJust result)
+  getObject x =
+    case x of
+      Object obj -> return obj
+      _ -> mzero
 
-  readData name obj = do
-    fields <- forM assocs $ \(_,v) -> do
-      cvalue <- convert v
-      return cvalue
-    return (intercalate " " (Text.unpack name : fields))
-      where assocs = sortBy (comparing fst)
-                            (filter ((/="instance").fst) (Map.toList obj))
+-- | Parse a data constructor from an object.
+parseObject :: Data a => DataType -> HashMap Text Value -> Maybe a
+parseObject typ obj = listToMaybe (catMaybes choices) where
+  choices = map makeConstructor constructors
+  constructors = dataTypeConstrs typ
+  makeConstructor cons = do
+    name <- Map.lookup (Text.pack "instance") obj >>= parseString
+    guard (showConstr cons == name)
+    if null fields
+      then makeSimple obj cons
+      else makeRecord obj cons fields
 
-  readRecord name (Map.toList -> assocs) = go (dataTypeConstrs typ)
-    where go (cons:conses) =
-            readConstructor name assocs cons <|> go conses
-          go [] = Nothing
+      where fields = constrFields cons
 
-  readConstructor name assocs cons = do
-    let getField key =
-          case lookup key (map (first Text.unpack) assocs) of
-            Just v  -> return (key,v)
-            Nothing -> Nothing
-    fields <- forM (constrFields cons) $ \field -> do
-      (key,v) <- getField field
-      cvalue <- convert v
-      return (unwords [key,"=",cvalue])
-    guard $ not $ null fields
-    return (Text.unpack name ++
-            if null fields
-               then ""
-               else " {" ++ intercalate ", " fields ++ "}")
+-- | Make a simple ADT constructor from an object: { "slot1": 1, "slot2": 2} -> Foo 1 2
+makeSimple :: Data a => HashMap Text Value -> Constr -> Maybe a
+makeSimple obj cons =
+  evalStateT (fromConstrM (do i:next <- get
+                              put next
+                              value <- lift (Map.lookup (Text.pack ("slot" ++ show i)) obj)
+                              lift (readFromFay value))
+                          cons)
+             [1..]
 
-  typ = dataTypeOf $ resType result
-  resType :: Maybe a -> a
-  resType = undefined
-  parens x = "(" ++ x ++ ")"
+-- | Make a record from a key-value: { "x": 1 } -> Foo { x = 1 }
+makeRecord :: Data a => HashMap Text Value -> Constr -> [String] -> Maybe a
+makeRecord obj cons fields =
+  evalStateT (fromConstrM (do key:next <- get
+                              put next
+                              value <- lift (Map.lookup (Text.pack key) obj)
+                              lift (readFromFay value))
+                          cons)
+             fields
+
+-- | Parse a double.
+parseDouble :: Value -> Maybe Double
+parseDouble value = do
+  number <- parseNumber value
+  case number of
+    D n -> return n
+    _ -> mzero
+
+-- | Parse an int.
+parseInt :: Value -> Maybe Int
+parseInt value = do
+  number <- parseNumber value
+  case number of
+    I n -> return (fromIntegral n)
+    _ -> mzero
+
+-- | Parse a number.
+parseNumber :: Value -> Maybe Number
+parseNumber value =
+  case value of
+    Number n -> return n
+    _ -> mzero
+
+-- | Parse a bool.
+parseBool :: Value -> Maybe Bool
+parseBool value =
+  case value of
+    Bool n -> return n
+    _ -> mzero
+
+-- | Parse a string.
+parseString :: Value -> Maybe String
+parseString value =
+  case value of
+    String s -> return (Text.unpack s)
+    _ -> mzero
+
+-- | Parse an array.
+parseArray :: Data a => Value -> Maybe [a]
+parseArray value =
+  case value of
+    Array xs -> mapM readFromFay (Vector.toList xs)
+    _ -> mzero

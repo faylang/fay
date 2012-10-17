@@ -5,7 +5,7 @@
 module Language.Fay.FFI where
 
 import           Language.Fay.Types (Fay)
-import           Prelude            (Bool, Char, Double, String, Int, error)
+import           Prelude            (Bool, Char, Double, String, Int, Maybe, error)
 
 -- | In case you want to distinguish values with a JsPtr.
 data JsPtr a
@@ -39,6 +39,9 @@ instance Foreign a => Foreign (Fay a)
 
 -- | Functions are foreignable.
 instance (Foreign a,Foreign b) => Foreign (a -> b)
+
+-- | Maybes are pretty common.
+instance Foreign a => Foreign (Maybe a)
 
 -- | Declare a foreign action.
 ffi

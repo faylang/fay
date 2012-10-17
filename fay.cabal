@@ -77,72 +77,44 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      examples/tailrecursive.hs examples/data.hs examples/canvaswater.hs
                      examples/canvaswater.html examples/haskell.png
                      -- Test cases
-                      tests/ints.hs tests/ints
-                      tests/asPatternMatch tests/caseList.hs
-                      tests/Double2.hs tests/fromInteger tests/List.hs
-                      tests/RecCon tests/recordPatternMatch
-                      tests/String.hs tests/asPatternMatch.hs
-                      tests/caseList.js tests/Double2.js
-                      tests/fromInteger.hs tests/List.js
-                      tests/RecCon.hs tests/recordPatternMatch2
-                      tests/String.js tests/asPatternMatch.js
-                      tests/caseWildcard tests/Double3
-                      tests/fromInteger.js tests/Monad tests/RecCon.js
-                      tests/recordPatternMatch2.hs tests/tailRecursion
-                      tests/basicFunctions tests/caseWildcard.hs
-                      tests/Double3.hs
-                      tests/Monad2 tests/RecDecl
-                      tests/recordPatternMatch2.js
-                      tests/tailRecursion.hs tests/basicFunctions.hs
-                      tests/caseWildcard.js tests/Double3.js
-                      tests/HierarchicalImport tests/Monad2.hs
-                      tests/RecDecl.hs tests/recordPatternMatch.hs
-                      tests/tailRecursion.js tests/basicFunctions.js
-                      tests/do tests/Double4
-                      tests/Monad2.js
-                      tests/RecDecl.js tests/recordPatternMatch.js
-                      tests/then tests/Bool tests/doAssingPatternMatch
-                      tests/Double4.hs tests/HierarchicalImport.hs
-                      tests/Monad.hs
-                      tests/records tests/then.hs tests/Bool.hs
-                      tests/doAssingPatternMatch.hs tests/Double4.js
-                      tests/Monad.js
-                      tests/recordFunctionPatternMatch
-                      tests/records.hs tests/then.js tests/Bool.js
-                      tests/doAssingPatternMatch.js tests/Double.hs
-                      tests/HierarchicalImport.js
-                      tests/mutableReference
-                      tests/recordFunctionPatternMatch.hs
-                      tests/records.js tests/utf8 tests/case
-                      tests/doBindAssign tests/Double.js
-                      tests/infixDataConst tests/mutableReference.hs
-                      tests/recordFunctionPatternMatch.js
-                      tests/recordUseBeforeDefine tests/utf8.hs
-                      tests/case2 tests/doBindAssign.hs
-                      tests/emptyMain tests/infixDataConst.hs
-                      tests/mutableReference.js
-                      tests/RecordImport_Export
-                      tests/recordUseBeforeDefine.hs tests/utf8.js
-                      tests/case2.hs tests/doBindAssign.js
-                      tests/emptyMain.hs tests/infixDataConst.js
-                      tests/patternGuards tests/RecordImport_Export.hs
-                      tests/recordUseBeforeDefine.js tests/where
-                      tests/case2.js tests/do.hs tests/emptyMain.js
-                      tests/List tests/patternGuards.hs
-                      tests/RecordImport_Export.js tests/reservedWords
-                      tests/where.hs tests/case.hs tests/do.js
-                      tests/fix tests/List2 tests/patternGuards.js
-                      tests/RecordImport_Import tests/reservedWords.hs
-                      tests/where.js tests/case.js tests/Double
-                      tests/fix.hs tests/List2.hs
-                      tests/patternMatchFail.hs
-                      tests/RecordImport_Import.hs
-                      tests/reservedWords.js tests/caseList
-                      tests/Double2 tests/fix.js tests/List2.js
-                      tests/patternMatchFail.js
-                      tests/RecordImport_Import.js tests/String
-                      tests/Hierarchical/Export.hs
-                      tests/Hierarchical/RecordDefined.hs
+                     tests/ints.hs tests/ints tests/asPatternMatch
+                     tests/caseList.hs tests/Double2.hs
+                     tests/fromInteger tests/List.hs tests/RecCon
+                     tests/recordPatternMatch tests/String.hs
+                     tests/asPatternMatch.hs tests/fromInteger.hs
+                     tests/RecCon.hs tests/recordPatternMatch2
+                     tests/caseWildcard tests/Double3 tests/Monad
+                     tests/recordPatternMatch2.hs tests/tailRecursion
+                     tests/basicFunctions tests/caseWildcard.hs
+                     tests/Double3.hs tests/Monad2 tests/RecDecl
+                     tests/tailRecursion.hs tests/basicFunctions.hs
+                     tests/HierarchicalImport tests/Monad2.hs
+                     tests/RecDecl.hs tests/recordPatternMatch.hs
+                     tests/do tests/Double4 tests/then tests/Bool
+                     tests/doAssingPatternMatch tests/Double4.hs
+                     tests/HierarchicalImport.hs tests/Monad.hs
+                     tests/records tests/then.hs tests/Bool.hs
+                     tests/doAssingPatternMatch.hs
+                     tests/recordFunctionPatternMatch tests/records.hs
+                     tests/Double.hs tests/mutableReference
+                     tests/recordFunctionPatternMatch.hs tests/utf8
+                     tests/case tests/doBindAssign
+                     tests/infixDataConst tests/mutableReference.hs
+                     tests/recordUseBeforeDefine tests/utf8.hs
+                     tests/case2 tests/doBindAssign.hs tests/emptyMain
+                     tests/infixDataConst.hs tests/RecordImport_Export
+                     tests/recordUseBeforeDefine.hs tests/case2.hs
+                     tests/emptyMain.hs tests/patternGuards
+                     tests/RecordImport_Export.hs tests/where
+                     tests/do.hs tests/List tests/patternGuards.hs
+                     tests/reservedWords tests/where.hs tests/case.hs
+                     tests/fix tests/List2 tests/RecordImport_Import
+                     tests/reservedWords.hs tests/Double tests/fix.hs
+                     tests/List2.hs tests/patternMatchFail.hs
+                     tests/RecordImport_Import.hs tests/caseList
+                     tests/Double2 tests/String
+                     tests/Hierarchical/Export.hs
+                     tests/Hierarchical/RecordDefined.hs
                      -- Documentation files
                      docs/beautify.js docs/highlight.pack.js docs/home.css docs/jquery.js
                      docs/analytics.js

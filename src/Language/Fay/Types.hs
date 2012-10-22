@@ -174,6 +174,7 @@ data JsExp
   | JsFun [JsParam] [JsStmt] (Maybe JsExp)
   | JsLit JsLit
   | JsApp JsExp [JsExp]
+  | JsNegApp JsExp
   | JsTernaryIf JsExp JsExp JsExp
   | JsNull
   | JsParen JsExp

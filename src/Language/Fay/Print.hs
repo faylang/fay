@@ -164,6 +164,8 @@ instance Printable JsExp where
     +> (intercalateM "," (map printJS args))
     +> ")"
      where isFunc JsFun{..} = True; isFunc _ = False
+  printJS (JsNegApp args) =
+      "-" +> printJS args
 
 --------------------------------------------------------------------------------
 -- Utilities

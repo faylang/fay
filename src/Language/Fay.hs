@@ -767,6 +767,7 @@ compileExp exp =
     Var qname                     -> return (JsName qname)
     Lit lit                       -> compileLit lit
     App exp1 exp2                 -> compileApp exp1 exp2
+    NegApp exp                    -> compileNegApp exp
     InfixApp exp1 op exp2         -> compileInfixApp exp1 op exp2
     Let (BDecls decls) exp        -> compileLet decls exp
     List []                       -> return JsNull
@@ -821,6 +822,10 @@ compileApp exp1 exp2 = do
      JsApp l r -> JsApp l (r ++ args)
      _        -> JsApp (JsName "__") (op : args)
   flatten x = x
+
+-- | Compile a negate application
+compileNegApp :: Exp -> Compile JsExp
+compileNegApp e = JsNegApp <$> compileExp e
 
 -- | Compile an infix application, optimizing the JS cases.
 compileInfixApp :: Exp -> QOp -> Exp -> Compile JsExp

@@ -5,10 +5,10 @@ module Nums where
 import Language.Fay.FFI
 import Language.Fay.Prelude
 
+negNum = -10
 
 main = Fay ()
-main = do
-    print -10
+main = print negNum
 
 
 print :: (Num a) => a -> Fay ()

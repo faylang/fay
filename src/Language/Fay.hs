@@ -946,20 +946,41 @@ compilePat exp pat body =
     PList pats      -> compilePList pats body exp
     PTuple pats     -> compilePList pats body exp
     PAsPat name pat -> compilePAsPat exp name pat body
-    PRec _ pats     -> compilePatFields exp pats body
+    PRec name pats  -> compilePatFields exp name pats body
     pat             -> throwError (UnsupportedPattern pat)
 
 -- | Compile a record field pattern.
-compilePatFields :: JsExp -> [PatField] -> [JsStmt] -> Compile [JsStmt]
-compilePatFields exp pats body =
-    liftM ((flip (++) body) . concat) (mapM compilePat pats)
-  where compilePat :: PatField -> Compile [JsStmt]
-        compilePat (PFieldPun name) = compilePat (PFieldPat (UnQual name) (PVar name))
-        compilePat (PFieldPat qname (PVar (Ident name))) = 
-          return $ [JsVar qname (JsGetProp (force exp) jsname)] -- TODO: think about this force call
-            where jsname = UnQual (Ident name)
-        compilePat pf = throwError (UnsupportedFieldPattern pf)
-        -- TODO: FieldWildcard
+compilePatFields :: JsExp -> QName -> [PatField] -> [JsStmt] -> Compile [JsStmt]
+compilePatFields exp (UnQual name) pats body =
+    liftM ((flip (++) body)) (compilePats pats)
+  where compilePats :: [PatField] -> Compile [JsStmt]
+        compilePats pats = compilePats' [] pats
+
+        -- compilePats' collects field names that had already been matched so that
+        -- wildcard generates code for the rest of the fields.
+        compilePats' :: [Name] -> [PatField] -> Compile [JsStmt]
+        compilePats' names ((PFieldPun name):xs) =
+          compilePats' names ((PFieldPat (UnQual name) (PVar name)):xs)
+
+        compilePats' names ((PFieldPat fieldQName (PVar varName)):xs) = do
+          let fieldname = case fieldQName of
+                            (Qual _ name) -> name
+                            (UnQual name) -> name
+                            (Special _) -> undefined -- TODO: how to handle special names ?
+          r <- compilePats' (fieldname:names) xs
+          return $ (JsVar (UnQual varName) (JsGetProp (force exp) fieldQName)):r -- TODO: think about this force call
+
+        compilePats' names (PFieldWildcard:xs) = do
+          records <- liftM stateRecords get
+          let fields = fromJust (lookup name records)
+              fields' = fields \\ names
+              f = map (\fieldName -> JsVar (UnQual fieldName) (JsGetProp (force exp) (UnQual fieldName))) fields'
+          r <- compilePats' names xs
+          return $ f ++ r
+        
+        compilePats' _ [] = return []
+
+        compilePats' _ (pat:_) = throwError (UnsupportedFieldPattern pat)
 
 -- | Compile a literal value from a pattern match.
 compilePLit :: JsExp -> Literal -> [JsStmt] -> Compile [JsStmt]
@@ -979,16 +1000,22 @@ compilePAsPat exp name pat body = do
 -- | GHC will warn on uninitialized fields, they will be undefined in JS.
 compileRecConstr :: QName -> [FieldUpdate] -> Compile JsExp
 compileRecConstr name fieldUpdates = do
-    let o = UnQual (Ident (map toLower (qname name)))
+    let o = UnQual (Ident (qname name))
     -- var obj = new $_Type()
     let record = JsVar o (JsNew (constructorName name) [])
-    setFields <- forM fieldUpdates (updateStmt o)
+    setFields <- liftM concat (forM fieldUpdates (updateStmt o))
     return $ JsApp (JsFun [] (record:setFields) (Just (JsName o))) []
-  where updateStmt :: QName -> FieldUpdate -> Compile JsStmt
+  where updateStmt :: QName -> FieldUpdate -> Compile [JsStmt]
         updateStmt o (FieldUpdate field value) = do
-          JsSetProp o field <$> compileExp value
-        -- TODO: FieldWildCard, NamedFieldPun
-        updateStmt o u = error ("updateStmt: " ++ show u)
+          exp <- compileExp value
+          return [JsSetProp o field exp]
+        updateStmt o@(UnQual name) FieldWildcard = do
+          records <- liftM stateRecords get
+          let fields = fromJust (lookup name records)
+          return (map (\fieldName -> JsSetProp o (UnQual fieldName) (JsName (UnQual fieldName))) fields)
+        -- TODO: FieldPun
+        -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
+        updateStmt _ u = error ("updateStmt: " ++ show u)
 
 updateRec :: Exp -> [FieldUpdate] -> Compile JsExp
 updateRec rec fieldUpdates = do
@@ -1005,6 +1032,7 @@ updateRec rec fieldUpdates = do
           -- let a = 1 in C {a}
           return $ JsSetProp copyName (UnQual name) (JsName (UnQual name))
         -- TODO: FieldWildcard
+        -- I also couldn't find a code that generates (FieldUpdate FieldWildCard)
         updateExp copyName FieldWildcard = error "unsupported update: FieldWildcard"
 
 -- | Equality test for two expressions, with some optimizations.

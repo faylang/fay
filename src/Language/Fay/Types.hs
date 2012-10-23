@@ -132,6 +132,7 @@ data CompileError
   | UnsupportedLetBinding Decl
   | UnsupportedOperator QOp
   | UnsupportedPattern Pat
+  | UnsupportedFieldPattern PatField
   | UnsupportedRhs Rhs
   | UnsupportedGuardedAlts GuardedAlts
   | EmptyDoBlock

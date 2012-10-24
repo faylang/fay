@@ -12,16 +12,31 @@ import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
 main = do
-  benchmark
-  benchmark
-  benchmark
-  benchmark
+  benchmark $ printI (map (\x -> x+1) fibs !! 10)
+  benchmark $ printI (fibs !! 80)
+  benchmark $ printD (sum 1000000 0)
+  benchmark $ printD (sum 1000000 0)
+  benchmark $ printD (sum 1000000 0)
+  benchmark $ printD (sum 1000000 0)
 
-benchmark = do
+fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
+
+tail (_:xs) = xs
+
+xs !! k = go 0 xs where
+  go n (x:xs) | n == k = x
+              | otherwise = go (n+1) xs
+
+benchmark m = do
   start <- getSeconds
-  printD (sum 1000000 0 :: Double)
+  m
   end <- getSeconds
   printS (show (end-start) ++ "ms")
+
+length' :: [a] -> Int
+length' = go 0 where
+  go acc (_:xs) = go (acc+1) xs
+  go acc [] = acc
 
 -- tail recursive
 sum 0 acc = acc
@@ -32,6 +47,9 @@ getSeconds = ffi "new Date()"
 
 printD :: Double -> Fay ()
 printD = ffi "console.log(%1)"
+
+printI :: Int -> Fay ()
+printI = ffi "console.log(%1)"
 
 printS :: String -> Fay ()
 printS = ffi "console.log(%1)"

@@ -881,14 +881,15 @@ compileLambda pats exp = do
 compileCase :: Exp -> [Alt] -> Compile JsExp
 compileCase exp alts = do
   exp <- compileExp exp
-  pats <- fmap optimizePatConditions $ mapM (compilePatAlt (JsName (tmpName exp))) alts
-  return $
-    JsApp (JsFun [tmpName exp]
-                 (concat pats)
-                 (if any isWildCardAlt alts
-                     then Nothing
-                     else Just (throwExp "unhandled case" (JsName (tmpName exp)))))
-          [exp]
+  withScopedTmpName $ \tmpName -> do
+    pats <- fmap optimizePatConditions $ mapM (compilePatAlt (JsName tmpName)) alts
+    return $
+      JsApp (JsFun [tmpName]
+                   (concat pats)
+                   (if any isWildCardAlt alts
+                       then Nothing
+                       else Just (throwExp "unhandled case" (JsName tmpName))))
+            [exp]
 
 -- | Compile a do block.
 compileDoBlock :: [Stmt] -> Compile JsExp
@@ -1040,15 +1041,16 @@ compileInfixPat :: JsExp -> Pat -> [JsStmt] -> Compile [JsStmt]
 compileInfixPat exp pat@(PInfixApp left (Special cons) right) body =
   case cons of
     Cons -> do
-      let forcedExp = JsName (tmpName exp)
-          x = JsGetProp forcedExp "car"
-          xs = JsGetProp forcedExp "cdr"
-      rightMatch <- compilePat xs right body
-      leftMatch <- compilePat x left rightMatch
-      return [JsVar (tmpName exp) (force exp)
-             ,JsIf (JsInstanceOf forcedExp (hjIdent "Cons"))
-                   leftMatch
-                   []]
+      withScopedTmpName $ \tmpName -> do
+        let forcedExp = JsName tmpName
+            x = JsGetProp forcedExp "car"
+            xs = JsGetProp forcedExp "cdr"
+        rightMatch <- compilePat xs right body
+        leftMatch <- compilePat x left rightMatch
+        return [JsVar tmpName (force exp)
+               ,JsIf (JsInstanceOf forcedExp (hjIdent "Cons"))
+                     leftMatch
+                     []]
     _ -> throwError (UnsupportedPattern pat)
 compileInfixPat _ pat _ = throwError (UnsupportedPattern pat)
 
@@ -1127,13 +1129,15 @@ isWildCardPat PWildCard{} = True
 isWildCardPat PVar{}      = True
 isWildCardPat _           = False
 
--- | A temporary name for testing conditions and such.
-tmpName :: JsExp -> JsName
-tmpName exp =
-  fromString $
-    case exp of
-      JsName (qname -> x) -> "$_" ++ x
-      _ -> ":tmp"
+-- | Generate a temporary, SCOPED name for testing conditions and
+-- such.
+withScopedTmpName :: (JsName -> Compile a) -> Compile a
+withScopedTmpName withName = do
+  depth <- gets stateNameDepth
+  modify $ \s -> s { stateNameDepth = depth + 1 }
+  ret <- withName $ fromString $ "$_tmp" ++ show depth
+  modify $ \s -> s { stateNameDepth = depth }
+  return ret
 
 -- | Wrap an expression in a thunk.
 thunk :: JsExp -> JsExp

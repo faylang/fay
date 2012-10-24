@@ -67,6 +67,7 @@ data CompileState = CompileState
   , stateFayToJs     :: [JsStmt]
   , stateJsToFay     :: [JsStmt]
   , stateImported    :: [String] -- ^ Names of imported modules so far.
+  , stateNameDepth   :: Integer
 }
 
 defaultCompileState :: CompileConfig -> CompileState
@@ -79,6 +80,7 @@ defaultCompileState config = CompileState {
   , stateFayToJs = []
   , stateJsToFay = []
   , stateImported = ["Language.Fay.Prelude","Language.Fay.FFI","Language.Fay.Types","Prelude"]
+  , stateNameDepth = 1
   }
 
 -- | Compile monad.

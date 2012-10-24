@@ -184,13 +184,12 @@ reservedWords = [
 -- TODO: Fix this hack.
 jsEncodeName :: String -> String
 -- Special symbols:
-jsEncodeName ":tmp" = "$tmp"
 jsEncodeName ":thunk" = "$"
 jsEncodeName ":this" = "this"
 -- jsEncodeName ":return" = "return"
 -- Used keywords:
+jsEncodeName ('$':'_':name) = "$_" ++ normalize name
 jsEncodeName name
-  | "$_" `isPrefixOf` name = normalize name
   | name `elem` reservedWords = "$_" ++ normalize name
 -- Anything else.
 jsEncodeName name = normalize name

@@ -24,7 +24,6 @@ import           System.IO
 -- | Options and help.
 data FayCompilerOptions = FayCompilerOptions
     { optLibrary     :: Bool
-    , optInlineForce :: Bool
     , optFlattenApps :: Bool
     , optHTMLWrapper :: Bool
     , optHTMLJSLibs  :: [String]
@@ -41,7 +40,6 @@ data FayCompilerOptions = FayCompilerOptions
 options :: Parser FayCompilerOptions
 options = FayCompilerOptions
   <$> switch (long "library" & help "Don't automatically call main in generated JavaScript")
-  <*> switch (long "inline-force" & help "inline forcing, adds some speed for numbers, blows up code a bit")
   <*> switch (long "flatten-apps" & help "flatten function applicaton")
 
   <*> switch (long "html-wrapper" & help "Create an html file that loads the javascript")
@@ -80,10 +78,8 @@ main = do
     then runCommandVersion
     else (do
   let config = def { configTCO = False -- optTCO opts
-                   , configInlineForce = optInlineForce opts
                    , configFlattenApps = optFlattenApps opts
                    , configExportBuiltins = True -- optExportBuiltins opts
-
                    , configDirectoryIncludes = "." : optInclude opts
                    , configPrettyPrint = optPretty opts
                    , configLibrary = optLibrary opts

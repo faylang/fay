@@ -837,7 +837,7 @@ compileInfixApp exp1 op exp2 = do
           e1 <- compileExp exp1
           e2 <- compileExp exp2
           fn <- resolveOpToVar >=> compileExp $ op
-          return $ JsApp (JsApp (force fn) [(forceInlinable config e1)]) [(forceInlinable config e2)]
+          return $ JsApp (JsApp (force fn) [(force e1)]) [(force e2)]
     _ -> do
       var <- resolveOpToVar op
       compileExp (App (App var exp1) exp2)
@@ -1168,16 +1168,6 @@ jsToFay typ exp = JsApp (JsName (hjIdent "jsToFay"))
 force :: JsExp -> JsExp
 force exp
   | isConstant exp = exp
-  | otherwise = JsApp (JsName "_") [exp]
-
--- | Force an expression in a thunk.
-forceInlinable :: CompileConfig -> JsExp -> JsExp
-forceInlinable config exp
-  | isConstant exp = exp
-  | configInlineForce config =
-    JsParen (JsTernaryIf (exp `JsInstanceOf` ":thunk")
-                         (JsApp (JsName "_") [exp])
-                         exp)
   | otherwise = JsApp (JsName "_") [exp]
 
 -- | Resolve operators to only built-in (for now) functions.

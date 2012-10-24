@@ -951,24 +951,22 @@ compilePat exp pat body =
 
 -- | Compile a record field pattern.
 compilePatFields :: JsExp -> QName -> [PatField] -> [JsStmt] -> Compile [JsStmt]
-compilePatFields exp (UnQual name) pats body =
-    liftM ((flip (++) body)) (compilePats pats)
-  where compilePats :: [PatField] -> Compile [JsStmt]
-        compilePats pats = compilePats' [] pats
-
-        -- compilePats' collects field names that had already been matched so that
+compilePatFields exp (UnQual name) pats body = do
+    c <- liftM (++ body) (compilePats' [] pats)
+    return [JsIf ((force exp) `JsInstanceOf` constructorName (UnQual name)) c []]
+  where -- compilePats' collects field names that had already been matched so that
         -- wildcard generates code for the rest of the fields.
         compilePats' :: [Name] -> [PatField] -> Compile [JsStmt]
-        compilePats' names ((PFieldPun name):xs) =
-          compilePats' names ((PFieldPat (UnQual name) (PVar name)):xs)
+        compilePats' names (PFieldPun name:xs) =
+          compilePats' names (PFieldPat (UnQual name) (PVar name):xs)
 
-        compilePats' names ((PFieldPat fieldQName (PVar varName)):xs) = do
+        compilePats' names (PFieldPat fieldQName (PVar varName):xs) = do
           let fieldname = case fieldQName of
                             (Qual _ name) -> name
                             (UnQual name) -> name
                             (Special _) -> undefined -- TODO: how to handle special names ?
           r <- compilePats' (fieldname:names) xs
-          return $ (JsVar (UnQual varName) (JsGetProp (force exp) fieldQName)):r -- TODO: think about this force call
+          return $ JsVar (UnQual varName) (JsGetProp (force exp) fieldQName):r -- TODO: think about this force call
 
         compilePats' names (PFieldWildcard:xs) = do
           records <- liftM stateRecords get
@@ -1033,7 +1031,7 @@ updateRec rec fieldUpdates = do
           return $ JsSetProp copyName (UnQual name) (JsName (UnQual name))
         -- TODO: FieldWildcard
         -- I also couldn't find a code that generates (FieldUpdate FieldWildCard)
-        updateExp copyName FieldWildcard = error "unsupported update: FieldWildcard"
+        updateExp _ FieldWildcard = error "unsupported update: FieldWildcard"
 
 -- | Equality test for two expressions, with some optimizations.
 equalExps :: JsExp -> JsExp -> JsExp

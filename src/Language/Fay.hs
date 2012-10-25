@@ -17,6 +17,7 @@ module Language.Fay
   ,compileFromStr
   ,compileModule
   ,compileExp
+  ,compileDecl
   ,printCompile
   ,printTestCompile
   ,compileToplevelModule
@@ -324,6 +325,8 @@ compileDecl toplevel decl =
     InstDecl{} -> return [] -- FIXME: Ignore.
     DerivDecl{} -> return []
     _ -> throwError (UnsupportedDeclaration decl)
+
+instance CompilesTo Decl [JsStmt] where compileTo = compileDecl True
 
 -- | Compile a top-level pattern bind.
 compilePatBind :: Bool -> Maybe Type -> Decl -> Compile [JsStmt]

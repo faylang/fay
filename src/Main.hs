@@ -119,7 +119,15 @@ runInteractive =
             Just input -> do
                 result <- liftIO $ compileViaStr def compileExp input
                 case result of
-                    Left err -> outputStrLn . show $ err
+                    Left err -> do
+                      -- an error occured, maybe input was not an expression,
+                      -- but a declaration, try compiling the input as a declaration
+                      outputStrLn ("can't parse input as expression: " ++ show err)
+                      result' <- liftIO $ compileViaStr def (compileDecl True) input
+                      case result' of
+                        Right (ok,_) -> liftIO (prettyPrintString ok) >>= outputStr
+                        Left err' ->
+                          outputStrLn ("can't parse input as declaration: " ++ show err')
                     Right (ok,_) -> liftIO (prettyPrintString ok) >>= outputStr
                 loop
 

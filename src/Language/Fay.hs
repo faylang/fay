@@ -831,7 +831,6 @@ compileNegApp e = JsNegApp <$> compileExp e
 -- | Compile an infix application, optimizing the JS cases.
 compileInfixApp :: Exp -> QOp -> Exp -> Compile JsExp
 compileInfixApp exp1 op exp2 = do
-  config <- config id
   case getOp op of
     UnQual (Symbol symbol)
       | symbol `elem` words "* + - / < > || &&" -> do
@@ -951,7 +950,7 @@ compilePat exp pat body =
 
 -- | Compile a record field pattern.
 compilePatFields :: JsExp -> QName -> [PatField] -> [JsStmt] -> Compile [JsStmt]
-compilePatFields exp (UnQual name) pats body = do
+compilePatFields exp (Ident . qname -> name) pats body = do
     c <- liftM (++ body) (compilePats' [] pats)
     return [JsIf ((force exp) `JsInstanceOf` constructorName (UnQual name)) c []]
   where -- compilePats' collects field names that had already been matched so that
@@ -975,7 +974,7 @@ compilePatFields exp (UnQual name) pats body = do
               f = map (\fieldName -> JsVar (UnQual fieldName) (JsGetProp (force exp) (UnQual fieldName))) fields'
           r <- compilePats' names xs
           return $ f ++ r
-        
+
         compilePats' _ [] = return []
 
         compilePats' _ (pat:_) = throwError (UnsupportedFieldPattern pat)
@@ -1026,7 +1025,7 @@ updateRec rec fieldUpdates = do
   where updateExp :: QName -> FieldUpdate -> Compile JsStmt
         updateExp copyName (FieldUpdate field value) =
           JsSetProp copyName field <$> compileExp value
-        updateExp copyName (FieldPun name) = 
+        updateExp copyName (FieldPun name) =
           -- let a = 1 in C {a}
           return $ JsSetProp copyName (UnQual name) (JsName (UnQual name))
         -- TODO: FieldWildcard

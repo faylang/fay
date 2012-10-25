@@ -165,7 +165,7 @@ instance Printable JsExp where
     +> ")"
      where isFunc JsFun{..} = True; isFunc _ = False
   printJS (JsNegApp args) =
-      "-" +> printJS args
+      "(-" +> printJS args +> ")"
 
 --------------------------------------------------------------------------------
 -- Utilities

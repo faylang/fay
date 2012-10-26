@@ -68,16 +68,15 @@ compileFromToReturningStatus config filein fileout = do
     Left err -> return (Left err)
 
 -- | Compile readable/writable values.
-compileReadWrite :: (Reader r, Writer w) => CompileConfig -> r -> w -> IO ()
-compileReadWrite config reader writer = do
-  result <- compileFile config reader
+compileReadWrite :: CompileConfig -> FilePath -> Maybe FilePath -> IO ()
+compileReadWrite config filein fileout = do
+  result <- compileFile config filein
   case result of
-    Right out -> do
-      writeout writer out
+    Right out -> maybe (putStrLn out) (flip writeFile out) fileout
     Left err -> error . groom $ err
 
 -- | Compile the given file.
-compileFile :: (Reader r) => CompileConfig -> r -> IO (Either CompileError String)
+compileFile :: CompileConfig -> FilePath -> IO (Either CompileError String)
 compileFile config filein = do
   runtime <- getDataFileName "js/runtime.js"
   stdlibpath <- getDataFileName "hs/stdlib.hs"
@@ -85,8 +84,9 @@ compileFile config filein = do
   raw <- readFile runtime
   stdlib <- readFile stdlibpath
   stdlibprelude <- readFile stdlibpathprelude
-  hscode <- readin filein
-  compileProgram config
+  hscode <- readFile filein
+  compileProgram filein
+                 config
                  raw
                  compileToplevelModule
                  (hscode ++ "\n" ++ stdlib ++ "\n" ++ strip stdlibprelude)
@@ -95,10 +95,11 @@ compileFile config filein = do
 
 -- | Compile the given module to a runnable program.
 compileProgram :: (Show from,Show to,CompilesTo from to)
-               => CompileConfig -> String -> (from -> Compile to) -> String
+               => FilePath
+               -> CompileConfig -> String -> (from -> Compile to) -> String
                -> IO (Either CompileError String)
-compileProgram config raw with hscode = do
-  result <- compileViaStr config with hscode
+compileProgram filepath config raw with hscode = do
+  result <- compileViaStr filepath config with hscode
   case result of
     Left err -> return (Left err)
     Right (jscode,state) -> fmap Right $

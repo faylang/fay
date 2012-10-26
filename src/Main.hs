@@ -76,30 +76,27 @@ main = do
   opts <- execParser parser
   if optVersion opts
     then runCommandVersion
-    else (do
-  let config = def { configTCO = False -- optTCO opts
-                   , configFlattenApps = optFlattenApps opts
-                   , configExportBuiltins = True -- optExportBuiltins opts
-                   , configDirectoryIncludes = "." : optInclude opts
-                   , configPrettyPrint = optPretty opts
-                   , configLibrary = optLibrary opts
-                   , configHtmlWrapper =  optHTMLWrapper opts
-                   , configHtmlJSLibs = optHTMLJSLibs opts
-                   , configTypecheck = not $ optNoGHC opts
-                   , configWall = optWall opts
-                   }
-  void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
-
-  case optFiles opts of
-       ["-"] -> do
-               hGetContents stdin >>= printCompile config compileModule
-       [] -> runInteractive
-       files  -> forM_ files $ \file -> do
-               if optStdout opts
-                 then compileReadWrite config file stdout
-                 else
-                    compileFromTo config file $ outPutFile opts file)
-
+    else do let config = def
+                  { configTCO = False -- optTCO opts
+                  , configFlattenApps = optFlattenApps opts
+                  , configExportBuiltins = True -- optExportBuiltins opts
+                  , configDirectoryIncludes = "." : optInclude opts
+                  , configPrettyPrint = optPretty opts
+                  , configLibrary = optLibrary opts
+                  , configHtmlWrapper =  optHTMLWrapper opts
+                  , configHtmlJSLibs = optHTMLJSLibs opts
+                  , configTypecheck = not $ optNoGHC opts
+                  , configWall = optWall opts
+                  }
+            void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
+            case optFiles opts of
+                 ["-"] -> do
+                         hGetContents stdin >>= printCompile config compileModule
+                 [] -> runInteractive
+                 files  -> forM_ files $ \file -> do
+                         if optStdout opts
+                           then compileReadWrite config file Nothing
+                           else compileReadWrite config file (Just (outPutFile opts file))
 
   where
     parser = info (helper <*> options) (fullDesc & header helpTxt)
@@ -117,13 +114,13 @@ runInteractive =
             Nothing -> return ()
             Just "" -> loop
             Just input -> do
-                result <- liftIO $ compileViaStr def compileExp input
+                result <- liftIO $ compileViaStr "<interactive>" def compileExp input
                 case result of
                     Left err -> do
                       -- an error occured, maybe input was not an expression,
                       -- but a declaration, try compiling the input as a declaration
                       outputStrLn ("can't parse input as expression: " ++ show err)
-                      result' <- liftIO $ compileViaStr def (compileDecl True) input
+                      result' <- liftIO $ compileViaStr "<interactive>" def (compileDecl True) input
                       case result' of
                         Right (ok,_) -> liftIO (prettyPrintString ok) >>= outputStr
                         Left err' ->

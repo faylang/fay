@@ -60,38 +60,40 @@ runCompile state m = runErrorT (runStateT (unCompile m) state) where
 
 -- | Compile a Haskell source string to a JavaScript source string.
 compileViaStr :: (Show from,Show to,CompilesTo from to)
-              => CompileConfig
+              => FilePath
+              -> CompileConfig
               -> (from -> Compile to)
               -> String
               -> IO (Either CompileError (String,CompileState))
-compileViaStr config with from =
+compileViaStr filepath config with from =
   runCompile (defaultCompileState config)
              (parseResult (throwError . uncurry ParseError)
                           (fmap printJSString . with)
-                          (parseFay from))
+                          (parseFay filepath from))
 
 -- | Compile a Haskell source string to a JavaScript source string.
 compileToAst :: (Show from,Show to,CompilesTo from to)
-              => CompileState
+              => FilePath
+              -> CompileState
               -> (from -> Compile to)
               -> String
               -> IO (Either CompileError (to,CompileState))
-compileToAst state with from =
+compileToAst filepath state with from =
   runCompile state
              (parseResult (throwError . uncurry ParseError)
                           with
-                          (parseFay from))
+                          (parseFay filepath from))
 
 -- | Compile from a string.
-compileFromStr :: (Parseable a, MonadError CompileError m) => (a -> m a1) -> String -> m a1
-compileFromStr with from =
+compileFromStr :: (Parseable a, MonadError CompileError m) => FilePath -> (a -> m a1) -> String -> m a1
+compileFromStr filepath with from =
   parseResult (throwError . uncurry ParseError)
               with
-              (parseFay from)
+              (parseFay filepath from)
 
 -- | Parse some Fay code.
-parseFay :: Parseable ast => String -> ParseResult ast
-parseFay = parseWithMode parseMode
+parseFay :: Parseable ast => FilePath -> String -> ParseResult ast
+parseFay filepath = parseWithMode parseMode { parseFilename = filepath }
 
 -- | The parse mode for Fay.
 parseMode :: ParseMode
@@ -105,7 +107,7 @@ printCompile :: (Show from,Show to,CompilesTo from to)
               -> String
               -> IO ()
 printCompile config with from = do
-  result <- compileViaStr config with from
+  result <- compileViaStr "<interactive>" config with from
   case result of
     Left err -> print err
     Right (ok,_) -> prettyPrintString ok >>= putStr
@@ -150,9 +152,9 @@ initialPass_import :: ImportDecl -> Compile ()
 initialPass_import (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
   void $ unlessImported name $ do
     dirs <- configDirectoryIncludes <$> gets stateConfig
-    contents <- io (findImport dirs name)
+    (filepath,contents) <- io $ findImport dirs name
     cs <- gets id
-    result <- liftIO $ initialPass_records cs initialPass contents
+    result <- liftIO $ initialPass_records filepath cs initialPass contents
     case result of
       Right ((),state) -> do
         -- Merges the state gotten from passing through an imported
@@ -170,15 +172,16 @@ initialPass_import i =
         "It was: " ++ show i
 
 initialPass_records :: (Show from,Parseable from)
-              => CompileState
-              -> (from -> Compile ())
-              -> String
-              -> IO (Either CompileError ((),CompileState))
-initialPass_records compileState with from =
+                    => FilePath
+                    -> CompileState
+                    -> (from -> Compile ())
+                    -> String
+                    -> IO (Either CompileError ((),CompileState))
+initialPass_records filepath compileState with from =
   runCompile compileState
              (parseResult (throwError . uncurry ParseError)
                           with
-                          (parseFay from))
+                          (parseFay filepath from))
 
 initialPass_decl :: Bool -> Decl -> Compile ()
 initialPass_decl toplevel decl =
@@ -252,11 +255,11 @@ checkModulePragmas pragmas =
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
 
-findImport :: [FilePath] -> String -> IO String
+findImport :: [FilePath] -> String -> IO (FilePath,String)
 findImport (dir:dirs) name = do
   exists <- doesFileExist path
   if exists
-    then readFile path
+    then fmap (path,) (readFile path)
     else findImport dirs name
   where
     path = dir </> replace '.' '/' name ++ ".hs"
@@ -269,9 +272,9 @@ compileImport :: ImportDecl -> Compile [JsStmt]
 compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
   unlessImported name $ do
     dirs <- configDirectoryIncludes <$> gets stateConfig
-    contents <- io (findImport dirs name)
+    (filepath,contents) <- io (findImport dirs name)
     state <- gets id
-    result <- liftIO $ compileToAst state compileModule contents
+    result <- liftIO $ compileToAst filepath state compileModule contents
     case result of
       Right (stmts,state) -> do
         modify $ \s -> s { stateFayToJs = stateFayToJs state

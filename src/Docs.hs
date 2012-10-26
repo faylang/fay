@@ -43,7 +43,8 @@ generate = do
   where compile file = do
           contents <- readFile file
           putStrLn $ "Generating " ++ file ++ " ..."
-          result <- compileViaStr def { configFlattenApps = True
+          result <- compileViaStr file
+                                  def { configFlattenApps = True
                                       , configTCO = True
                                       , configTypecheck = False }
                                   compileForDocs contents

@@ -6,8 +6,8 @@
 
 module Main where
 
-import           Language.Fay                (compileForDocs, compileViaStr)
-import           Language.Fay.Compiler       (compileFromTo)
+import           Language.Fay                (compileFromTo)
+import           Language.Fay.Compiler       (compileForDocs, compileViaStr)
 import           Language.Fay.Types          (CompileConfig(..))
 
 

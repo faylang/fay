@@ -2,14 +2,14 @@
 
 module Test.Api (tests) where
 
-import           Data.Default
-import           Language.Fay.Compiler
-import           Language.Fay.Types
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
-import           Test.Framework.TH
-import           Test.HUnit                     (Assertion, assertBool)
-import           Test.Util
+import Language.Fay
+
+import Data.Default
+import Test.Framework
+import Test.Framework.Providers.HUnit
+import Test.Framework.TH
+import Test.HUnit                     (Assertion, assertBool)
+import Test.Util
 
 tests :: Test
 tests = $testGroupGenerator

@@ -7,8 +7,7 @@ module Main where
 
 import           Data.Default
 import           Data.List
-import           Language.Fay.Compiler
-import           Language.Fay.Types
+import           Language.Fay
 import           System.Directory
 import           System.FilePath
 import           System.Process.Extra

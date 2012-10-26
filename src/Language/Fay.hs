@@ -829,7 +829,7 @@ compileApp exp1 exp2 = do
 
 -- | Compile a negate application
 compileNegApp :: Exp -> Compile JsExp
-compileNegApp e = JsNegApp <$> compileExp e
+compileNegApp e = JsNegApp . force <$> compileExp e
 
 -- | Compile an infix application, optimizing the JS cases.
 compileInfixApp :: Exp -> QOp -> Exp -> Compile JsExp

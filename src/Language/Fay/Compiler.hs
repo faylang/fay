@@ -6,7 +6,7 @@
 
 module Language.Fay.Compiler where
 
-import Language.Fay                 (compileToplevelModule, compileViaStr, prettyPrintString)
+import Language.Fay                 (compileToplevelModule, compileViaStr)
 import Language.Fay.Types
 import Language.Fay.Print
 
@@ -81,11 +81,7 @@ compileToModule filepath config raw with hscode = do
   result <- compileViaStr filepath config with hscode
   case result of
     Left err -> return (Left err)
-    Right (jscode,state) -> fmap Right $
-      let out = generate jscode (stateExports state) (stateModuleName state)
-      in if configPrettyPrint config
-            then prettyPrintString out
-            else return out
+    Right (jscode,state) -> return (Right (generate jscode (stateExports state) (stateModuleName state)))
 
   where generate jscode exports (ModuleName (clean -> modulename)) = unlines
           ["/** @constructor"

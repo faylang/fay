@@ -7,9 +7,6 @@ module Language.Fay.FFI where
 import           Language.Fay.Types (Fay)
 import           Prelude            (Bool, Char, Double, String, Int, Maybe, error)
 
--- | In case you want to distinguish values with a JsPtr.
-data JsPtr a
-
 -- | Contains allowed foreign function types.
 class Foreign a
 
@@ -30,9 +27,6 @@ instance Foreign Bool
 
 -- | Lists → arrays are OK.
 instance Foreign a => Foreign [a]
-
--- | Pointers to arbitrary objects are OK.
-instance Foreign (JsPtr a)
 
 -- | JS values are foreignable.
 instance Foreign a => Foreign (Fay a)

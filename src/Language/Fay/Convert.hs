@@ -91,7 +91,7 @@ showToFay = Show.reify >=> convert where
   slots = zipWithM keyval (map (("slot"++).show) [1::Int ..])
   keyval key val = fmap (Text.pack key,) (convert val)
 
---- | Convert a value representing a Fay value to a Haskell value.
+-- | Convert a value representing a Fay value to a Haskell value.
 readFromFay :: Data a => Value -> Maybe a
 readFromFay value = do
   parseData value

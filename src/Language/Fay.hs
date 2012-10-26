@@ -18,13 +18,11 @@ module Language.Fay
   ,compileDecl
   ,printCompile
   ,printTestCompile
-  ,compileToplevelModule
-  ,prettyPrintString)
+  ,compileToplevelModule)
   where
 
 import           Language.Fay.Print          (jsEncodeName, printJSString)
 import           Language.Fay.Types
-import           System.Process.Extra
 
 import           Control.Applicative
 import           Control.Monad.Error
@@ -37,13 +35,11 @@ import           Data.Maybe
 import           Data.String
 import qualified Language.ECMAScript3.Parser as JS
 import           Language.Haskell.Exts
-
 import           Safe
 import           System.Directory            (doesFileExist, findExecutable)
-import           System.Exit
 import           System.FilePath             ((</>))
 import           System.IO
-import           System.Process
+import           System.Process.Extra
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -94,10 +90,10 @@ printCompile :: (Show from,Show to,CompilesTo from to)
               -> String
               -> IO ()
 printCompile config with from = do
-  result <- compileViaStr "<interactive>" config with from
+  result <- compileViaStr "<interactive>" config { configPrettyPrint = True } with from
   case result of
     Left err -> print err
-    Right (ok,_) -> prettyPrintString ok >>= putStr
+    Right (ok,_) -> putStr ok
 
 -- | Compile a String of Fay and print it as beautified JavaScript.
 printTestCompile :: String -> IO ()
@@ -718,19 +714,6 @@ expand (JsApp (JsName (UnQual (Ident "_"))) xs) =
   fmap concat (mapM flatten xs)
 expand _ = Nothing
 
--- | Format a JS string using "js-beautify", or return the JS as-is if
---   "js-beautify" is unavailable.
-prettyPrintString :: String -> IO String
-prettyPrintString contents = do
-    mexe <- findExecutable "js-beautify"
-    case mexe of
-      Nothing -> return $ contents ++ "\n"
-      Just exe -> do
-        (code,out,_) <- readProcessWithExitCode exe ["--stdin"] contents
-        case code of
-          ExitSuccess -> return out
-          ExitFailure _ -> return $ contents ++ "\n"
-
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp
 compileRhs (UnGuardedRhs exp) = compileExp exp
@@ -782,7 +765,6 @@ compileExp exp =
     exp -> throwError (UnsupportedExpression exp)
 
 instance CompilesTo Exp JsExp where compileTo = compileExp
-
 
 -- | Compile simple application.
 compileApp :: Exp -> Exp -> Compile JsExp

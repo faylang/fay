@@ -95,8 +95,8 @@ main = do
                  [] -> runInteractive
                  files  -> forM_ files $ \file -> do
                          if optStdout opts
-                           then compileReadWrite config file Nothing
-                           else compileReadWrite config file (Just (outPutFile opts file))
+                           then compileFromTo config file Nothing
+                           else compileFromTo config file (Just (outPutFile opts file))
 
   where
     parser = info (helper <*> options) (fullDesc & header helpTxt)
@@ -141,9 +141,3 @@ incompatible :: Monad m => (FayCompilerOptions -> Bool)
 incompatible test opts message = case test opts of
              True -> E.throw $ userError message
              False -> return True
-
-instance Writer Handle where
-  writeout = hPutStr
-
-instance Reader Handle where
-  readin = hGetContents

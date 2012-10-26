@@ -62,6 +62,7 @@ data CompileState = CompileState
   , stateExports     :: [Name]
   , stateExportAll   :: Bool
   , stateModuleName  :: ModuleName
+  , stateFilePath    :: FilePath
   , stateRecords     :: [(Name,[Name])] -- records with field names
   , stateFayToJs     :: [JsStmt]
   , stateJsToFay     :: [JsStmt]
@@ -80,6 +81,7 @@ defaultCompileState config = CompileState {
   , stateJsToFay = []
   , stateImported = ["Language.Fay.Prelude","Language.Fay.FFI","Language.Fay.Types","Prelude"]
   , stateNameDepth = 1
+  , stateFilePath = "<unknown>"
   }
 
 -- | Compile monad.
@@ -135,11 +137,13 @@ data CompileError
   | UnsupportedFieldPattern PatField
   | UnsupportedRhs Rhs
   | UnsupportedGuardedAlts GuardedAlts
+  | UnsupportedImport ImportDecl
   | EmptyDoBlock
   | UnsupportedModuleSyntax Module
   | LetUnsupported
   | InvalidDoBlock
   | RecursiveDoUnsupported
+  | Couldn'tFindImport String [FilePath]
   | FfiNeedsTypeSig Decl
   | FfiFormatBadChars String
   | FfiFormatNoSuchArg Int

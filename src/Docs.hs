@@ -60,7 +60,7 @@ generate = do
 
 generateJs = do
   putStrLn $ "Compiling " ++ inp ++ " to " ++ out ++ " ..."
-  compileFromTo def { configFlattenApps = True, configTypecheck = False } inp out
+  compileFromTo def { configFlattenApps = True, configTypecheck = False } inp (Just out)
 
   where docs = ("docs" </>)
         inp = docs "home.hs"

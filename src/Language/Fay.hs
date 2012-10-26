@@ -9,12 +9,10 @@
 -- | The Haskell→Javascript compiler.
 
 module Language.Fay
-  (compile
-  ,runCompile
+  (runCompile
   ,compileViaStr
   ,compileForDocs
   ,compileToAst
-  ,compileFromStr
   ,compileModule
   ,compileExp
   ,compileDecl
@@ -50,10 +48,6 @@ import           System.Process
 --------------------------------------------------------------------------------
 -- Top level entry points
 
--- | Compile something that compiles to something else.
-compile :: CompilesTo from to => CompileConfig -> from -> IO (Either CompileError (to,CompileState))
-compile config = runCompile (defaultCompileState config) . compileTo
-
 -- | Run the compiler.
 runCompile :: CompileState -> Compile a -> IO (Either CompileError (a,CompileState))
 runCompile state m = runErrorT (runStateT (unCompile m) state) where
@@ -66,7 +60,7 @@ compileViaStr :: (Show from,Show to,CompilesTo from to)
               -> String
               -> IO (Either CompileError (String,CompileState))
 compileViaStr filepath config with from =
-  runCompile (defaultCompileState config)
+  runCompile ((defaultCompileState config) { stateFilePath = filepath })
              (parseResult (throwError . uncurry ParseError)
                           (fmap printJSString . with)
                           (parseFay filepath from))
@@ -83,13 +77,6 @@ compileToAst filepath state with from =
              (parseResult (throwError . uncurry ParseError)
                           with
                           (parseFay filepath from))
-
--- | Compile from a string.
-compileFromStr :: (Parseable a, MonadError CompileError m) => FilePath -> (a -> m a1) -> String -> m a1
-compileFromStr filepath with from =
-  parseResult (throwError . uncurry ParseError)
-              with
-              (parseFay filepath from)
 
 -- | Parse some Fay code.
 parseFay :: Parseable ast => FilePath -> String -> ParseResult ast
@@ -152,7 +139,7 @@ initialPass_import :: ImportDecl -> Compile ()
 initialPass_import (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
   void $ unlessImported name $ do
     dirs <- configDirectoryIncludes <$> gets stateConfig
-    (filepath,contents) <- io $ findImport dirs name
+    (filepath,contents) <- findImport dirs name
     cs <- gets id
     result <- liftIO $ initialPass_records filepath cs initialPass contents
     case result of
@@ -166,10 +153,7 @@ initialPass_import (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothi
       Left err -> throwError err
     return []
 
-initialPass_import i =
-  error $ "Initial pass: Import syntax not supported. " ++
-        "The compiler writer was too lazy to support that.\n" ++
-        "It was: " ++ show i
+initialPass_import i = throwError $ UnsupportedImport i
 
 initialPass_records :: (Show from,Parseable from)
                     => FilePath
@@ -255,24 +239,25 @@ checkModulePragmas pragmas =
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
 
-findImport :: [FilePath] -> String -> IO (FilePath,String)
-findImport (dir:dirs) name = do
-  exists <- doesFileExist path
-  if exists
-    then fmap (path,) (readFile path)
-    else findImport dirs name
-  where
-    path = dir </> replace '.' '/' name ++ ".hs"
-    replace c r = map (\x -> if x == c then r else x)
-findImport [] name =
-  error $ "Could not find import: " ++ name
+findImport :: [FilePath] -> String -> Compile (FilePath,String)
+findImport alldirs = go alldirs where
+  go (dir:dirs) name = do
+    exists <- io (doesFileExist path)
+    if exists
+      then fmap (path,) (io (readFile path))
+      else go dirs name
+    where
+      path = dir </> replace '.' '/' name ++ ".hs"
+      replace c r = map (\x -> if x == c then r else x)
+  go [] name =
+    throwError $ Couldn'tFindImport name alldirs
 
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]
 compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
   unlessImported name $ do
     dirs <- configDirectoryIncludes <$> gets stateConfig
-    (filepath,contents) <- io (findImport dirs name)
+    (filepath,contents) <- findImport dirs name
     state <- gets id
     result <- liftIO $ compileToAst filepath state compileModule contents
     case result of
@@ -283,10 +268,7 @@ compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) =
                          }
         return stmts
       Left err -> throwError err
-compileImport i =
-  error $ "compileImport: Import syntax not supported. " ++
-        "The compiler writer was too lazy to support that.\n" ++
-        "It was: " ++ show i
+compileImport i = throwError $ UnsupportedImport i
 
 -- | Don't re-import the same modules.
 unlessImported :: String -> Compile [JsStmt] -> Compile [JsStmt]

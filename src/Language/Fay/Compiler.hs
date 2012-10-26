@@ -6,47 +6,34 @@
 
 module Language.Fay.Compiler where
 
-import           Language.Fay                 (compileToplevelModule, compileViaStr, prettyPrintString)
-import           Language.Fay.Types
-import           Language.Fay.Print
+import Language.Fay                 (compileToplevelModule, compileViaStr, prettyPrintString)
+import Language.Fay.Types
+import Language.Fay.Print
 
-import           Control.Monad
-import           Language.Haskell.Exts.Syntax
-import           Paths_fay
-import           System.FilePath
-import           Text.Groom
+import Control.Monad
+import Data.List
+import Language.Haskell.Exts.Syntax
+import Language.Haskell.Exts (prettyPrint)
+import Paths_fay
+import System.FilePath
 
--- | A result of something the compiler writes.
-class Writer a where
-  writeout :: a -> String -> IO ()
-
--- | Something to feed into the compiler.
-class Reader a where
-  readin :: a -> IO String
-
--- | Simple file writer.
-instance Writer FilePath where
-  writeout = writeFile
-
--- | Simple file reader.
-instance Reader FilePath where
-  readin = readFile
-
--- | Compile file program to…
-compileFromTo :: CompileConfig -> FilePath -> FilePath -> IO ()
+-- | Compile the given file and write the output to the given path, or
+-- if nothing given, stdout.
+compileFromTo :: CompileConfig -> FilePath -> Maybe FilePath -> IO ()
 compileFromTo config filein fileout = do
-  result <- compileFromToReturningStatus config filein fileout
+  result <- maybe (compileFile config filein)
+                  (compileFromToAndGenerateHtml config filein)
+                  fileout
   case result of
-    Right () -> return ()
-    Left err -> error . groom $ err
+    Right out -> maybe (putStrLn out) (flip writeFile out) fileout
+    Left err -> error $ showCompileError $ err
 
--- | Compile file program to…
-compileFromToReturningStatus :: CompileConfig -> FilePath -> FilePath -> IO (Either CompileError ())
-compileFromToReturningStatus config filein fileout = do
+-- | Compile the given file and write to the output, also generate any HTML.
+compileFromToAndGenerateHtml :: CompileConfig -> FilePath -> FilePath -> IO (Either CompileError String)
+compileFromToAndGenerateHtml config filein fileout = do
   result <- compileFile config { configFilePath = Just filein } filein
   case result of
     Right out -> do
-      writeFile fileout out
       when (configHtmlWrapper config) $
         writeFile (replaceExtension fileout "html") $ unlines [
             "<!doctype html>"
@@ -60,20 +47,12 @@ compileFromToReturningStatus config filein fileout = do
           , "  <body>"
           , "  </body>"
           , "</html>"]
-      return (Right ())
+      return (Right out)
             where relativeJsPath = makeRelative (dropFileName fileout) fileout
                   makeScriptTagSrc :: FilePath -> String
                   makeScriptTagSrc = \s ->
                     "<script type=\"text/javascript\" src=\"" ++ s ++ "\"></script>"
     Left err -> return (Left err)
-
--- | Compile readable/writable values.
-compileReadWrite :: CompileConfig -> FilePath -> Maybe FilePath -> IO ()
-compileReadWrite config filein fileout = do
-  result <- compileFile config filein
-  case result of
-    Right out -> maybe (putStrLn out) (flip writeFile out) fileout
-    Left err -> error . groom $ err
 
 -- | Compile the given file.
 compileFile :: CompileConfig -> FilePath -> IO (Either CompileError String)
@@ -85,20 +64,20 @@ compileFile config filein = do
   stdlib <- readFile stdlibpath
   stdlibprelude <- readFile stdlibpathprelude
   hscode <- readFile filein
-  compileProgram filein
-                 config
-                 raw
-                 compileToplevelModule
-                 (hscode ++ "\n" ++ stdlib ++ "\n" ++ strip stdlibprelude)
+  compileToModule filein
+                  config
+                  raw
+                  compileToplevelModule
+                  (hscode ++ "\n" ++ stdlib ++ "\n" ++ strip stdlibprelude)
 
   where strip = unlines . dropWhile (/="-- START") . lines
 
--- | Compile the given module to a runnable program.
-compileProgram :: (Show from,Show to,CompilesTo from to)
+-- | Compile the given module to a runnable module.
+compileToModule :: (Show from,Show to,CompilesTo from to)
                => FilePath
                -> CompileConfig -> String -> (from -> Compile to) -> String
                -> IO (Either CompileError String)
-compileProgram filepath config raw with hscode = do
+compileToModule filepath config raw with hscode = do
   result <- compileViaStr filepath config with hscode
   case result of
     Left err -> return (Left err)
@@ -148,3 +127,36 @@ toJsName :: String -> String
 toJsName x = case reverse x of
                ('s':'h':'.': (reverse -> file)) -> file ++ ".js"
                _ -> x
+
+-- | Print a compile error for human consumption.
+showCompileError :: CompileError -> String
+showCompileError e =
+  case e of
+    ParseError _ err -> err
+    UnsupportedDeclaration d -> "unsupported declaration: " ++ prettyPrint d
+    UnsupportedExportSpec es -> "unsupported export specification: " ++ prettyPrint es
+    UnsupportedMatchSyntax m -> "unsupported match/binding syntax: " ++ prettyPrint m
+    UnsupportedWhereInMatch m -> "unsupported `where' syntax: " ++ prettyPrint m
+    UnsupportedExpression expr -> "unsupported expression syntax: " ++ prettyPrint expr
+    UnsupportedLiteral lit -> "unsupported literal syntax: " ++ prettyPrint lit
+    UnsupportedLetBinding d -> "unsupported let binding: " ++ prettyPrint d
+    UnsupportedOperator qop -> "unsupported operator syntax: " ++ prettyPrint qop
+    UnsupportedPattern pat -> "unsupported pattern syntax: " ++ prettyPrint pat
+    UnsupportedRhs rhs -> "unsupported right-hand side syntax: " ++ prettyPrint rhs
+    UnsupportedGuardedAlts ga -> "unsupported guarded alts: " ++ prettyPrint ga
+    EmptyDoBlock -> "empty `do' block"
+    UnsupportedModuleSyntax{} -> "unsupported module syntax (may be supported later)"
+    LetUnsupported -> "let not supported here"
+    InvalidDoBlock -> "invalid `do' block"
+    RecursiveDoUnsupported -> "recursive `do' isn't supported"
+    FfiNeedsTypeSig d -> "your FFI declaration needs a type signature: " ++ prettyPrint d
+    FfiFormatBadChars cs -> "invalid characters for FFI format string: " ++ show cs
+    FfiFormatNoSuchArg i -> "no such argument in FFI format string: " ++ show i
+    FfiFormatIncompleteArg -> "incomplete `%' syntax in FFI format string"
+    FfiFormatInvalidJavaScript code err -> "invalid JavaScript code in FFI format string:\n"
+                                           ++ err ++ "\nin " ++ code
+    UnsupportedFieldPattern p -> "unsupported field pattern: " ++ prettyPrint p
+    UnsupportedImport i -> "unsupported import syntax, we're too lazy: " ++ prettyPrint i
+    Couldn'tFindImport i places ->
+      "could not find an import in the path: " ++ i ++ ", \n" ++
+      "searched in these places: " ++ intercalate ", " places

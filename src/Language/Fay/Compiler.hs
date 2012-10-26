@@ -23,19 +23,18 @@ module Language.Fay.Compiler
 
 import           Language.Fay.Print          (jsEncodeName, printJSString)
 import           Language.Fay.Types
+import           Language.Fay.Compiler.FFI
+import           Language.Fay.Compiler.Misc
 
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.IO
 import           Control.Monad.State
-import           Data.Char
 import           Data.Default                (def)
 import           Data.List
 import           Data.Maybe
 import           Data.String
-import qualified Language.ECMAScript3.Parser as JS
 import           Language.Haskell.Exts
-import           Safe
 import           System.Directory            (doesFileExist)
 import           System.FilePath             ((</>))
 import           System.IO
@@ -204,7 +203,6 @@ typecheck includeDirs ghcFlags wall fp = do
 --------------------------------------------------------------------------------
 -- Compilers
 
-
 -- | Compile Haskell module.
 compileModule :: Module -> Compile [JsStmt]
 compileModule (Module _ modulename pragmas Nothing exports imports decls) = do
@@ -326,134 +324,6 @@ compilePatBind toplevel sig pat =
   where ffiExp (App (Var (UnQual (Ident "ffi"))) (Lit (String formatstr))) = Just formatstr
         ffiExp _ = Nothing
 
--- | Compile an FFI call.
-compileFFI :: SrcLoc -- ^ Location of the original FFI decl.
-           -> Name   -- ^ Name of the to-be binding.
-           -> String -- ^ The format string.
-           -> Type   -- ^ Type signature.
-           -> Compile [JsStmt]
-compileFFI srcloc name formatstr sig = do
-  inner <- formatFFI formatstr (zip params funcFundamentalTypes)
-  case JS.parse JS.parseExpression (prettyPrint name) (printJSString (wrapReturn inner)) of
-    Left err -> throwError (FfiFormatInvalidJavaScript inner (show err))
-    Right{}  -> fmap return (bindToplevel srcloc True (UnQual name) (body inner))
-
-  where body inner = foldr wrapParam (wrapReturn inner) params
-        wrapParam name inner = JsFun [name] [] (Just inner)
-        params = zipWith const uniqueNames [1..typeArity sig]
-        wrapReturn inner = thunk $
-          case lastMay funcFundamentalTypes of
-            -- Returns a “pure” value;
-            Just{} -> jsToFay returnType (JsRawExp inner)
-            -- Base case:
-            Nothing -> JsRawExp inner
-        funcFundamentalTypes = functionTypeArgs sig
-        returnType = last funcFundamentalTypes
-
--- | Format the FFI format string with the given arguments.
-formatFFI :: String                      -- ^ The format string.
-          -> [(JsParam,FundamentalType)] -- ^ Arguments.
-          -> Compile String              -- ^ The JS code.
-formatFFI formatstr args = go formatstr where
-  go ('%':'*':xs) = do
-    these <- mapM inject (zipWith const [1..] args)
-    rest <- go xs
-    return (intercalate "," these ++ rest)
-  go ('%':'%':xs) = do
-    rest <- go xs
-    return ('%' : rest)
-  go ['%'] = throwError FfiFormatIncompleteArg
-  go ('%':(span isDigit -> (op,xs))) =
-    case readMay op of
-     Nothing -> throwError (FfiFormatBadChars op)
-     Just n -> do
-       this <- inject n
-       rest <- go xs
-       return (this ++ rest)
-  go (x:xs) = do rest <- go xs
-                 return (x : rest)
-  go [] = return []
-
-  inject n =
-    case listToMaybe (drop (n-1) args) of
-      Nothing -> throwError (FfiFormatNoSuchArg n)
-      Just (arg,typ) -> do
-        return (printJSString (fayToJs (typeRep typ) (JsName arg)))
-
--- | Translate: Fay → JS.
-fayToJs :: JsExp -> JsExp -> JsExp
-fayToJs typ exp = JsApp (JsName (hjIdent "fayToJs"))
-                        [typ,exp]
-
--- | Get a JS-representation of a fundamental type for encoding/decoding.
-typeRep :: FundamentalType -> JsExp
-typeRep typ =
-  case typ of
-    FunctionType xs     -> JsList [JsLit $ JsStr "function",JsList (map typeRep xs)]
-    JsType x            -> JsList [JsLit $ JsStr "action",JsList [typeRep x]]
-    ListType x          -> JsList [JsLit $ JsStr "list",JsList [typeRep x]]
-    UserDefined name xs -> JsList [JsLit $ JsStr "user"
-                                  ,JsLit $ JsStr (unname name)
-                                  ,JsList (map typeRep xs)]
-    typ -> JsList [JsLit $ JsStr nom]
-
-      where nom = case typ of
-              StringType -> "string"
-              DoubleType -> "double"
-              IntType    -> "int"
-              BoolType   -> "bool"
-              DateType   -> "date"
-              _          -> "unknown"
-
--- | Get arg types of a function type.
-functionTypeArgs :: Type -> [FundamentalType]
-functionTypeArgs t =
-  case t of
-    TyForall _ _ i -> functionTypeArgs i
-    TyFun a b      -> argType a : functionTypeArgs b
-    TyParen st     -> functionTypeArgs st
-    r              -> [argType r]
-
--- | Convert a Haskell type to an internal FFI representation.
-argType :: Type -> FundamentalType
-argType t =
-  case t of
-    TyCon "String"        -> StringType
-    TyCon "Double"        -> DoubleType
-    TyCon "Int"           -> IntType
-    TyCon "Bool"          -> BoolType
-    TyApp (TyCon "Fay") a -> JsType (argType a)
-    TyFun x xs            -> FunctionType (argType x : functionTypeArgs xs)
-    TyList x              -> ListType (argType x)
-    TyParen st            -> argType st
-    TyApp op arg          -> userDefined (reverse (arg : expandApp op))
-    _                     ->
-      -- No semantic point to this, merely to avoid GHC's broken
-      -- warning.
-      case t of
-        TyCon (UnQual user)   -> UserDefined user []
-        _ -> UnknownType
-
--- | Generate a user-defined type.
-userDefined :: [Type] -> FundamentalType
-userDefined (TyCon (UnQual name):typs) = UserDefined name (map argType typs)
-userDefined _ = UnknownType
-
--- | Expand a type application.
-expandApp :: Type -> [Type]
-expandApp (TyParen t) = expandApp t
-expandApp (TyApp op arg) = arg : expandApp op
-expandApp x = [x]
-
--- | Get the arity of a type.
-typeArity :: Type -> Int
-typeArity t =
-  case t of
-    TyForall _ _ i -> typeArity i
-    TyFun _ b      -> 1 + typeArity b
-    TyParen st     -> typeArity st
-    _              -> 0
-
 -- | Compile a normal simple pattern binding.
 compileUnguardedRhs :: SrcLoc -> Bool -> Name -> Exp -> Compile [JsStmt]
 compileUnguardedRhs srcloc toplevel ident rhs = do
@@ -534,104 +404,6 @@ compileDataDecl toplevel _decl constructors =
                                []
                                (Just (thunk (JsGetProp (force (JsName "x"))
                                                        (fromString name)))))
-
-fayToJsDispatcher :: [JsStmt] -> JsStmt
-fayToJsDispatcher cases =
-  JsVar (hjIdent "fayToJsUserDefined")
-        (JsFun ["type",transcodingObj]
-               (decl ++ cases ++ [baseCase])
-               Nothing)
-
-  where decl = [JsVar transcodingObjForced
-                      (force (JsName transcodingObj))
-               ,JsVar "argTypes"
-                      (JsLookup (JsName "type")
-                                (JsLit (JsInt 2)))]
-        baseCase =
-          JsEarlyReturn (JsName transcodingObj)
-          -- JsThrow (JsNew "Error"
-          --                [JsLit (JsStr "No handler for translating this Fay value to a JS value.")])
-
--- Make a Fay→JS encoder.
-emitFayToJs :: QName -> [([Name], BangType)] -> Compile ()
-emitFayToJs name (explodeFields -> fieldTypes) =
-  modify $ \s -> s { stateFayToJs = translator : stateFayToJs s }
-
-  where
-    translator = JsIf (JsInstanceOf (JsName transcodingObjForced) (constructorName name))
-                      [JsEarlyReturn (JsObj (("instance",JsLit (JsStr (qname name)))
-                                                     : zipWith declField [0..] fieldTypes))]
-                      []
-    -- Declare/encode Fay→JS field
-    declField :: Int -> (Name,BangType) -> (String,JsExp)
-    declField _i (name,typ) =
-      (unname name
-      ,fayToJs (case argType (bangType typ) of
-                 known -> typeRep known)
-               (force (JsGetProp (JsName transcodingObjForced)
-                                 (UnQual name))))
-
-jsToFayDispatcher :: [JsStmt] -> JsStmt
-jsToFayDispatcher cases =
-  JsVar (hjIdent "jsToFayUserDefined")
-        (JsFun ["type",transcodingObj]
-               (cases ++ [baseCase])
-               Nothing)
-
-  where baseCase =
-          JsEarlyReturn (JsName transcodingObj)
-          -- JsThrow (JsNew "Error"
-          --                [JsLit (JsStr "No handler for translating this JS value to a Fay value.")])
-
--- Make a JS→Fay decoder
-emitJsToFay ::  QName -> [([Name], BangType)] -> Compile ()
-emitJsToFay name (explodeFields -> fieldTypes) =
-  modify $ \s -> s { stateJsToFay = translator : stateJsToFay s }
-
-  where
-    translator =
-      JsIf (JsEq (JsGetPropExtern (JsName transcodingObj) "instance")
-                 (JsLit (JsStr (qname name))))
-           [JsEarlyReturn (JsNew (constructorName name)
-                                 (map decodeField fieldTypes))]
-           []
-    -- Decode JS→Fay field
-    decodeField :: (Name,BangType) -> JsExp
-    decodeField (name,typ) =
-      jsToFay (argType (bangType typ))
-              (JsGetPropExtern (JsName transcodingObj)
-                               (unname name))
-
-explodeFields :: [([a], t)] -> [(a, t)]
-explodeFields = concatMap $ \(names,typ) -> map (,typ) names
-
-transcodingObj :: JsName
-transcodingObj = "obj"
-
-transcodingObjForced :: JsName
-transcodingObjForced = "_obj"
-
--- | Extract the type.
-bangType :: BangType -> Type
-bangType typ =
-  case typ of
-    BangedTy ty   -> ty
-    UnBangedTy ty -> ty
-    UnpackedTy ty -> ty
-
--- | Extract the string from a qname.
-qname :: QName -> String
-qname (UnQual (Ident str)) = str
-qname (UnQual (Symbol sym)) = jsEncodeName sym
-qname i = error $ "qname: Expected unqualified ident, found: " ++ show i -- FIXME:
-
--- | Extra the string from an ident.
-unname :: Name -> String
-unname (Ident str) = str
-unname _ = error "Expected ident from uname." -- FIXME:
-
-constructorName :: QName -> QName
-constructorName = fromString . ("$_" ++) . qname
 
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]
@@ -957,6 +729,15 @@ compilePLit exp literal body = do
                body
                []]
 
+  where -- Equality test for two expressions, with some optimizations.
+        equalExps :: JsExp -> JsExp -> JsExp
+        equalExps a b
+          | isConstant a && isConstant b = JsEq a b
+          | isConstant a = JsEq a (force b)
+          | isConstant b = JsEq (force a) b
+          | otherwise =
+             JsApp (JsName (hjIdent "equal")) [a,b]
+
 -- | Compile as binding in pattern match
 compilePAsPat :: JsExp -> Name -> Pat -> [JsStmt] -> Compile [JsStmt]
 compilePAsPat exp name pat body = do
@@ -1001,20 +782,6 @@ updateRec rec fieldUpdates = do
         -- TODO: FieldWildcard
         -- I also couldn't find a code that generates (FieldUpdate FieldWildCard)
         updateExp _ FieldWildcard = error "unsupported update: FieldWildcard"
-
--- | Equality test for two expressions, with some optimizations.
-equalExps :: JsExp -> JsExp -> JsExp
-equalExps a b
-  | isConstant a && isConstant b = JsEq a b
-  | isConstant a = JsEq a (force b)
-  | isConstant b = JsEq (force a) b
-  | otherwise =
-     JsApp (JsName (hjIdent "equal")) [a,b]
-
--- | Is a JS expression a literal (constant)?
-isConstant :: JsExp -> Bool
-isConstant JsLit{} = True
-isConstant _       = False
 
 -- | Compile a pattern application.
 compilePApp :: QName -> [Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
@@ -1107,143 +874,3 @@ compileLit lit =
     String string -> return (JsApp (JsName (hjIdent "list"))
                                    [JsLit (JsStr string)])
     lit           -> throwError (UnsupportedLiteral lit)
-
---------------------------------------------------------------------------------
--- Compilation utilities
-
--- | Generate unique names.
-uniqueNames :: [JsParam]
-uniqueNames = map (fromString . ("$_" ++))
-            $ map return "abcxyz" ++
-              zipWith (:) (cycle "v")
-                          (map show [1 :: Integer ..])
-
--- | Optimize pattern matching conditions by merging conditions in common.
-optimizePatConditions :: [[JsStmt]] -> [[JsStmt]]
-optimizePatConditions = concatMap merge . groupBy sameIf where
-  sameIf [JsIf cond1 _ _] [JsIf cond2 _ _] = cond1 == cond2
-  sameIf _ _ = False
-  merge xs@([JsIf cond _ _]:_) =
-    [[JsIf cond (concat (optimizePatConditions (map getIfConsequent xs))) []]]
-  merge noifs = noifs
-  getIfConsequent [JsIf _ cons _] = cons
-  getIfConsequent other = other
-
--- | Throw a JS exception.
-throw :: String -> JsExp -> JsStmt
-throw msg exp = JsThrow (JsList [JsLit (JsStr msg),exp])
-
--- | Throw a JS exception (in an expression).
-throwExp :: String -> JsExp -> JsExp
-throwExp msg exp = JsThrowExp (JsList [JsLit (JsStr msg),exp])
-
--- | Is an alt a wildcard?
-isWildCardAlt :: Alt -> Bool
-isWildCardAlt (Alt _ pat _ _) = isWildCardPat pat
-
--- | Is a pattern a wildcard?
-isWildCardPat :: Pat -> Bool
-isWildCardPat PWildCard{} = True
-isWildCardPat PVar{}      = True
-isWildCardPat _           = False
-
--- | Generate a temporary, SCOPED name for testing conditions and
--- such.
-withScopedTmpName :: (JsName -> Compile a) -> Compile a
-withScopedTmpName withName = do
-  depth <- gets stateNameDepth
-  modify $ \s -> s { stateNameDepth = depth + 1 }
-  ret <- withName $ fromString $ "$_tmp" ++ show depth
-  modify $ \s -> s { stateNameDepth = depth }
-  return ret
-
--- | Wrap an expression in a thunk.
-thunk :: JsExp -> JsExp
--- thunk exp = JsNew (hjIdent "Thunk") [JsFun [] [] (Just exp)]
-thunk exp =
-  case exp of
-    -- JS constants don't need to be in thunks, they're already strict.
-    JsLit{} -> exp
-    JsName "true" -> exp
-    JsName "false" -> exp
-    -- Functions (e.g. lets) used for introducing a new lexical scope
-    -- aren't necessary inside a thunk. This is a simple aesthetic
-    -- optimization.
-    JsApp fun@JsFun{} [] -> JsNew ":thunk" [fun]
-    -- Otherwise make a regular thunk.
-    _ -> JsNew ":thunk" [JsFun [] [] (Just exp)]
-
--- | Wrap an expression in a thunk.
-stmtsThunk :: [JsStmt] -> JsExp
-stmtsThunk stmts = JsNew ":thunk" [JsFun [] stmts Nothing]
-
--- | Translate: JS → Fay.
-jsToFay :: FundamentalType -> JsExp -> JsExp
-jsToFay typ exp = JsApp (JsName (hjIdent "jsToFay"))
-                        [typeRep typ,exp]
-
--- | Force an expression in a thunk.
-force :: JsExp -> JsExp
-force exp
-  | isConstant exp = exp
-  | otherwise = JsApp (JsName "_") [exp]
-
--- | Resolve operators to only built-in (for now) functions.
-resolveOpToVar :: QOp -> Compile Exp
-resolveOpToVar op =
-  case getOp op of
-    UnQual (Symbol symbol)
-      | symbol == "*"   -> return (Var (hjIdent "mult"))
-      | symbol == "+"   -> return (Var (hjIdent "add"))
-      | symbol == "-"   -> return (Var (hjIdent "sub"))
-      | symbol == "/"   -> return (Var (hjIdent "div"))
-      | symbol == "=="  -> return (Var (hjIdent "eq"))
-      | symbol == "/="  -> return (Var (hjIdent "neq"))
-      | symbol == ">"   -> return (Var (hjIdent "gt"))
-      | symbol == "<"   -> return (Var (hjIdent "lt"))
-      | symbol == ">="  -> return (Var (hjIdent "gte"))
-      | symbol == "<="  -> return (Var (hjIdent "lte"))
-      | symbol == "&&"  -> return (Var (hjIdent "and"))
-      | symbol == "||"  -> return (Var (hjIdent "or"))
-      | otherwise       -> return (Var (fromString symbol))
-    n@(UnQual Ident{})  -> return (Var n)
-    Special Cons        -> return (Var (hjIdent "cons"))
-    _                   -> throwError (UnsupportedOperator op)
-
-  where getOp (QVarOp op) = op
-        getOp (QConOp op) = op
-
--- | Make an identifier from the built-in HJ module.
-hjIdent :: String -> QName
-hjIdent = Qual (ModuleName "Fay") . Ident
-
--- | Make a top-level binding.
-bindToplevel :: SrcLoc -> Bool -> QName -> JsExp -> Compile JsStmt
-bindToplevel srcloc toplevel name exp = do
-  exportAll <- gets stateExportAll
-  when (toplevel && exportAll) $ emitExport (EVar name)
-  return (JsMappedVar srcloc name exp)
-
--- | Emit exported names.
-emitExport :: ExportSpec -> Compile ()
-emitExport spec =
-  case spec of
-    EVar (UnQual name) -> modify $ \s -> s { stateExports = name : stateExports s }
-    EVar _             -> error "Emitted a qualifed export, not supported."
-    _ -> throwError (UnsupportedExportSpec spec)
-
---------------------------------------------------------------------------------
--- Utilities
-
--- | Parse result.
-parseResult :: ((SrcLoc,String) -> b) -> (a -> b) -> ParseResult a -> b
-parseResult fail ok result =
-  case result of
-    ParseOk a -> ok a
-    ParseFailed srcloc msg -> fail (srcloc,msg)
-
--- | Get a config option.
-config :: (CompileConfig -> a) -> Compile a
-config f = gets (f . stateConfig)
-
-instance IsString Name where fromString = Ident

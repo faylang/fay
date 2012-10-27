@@ -158,7 +158,8 @@ library
                      process,
                      filepath,
                      directory,
-                     groom
+                     groom,
+                     random
 
   if flag(devel)
     build-depends:
@@ -199,6 +200,7 @@ executable fay
                      directory,
                      filepath,
                      groom,
+                     random,
                      optparse-applicative,
                      split,
                      haskeline
@@ -231,6 +233,7 @@ executable fay-tests
                      safe,
                      language-ecmascript,
                      groom,
+                     random,
                      test-framework,
                      test-framework-hunit,
                      test-framework-th
@@ -265,4 +268,5 @@ executable fay-docs
                      data-default,
                      safe,
                      language-ecmascript,
-                     groom
+                     groom,
+                     random

@@ -138,6 +138,7 @@ data CompileError
   | UnsupportedRhs Rhs
   | UnsupportedGuardedAlts GuardedAlts
   | UnsupportedImport ImportDecl
+  | UnsupportedQualStmt QualStmt
   | EmptyDoBlock
   | UnsupportedModuleSyntax Module
   | LetUnsupported

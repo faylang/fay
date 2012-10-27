@@ -5,7 +5,6 @@
 
 module Language.Fay.Compiler.Misc where
 
-import Language.Fay.Print          (jsEncodeName)
 import Language.Fay.Types
 
 import Control.Monad.Error
@@ -16,64 +15,56 @@ import Language.Haskell.Exts (ParseResult(..))
 import Language.Haskell.Exts.Syntax
 import Prelude hiding (exp)
 
-instance IsString Name where fromString = Ident
-
 -- | Extra the string from an ident.
 unname :: Name -> String
 unname (Ident str) = str
 unname _ = error "Expected ident from uname." -- FIXME:
 
 -- | Make an identifier from the built-in HJ module.
-hjIdent :: String -> QName
-hjIdent = Qual (ModuleName "Fay") . Ident
+fayBuiltin :: String -> QName
+fayBuiltin = Qual (ModuleName "Fay") . Ident
 
 -- | Wrap an expression in a thunk.
 thunk :: JsExp -> JsExp
--- thunk exp = JsNew (hjIdent "Thunk") [JsFun [] [] (Just exp)]
+-- thunk exp = JsNew (fayBuiltin "Thunk") [JsFun [] [] (Just exp)]
 thunk expr =
   case expr of
     -- JS constants don't need to be in thunks, they're already strict.
     JsLit{} -> expr
-    JsName "true" -> expr
-    JsName "false" -> expr
     -- Functions (e.g. lets) used for introducing a new lexical scope
     -- aren't necessary inside a thunk. This is a simple aesthetic
     -- optimization.
-    JsApp fun@JsFun{} [] -> JsNew ":thunk" [fun]
+    JsApp fun@JsFun{} [] -> JsNew JsThunk [fun]
     -- Otherwise make a regular thunk.
-    _ -> JsNew ":thunk" [JsFun [] [] (Just expr)]
+    _ -> JsNew JsThunk [JsFun [] [] (Just expr)]
 
 -- | Wrap an expression in a thunk.
 stmtsThunk :: [JsStmt] -> JsExp
-stmtsThunk stmts = JsNew ":thunk" [JsFun [] stmts Nothing]
+stmtsThunk stmts = JsNew JsThunk [JsFun [] stmts Nothing]
 
 -- | Generate unique names.
-uniqueNames :: [JsParam]
-uniqueNames = map (fromString . ("$_" ++))
-            $ map return "abcxyz" ++
-              zipWith (:) (cycle "v")
-                          (map show [1 :: Integer ..])
+uniqueNames :: [JsName]
+uniqueNames = map JsParam [1::Integer ..]
 
 -- | Make a top-level binding.
 bindToplevel :: SrcLoc -> Bool -> QName -> JsExp -> Compile JsStmt
 bindToplevel srcloc toplevel name expr = do
   exportAll <- gets stateExportAll
   when (toplevel && exportAll) $ emitExport (EVar name)
-  return (JsMappedVar srcloc name expr)
+  return (JsMappedVar srcloc (JsNameVar name) expr)
 
 -- | Emit exported names.
 emitExport :: ExportSpec -> Compile ()
 emitExport spec =
   case spec of
-    EVar (UnQual name) -> modify $ \s -> s { stateExports = name : stateExports s }
-    EVar _             -> error "Emitted a qualifed export, not supported."
+    EVar name -> modify $ \s -> s { stateExports = name : stateExports s }
     _ -> throwError (UnsupportedExportSpec spec)
 
 -- | Force an expression in a thunk.
 force :: JsExp -> JsExp
 force expr
   | isConstant expr = expr
-  | otherwise = JsApp (JsName "_") [expr]
+  | otherwise = JsApp (JsName JsForce) [expr]
 
 -- | Is a JS expression a literal (constant)?
 isConstant :: JsExp -> Bool
@@ -81,14 +72,10 @@ isConstant JsLit{} = True
 isConstant _       = False
 
 -- | Extract the string from a qname.
-qname :: QName -> String
-qname (UnQual (Ident str)) = str
-qname (UnQual (Symbol sym)) = jsEncodeName sym
-qname i = error $ "qname: Expected unqualified ident, found: " ++ show i -- FIXME:
-
--- | Make a constructor name.
-constructorName :: QName -> QName
-constructorName = fromString . ("$_" ++) . qname
+-- qname :: QName -> String
+-- qname (UnQual (Ident str)) = str
+-- qname (UnQual (Symbol sym)) = jsEncodeName sym
+-- qname i = error $ "qname: Expected unqualified ident, found: " ++ show i -- FIXME:
 
 -- | Deconstruct a parse result (a la maybe, foldr, either).
 parseResult :: ((SrcLoc,String) -> b) -> (a -> b) -> ParseResult a -> b
@@ -136,7 +123,7 @@ withScopedTmpName :: (JsName -> Compile a) -> Compile a
 withScopedTmpName withName = do
   depth <- gets stateNameDepth
   modify $ \s -> s { stateNameDepth = depth + 1 }
-  ret <- withName $ fromString $ "$_tmp" ++ show depth
+  ret <- withName $ JsTmp depth
   modify $ \s -> s { stateNameDepth = depth }
   return ret
 
@@ -145,21 +132,21 @@ resolveOpToVar :: QOp -> Compile Exp
 resolveOpToVar op =
   case getOp op of
     UnQual (Symbol symbol)
-      | symbol == "*"   -> return (Var (hjIdent "mult"))
-      | symbol == "+"   -> return (Var (hjIdent "add"))
-      | symbol == "-"   -> return (Var (hjIdent "sub"))
-      | symbol == "/"   -> return (Var (hjIdent "div"))
-      | symbol == "=="  -> return (Var (hjIdent "eq"))
-      | symbol == "/="  -> return (Var (hjIdent "neq"))
-      | symbol == ">"   -> return (Var (hjIdent "gt"))
-      | symbol == "<"   -> return (Var (hjIdent "lt"))
-      | symbol == ">="  -> return (Var (hjIdent "gte"))
-      | symbol == "<="  -> return (Var (hjIdent "lte"))
-      | symbol == "&&"  -> return (Var (hjIdent "and"))
-      | symbol == "||"  -> return (Var (hjIdent "or"))
+      | symbol == "*"   -> return (Var (fayBuiltin "mult"))
+      | symbol == "+"   -> return (Var (fayBuiltin "add"))
+      | symbol == "-"   -> return (Var (fayBuiltin "sub"))
+      | symbol == "/"   -> return (Var (fayBuiltin "div"))
+      | symbol == "=="  -> return (Var (fayBuiltin "eq"))
+      | symbol == "/="  -> return (Var (fayBuiltin "neq"))
+      | symbol == ">"   -> return (Var (fayBuiltin "gt"))
+      | symbol == "<"   -> return (Var (fayBuiltin "lt"))
+      | symbol == ">="  -> return (Var (fayBuiltin "gte"))
+      | symbol == "<="  -> return (Var (fayBuiltin "lte"))
+      | symbol == "&&"  -> return (Var (fayBuiltin "and"))
+      | symbol == "||"  -> return (Var (fayBuiltin "or"))
       | otherwise       -> return (Var (fromString symbol))
     n@(UnQual Ident{})  -> return (Var n)
-    Special Cons        -> return (Var (hjIdent "cons"))
+    Special Cons        -> return (Var (fayBuiltin "cons"))
     _                   -> throwError (UnsupportedOperator op)
 
   where getOp (QVarOp o) = o

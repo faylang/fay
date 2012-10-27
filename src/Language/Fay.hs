@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -8,6 +9,7 @@ module Language.Fay
   (module Language.Fay.Types
   ,compileFile
   ,compileFromTo
+  ,compileFromToAndGenerateHtml
   ,toJsName
   ,showCompileError)
    where
@@ -87,7 +89,10 @@ compileToModule filepath config raw with hscode = do
   result <- compileViaStr filepath config with hscode
   case result of
     Left err -> return (Left err)
-    Right (jscode,state) -> return (Right (generate jscode (stateExports state) (stateModuleName state)))
+    Right (PrintState{..},state) ->
+      return $ Right $ (generate (concat (reverse psOutput))
+                                 (stateExports state)
+                                 (stateModuleName state))
 
   where generate jscode exports (ModuleName (clean -> modulename)) = unlines
           ["/** @constructor"
@@ -118,11 +123,11 @@ compileToModule filepath config raw with hscode = do
         clean [] = []
 
 -- | Print an this.x = x; export out.
-printExport :: Name -> String
+printExport :: QName -> String
 printExport name =
-  printJSString (JsSetProp ":this"
-                           (UnQual name)
-                           (JsName (UnQual name)))
+  printJSString (JsSetProp JsThis
+                           (JsNameVar name)
+                           (JsName (JsNameVar name)))
 
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String
@@ -161,5 +166,5 @@ showCompileError e =
     UnsupportedFieldPattern p -> "unsupported field pattern: " ++ prettyPrint p
     UnsupportedImport i -> "unsupported import syntax, we're too lazy: " ++ prettyPrint i
     Couldn'tFindImport i places ->
-      "could not find an import in the path: " ++ i ++ ", \n" ++
+      "could not find an import in the path: " ++ prettyPrint i ++ ", \n" ++
       "searched in these places: " ++ intercalate ", " places

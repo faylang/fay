@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -27,13 +28,13 @@ import           Language.Fay.Print         (printJSString)
 import           Language.Fay.Types
 
 import           Control.Applicative
+import           Control.Arrow
 import           Control.Monad.Error
 import           Control.Monad.IO
 import           Control.Monad.State
 import           Data.Default               (def)
 import           Data.List
 import           Data.Maybe
-import           Data.String
 import           Data.Word
 import           Language.Haskell.Exts
 import           System.Directory           (doesFileExist)
@@ -55,12 +56,14 @@ compileViaStr :: (Show from,Show to,CompilesTo from to)
               -> CompileConfig
               -> (from -> Compile to)
               -> String
-              -> IO (Either CompileError (String,CompileState))
+              -> IO (Either CompileError (PrintState,CompileState))
 compileViaStr filepath config with from =
   runCompile ((defaultCompileState config) { stateFilePath = filepath })
              (parseResult (throwError . uncurry ParseError)
-                          (fmap printJSString . with)
+                          (fmap (\x -> execState (runPrinter (printJS x)) printConfig) . with)
                           (parseFay filepath from))
+
+  where printConfig = def { psPretty = configPrettyPrint config }
 
 -- | Compile a Haskell source string to a JavaScript source string.
 compileToAst :: (Show from,Show to,CompilesTo from to)
@@ -94,7 +97,8 @@ printCompile config with from = do
   result <- compileViaStr "<interactive>" config { configPrettyPrint = True } with from
   case result of
     Left err -> print err
-    Right (ok,_) -> putStr ok
+    Right (PrintState{..},_) -> do
+      putStrLn (concat (reverse (psOutput)))
 
 -- | Compile a String of Fay and print it as beautified JavaScript.
 printTestCompile :: String -> IO ()
@@ -133,7 +137,7 @@ initialPass (Module _ _ _ Nothing _ imports decls) = do
 initialPass mod = throwError (UnsupportedModuleSyntax mod)
 
 initialPass_import :: ImportDecl -> Compile ()
-initialPass_import (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
+initialPass_import (ImportDecl _ name False _ Nothing Nothing Nothing) = do
   void $ unlessImported name $ do
     dirs <- configDirectoryIncludes <$> gets stateConfig
     (filepath,contents) <- findImport dirs name
@@ -177,18 +181,18 @@ initialPass_dataDecl :: Bool -> Decl -> [QualConDecl] -> Compile ()
 initialPass_dataDecl _ _decl constructors =
   forM_ constructors $ \(QualConDecl _ _ _ condecl) ->
     case condecl of
-      ConDecl (UnQual -> name) types  -> do
-        let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
-        addRecordState name fields
-      InfixConDecl _t1 (UnQual -> name) _t2 ->
-        addRecordState name ["slot1", "slot2"]
-      RecDecl (UnQual -> name) fields' -> do
+      ConDecl name types -> do
+        let fields =  map (UnQual . Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
+        addRecordState (UnQual name) fields
+      InfixConDecl _t1 name _t2 ->
+        addRecordState (UnQual name) ["slot1", "slot2"]
+      RecDecl name fields' -> do
         let fields = concatMap fst fields'
-        addRecordState name fields
+        addRecordState (UnQual name) (map UnQual fields)
 
   where
-    addRecordState :: QName -> [Name] -> Compile ()
-    addRecordState name fields = modify $ \s -> s { stateRecords = (Ident (qname name), fields) : stateRecords s }
+    addRecordState :: QName -> [QName] -> Compile ()
+    addRecordState name fields = modify $ \s -> s { stateRecords = (name,fields) : stateRecords s }
 
 --------------------------------------------------------------------------------
 -- Typechecking
@@ -235,7 +239,7 @@ checkModulePragmas pragmas =
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
 
-findImport :: [FilePath] -> String -> Compile (FilePath,String)
+findImport :: [FilePath] -> ModuleName -> Compile (FilePath,String)
 findImport alldirs = go alldirs where
   go (dir:dirs) name = do
     exists <- io (doesFileExist path)
@@ -243,14 +247,14 @@ findImport alldirs = go alldirs where
       then fmap (path,) (io (readFile path))
       else go dirs name
     where
-      path = dir </> replace '.' '/' name ++ ".hs"
+      path = dir </> replace '.' '/' (prettyPrint name) ++ ".hs"
       replace c r = map (\x -> if x == c then r else x)
   go [] name =
     throwError $ Couldn'tFindImport name alldirs
 
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]
-compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) = do
+compileImport (ImportDecl _ name False _ Nothing Nothing Nothing) = do
   unlessImported name $ do
     dirs <- configDirectoryIncludes <$> gets stateConfig
     (filepath,contents) <- findImport dirs name
@@ -267,7 +271,7 @@ compileImport (ImportDecl _ (ModuleName name) False _ Nothing Nothing Nothing) =
 compileImport i = throwError $ UnsupportedImport i
 
 -- | Don't re-import the same modules.
-unlessImported :: String -> Compile [JsStmt] -> Compile [JsStmt]
+unlessImported :: ModuleName -> Compile [JsStmt] -> Compile [JsStmt]
 unlessImported name importIt = do
   imported <- gets stateImported
   if elem name imported
@@ -316,7 +320,7 @@ compilePatBind toplevel sig pat =
     PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
       case ffiExp rhs of
         Just formatstr -> case sig of
-          Just sig -> compileFFI srcloc ident formatstr sig
+          Just sig -> compileFFI srcloc (UnQual ident) formatstr sig
           Nothing  -> throwError (FfiNeedsTypeSig pat)
         _ -> compileUnguardedRhs srcloc toplevel ident rhs
     PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) bdecls ->
@@ -351,76 +355,74 @@ compileDataDecl toplevel _decl constructors =
   fmap concat $
     forM constructors $ \(QualConDecl srcloc _ _ condecl) ->
       case condecl of
-        ConDecl (UnQual -> name) types  -> do
-          let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
+        ConDecl name types  -> do
+          let fields =  map (UnQual . Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
               fields' = (zip (map return fields) types)
-          cons <- makeConstructor name fields
+          cons <- makeConstructor (UnQual name) fields
           func <- makeFunc name fields
-          emitFayToJs name fields'
-          emitJsToFay name fields'
+          emitFayToJs (UnQual name) fields'
+          emitJsToFay (UnQual name) fields'
           return [cons, func]
-        InfixConDecl t1 (UnQual -> name) t2 -> do
-          let slots = [Ident "slot1", Ident "slot2"]
+        InfixConDecl t1 name t2 -> do
+          let slots = ["slot1","slot2"]
               fields = zip (map return slots) [t1, t2]
-          cons <- makeConstructor name slots
+          cons <- makeConstructor (UnQual name) slots
           func <- makeFunc name slots
-          emitFayToJs name fields
-          emitJsToFay name fields
+          emitFayToJs (UnQual name) fields
+          emitJsToFay (UnQual name) fields
           return [cons, func]
-        RecDecl (UnQual -> name) fields' -> do
-          let fields = concatMap fst fields'
-          cons <- makeConstructor name fields
+        RecDecl name fields' -> do
+          let fields = map UnQual (concatMap fst fields')
+          cons <- makeConstructor (UnQual name) fields
           func <- makeFunc name fields
           funs <- makeAccessors srcloc fields
-          emitFayToJs name fields'
-          emitJsToFay name fields'
+          emitFayToJs (UnQual name) (map (first (map UnQual )) fields')
+          emitJsToFay (UnQual name) (map (first (map UnQual )) fields')
           return (cons : func : funs)
 
   where
     -- Creates a constructor R_RecConstr for a Record
     makeConstructor name fields = do
-          let fieldParams = map (fromString . unname) fields
+          let fieldParams = map JsNameVar fields
           return $
-            JsVar (constructorName name) $
+            JsVar (JsConstructor name) $
               JsFun fieldParams
-                  (flip map fields $ \field@(Ident s) ->
-                     JsSetProp (fromString ":this") (UnQual field) (JsName (fromString s)))
+                  (flip map fields $ \field ->
+                     JsSetProp JsThis (JsNameVar field) (JsName (JsNameVar field)))
                 Nothing
 
     -- Creates a function to initialize the record by regular application
+    makeFunc :: Name -> [QName] -> Compile JsStmt
     makeFunc name fields = do
-          let fieldParams = map (\(Ident s) -> fromString s) fields
-          let fieldExps = map (JsName . UnQual) fields
-          return $ JsVar name $
+          let fieldParams = map JsNameVar fields
+          let fieldExps = map (JsName . JsNameVar) fields
+          return $ JsVar (JsNameVar (UnQual name)) $
             foldr (\slot inner -> JsFun [slot] [] (Just inner))
-              (thunk $ JsNew (constructorName name) fieldExps)
+              (thunk $ JsNew (JsConstructor (UnQual name)) fieldExps)
               fieldParams
 
     -- Creates getters for a RecDecl's values
+    makeAccessors :: SrcLoc -> [QName] -> Compile [JsStmt]
     makeAccessors srcloc fields =
-      forM fields $ \(Ident name) ->
+      forM fields $ \name ->
            bindToplevel srcloc
                         toplevel
-                        (fromString name)
-                        (JsFun ["x"]
+                        name
+                        (JsFun [JsNameVar "x"]
                                []
-                               (Just (thunk (JsGetProp (force (JsName "x"))
-                                                       (fromString name)))))
+                               (Just (thunk (JsGetProp (force (JsName (JsNameVar "x")))
+                                                       (JsNameVar name)))))
 
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]
 compileFunCase _toplevel [] = return []
 compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
-  tco  <- config configTCO
   pats <- fmap optimizePatConditions (mapM compileCase matches)
   bind <- bindToplevel srcloc
                        toplevel
                        (UnQual name)
                        (foldr (\arg inner -> JsFun [arg] [] (Just inner))
-                              (stmtsThunk (let stmts = (concat pats ++ basecase)
-                                           in if tco
-                                                 then optimizeTailCalls args name stmts
-                                                 else stmts))
+                              (stmtsThunk (concat pats ++ basecase))
                               args)
   return [bind]
   where args = zipWith const uniqueNames argslen
@@ -451,43 +453,6 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
                       else [throw ("unhandled case in " ++ show name)
                                   (JsList (map JsName args))]
 
--- | Optimize functions in tail-call form.
-optimizeTailCalls :: [JsParam] -- ^ The function parameters.
-                  -> Name      -- ^ The function name.
-                  -> [JsStmt]  -- ^ The body of the function.
-                  -> [JsStmt]  -- ^ A new optimized function body.
-optimizeTailCalls params name stmts = abandonIfNoChange $
-  JsWhile (JsLit (JsBool True))
-          (concatMap replaceTailStmt
-                     (reverse (zip (reverse stmts) [0::Integer ..])))
-
-  where replaceTailStmt (JsIf cond sothen orelse,i) = [JsIf cond (concatMap (replaceTailStmt . (,i)) sothen)
-                                                                 (concatMap (replaceTailStmt . (,i)) orelse)]
-        replaceTailStmt (JsEarlyReturn exp,i) = expTailReplace i exp
-        replaceTailStmt (x,_) = [x]
-        expTailReplace i (flatten -> Just (JsName (UnQual call):args@(_:_)))
-          | call == name = updateParamsInstead i args
-        expTailReplace _i original = [JsEarlyReturn original]
-        updateParamsInstead i args = zipWith JsUpdate params args ++
-                                     [JsContinue | i /= 0]
-        abandonIfNoChange (JsWhile _ newstmts)
-          | newstmts == stmts = stmts
-        abandonIfNoChange new = [new]
-
--- | Flatten an application expression into function : arg : arg : []
-flatten :: JsExp -> Maybe [JsExp]
-flatten (JsApp op@JsApp{} arg) = do
-  inner <- expand op
-  return (inner ++ arg)
-flatten name@JsName{} = return [name]
-flatten _ = Nothing
-
--- | Expand a forced value into the value.
-expand :: JsExp -> Maybe [JsExp]
-expand (JsApp (JsName (UnQual (Ident "_"))) xs) =
-  fmap concat (mapM flatten xs)
-expand _ = Nothing
-
 -- | Compile a right-hand-side expression.
 compileRhs :: Rhs -> Compile JsExp
 compileRhs (UnGuardedRhs exp) = compileExp exp
@@ -508,9 +473,7 @@ compileExp :: Exp -> Compile JsExp
 compileExp exp =
   case exp of
     Paren exp                     -> compileExp exp
--- Commented out: See #59
---    Var (UnQual (Ident "return")) -> return (JsName (hjIdent "return"))
-    Var qname                     -> return (JsName qname)
+    Var qname                     -> return (JsName (JsNameVar qname))
     Lit lit                       -> compileLit lit
     App exp1 exp2                 -> compileApp exp1 exp2
     NegApp exp                    -> compileNegApp exp
@@ -523,14 +486,14 @@ compileExp exp =
     Case exp alts                 -> compileCase exp alts
     Con (UnQual (Ident "True"))   -> return (JsLit (JsBool True))
     Con (UnQual (Ident "False"))  -> return (JsLit (JsBool False))
-    Con exp                       -> return (JsName exp)
+    Con exp                       -> return (JsName (JsNameVar exp))
     Do stmts                      -> compileDoBlock stmts
     Lambda _ pats exp             -> compileLambda pats exp
     EnumFrom i                    -> do e <- compileExp i
-                                        return (JsApp (JsName "enumFrom") [e])
+                                        return (JsApp (JsName (JsNameVar "enumFrom")) [e])
     EnumFromTo i i'               -> do f <- compileExp i
                                         t <- compileExp i'
-                                        return (JsApp (JsApp (JsName "enumFromTo") [f])
+                                        return (JsApp (JsApp (JsName (JsNameVar "enumFromTo")) [f])
                                                       [t])
     RecConstr name fieldUpdates -> compileRecConstr name fieldUpdates
     RecUpdate rec  fieldUpdates -> updateRec rec fieldUpdates
@@ -554,7 +517,7 @@ compileApp exp1 exp2 = do
   method1 =
     JsApp <$> (forceFlatName <$> compileExp exp1)
           <*> fmap return (compileExp exp2)
-  forceFlatName name = JsApp (JsName "_") [name]
+  forceFlatName name = JsApp (JsName JsForce) [name]
 
   -- Method 2:
   -- In this approach code ends up looking like this:
@@ -566,7 +529,7 @@ compileApp exp1 exp2 = do
   flatten (JsApp op args) =
    case op of
      JsApp l r -> JsApp l (r ++ args)
-     _        -> JsApp (JsName "__") (op : args)
+     _        -> JsApp (JsName JsApply) (op : args)
   flatten x = x
 
 -- | Compile a negate application
@@ -597,7 +560,7 @@ compileList xs = do
   return (makeList exps)
 
 makeList :: [JsExp] -> JsExp
-makeList exps = (JsApp (JsName (hjIdent "list")) [JsList exps])
+makeList exps = (JsApp (JsName (JsBuiltIn "list")) [JsList exps])
 
 -- | Compile an if.
 compileIf :: Exp -> Exp -> Exp -> Compile JsExp
@@ -710,7 +673,7 @@ compilePatAlt exp (Alt _ pat rhs _) = do
 compilePat :: JsExp -> Pat -> [JsStmt] -> Compile [JsStmt]
 compilePat exp pat body =
   case pat of
-    PVar name       -> return $ JsVar (UnQual name) exp : body
+    PVar name       -> return $ JsVar (JsNameVar (UnQual name)) exp : body
     PApp cons pats  -> compilePApp cons pats exp body
     PLit literal    -> compilePLit exp literal body
     PParen pat      -> compilePat exp pat body
@@ -724,28 +687,28 @@ compilePat exp pat body =
 
 -- | Compile a record field pattern.
 compilePatFields :: JsExp -> QName -> [PatField] -> [JsStmt] -> Compile [JsStmt]
-compilePatFields exp (Ident . qname -> name) pats body = do
+compilePatFields exp name pats body = do
     c <- liftM (++ body) (compilePats' [] pats)
-    return [JsIf ((force exp) `JsInstanceOf` constructorName (UnQual name)) c []]
+    return [JsIf (force exp `JsInstanceOf` JsConstructor name) c []]
   where -- compilePats' collects field names that had already been matched so that
         -- wildcard generates code for the rest of the fields.
-        compilePats' :: [Name] -> [PatField] -> Compile [JsStmt]
+        compilePats' :: [QName] -> [PatField] -> Compile [JsStmt]
         compilePats' names (PFieldPun name:xs) =
           compilePats' names (PFieldPat (UnQual name) (PVar name):xs)
 
-        compilePats' names (PFieldPat fieldQName (PVar varName):xs) = do
-          let fieldname = case fieldQName of
-                            (Qual _ name) -> name
-                            (UnQual name) -> name
-                            (Special _) -> undefined -- TODO: how to handle special names ?
-          r <- compilePats' (fieldname:names) xs
-          return $ JsVar (UnQual varName) (JsGetProp (force exp) fieldQName):r -- TODO: think about this force call
+        compilePats' names (PFieldPat fieldname (PVar varName):xs) = do
+          r <- compilePats' (fieldname : names) xs
+          return $ JsVar (JsNameVar (UnQual varName))
+                         (JsGetProp (force exp) (JsNameVar fieldname))
+                   : r -- TODO: think about this force call
 
         compilePats' names (PFieldWildcard:xs) = do
           records <- liftM stateRecords get
           let fields = fromJust (lookup name records)
               fields' = fields \\ names
-              f = map (\fieldName -> JsVar (UnQual fieldName) (JsGetProp (force exp) (UnQual fieldName))) fields'
+              f = map (\fieldName -> JsVar (JsNameVar fieldName)
+                                           (JsGetProp (force exp) (JsNameVar fieldName)))
+                      fields'
           r <- compilePats' names xs
           return $ f ++ r
 
@@ -768,31 +731,33 @@ compilePLit exp literal body = do
           | isConstant a = JsEq a (force b)
           | isConstant b = JsEq (force a) b
           | otherwise =
-             JsApp (JsName (hjIdent "equal")) [a,b]
+             JsApp (JsName (JsBuiltIn "equal")) [a,b]
 
 -- | Compile as binding in pattern match
 compilePAsPat :: JsExp -> Name -> Pat -> [JsStmt] -> Compile [JsStmt]
 compilePAsPat exp name pat body = do
   x <- compilePat exp pat body
-  return ([JsVar (UnQual name) exp] ++ x ++ body)
+  return ([JsVar (JsNameVar (UnQual name)) exp] ++ x ++ body)
 
 -- | Compile a record construction with named fields
 -- | GHC will warn on uninitialized fields, they will be undefined in JS.
 compileRecConstr :: QName -> [FieldUpdate] -> Compile JsExp
 compileRecConstr name fieldUpdates = do
-    let o = UnQual (Ident (qname name))
     -- var obj = new $_Type()
-    let record = JsVar o (JsNew (constructorName name) [])
-    setFields <- liftM concat (forM fieldUpdates (updateStmt o))
-    return $ JsApp (JsFun [] (record:setFields) (Just (JsName o))) []
+    let record = JsVar (JsNameVar name) (JsNew (JsConstructor name) [])
+    setFields <- liftM concat (forM fieldUpdates (updateStmt name))
+    return $ JsApp (JsFun [] (record:setFields) (Just (JsName (JsNameVar name)))) []
   where updateStmt :: QName -> FieldUpdate -> Compile [JsStmt]
         updateStmt o (FieldUpdate field value) = do
           exp <- compileExp value
-          return [JsSetProp o field exp]
-        updateStmt o@(UnQual name) FieldWildcard = do
+          return [JsSetProp (JsNameVar o) (JsNameVar field) exp]
+        updateStmt name FieldWildcard = do
           records <- liftM stateRecords get
           let fields = fromJust (lookup name records)
-          return (map (\fieldName -> JsSetProp o (UnQual fieldName) (JsName (UnQual fieldName))) fields)
+          return (map (\fieldName -> JsSetProp (JsNameVar name)
+                                               (JsNameVar fieldName)
+                                               (JsName (JsNameVar fieldName)))
+                      fields)
         -- TODO: FieldPun
         -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
         updateStmt _ u = error ("updateStmt: " ++ show u)
@@ -801,16 +766,18 @@ updateRec :: Exp -> [FieldUpdate] -> Compile JsExp
 updateRec rec fieldUpdates = do
     record <- force <$> compileExp rec
     let copyName = UnQual (Ident "$_record_to_update")
-        copy = JsVar copyName
+        copy = JsVar (JsNameVar copyName)
                      (JsRawExp ("Object.create(" ++ printJSString record ++ ")"))
     setFields <- forM fieldUpdates (updateExp copyName)
-    return $ JsApp (JsFun [] (copy:setFields) (Just (JsName copyName))) []
+    return $ JsApp (JsFun [] (copy:setFields) (Just (JsName (JsNameVar copyName)))) []
   where updateExp :: QName -> FieldUpdate -> Compile JsStmt
         updateExp copyName (FieldUpdate field value) =
-          JsSetProp copyName field <$> compileExp value
+          JsSetProp (JsNameVar copyName) (JsNameVar field) <$> compileExp value
         updateExp copyName (FieldPun name) =
           -- let a = 1 in C {a}
-          return $ JsSetProp copyName (UnQual name) (JsName (UnQual name))
+          return $ JsSetProp (JsNameVar copyName)
+                             (JsNameVar (UnQual name))
+                             (JsName (JsNameVar (UnQual name)))
         -- TODO: FieldWildcard
         -- I also couldn't find a code that generates (FieldUpdate FieldWildCard)
         updateExp _ FieldWildcard = error "unsupported update: FieldWildcard"
@@ -826,17 +793,17 @@ compilePApp cons pats exp body = do
     "False" -> boolIf False
     -- Everything else, generic:
     _ -> do
-      rf <- lookup (Ident (qname cons)) <$> gets stateRecords
+      rf <- fmap (lookup cons) (gets stateRecords)
       let recordFields =
             fromMaybe
-              (error $ "Constructor '" ++ qname cons ++
+              (error $ "Constructor '" ++ prettyPrint cons ++
                        "' was not found in stateRecords, did you try running this through GHC first?")
               rf
-      substmts <- foldM (\body (Ident field,pat) ->
-                             compilePat (JsGetProp forcedExp (fromString field)) pat body)
+      substmts <- foldM (\body (field,pat) ->
+                             compilePat (JsGetProp forcedExp (JsNameVar field)) pat body)
                   body
                   (reverse (zip recordFields pats))
-      return [JsIf (forcedExp `JsInstanceOf` constructorName cons)
+      return [JsIf (forcedExp `JsInstanceOf` JsConstructor cons)
                    substmts
                    []]
 
@@ -846,7 +813,7 @@ compilePList [] body exp =
   return [JsIf (JsEq (force exp) JsNull) body []]
 compilePList pats body exp = do
   let forcedExp = force exp
-  foldM (\body (i,pat) -> compilePat (JsApp (JsApp (JsName (hjIdent "index"))
+  foldM (\body (i,pat) -> compilePat (JsApp (JsApp (JsName (JsBuiltIn "index"))
                                                    [JsLit (JsInt i)])
                                             [forcedExp])
                                      pat body)
@@ -860,12 +827,12 @@ compileInfixPat exp pat@(PInfixApp left (Special cons) right) body =
     Cons -> do
       withScopedTmpName $ \tmpName -> do
         let forcedExp = JsName tmpName
-            x = JsGetProp forcedExp "car"
-            xs = JsGetProp forcedExp "cdr"
+            x = JsGetProp forcedExp (JsNameVar "car")
+            xs = JsGetProp forcedExp (JsNameVar "cdr")
         rightMatch <- compilePat xs right body
         leftMatch <- compilePat x left rightMatch
         return [JsVar tmpName (force exp)
-               ,JsIf (JsInstanceOf forcedExp (hjIdent "Cons"))
+               ,JsIf (JsInstanceOf forcedExp (JsBuiltIn "Cons"))
                      leftMatch
                      []]
     _ -> throwError (UnsupportedPattern pat)
@@ -903,6 +870,6 @@ compileLit lit =
     Frac rational -> return (JsLit (JsFloating (fromRational rational)))
     -- TODO: Use real JS strings instead of array, probably it will
     -- lead to the same result.
-    String string -> return (JsApp (JsName (hjIdent "list"))
+    String string -> return (JsApp (JsName (JsBuiltIn "list"))
                                    [JsLit (JsStr string)])
     lit           -> throwError (UnsupportedLiteral lit)

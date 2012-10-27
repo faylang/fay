@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS -fno-warn-orphans #-}
 {-# OPTIONS -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -134,9 +135,9 @@ runInteractive = runInputT defaultSettings loop where
                     outputStrLn ("can't parse input as expression: " ++ show err)
                     result' <- liftIO $ compileViaStr "<interactive>" config (compileDecl True) input
                     case result' of
-                      Right (ok,_) -> outputStr ok
+                      Right (PrintState{..},_) -> outputStr (concat (reverse psOutput))
                       Left err' ->
                         outputStrLn ("can't parse input as declaration: " ++ show err')
-                  Right (ok,_) -> outputStr ok
+                  Right (PrintState{..},_) -> outputStr (concat (reverse psOutput))
               loop
   config = def { configPrettyPrint = True }

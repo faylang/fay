@@ -25,6 +25,7 @@ import           Data.Default
 import           Data.List
 import           Data.String
 import           Language.Haskell.Exts.Syntax
+
 import           Prelude                      hiding (exp)
 
 --------------------------------------------------------------------------------
@@ -53,32 +54,26 @@ instance Printable QName where
       UnQual name -> printJS name
       Special con -> printJS con
 
+-- | Print module name.
+instance Printable ModuleName where
+  printJS (ModuleName moduleName) =
+    write $ encodeName moduleName
+
 -- | Print special constructors (tuples, list, etc.)
 instance Printable SpecialCon where
   printJS specialCon =
     printJS $ (Qual (ModuleName "Fay") . Ident) $
       case specialCon of
-        UnitCon          -> "unit"
-        ListCon          -> "emptyList"
-        FunCon           -> "funCon"
-        TupleCon boxed n -> (if boxed == Boxed
-                                then "boxed"
-                                else "unboxed" ++
-                                "TupleOf" ++ show n)
-        Cons             -> "cons"
-        UnboxedSingleCon -> "unboxedSingleCon"
-
--- | Print module name.
-instance Printable ModuleName where
-  printJS (ModuleName moduleName) =
-    write $ jsEncodeName moduleName
+        UnitCon -> "unit"
+        Cons    -> "cons"
+        _       -> error $ "Special constructor not supported: " ++ show specialCon
 
 -- | Print (and properly encode) a name.
 instance Printable Name where
   printJS name = write $
     case name of
-      Ident ident -> jsEncodeName ident
-      Symbol sym -> jsEncodeName sym
+      Ident ident -> encodeName ident
+      Symbol sym -> encodeName sym
 
 -- | Print a list of statements.
 instance Printable [JsStmt] where
@@ -89,35 +84,39 @@ instance Printable JsStmt where
   printJS (JsBlock stmts) =
     "{ " +> stmts +> "}"
   printJS (JsVar name expr) =
-    "var " +> name +> " = " +> expr +> ";"
+    "var " +> name +> " = " +> expr +> ";" +> newline
   printJS (JsUpdate name expr) =
-    name +> " = " +> expr +> ";"
+    name +> " = " +> expr +> ";" +> newline
   printJS (JsSetProp name prop expr) =
-    name +> "." +> prop +> " = " +> expr +> ";"
+    name +> "." +> prop +> " = " +> expr +> ";" +> newline
   printJS (JsIf exp thens elses) =
-    "if (" +> exp +> ") {" +> thens +> "}" +>
-    (when (length elses > 0) $ " else {" +> elses +> "}")
+    "if (" +> exp +> ") {" +> newline +>
+    indented (printJS thens) +>
+    "}" +>
+    (when (length elses > 0) $ " else {" +>
+    indented (printJS elses) +>
+    "}") +> newline
   printJS (JsEarlyReturn exp) =
-    "return " +> exp +> ";"
+    "return " +> exp +> ";" +> newline
   printJS (JsThrow exp) = do
-    "throw " +> exp +> ";"
+    "throw " +> exp +> ";" +> newline
   printJS (JsWhile cond stmts) =
-    "while (" +> cond +> ") {" +> stmts +> "}"
+    "while (" +> cond +> ") {"  +> newline +>
+    indented (printJS stmts) +>
+    "}" +> newline
   printJS JsContinue =
-    printJS "continue;"
+    printJS "continue;" +> newline
   printJS (JsMappedVar _ name expr) =
-    "var " +> name +> " = " +> expr +> ";"
+    "var " +> name +> " = " +> expr +> ";" +> newline
 
 -- | Print an expression.
 instance Printable JsExp where
-  printJS (JsRawExp name) =
-    printJS name
+  printJS (JsRawExp e) = write e
+  printJS (JsName name) = printJS name
   printJS (JsThrowExp exp) =
     "(function(){ throw (" +> exp +> "); })()"
   printJS JsNull =
     printJS "null"
-  printJS (JsName name) =
-    printJS name
   printJS (JsLit lit) =
     printJS lit
   printJS (JsParen exp) =
@@ -130,8 +129,7 @@ instance Printable JsExp where
     "(" +> exp +> ")[" +> show i +> "]"
   printJS (JsEq exp1 exp2) =
     exp1 +> " === " +> exp2
-  printJS (JsGetProp exp prop) =
-    exp +> "." +> prop
+  printJS (JsGetProp exp prop) = exp +> "." +> prop
   printJS (JsLookup exp1 exp2) =
     exp1 +> "[" +> exp2 +> "]"
   printJS (JsUpdateProp name prop expr) =
@@ -152,11 +150,11 @@ instance Printable JsExp where
   printJS (JsFun params stmts ret) =
     "function("
     +> (intercalateM "," (map printJS params))
-    +> "){"
-    +> stmts
-    +> case ret of
-      Just ret' -> "return " +> ret' +> ";"
-      Nothing   -> return ()
+    +> "){" +> newline
+    +> indented (stmts +>
+                 case ret of
+                   Just ret' -> "return " +> ret' +> ";" +> newline
+                   Nothing   -> return ())
     +> "}"
   printJS (JsApp op args) =
     (if isFunc op then JsParen op else op)
@@ -167,8 +165,28 @@ instance Printable JsExp where
   printJS (JsNegApp args) =
       "(-(" +> printJS args +> "))"
 
+-- | Print one of the kinds of names.
+instance Printable JsName where
+  printJS name =
+    case name of
+      JsNameVar qname -> printJS qname
+      JsThis -> write "this"
+      JsThunk -> write "$"
+      JsForce -> write "_"
+      JsApply -> write "__"
+      JsParam i -> write ("$p" ++ show i)
+      JsTmp i -> write ("$tmp" ++ show i)
+      JsConstructor qname -> "$_" +> printJS qname
+      JsBuiltIn qname -> "Fay$$" +> printJS qname
+
+instance Printable String where
+  printJS = write
+
+instance Printable (Printer ()) where
+  printJS = id
+
 --------------------------------------------------------------------------------
--- Utilities
+-- Name encoding
 
 -- Words reserved in haskell as well are not needed here:
 -- case, class, do, else, if, import, in, let
@@ -181,37 +199,63 @@ reservedWords = [
   "var", "void", "while", "window", "with", "yield","true","false"]
 
 -- | Encode a Haskell name to JavaScript.
--- TODO: Fix this hack.
-jsEncodeName :: String -> String
--- Special symbols:
-jsEncodeName ":thunk" = "$"
-jsEncodeName ":this" = "this"
--- jsEncodeName ":return" = "return"
--- Used keywords:
-jsEncodeName ('$':'_':name) = "$_" ++ normalize name
-jsEncodeName name
-  | name `elem` reservedWords = "$_" ++ normalize name
--- Anything else.
-jsEncodeName name = normalize name
+encodeName :: String -> String
+encodeName name
+  | name `elem` reservedWords = "$_" ++ normalizeName name
+  | otherwise                 = normalizeName name
 
 -- | Normalize the given name to JavaScript-valid names.
-normalize :: [Char] -> [Char]
-normalize name =
+normalizeName :: [Char] -> [Char]
+normalizeName name =
   concatMap encodeChar name
 
   where
     encodeChar c | c `elem` allowed = [c]
-                 | otherwise      = escapeChar c
+                 | otherwise        = escapeChar c
     allowed = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
     escapeChar c = "$" ++ charId c ++ "$"
     charId c = show (fromEnum c)
 
--- |
-write :: String -> Printer a
+--------------------------------------------------------------------------------
+-- Printing
+
+
+-- | Print the given printer indented.
+indented :: Printer a -> Printer ()
+indented p = do
+  PrintState{..} <- get
+  if psPretty
+     then do modify $ \s -> s { psIndentLevel = psIndentLevel + 1 }
+             p
+             modify $ \s -> s { psIndentLevel = psIndentLevel }
+     else p >> return ()
+
+-- | Output a newline.
+newline :: Printer ()
+newline = do
+  PrintState{..} <- get
+  when psPretty $ do
+    write "\n"
+    modify $ \s -> s { psNewline = True }
+
+-- | Write out a string, updating the current position information.
+write :: String -> Printer ()
 write x = do
-  modify $ \s -> s { psOutput = x : psOutput s }
+  PrintState{..} <- get
+  let out = if psNewline then replicate (2*psIndentLevel) ' ' ++ x else x
+  modify $ \s -> s { psOutput  = out : psOutput
+                   , psLine    = psLine + additionalLines
+                   , psColumn  = if additionalLines > 0
+                                    then length (concat (take 1 (reverse srclines)))
+                                    else psColumn + length x
+                   , psNewline = False
+                   }
   return (error "Nothing to return for writer string.")
 
+  where srclines = lines x
+        additionalLines = length (filter (=='\n') x)
+
+-- | Intercalate monadic action.
 intercalateM :: String -> [Printer a] -> Printer ()
 intercalateM _ [] = return ()
 intercalateM _ [x] = x >> return ()
@@ -220,20 +264,6 @@ intercalateM str (x:xs) = do
   write str
   intercalateM str xs
 
-
--- | Helpful for writing qualified symbols (Fay.*).
-instance IsString ModuleName where
-  fromString = ModuleName
-
--- | Helpful for writing variable names.
-instance IsString JsName where
-  fromString = UnQual . Ident
-
-instance Printable String where
-  printJS = write
-
-instance Printable (Printer ()) where
-  printJS = id
-
+-- | Concatenate two printables.
 (+>) :: (Printable a, Printable b) => a -> b -> Printer ()
 pa +> pb = printJS pa >> printJS pb

@@ -1,6 +1,8 @@
+{-# OPTIONS -fno-warn-orphans #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 
 -- | All Fay types and instances.
@@ -9,8 +11,7 @@ module Language.Fay.Types
   (JsStmt(..)
   ,JsExp(..)
   ,JsLit(..)
-  ,JsParam
-  ,JsName
+  ,JsName(..)
   ,CompileError(..)
   ,Compile(..)
   ,CompilesTo(..)
@@ -21,17 +22,19 @@ module Language.Fay.Types
   ,defaultCompileState
   ,FundamentalType(..)
   ,PrintState(..)
-  ,Printer(..))
+  ,Printer(..)
+  ,ModuleImport(..)
+  ,Mapping(..))
   where
 
-import           Control.Applicative
+import Data.String
+import Control.Applicative
+import Control.Monad.Error    (Error, ErrorT, MonadError)
+import Control.Monad.Identity (Identity)
+import Control.Monad.State
+import Data.Default
 
-import           Control.Monad.Error    (Error, ErrorT, MonadError)
-import           Control.Monad.Identity (Identity)
-import           Control.Monad.State
-
-import           Data.Default
-import           Language.Haskell.Exts
+import Language.Haskell.Exts
 
 --------------------------------------------------------------------------------
 -- Compiler types
@@ -59,16 +62,19 @@ instance Default CompileConfig where
 -- | State of the compiler.
 data CompileState = CompileState
   { stateConfig      :: CompileConfig
-  , stateExports     :: [Name]
+  , stateExports     :: [QName]
   , stateExportAll   :: Bool
   , stateModuleName  :: ModuleName
   , stateFilePath    :: FilePath
-  , stateRecords     :: [(Name,[Name])] -- records with field names
+  , stateRecords     :: [(QName,[QName])]
   , stateFayToJs     :: [JsStmt]
   , stateJsToFay     :: [JsStmt]
-  , stateImported    :: [String] -- ^ Names of imported modules so far.
+  , stateImported    :: [ModuleName]
   , stateNameDepth   :: Integer
 }
+
+-- | A module import.
+data ModuleImport = ModuleImport ModuleName | ModuleImportAs ModuleName Name
 
 defaultCompileState :: CompileConfig -> CompileState
 defaultCompileState config = CompileState {
@@ -76,7 +82,7 @@ defaultCompileState config = CompileState {
   , stateExports = []
   , stateExportAll = True
   , stateModuleName = ModuleName "Main"
-  , stateRecords = [(Ident "Nothing",[]),(Ident "Just",[Ident "slot1"])]
+  , stateRecords = [("Nothing",[]),("Just",["slot1"])]
   , stateFayToJs = []
   , stateJsToFay = []
   , stateImported = ["Language.Fay.Prelude","Language.Fay.FFI","Language.Fay.Types","Prelude"]
@@ -93,27 +99,29 @@ newtype Compile a = Compile { unCompile :: StateT CompileState (ErrorT CompileEr
            ,Functor
            ,Applicative)
 
--- | Convenience type for function parameters.
-type JsParam = JsName
-
--- | To be used to force name sanitization eventually.
-type JsName = QName -- FIXME: Force sanitization at this point.
-
 -- | Just a convenience class to generalize the parsing/printing of
 -- various types of syntax.
 class (Parseable from,Printable to) => CompilesTo from to | from -> to where
   compileTo :: from -> Compile to
 
+data Mapping = Mapping
+  { mappingName :: String
+  , mappingFrom :: SrcLoc
+  , mappingTo   :: SrcLoc
+  } deriving (Show)
+
 data PrintState = PrintState
-  { psLine         :: Int
+  { psPretty       :: Bool
+  , psLine         :: Int
   , psColumn       :: Int
-  , psMapping      :: [(SrcLoc,SrcLoc)]
+  , psMapping      :: [Mapping]
   , psIndentLevel  :: Int
   , psOutput       :: [String]
+  , psNewline      :: Bool
   }
 
 instance Default PrintState where
-  def = PrintState 0 0 [] 0 []
+  def = PrintState False 0 0 [] 0 [] False
 
 newtype Printer a = Printer { runPrinter :: State PrintState a }
   deriving (Monad,Functor,MonadState PrintState)
@@ -144,7 +152,7 @@ data CompileError
   | LetUnsupported
   | InvalidDoBlock
   | RecursiveDoUnsupported
-  | Couldn'tFindImport String [FilePath]
+  | Couldn'tFindImport ModuleName [FilePath]
   | FfiNeedsTypeSig Decl
   | FfiFormatBadChars String
   | FfiFormatNoSuchArg Int
@@ -178,7 +186,7 @@ data JsStmt
 data JsExp
   = JsName JsName
   | JsRawExp String
-  | JsFun [JsParam] [JsStmt] (Maybe JsExp)
+  | JsFun [JsName] [JsStmt] (Maybe JsExp)
   | JsLit JsLit
   | JsApp JsExp [JsExp]
   | JsNegApp JsExp
@@ -199,6 +207,19 @@ data JsExp
   | JsInfix String JsExp JsExp -- Used to optimize *, /, +, etc
   | JsObj [(String,JsExp)]
   deriving (Show,Eq)
+
+-- | A name of some kind.
+data JsName
+  = JsNameVar QName
+  | JsThis
+  | JsThunk
+  | JsForce
+  | JsApply
+  | JsParam Integer
+  | JsTmp Integer
+  | JsConstructor QName
+  | JsBuiltIn Name
+  deriving (Eq,Show)
 
 -- | Literal value type.
 data JsLit
@@ -229,3 +250,15 @@ data FundamentalType
  -- | Unknown.
  | UnknownType
    deriving (Show)
+
+-- | Helpful for some things.
+instance IsString Name where
+  fromString = Ident
+
+-- | Helpful for some things.
+instance IsString QName where
+  fromString = UnQual . Ident
+
+-- | Helpful for writing qualified symbols (Fay.*).
+instance IsString ModuleName where
+  fromString = ModuleName

@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS -fno-warn-missing-signatures -fno-warn-unused-do-bind #-}
@@ -8,7 +9,7 @@ module Main where
 
 import           Language.Fay                (compileFromTo)
 import           Language.Fay.Compiler       (compileForDocs, compileViaStr)
-import           Language.Fay.Types          (CompileConfig(..))
+import           Language.Fay.Types          (CompileConfig(..),PrintState(..))
 
 
 import           Control.Monad
@@ -49,7 +50,7 @@ generate = do
                                       , configTypecheck = False }
                                   compileForDocs contents
           case result of
-            Right (javascript,_) -> return javascript
+            Right (PrintState{..},_) -> return (concat (reverse psOutput))
             Left err -> error (show err)
         titlize = takeWhile (/='.') . upperize . takeFileName
           where upperize (x:xs) = toUpper x : xs

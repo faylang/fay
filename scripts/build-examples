@@ -1,1 +1,1 @@
-for i in `ls examples/*.hs`; do echo $i;dist/build/fay/fay --autorun $i; done
+for i in `ls examples/*.hs`; do echo $i;dist/build/fay/fay -p $i --no-ghc; done

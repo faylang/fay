@@ -137,7 +137,7 @@ Flag devel
 
 library
   hs-source-dirs:    src
-  exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude, Language.Fay.Convert, Language.Fay.Compiler
+  exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude, Language.Fay.Convert, Language.Fay.Compiler, Language.Fay.Compiler.Misc, Language.Fay.Compiler.FFI
   other-modules:     Language.Fay.Print, Control.Monad.IO, Language.Fay.Stdlib, System.Process.Extra, Paths_fay
   ghc-options:       -O2 -Wall
   build-depends:     base >= 4 && < 5,

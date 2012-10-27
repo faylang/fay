@@ -30,7 +30,7 @@ import           Safe
 
 -- | Compile an FFI call.
 compileFFI :: SrcLoc -- ^ Location of the original FFI decl.
-           -> Name   -- ^ Name of the to-be binding.
+           -> QName  -- ^ Name of the to-be binding.
            -> String -- ^ The format string.
            -> Type   -- ^ Type signature.
            -> Compile [JsStmt]
@@ -38,7 +38,7 @@ compileFFI srcloc name formatstr sig = do
   inner <- formatFFI formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.parseExpression (prettyPrint name) (printJSString (wrapReturn inner)) of
     Left err -> throwError (FfiFormatInvalidJavaScript inner (show err))
-    Right{}  -> fmap return (bindToplevel srcloc True (UnQual name) (body inner))
+    Right{}  -> fmap return (bindToplevel srcloc True name (body inner))
 
   where body inner = foldr wrapParam (wrapReturn inner) params
         wrapParam pname inner = JsFun [pname] [] (Just inner)
@@ -53,29 +53,29 @@ compileFFI srcloc name formatstr sig = do
         returnType = last funcFundamentalTypes
 
 -- Make a Fay→JS encoder.
-emitFayToJs :: QName -> [([Name], BangType)] -> Compile ()
+emitFayToJs :: QName -> [([QName], BangType)] -> Compile ()
 emitFayToJs name (explodeFields -> fieldTypes) =
   modify $ \s -> s { stateFayToJs = translator : stateFayToJs s }
 
   where
-    translator = JsIf (JsInstanceOf (JsName transcodingObjForced) (constructorName name))
-                      [JsEarlyReturn (JsObj (("instance",JsLit (JsStr (qname name)))
-                                                     : zipWith declField [0..] fieldTypes))]
+    translator = JsIf (JsInstanceOf (JsName transcodingObjForced) (JsConstructor name))
+                      [JsEarlyReturn (JsObj (("instance",JsLit (JsStr (printJSString name)))
+                                             : zipWith declField [0..] fieldTypes))]
                       []
     -- Declare/encode Fay→JS field
-    declField :: Int -> (Name,BangType) -> (String,JsExp)
+    declField :: Int -> (QName,BangType) -> (String,JsExp)
     declField _i (fname,typ) =
-      (unname fname
+      (prettyPrint fname
       ,fayToJs (case argType (bangType typ) of
                  known -> typeRep known)
                (force (JsGetProp (JsName transcodingObjForced)
-                                 (UnQual fname))))
+                                 (JsNameVar fname))))
 
 transcodingObj :: JsName
-transcodingObj = "obj"
+transcodingObj = JsNameVar "obj"
 
 transcodingObjForced :: JsName
-transcodingObjForced = "_obj"
+transcodingObjForced = JsNameVar "_obj"
 
 -- | Get arg types of a function type.
 functionTypeArgs :: Type -> [FundamentalType]
@@ -127,12 +127,12 @@ userDefined _ = UnknownType
 
 -- | Translate: JS → Fay.
 jsToFay :: FundamentalType -> JsExp -> JsExp
-jsToFay typ exp = JsApp (JsName (hjIdent "jsToFay"))
+jsToFay typ exp = JsApp (JsName (JsBuiltIn "jsToFay"))
                         [typeRep typ,exp]
 
 -- | Translate: Fay → JS.
 fayToJs :: JsExp -> JsExp -> JsExp
-fayToJs typ exp = JsApp (JsName (hjIdent "fayToJs"))
+fayToJs typ exp = JsApp (JsName (JsBuiltIn "fayToJs"))
                         [typ,exp]
 
 -- | Get a JS-representation of a fundamental type for encoding/decoding.
@@ -166,7 +166,7 @@ typeArity t =
 
 -- | Format the FFI format string with the given arguments.
 formatFFI :: String                      -- ^ The format string.
-          -> [(JsParam,FundamentalType)] -- ^ Arguments.
+          -> [(JsName,FundamentalType)] -- ^ Arguments.
           -> Compile String              -- ^ The JS code.
 formatFFI formatstr args = go formatstr where
   go ('%':'*':xs) = do
@@ -199,23 +199,23 @@ explodeFields = concatMap $ \(names,typ) -> map (,typ) names
 
 fayToJsDispatcher :: [JsStmt] -> JsStmt
 fayToJsDispatcher cases =
-  JsVar (hjIdent "fayToJsUserDefined")
-        (JsFun ["type",transcodingObj]
+  JsVar (JsBuiltIn "fayToJsUserDefined")
+        (JsFun [JsNameVar "type",transcodingObj]
                (decl ++ cases ++ [baseCase])
                Nothing)
 
   where decl = [JsVar transcodingObjForced
                       (force (JsName transcodingObj))
-               ,JsVar "argTypes"
-                      (JsLookup (JsName "type")
+               ,JsVar (JsNameVar "argTypes")
+                      (JsLookup (JsName (JsNameVar "type"))
                                 (JsLit (JsInt 2)))]
         baseCase =
           JsEarlyReturn (JsName transcodingObj)
 
 jsToFayDispatcher :: [JsStmt] -> JsStmt
 jsToFayDispatcher cases =
-  JsVar (hjIdent "jsToFayUserDefined")
-        (JsFun ["type",transcodingObj]
+  JsVar (JsBuiltIn "jsToFayUserDefined")
+        (JsFun [JsNameVar "type",transcodingObj]
                (cases ++ [baseCase])
                Nothing)
 
@@ -223,20 +223,20 @@ jsToFayDispatcher cases =
           JsEarlyReturn (JsName transcodingObj)
 
 -- Make a JS→Fay decoder
-emitJsToFay ::  QName -> [([Name], BangType)] -> Compile ()
+emitJsToFay ::  QName -> [([QName], BangType)] -> Compile ()
 emitJsToFay name (explodeFields -> fieldTypes) =
   modify $ \s -> s { stateJsToFay = translator : stateJsToFay s }
 
   where
     translator =
       JsIf (JsEq (JsGetPropExtern (JsName transcodingObj) "instance")
-                 (JsLit (JsStr (qname name))))
-           [JsEarlyReturn (JsNew (constructorName name)
+                 (JsLit (JsStr (printJSString name))))
+           [JsEarlyReturn (JsNew (JsConstructor name)
                                  (map decodeField fieldTypes))]
            []
     -- Decode JS→Fay field
-    decodeField :: (Name,BangType) -> JsExp
+    decodeField :: (QName,BangType) -> JsExp
     decodeField (fname,typ) =
       jsToFay (argType (bangType typ))
               (JsGetPropExtern (JsName transcodingObj)
-                               (unname fname))
+                               (prettyPrint fname))

@@ -119,11 +119,21 @@ isWildCardPat _           = False
 
 -- | Generate a temporary, SCOPED name for testing conditions and
 -- such.
-withScopedTmpName :: (JsName -> Compile a) -> Compile a
-withScopedTmpName withName = do
+withScopedTmpJsName :: (JsName -> Compile a) -> Compile a
+withScopedTmpJsName withName = do
   depth <- gets stateNameDepth
   modify $ \s -> s { stateNameDepth = depth + 1 }
   ret <- withName $ JsTmp depth
+  modify $ \s -> s { stateNameDepth = depth }
+  return ret
+
+-- | Generate a temporary, SCOPED name for testing conditions and
+-- such. We don't have name tracking yet, so instead we use this.
+withScopedTmpName :: (Name -> Compile a) -> Compile a
+withScopedTmpName withName = do
+  depth <- gets stateNameDepth
+  modify $ \s -> s { stateNameDepth = depth + 1 }
+  ret <- withName $ Ident $ "$gen" ++ show depth
   modify $ \s -> s { stateNameDepth = depth }
   return ret
 

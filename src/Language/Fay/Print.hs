@@ -200,6 +200,9 @@ reservedWords = [
 
 -- | Encode a Haskell name to JavaScript.
 encodeName :: String -> String
+-- | This is a hack for names generated in the Haskell AST. Should be
+-- removed once it's no longer needed.
+encodeName ('$':'g':'e':'n':name) = "$gen_" ++ normalizeName name
 encodeName name
   | name `elem` reservedWords = "$_" ++ normalizeName name
   | otherwise                 = normalizeName name

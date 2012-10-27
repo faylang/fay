@@ -585,26 +585,17 @@ compileLambda pats exp = do
   where unhandledcase = throw "unhandled case" . JsName
         allfree = all isWildCardPat pats
 
--- | This is a hack to get hopefully fresh variable names.  Really we should
--- keep some kind of counter, or even a map of encountered variable names to
--- uniqueify, but this has only a one in a billion chance of failure, and it
--- works for testing.
-freshVariable :: Compile Name
-freshVariable = do
-  n <- liftIO $ randomRIO (1, maxBound :: Word64)
-  return (Ident ("freshVar__" ++ show n))
-
 -- | Compile list comprehensions.
 desugarListComp :: Exp -> [QualStmt] -> Compile Exp
 desugarListComp e [] =
     return (List [ e ])
 desugarListComp e (QualStmt (Generator loc p e2) : stmts) = do
     nested <- desugarListComp e stmts
-    f      <- freshVariable
-    return (Let (BDecls [ FunBind [
-        Match loc f [ p         ] Nothing (UnGuardedRhs nested)    (BDecls []),
-        Match loc f [ PWildCard ] Nothing (UnGuardedRhs (List [])) (BDecls [])
-        ]]) (App (App (Var (UnQual (Ident "concatMap"))) (Var (UnQual f))) e2))
+    withScopedTmpName $ \f ->
+      return (Let (BDecls [ FunBind [
+          Match loc f [ p         ] Nothing (UnGuardedRhs nested)    (BDecls []),
+          Match loc f [ PWildCard ] Nothing (UnGuardedRhs (List [])) (BDecls [])
+          ]]) (App (App (Var (UnQual (Ident "concatMap"))) (Var (UnQual f))) e2))
 desugarListComp e (QualStmt (Qualifier e2)       : stmts) = do
     nested <- desugarListComp e stmts
     return (If e2 nested (List []))
@@ -618,7 +609,7 @@ desugarListComp _ (s                             : _    ) =
 compileCase :: Exp -> [Alt] -> Compile JsExp
 compileCase exp alts = do
   exp <- compileExp exp
-  withScopedTmpName $ \tmpName -> do
+  withScopedTmpJsName $ \tmpName -> do
     pats <- fmap optimizePatConditions $ mapM (compilePatAlt (JsName tmpName)) alts
     return $
       JsApp (JsFun [tmpName]
@@ -825,7 +816,7 @@ compileInfixPat :: JsExp -> Pat -> [JsStmt] -> Compile [JsStmt]
 compileInfixPat exp pat@(PInfixApp left (Special cons) right) body =
   case cons of
     Cons -> do
-      withScopedTmpName $ \tmpName -> do
+      withScopedTmpJsName $ \tmpName -> do
         let forcedExp = JsName tmpName
             x = JsGetProp forcedExp (JsNameVar "car")
             xs = JsGetProp forcedExp (JsNameVar "cdr")

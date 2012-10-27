@@ -450,7 +450,7 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
         basecase :: [JsStmt]
         basecase = if any isWildCardMatch matches
                       then []
-                      else [throw ("unhandled case in " ++ show name)
+                      else [throw ("unhandled case in " ++ prettyPrint name)
                                   (JsList (map JsName args))]
 
 -- | Compile a right-hand-side expression.

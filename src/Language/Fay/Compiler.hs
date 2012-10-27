@@ -34,11 +34,13 @@ import           Data.Default                (def)
 import           Data.List
 import           Data.Maybe
 import           Data.String
+import           Data.Word
 import           Language.Haskell.Exts
 import           System.Directory            (doesFileExist)
 import           System.FilePath             ((</>))
 import           System.IO
 import           System.Process.Extra
+import           System.Random
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -532,6 +534,7 @@ compileExp exp =
                                                       [t])
     RecConstr name fieldUpdates -> compileRecConstr name fieldUpdates
     RecUpdate rec  fieldUpdates -> updateRec rec fieldUpdates
+    ListComp exp stmts            -> compileExp =<< desugarListComp exp stmts
     ExpTypeSig _ e _ -> compileExp e
 
     exp -> throwError (UnsupportedExpression exp)
@@ -618,6 +621,35 @@ compileLambda pats exp = do
 
   where unhandledcase = throw "unhandled case" . JsName
         allfree = all isWildCardPat pats
+
+-- | This is a hack to get hopefully fresh variable names.  Really we should
+-- keep some kind of counter, or even a map of encountered variable names to
+-- uniqueify, but this has only a one in a billion chance of failure, and it
+-- works for testing.
+freshVariable :: Compile Name
+freshVariable = do
+  n <- liftIO $ randomRIO (1, maxBound :: Word64)
+  return (Ident ("freshVar__" ++ show n))
+
+-- | Compile list comprehensions.
+desugarListComp :: Exp -> [QualStmt] -> Compile Exp
+desugarListComp e [] =
+    return (List [ e ])
+desugarListComp e (QualStmt (Generator loc p e2) : stmts) = do
+    nested <- desugarListComp e stmts
+    f      <- freshVariable
+    return (Let (BDecls [ FunBind [
+        Match loc f [ p         ] Nothing (UnGuardedRhs nested)    (BDecls []),
+        Match loc f [ PWildCard ] Nothing (UnGuardedRhs (List [])) (BDecls [])
+        ]]) (App (App (Var (UnQual (Ident "concatMap"))) (Var (UnQual f))) e2))
+desugarListComp e (QualStmt (Qualifier e2)       : stmts) = do
+    nested <- desugarListComp e stmts
+    return (If e2 nested (List []))
+desugarListComp e (QualStmt (LetStmt bs)         : stmts) = do
+    nested <- desugarListComp e stmts
+    return (Let bs nested)
+desugarListComp _ (s                             : _    ) =
+    throwError (UnsupportedQualStmt s)
 
 -- | Compile case expressions.
 compileCase :: Exp -> [Alt] -> Compile JsExp

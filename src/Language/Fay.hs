@@ -140,6 +140,7 @@ showCompileError e =
     UnsupportedMatchSyntax m -> "unsupported match/binding syntax: " ++ prettyPrint m
     UnsupportedWhereInMatch m -> "unsupported `where' syntax: " ++ prettyPrint m
     UnsupportedExpression expr -> "unsupported expression syntax: " ++ prettyPrint expr
+    UnsupportedQualStmt stmt -> "unsupported list qualifier: " ++ prettyPrint stmt
     UnsupportedLiteral lit -> "unsupported literal syntax: " ++ prettyPrint lit
     UnsupportedLetBinding d -> "unsupported let binding: " ++ prettyPrint d
     UnsupportedOperator qop -> "unsupported operator syntax: " ++ prettyPrint qop

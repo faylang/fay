@@ -6,6 +6,7 @@ module Language.Fay.Stdlib
   ,any
   ,compare
   ,concat
+  ,concatMap
   ,const
   ,elem
   ,enumFrom
@@ -164,6 +165,9 @@ conc []     ys = ys
 
 concat :: [[a]] -> [a]
 concat = foldr conc []
+
+concatMap :: (a -> [b]) -> [a] -> [b]
+concatMap f = foldr ((++) . f) []
 
 foldr :: (t -> t1 -> t1) -> t1 -> [t] -> t1
 foldr _ z []     = z

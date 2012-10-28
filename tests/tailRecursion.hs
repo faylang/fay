@@ -2,7 +2,7 @@
 
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Fib where
+module Tail where
 
 import           Language.Fay.FFI
 import           Language.Fay.Prelude
@@ -12,9 +12,6 @@ main = do
 
 sum 0 acc = acc
 sum n acc = sum (n - 1) (acc + n)
-
-getSeconds :: Fay Double
-getSeconds = ffi "new Date"
 
 print :: Double -> Fay ()
 print = ffi "console.log(%1)"

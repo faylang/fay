@@ -50,19 +50,24 @@ instance Printable JsLit where
 instance Printable QName where
   printJS qname =
     case qname of
-      Qual moduleName name -> moduleName +> "$$" +> name
+      Qual moduleName name -> moduleName +> "$" +> name
       UnQual name -> printJS name
       Special con -> printJS con
 
 -- | Print module name.
 instance Printable ModuleName where
-  printJS (ModuleName moduleName) =
-    write $ encodeName moduleName
+  printJS (ModuleName "Fay$") =
+    write "Fay$"
+  printJS (ModuleName moduleName) = write $ go moduleName
+
+    where go ('.':xs) = '$' : go xs
+          go (x:xs) = normalizeName [x] ++ go xs
+          go [] = []
 
 -- | Print special constructors (tuples, list, etc.)
 instance Printable SpecialCon where
   printJS specialCon =
-    printJS $ (Qual (ModuleName "Fay") . Ident) $
+    printJS $ (Qual (ModuleName "Fay$") . Ident) $
       case specialCon of
         UnitCon -> "unit"
         Cons    -> "cons"

@@ -5,15 +5,20 @@
 
 module Language.Fay.Compiler.Misc where
 
-import Language.Fay.Types
+import           Language.Fay.Types
 
-import Control.Monad.Error
-import Control.Monad.State
-import Data.List
-import Data.String
-import Language.Haskell.Exts (ParseResult(..))
-import Language.Haskell.Exts.Syntax
-import Prelude hiding (exp)
+import           Control.Monad.Error
+import           Control.Monad.State
+
+
+
+import           Data.List
+import qualified Data.Map as M
+import           Data.Maybe
+import           Data.String
+import           Language.Haskell.Exts (ParseResult(..))
+import           Language.Haskell.Exts.Syntax
+import           Prelude hiding (exp)
 
 -- | Extra the string from an ident.
 unname :: Name -> String
@@ -22,7 +27,7 @@ unname _ = error "Expected ident from uname." -- FIXME:
 
 -- | Make an identifier from the built-in HJ module.
 fayBuiltin :: String -> QName
-fayBuiltin = Qual (ModuleName "Fay") . Ident
+fayBuiltin = Qual (ModuleName "Fay$") . Ident
 
 -- | Wrap an expression in a thunk.
 thunk :: JsExp -> JsExp
@@ -46,25 +51,105 @@ stmtsThunk stmts = JsNew JsThunk [JsFun [] stmts Nothing]
 uniqueNames :: [JsName]
 uniqueNames = map JsParam [1::Integer ..]
 
+-- | Resolve a given maybe-qualified name to a fully qualifed name.
+resolveName :: QName -> Compile QName
+resolveName special@Special{} = return special
+resolveName (UnQual name) = do
+--  let echo = io . putStrLn
+--  echo $ "Resolving name " ++ prettyPrint name
+  names <- gets stateScope
+--  echo $ "Names are: " ++ show names
+  case M.lookup name names of
+    -- Unqualified and not imported? Current module.
+    Nothing -> qualify name
+    Just scopes -> case find localBinding scopes of
+      Just ScopeBinding -> return (UnQual name)
+      _ ->
+        case find simpleImport scopes of
+          Just (ScopeImported modulename replacement) -> return (Qual modulename (fromMaybe name replacement))
+          _ -> case find asImport scopes of
+            Just (ScopeImportedAs _ modulename _) -> return (Qual modulename name)
+            _ -> throwError $ UnableResolveUnqualified name
+
+  where asImport ScopeImportedAs{} = True
+        asImport _ = False
+
+        localBinding ScopeBinding = True
+        localBinding _ = False
+
+resolveName (Qual modulename name) = do
+  names <- gets stateScope
+  case M.lookup name names of
+    -- Qualified and not imported? It's correct, leave it as-is.
+    Nothing -> return (Qual modulename name)
+    Just scopes -> case find simpleImport scopes of
+      Just (ScopeImported _ replacement) -> return (Qual modulename (fromMaybe name replacement))
+      _ -> case find asMatch scopes of
+        Just (ScopeImported realname replacement) -> return (Qual realname (fromMaybe name replacement))
+        _ -> throwError $ UnableResolveQualified (Qual modulename name)
+
+  where asMatch i = case i of
+          ScopeImported{} -> True
+          ScopeImportedAs _ _ qmodulename -> qmodulename == moduleToName modulename
+          ScopeBinding -> False
+          where moduleToName (ModuleName n) = Ident n
+
+-- | Do have have a simple "import X" import on our hands?
+simpleImport :: NameScope -> Bool
+simpleImport ScopeImported{} = True
+simpleImport _ = False
+
 -- | Qualify a name for the current module.
 qualify :: Name -> Compile QName
 qualify name = do
   modulename <- gets stateModuleName
   return (Qual modulename name)
 
+-- | Qualify a name for the current module.
+qualifyQ :: QName -> Compile QName
+qualifyQ (Qual _ name) = qualify name
+qualifyQ (UnQual name) = qualify name
+qualifyQ e = return e
+
 -- | Make a top-level binding.
 bindToplevel :: SrcLoc -> Bool -> Name -> JsExp -> Compile JsStmt
 bindToplevel srcloc toplevel name expr = do
+  qname <- (if toplevel then qualify else return . UnQual) name
   exportAll <- gets stateExportAll
-  when (toplevel && exportAll) $ emitExport (EVar (UnQual name))
-  return (JsMappedVar srcloc (JsNameVar (UnQual name)) expr)
+  when (toplevel && exportAll) $ emitExport (EVar qname)
+  return (JsMappedVar srcloc (JsNameVar qname) expr)
+
+-- | Create a temporary scope and discard it after the given computation.
+withScope :: Compile a -> Compile a
+withScope m = do
+  scope <- gets stateScope
+  value <- m
+  modify $ \s -> s { stateScope = scope }
+  return value
+
+-- | Run a compiler and just get the scope information.
+generateScope :: Compile a -> Compile ()
+generateScope m = do
+  st <- get
+  _ <- m
+  scope <- gets stateScope
+  put st { stateScope = scope }
+
+-- | Bind a variable in the current scope.
+bindVar :: Name -> Compile ()
+bindVar name = do
+  modify $ \s -> s { stateScope = M.insertWith (++) name [ScopeBinding] (stateScope s) }
 
 -- | Emit exported names.
 emitExport :: ExportSpec -> Compile ()
 emitExport spec =
   case spec of
-    EVar name -> modify $ \s -> s { stateExports = name : stateExports s }
-    _ -> throwError (UnsupportedExportSpec spec)
+    EVar (UnQual name) -> qualify name >>= emitExport . EVar
+    EVar name@Qual{} -> modify $ \s -> s { stateExports = name : stateExports s }
+    _ -> do
+      name <- gets stateModuleName
+      unless (name == "Language.Fay.Stdlib") $
+        throwError (UnsupportedExportSpec spec)
 
 -- | Force an expression in a thunk.
 force :: JsExp -> JsExp
@@ -142,28 +227,3 @@ withScopedTmpName withName = do
   ret <- withName $ Ident $ "$gen" ++ show depth
   modify $ \s -> s { stateNameDepth = depth }
   return ret
-
--- | Resolve operators to only built-in (for now) functions.
-resolveOpToVar :: QOp -> Compile Exp
-resolveOpToVar op =
-  case getOp op of
-    UnQual (Symbol symbol)
-      | symbol == "*"   -> return (Var (fayBuiltin "mult"))
-      | symbol == "+"   -> return (Var (fayBuiltin "add"))
-      | symbol == "-"   -> return (Var (fayBuiltin "sub"))
-      | symbol == "/"   -> return (Var (fayBuiltin "div"))
-      | symbol == "=="  -> return (Var (fayBuiltin "eq"))
-      | symbol == "/="  -> return (Var (fayBuiltin "neq"))
-      | symbol == ">"   -> return (Var (fayBuiltin "gt"))
-      | symbol == "<"   -> return (Var (fayBuiltin "lt"))
-      | symbol == ">="  -> return (Var (fayBuiltin "gte"))
-      | symbol == "<="  -> return (Var (fayBuiltin "lte"))
-      | symbol == "&&"  -> return (Var (fayBuiltin "and"))
-      | symbol == "||"  -> return (Var (fayBuiltin "or"))
-      | otherwise       -> return (Var (fromString symbol))
-    n@(UnQual Ident{})  -> return (Var n)
-    Special Cons        -> return (Var (fayBuiltin "cons"))
-    _                   -> throwError (UnsupportedOperator op)
-
-  where getOp (QVarOp o) = o
-        getOp (QConOp o) = o

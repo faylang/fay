@@ -54,14 +54,16 @@ compileFFI srcloc name formatstr sig = do
 
 -- Make a Fay→JS encoder.
 emitFayToJs :: Name -> [([Name],BangType)] -> Compile ()
-emitFayToJs name (explodeFields -> fieldTypes) =
-  modify $ \s -> s { stateFayToJs = translator : stateFayToJs s }
+emitFayToJs name (explodeFields -> fieldTypes) = do
+  qname <- qualify name
+  modify $ \s -> s { stateFayToJs = translator qname : stateFayToJs s }
 
   where
-    translator = JsIf (JsInstanceOf (JsName transcodingObjForced) (JsConstructor (UnQual name)))
-                      [JsEarlyReturn (JsObj (("instance",JsLit (JsStr (printJSString name)))
-                                             : zipWith declField [0..] fieldTypes))]
-                      []
+    translator qname =
+      JsIf (JsInstanceOf (JsName transcodingObjForced) (JsConstructor qname))
+           [JsEarlyReturn (JsObj (("instance",JsLit (JsStr (printJSString name)))
+                                  : zipWith declField [0..] fieldTypes))]
+           []
     -- Declare/encode Fay→JS field
     declField :: Int -> (Name,BangType) -> (String,JsExp)
     declField _i (fname,typ) =
@@ -224,14 +226,15 @@ jsToFayDispatcher cases =
 
 -- Make a JS→Fay decoder
 emitJsToFay ::  Name -> [([Name], BangType)] -> Compile ()
-emitJsToFay name (explodeFields -> fieldTypes) =
-  modify $ \s -> s { stateJsToFay = translator : stateJsToFay s }
+emitJsToFay name (explodeFields -> fieldTypes) = do
+  qname <- qualify name
+  modify $ \s -> s { stateJsToFay = translator qname : stateJsToFay s }
 
   where
-    translator =
+    translator qname =
       JsIf (JsEq (JsGetPropExtern (JsName transcodingObj) "instance")
                  (JsLit (JsStr (printJSString name))))
-           [JsEarlyReturn (JsNew (JsConstructor (UnQual name))
+           [JsEarlyReturn (JsNew (JsConstructor qname)
                                  (map decodeField fieldTypes))]
            []
     -- Decode JS→Fay field

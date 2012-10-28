@@ -23,17 +23,17 @@ module Language.Fay.Types
   ,FundamentalType(..)
   ,PrintState(..)
   ,Printer(..)
-  ,ModuleImport(..)
+  ,NameScope(..)
   ,Mapping(..))
   where
 
-import Data.String
 import Control.Applicative
 import Control.Monad.Error    (Error, ErrorT, MonadError)
 import Control.Monad.Identity (Identity)
 import Control.Monad.State
 import Data.Default
-
+import Data.Map as M
+import Data.String
 import Language.Haskell.Exts
 
 --------------------------------------------------------------------------------
@@ -53,7 +53,7 @@ data CompileConfig = CompileConfig
   , configFilePath          :: Maybe FilePath
   , configTypecheck         :: Bool
   , configWall              :: Bool
-  }
+  } deriving (Show)
 
 -- | Default configuration.
 instance Default CompileConfig where
@@ -71,11 +71,17 @@ data CompileState = CompileState
   , stateJsToFay     :: [JsStmt]
   , stateImported    :: [ModuleName]
   , stateNameDepth   :: Integer
-}
+  , stateScope       :: Map Name [NameScope]
+} deriving (Show)
 
--- | A module import.
-data ModuleImport = ModuleImport ModuleName | ModuleImportAs ModuleName Name
+-- | A name's scope, either imported or bound locally.
+data NameScope = ScopeImported ModuleName (Maybe Name)
+               | ScopeImportedAs Bool ModuleName Name
+               | ScopeBinding
 
+  deriving (Show,Eq)
+
+-- | The default compiler state.
 defaultCompileState :: CompileConfig -> CompileState
 defaultCompileState config = CompileState {
     stateConfig = config
@@ -85,10 +91,41 @@ defaultCompileState config = CompileState {
   , stateRecords = [("Nothing",[]),("Just",["slot1"])]
   , stateFayToJs = []
   , stateJsToFay = []
-  , stateImported = ["Language.Fay.Prelude","Language.Fay.FFI","Language.Fay.Types","Prelude"]
+  , stateImported = ["Language.Fay.FFI","Language.Fay.Types","Prelude"]
   , stateNameDepth = 1
   , stateFilePath = "<unknown>"
+  , stateScope = M.fromList primOps
   }
+
+-- | The built-in operations that aren't actually compiled from
+-- anywhere, they come from runtime.js.
+--
+-- They're in the names list so that they can be overriden by the user
+-- in e.g. let a * b = a - b in 1 * 2.
+--
+-- So we resolve them to Fay$, i.e. the prefix used for the runtime
+-- support. $ is not allowed in Haskell module names, so there will be
+-- no conflicts if a user decicdes to use a module named Fay.
+--
+-- So e.g. will compile to (*) Fay$$mult, which is in runtime.js.
+primOps :: [(Name, [NameScope])]
+primOps =
+  [(Symbol ">>",[ScopeImported "Fay$" (Just "then")])
+  ,(Symbol ">>=",[ScopeImported "Fay$" (Just "bind")])
+  ,(Ident "return",[ScopeImported "Fay$" (Just "return")])
+  ,(Symbol "*",[ScopeImported "Fay$" (Just "mult")])
+  ,(Symbol "*",[ScopeImported "Fay$" (Just "mult")])
+  ,(Symbol "+",[ScopeImported "Fay$" (Just "add")])
+  ,(Symbol "-",[ScopeImported "Fay$" (Just "sub")])
+  ,(Symbol "/",[ScopeImported "Fay$" (Just "div")])
+  ,(Symbol "==",[ScopeImported "Fay$" (Just "eq")])
+  ,(Symbol "/=",[ScopeImported "Fay$" (Just "neq")])
+  ,(Symbol ">",[ScopeImported "Fay$" (Just "gt")])
+  ,(Symbol "<",[ScopeImported "Fay$" (Just "lt")])
+  ,(Symbol ">=",[ScopeImported "Fay$" (Just "gte")])
+  ,(Symbol "<=",[ScopeImported "Fay$" (Just "lte")])
+  ,(Symbol "&&",[ScopeImported "Fay$" (Just "and")])
+  ,(Symbol "||",[ScopeImported "Fay$" (Just "or")])]
 
 -- | Compile monad.
 newtype Compile a = Compile { unCompile :: StateT CompileState (ErrorT CompileError IO) a }
@@ -158,6 +195,8 @@ data CompileError
   | FfiFormatNoSuchArg Int
   | FfiFormatIncompleteArg
   | FfiFormatInvalidJavaScript String String
+  | UnableResolveUnqualified Name
+  | UnableResolveQualified QName
   deriving (Show)
 instance Error CompileError
 

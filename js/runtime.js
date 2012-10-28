@@ -46,9 +46,8 @@ function Fay$$Monad(value){
 }
 
 // >>
-// encode_fay_to_js(">>=") → $62$$62$
-// This is used directly from Fay, but can be rebound or shadowed.
-function $62$$62$(a){
+// This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
+function Fay$$then(a){
     return function(b){
         return new $(function(){
             _(a,true);
@@ -58,9 +57,8 @@ function $62$$62$(a){
 }
 
 // >>=
-// encode_fay_to_js(">>=") → $62$$62$$61$
-// This is used directly from Fay, but can be rebound or shadowed.
-function $62$$62$$61$(m){
+// This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
+function Fay$$bind(m){
     return function(f){
         return new $(function(){
             var monad = _(m,true);
@@ -70,7 +68,7 @@ function $62$$62$$61$(m){
 }
 
 // This is used directly from Fay, but can be rebound or shadowed.
-function $_return(a){
+function Fay$$$_return(a){
     return new Fay$$Monad(a);
 }
 
@@ -283,7 +281,6 @@ function Fay$$mult(x){
         });
     };
 }
-var $42$ = Fay$$mult;
 
 // Built-in +.
 function Fay$$add(x){
@@ -293,7 +290,6 @@ function Fay$$add(x){
         });
     };
 }
-var $43$ = Fay$$add;
 
 // Built-in -.
 function Fay$$sub(x){
@@ -303,7 +299,6 @@ function Fay$$sub(x){
         });
     };
 }
-var $45$ = Fay$$sub;
 
 // Built-in /.
 function Fay$$div(x){
@@ -313,7 +308,6 @@ function Fay$$div(x){
         });
     };
 }
-var $47$ = Fay$$div;
 
 /*******************************************************************************
  * Booleans.
@@ -363,7 +357,6 @@ function Fay$$eq(x){
         });
     };
 }
-var $61$$61$ = Fay$$eq;
 
 // Built-in /=.
 function Fay$$neq(x){
@@ -373,7 +366,6 @@ function Fay$$neq(x){
         });
     };
 }
-var $47$$61$ = Fay$$neq;
 
 // Built-in >.
 function Fay$$gt(x){
@@ -383,7 +375,6 @@ function Fay$$gt(x){
         });
     };
 }
-var $62$ = Fay$$gt;
 
 // Built-in <.
 function Fay$$lt(x){
@@ -393,7 +384,6 @@ function Fay$$lt(x){
         });
     };
 }
-var $60$ = Fay$$lt;
 
 // Built-in >=.
 function Fay$$gte(x){
@@ -403,7 +393,6 @@ function Fay$$gte(x){
         });
     };
 }
-var $62$$61$ = Fay$$gte;
 
 // Built-in <=.
 function Fay$$lte(x){
@@ -413,7 +402,6 @@ function Fay$$lte(x){
         });
     };
 }
-var $60$$61$ = Fay$$lte;
 
 // Built-in &&.
 function Fay$$and(x){
@@ -423,7 +411,6 @@ function Fay$$and(x){
         });
     };
 }
-var $38$$38$ = Fay$$and;
 
 // Built-in ||.
 function Fay$$or(x){
@@ -433,7 +420,6 @@ function Fay$$or(x){
         });
     };
 }
-var $124$$124$ = Fay$$or;
 
 /*******************************************************************************
  * Mutable references.

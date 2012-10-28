@@ -1,8 +1,12 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 module Language.Fay.Stdlib
   (($)
   ,(++)
   ,(.)
   ,Ordering(..)
+  ,show
+  ,fromInteger
+  ,fromRational
   ,any
   ,compare
   ,concat
@@ -45,10 +49,18 @@ module Language.Fay.Stdlib
   where
 
 import           Language.Fay.FFI
-import           Prelude          (Bool(..), Double, Eq(..), Int, Maybe(..), Monad(..), Num(..),
- Ord((>), (<)), (||))
+import           Prelude (Bool(..), Double, Eq(..), Int, Maybe(..), Monad(..), Num((+)),
+                         Ord((>), (<)), (||),String,Show,Integer,Rational,Fractional)
 
--- START
+show :: (Foreign a,Show a) => a -> String
+show = ffi "JSON.stringify(%1)"
+
+-- There is only Double in JS.
+fromInteger :: a -> a
+fromInteger x = x
+
+fromRational :: a -> a
+fromRational x = x
 
 snd :: (t, t1) -> t1
 snd (_,x) = x

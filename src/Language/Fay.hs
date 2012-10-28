@@ -67,18 +67,15 @@ compileFile :: CompileConfig -> FilePath -> IO (Either CompileError String)
 compileFile config filein = do
   runtime <- getDataFileName "js/runtime.js"
   stdlibpath <- getDataFileName "hs/stdlib.hs"
-  stdlibpathprelude <- getDataFileName "src/Language/Fay/Stdlib.hs"
+  srcdir <- fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
   raw <- readFile runtime
   stdlib <- readFile stdlibpath
-  stdlibprelude <- readFile stdlibpathprelude
   hscode <- readFile filein
   compileToModule filein
-                  config
+                  config { configDirectoryIncludes = configDirectoryIncludes config ++ [srcdir] }
                   raw
                   compileToplevelModule
-                  (hscode ++ "\n" ++ stdlib ++ "\n" ++ strip stdlibprelude)
-
-  where strip = unlines . dropWhile (/="-- START") . lines
+                  (hscode ++ "\n" ++ stdlib)
 
 -- | Compile the given module to a runnable module.
 compileToModule :: (Show from,Show to,CompilesTo from to)
@@ -114,7 +111,7 @@ compileToModule filepath config raw with hscode = do
           ,if not (configLibrary config)
               then unlines [";"
                            ,"var main = new " ++ modulename ++ "();"
-                           ,"main._(main.main);"
+                           ,"main._(main." ++ modulename ++ "$main);"
                            ]
               else ""
           ]
@@ -168,3 +165,5 @@ showCompileError e =
     Couldn'tFindImport i places ->
       "could not find an import in the path: " ++ prettyPrint i ++ ", \n" ++
       "searched in these places: " ++ intercalate ", " places
+    UnableResolveUnqualified name -> "unable to resolve unqualified name " ++ prettyPrint name
+    UnableResolveQualified qname -> "unable to resolve qualified names " ++ prettyPrint qname

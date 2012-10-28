@@ -46,12 +46,18 @@ stmtsThunk stmts = JsNew JsThunk [JsFun [] stmts Nothing]
 uniqueNames :: [JsName]
 uniqueNames = map JsParam [1::Integer ..]
 
+-- | Qualify a name for the current module.
+qualify :: Name -> Compile QName
+qualify name = do
+  modulename <- gets stateModuleName
+  return (Qual modulename name)
+
 -- | Make a top-level binding.
-bindToplevel :: SrcLoc -> Bool -> QName -> JsExp -> Compile JsStmt
+bindToplevel :: SrcLoc -> Bool -> Name -> JsExp -> Compile JsStmt
 bindToplevel srcloc toplevel name expr = do
   exportAll <- gets stateExportAll
-  when (toplevel && exportAll) $ emitExport (EVar name)
-  return (JsMappedVar srcloc (JsNameVar name) expr)
+  when (toplevel && exportAll) $ emitExport (EVar (UnQual name))
+  return (JsMappedVar srcloc (JsNameVar (UnQual name)) expr)
 
 -- | Emit exported names.
 emitExport :: ExportSpec -> Compile ()

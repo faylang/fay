@@ -30,7 +30,7 @@ import           Safe
 
 -- | Compile an FFI call.
 compileFFI :: SrcLoc -- ^ Location of the original FFI decl.
-           -> QName  -- ^ Name of the to-be binding.
+           -> Name  -- ^ Name of the to-be binding.
            -> String -- ^ The format string.
            -> Type   -- ^ Type signature.
            -> Compile [JsStmt]
@@ -53,23 +53,23 @@ compileFFI srcloc name formatstr sig = do
         returnType = last funcFundamentalTypes
 
 -- Make a Fay→JS encoder.
-emitFayToJs :: QName -> [([QName], BangType)] -> Compile ()
+emitFayToJs :: Name -> [([Name],BangType)] -> Compile ()
 emitFayToJs name (explodeFields -> fieldTypes) =
   modify $ \s -> s { stateFayToJs = translator : stateFayToJs s }
 
   where
-    translator = JsIf (JsInstanceOf (JsName transcodingObjForced) (JsConstructor name))
+    translator = JsIf (JsInstanceOf (JsName transcodingObjForced) (JsConstructor (UnQual name)))
                       [JsEarlyReturn (JsObj (("instance",JsLit (JsStr (printJSString name)))
                                              : zipWith declField [0..] fieldTypes))]
                       []
     -- Declare/encode Fay→JS field
-    declField :: Int -> (QName,BangType) -> (String,JsExp)
+    declField :: Int -> (Name,BangType) -> (String,JsExp)
     declField _i (fname,typ) =
       (prettyPrint fname
       ,fayToJs (case argType (bangType typ) of
                  known -> typeRep known)
                (force (JsGetProp (JsName transcodingObjForced)
-                                 (JsNameVar fname))))
+                                 (JsNameVar (UnQual fname)))))
 
 transcodingObj :: JsName
 transcodingObj = JsNameVar "obj"
@@ -223,7 +223,7 @@ jsToFayDispatcher cases =
           JsEarlyReturn (JsName transcodingObj)
 
 -- Make a JS→Fay decoder
-emitJsToFay ::  QName -> [([QName], BangType)] -> Compile ()
+emitJsToFay ::  Name -> [([Name], BangType)] -> Compile ()
 emitJsToFay name (explodeFields -> fieldTypes) =
   modify $ \s -> s { stateJsToFay = translator : stateJsToFay s }
 
@@ -231,11 +231,11 @@ emitJsToFay name (explodeFields -> fieldTypes) =
     translator =
       JsIf (JsEq (JsGetPropExtern (JsName transcodingObj) "instance")
                  (JsLit (JsStr (printJSString name))))
-           [JsEarlyReturn (JsNew (JsConstructor name)
+           [JsEarlyReturn (JsNew (JsConstructor (UnQual name))
                                  (map decodeField fieldTypes))]
            []
     -- Decode JS→Fay field
-    decodeField :: (QName,BangType) -> JsExp
+    decodeField :: (Name,BangType) -> JsExp
     decodeField (fname,typ) =
       jsToFay (argType (bangType typ))
               (JsGetPropExtern (JsName transcodingObj)

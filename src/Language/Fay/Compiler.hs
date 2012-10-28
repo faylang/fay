@@ -22,26 +22,24 @@ module Language.Fay.Compiler
   ,compileToplevelModule)
   where
 
-import           Language.Fay.Compiler.FFI
-import           Language.Fay.Compiler.Misc
-import           Language.Fay.Print         (printJSString)
-import           Language.Fay.Types
+import Language.Fay.Compiler.FFI
+import Language.Fay.Compiler.Misc
+import Language.Fay.Print         (printJSString)
+import Language.Fay.Types
 
-import           Control.Applicative
-import           Control.Arrow
-import           Control.Monad.Error
-import           Control.Monad.IO
-import           Control.Monad.State
-import           Data.Default               (def)
-import           Data.List
-import           Data.Maybe
-import           Data.Word
-import           Language.Haskell.Exts
-import           System.Directory           (doesFileExist)
-import           System.FilePath            ((</>))
-import           System.IO
-import           System.Process.Extra
-import           System.Random
+import Control.Applicative
+import Control.Monad.Error
+import Control.Monad.IO
+import Control.Monad.State
+import Data.Default               (def)
+import Data.List
+import Data.List.Extra
+import Data.Maybe
+import Language.Haskell.Exts
+import System.Directory           (doesFileExist)
+import System.FilePath            ((</>))
+import System.IO
+import System.Process.Extra
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -182,17 +180,18 @@ initialPass_dataDecl _ _decl constructors =
   forM_ constructors $ \(QualConDecl _ _ _ condecl) ->
     case condecl of
       ConDecl name types -> do
-        let fields =  map (UnQual . Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
-        addRecordState (UnQual name) fields
+        let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
+        addRecordState name fields
       InfixConDecl _t1 name _t2 ->
-        addRecordState (UnQual name) ["slot1", "slot2"]
+        addRecordState name ["slot1", "slot2"]
       RecDecl name fields' -> do
         let fields = concatMap fst fields'
-        addRecordState (UnQual name) (map UnQual fields)
+        addRecordState name fields
 
   where
-    addRecordState :: QName -> [QName] -> Compile ()
-    addRecordState name fields = modify $ \s -> s { stateRecords = (name,fields) : stateRecords s }
+    addRecordState :: Name -> [Name] -> Compile ()
+    addRecordState name fields = modify $ \s -> s
+      { stateRecords = (UnQual name,map UnQual fields) : stateRecords s }
 
 --------------------------------------------------------------------------------
 -- Typechecking
@@ -320,7 +319,7 @@ compilePatBind toplevel sig pat =
     PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
       case ffiExp rhs of
         Just formatstr -> case sig of
-          Just sig -> compileFFI srcloc (UnQual ident) formatstr sig
+          Just sig -> compileFFI srcloc ident formatstr sig
           Nothing  -> throwError (FfiNeedsTypeSig pat)
         _ -> compileUnguardedRhs srcloc toplevel ident rhs
     PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) bdecls ->
@@ -334,7 +333,7 @@ compilePatBind toplevel sig pat =
 compileUnguardedRhs :: SrcLoc -> Bool -> Name -> Exp -> Compile [JsStmt]
 compileUnguardedRhs srcloc toplevel ident rhs = do
   body <- compileExp rhs
-  bind <- bindToplevel srcloc toplevel (UnQual ident) (thunk body)
+  bind <- bindToplevel srcloc toplevel ident (thunk body)
   return [bind]
 
 convertGADT :: GadtDecl -> QualConDecl
@@ -356,53 +355,50 @@ compileDataDecl toplevel _decl constructors =
     forM constructors $ \(QualConDecl srcloc _ _ condecl) ->
       case condecl of
         ConDecl name types  -> do
-          let fields =  map (UnQual . Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
+          let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
               fields' = (zip (map return fields) types)
-          cons <- makeConstructor (UnQual name) fields
+          cons <- makeConstructor name fields
           func <- makeFunc name fields
-          emitFayToJs (UnQual name) fields'
-          emitJsToFay (UnQual name) fields'
+          emitFayToJs name fields'
+          emitJsToFay name fields'
           return [cons, func]
         InfixConDecl t1 name t2 -> do
           let slots = ["slot1","slot2"]
               fields = zip (map return slots) [t1, t2]
-          cons <- makeConstructor (UnQual name) slots
+          cons <- makeConstructor name slots
           func <- makeFunc name slots
-          emitFayToJs (UnQual name) fields
-          emitJsToFay (UnQual name) fields
+          emitFayToJs name fields
+          emitJsToFay name fields
           return [cons, func]
         RecDecl name fields' -> do
-          let fields = map UnQual (concatMap fst fields')
-          cons <- makeConstructor (UnQual name) fields
+          let fields = concatMap fst fields'
+          cons <- makeConstructor name fields
           func <- makeFunc name fields
           funs <- makeAccessors srcloc fields
-          emitFayToJs (UnQual name) (map (first (map UnQual )) fields')
-          emitJsToFay (UnQual name) (map (first (map UnQual )) fields')
+          emitFayToJs name fields'
+          emitJsToFay name fields'
           return (cons : func : funs)
 
   where
     -- Creates a constructor R_RecConstr for a Record
-    makeConstructor name fields = do
-          let fieldParams = map JsNameVar fields
-          return $
-            JsVar (JsConstructor name) $
-              JsFun fieldParams
-                  (flip map fields $ \field ->
-                     JsSetProp JsThis (JsNameVar field) (JsName (JsNameVar field)))
-                Nothing
+    makeConstructor :: Name -> [Name] -> Compile JsStmt
+    makeConstructor name (map (JsNameVar . UnQual) -> fields) = do
+      return $
+        JsVar (JsConstructor (UnQual name)) $
+          JsFun fields (for fields $ \field -> JsSetProp JsThis field (JsName field))
+            Nothing
 
     -- Creates a function to initialize the record by regular application
-    makeFunc :: Name -> [QName] -> Compile JsStmt
-    makeFunc name fields = do
-          let fieldParams = map JsNameVar fields
-          let fieldExps = map (JsName . JsNameVar) fields
+    makeFunc :: Name -> [Name] -> Compile JsStmt
+    makeFunc name (map (JsNameVar . UnQual) -> fields) = do
+          let fieldExps = map JsName fields
           return $ JsVar (JsNameVar (UnQual name)) $
             foldr (\slot inner -> JsFun [slot] [] (Just inner))
               (thunk $ JsNew (JsConstructor (UnQual name)) fieldExps)
-              fieldParams
+              fields
 
     -- Creates getters for a RecDecl's values
-    makeAccessors :: SrcLoc -> [QName] -> Compile [JsStmt]
+    makeAccessors :: SrcLoc -> [Name] -> Compile [JsStmt]
     makeAccessors srcloc fields =
       forM fields $ \name ->
            bindToplevel srcloc
@@ -411,7 +407,7 @@ compileDataDecl toplevel _decl constructors =
                         (JsFun [JsNameVar "x"]
                                []
                                (Just (thunk (JsGetProp (force (JsName (JsNameVar "x")))
-                                                       (JsNameVar name)))))
+                                                       (JsNameVar (UnQual name))))))
 
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]
@@ -420,7 +416,7 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
   pats <- fmap optimizePatConditions (mapM compileCase matches)
   bind <- bindToplevel srcloc
                        toplevel
-                       (UnQual name)
+                       name
                        (foldr (\arg inner -> JsFun [arg] [] (Just inner))
                               (stmtsThunk (concat pats ++ basecase))
                               args)

@@ -7,6 +7,7 @@ import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
 data C = C { a :: Int, b :: Int, c :: Int, d :: Int }
+instance Foreign C
 
 data X = X { foo :: Int } | Y { foo :: Int }
 

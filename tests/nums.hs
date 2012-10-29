@@ -1,15 +1,10 @@
-
-
 module Nums where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import           Language.Fay.FFI
+import           Language.Fay.Prelude
 
-negNum = -10
+main :: Fay ()
+main = print (-10 :: Double)
 
-main = Fay ()
-main = print negNum
-
-
-print :: (Num a) => a -> Fay ()
+print :: Foreign f => f -> Fay ()
 print = ffi "console.log(%1)"

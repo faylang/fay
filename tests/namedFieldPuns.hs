@@ -6,6 +6,7 @@ import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
 data SomeRec = SomeRec { a :: Integer, b :: Integer } | Y | X
+instance Foreign SomeRec
 
 fun :: SomeRec -> SomeRec
 fun SomeRec{a} = SomeRec{a=a+1, b=10}

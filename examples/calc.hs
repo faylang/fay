@@ -5,7 +5,7 @@
 --
 
 {-# OPTIONS -fno-warn-orphans -fno-warn-type-defaults -fno-warn-unused-do-bind #-}
-{-# LANGUAGE EmptyDataDecls    #-}
+{-# LANGUAGE EmptyDataDecls #-}
 
 
 module Calc (main) where
@@ -104,8 +104,6 @@ onClick = ffi "%2['click'](%1)"
 
 --------------------------------------------------------------------------------
 -- Utilities
-
-instance (Foreign a) => Foreign (Maybe a)
 
 parseDouble :: Int -> String -> Double
 parseDouble = ffi "parseFloat(%2,%1) || 0"

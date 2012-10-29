@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for i in `ls tests/*.hs`; do
+  echo $i;
+  ghc -package fay -XNoImplicitPrelude -fno-code -itests $i
+done

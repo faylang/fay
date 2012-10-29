@@ -1,6 +1,5 @@
-{-# LANGUAGE NoImplicitPrelude,
-             RecordWildCards,
-             NamedFieldPuns #-}
+{-# LANGUAGE NamedFieldPuns  #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module RecordWildcards where
 
@@ -31,7 +30,7 @@ main = do
     -- TODO: is there a way to test for exceptions ?
     --let y = Y{foo=6}
     --print_int (test2 y)
-    
+
 
 print_int :: Int -> Fay ()
 print_int = ffi "console.log(%1)"

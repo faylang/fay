@@ -1,6 +1,6 @@
 -- | This is to test tail-recursive calls are iterative.
 
-{-# LANGUAGE NoImplicitPrelude #-}
+
 
 module Tail where
 

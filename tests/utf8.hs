@@ -1,5 +1,5 @@
 {-# LANGUAGE EmptyDataDecls    #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+
 -- | Unicode test.
 
 module Utf8 where

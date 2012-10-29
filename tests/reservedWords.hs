@@ -1,5 +1,5 @@
 {-# LANGUAGE EmptyDataDecls    #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+
 
 module ReservedWords where
 

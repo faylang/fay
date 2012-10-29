@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+
 
 -- !!! count the number of solutions to the "n queens" problem.
 

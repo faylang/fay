@@ -6,7 +6,7 @@
 
 {-# OPTIONS -fno-warn-orphans -fno-warn-type-defaults -fno-warn-unused-do-bind #-}
 {-# LANGUAGE EmptyDataDecls    #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+
 
 module Calc (main) where
 

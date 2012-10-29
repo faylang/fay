@@ -1,7 +1,7 @@
 -- | Simple example interfacing with node.
 
 {-# LANGUAGE EmptyDataDecls    #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+
 
 module Test where
 

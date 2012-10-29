@@ -1,8 +1,8 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE ViewPatterns          #-}
 {-# OPTIONS -Wall -fno-warn-name-shadowing -fno-warn-orphans #-}
@@ -34,8 +34,8 @@ import           Control.Monad.State
 import           Data.Default               (def)
 import           Data.List
 import           Data.List.Extra
-import           Data.Map (Map)
-import qualified Data.Map as M
+import           Data.Map                   (Map)
+import qualified Data.Map                   as M
 import           Data.Maybe
 import           Language.Haskell.Exts
 import           System.Directory           (doesFileExist)
@@ -203,9 +203,9 @@ initialPass_dataDecl _ _decl constructors =
 typecheck :: [FilePath] -> [String] -> Bool -> String -> Compile ()
 typecheck includeDirs ghcFlags wall fp = do
   res <- liftIO $ readAllFromProcess' "ghc" (
-    ["-fno-code", "-package fay", fp] ++ map ("-i" ++) includeDirs ++ ghcFlags ++ wallF) ""
+    ["-fno-code", "-package fay", "-XNoImplicitPrelude", fp] ++ map ("-i" ++) includeDirs ++ ghcFlags ++ wallF) ""
   either error (warn . fst) res
-  where
+   where
     wallF | wall = ["-Wall"]
           | otherwise = []
 
@@ -214,8 +214,7 @@ typecheck includeDirs ghcFlags wall fp = do
 
 -- | Compile Haskell module.
 compileModule :: Module -> Compile [JsStmt]
-compileModule (Module _ modulename pragmas Nothing exports imports decls) = do
-  checkModulePragmas pragmas
+compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
   modify $ \s -> s { stateModuleName = modulename
                    , stateExportAll = isNothing exports
                    }
@@ -240,15 +239,6 @@ warn "" = return ()
 warn w = do
   shouldWarn <- configWarn <$> gets stateConfig
   when shouldWarn . liftIO . hPutStrLn stderr $ "Warning: " ++ w
-
-checkModulePragmas :: [ModulePragma] -> Compile ()
-checkModulePragmas pragmas =
-  when (not $ any noImplicitPrelude pragmas) $
-    warn "NoImplicitPrelude not specified"
-  where
-    noImplicitPrelude :: ModulePragma -> Bool
-    noImplicitPrelude (LanguagePragma _ names) = any (== (Ident "NoImplicitPrelude")) names
-    noImplicitPrelude _ = False
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
 

@@ -1,7 +1,7 @@
 -- | Mutable references.
 
 {-# LANGUAGE EmptyDataDecls    #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+
 
 module Ref where
 

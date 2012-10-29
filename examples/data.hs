@@ -4,7 +4,7 @@
 -- $ node examples/data.js
 -- (Foo { x = 123, y = "abc", z = (Bar) })
 
-{-# LANGUAGE NoImplicitPrelude #-}
+
 
 module Data where
 

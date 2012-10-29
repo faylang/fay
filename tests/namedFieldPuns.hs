@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude, NamedFieldPuns #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module NamedFieldPuns where
 

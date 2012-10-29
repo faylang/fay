@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+
 
 -- compile with fay --html-wrapper
 -- error thrown as soon as HTML page is loaded:

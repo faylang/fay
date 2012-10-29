@@ -2,11 +2,11 @@
 --
 -- Compile with
 -- $ fay -p --html-wrapper --html-js-lib jquery.min.js examples/calc.hs
+-- You also need to download jquery.min.js.
 --
 
 {-# OPTIONS -fno-warn-orphans -fno-warn-type-defaults -fno-warn-unused-do-bind #-}
 {-# LANGUAGE EmptyDataDecls #-}
-
 
 module Calc (main) where
 
@@ -24,6 +24,7 @@ main = do
         ,[enter 4, enter 5, enter 6, ("*",operator (*))]
         ,[enter 1, enter 2, enter 3, ("-",operator (-))]
         ,[("C",clear), enter 0, ("=",calculate), ("+",operator (+))]]
+      enter :: Double -> (String,Fay ())
       enter n = (show n,do current <- getVal display
                            addit <- readRef appendMore
                            if addit

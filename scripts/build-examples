@@ -1,1 +1,2 @@
+curl http://code.jquery.com/jquery-latest.min.js -o examples/jquery.min.js
 for i in `ls examples/*.hs`; do echo $i;dist/build/fay/fay -p $i --no-ghc; done

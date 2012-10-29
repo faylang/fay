@@ -7,18 +7,16 @@ module Language.Fay.Compiler.Misc where
 
 import           Language.Fay.Types
 
+import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.State
-
-
-
 import           Data.List
-import qualified Data.Map as M
+import qualified Data.Map                     as M
 import           Data.Maybe
 import           Data.String
-import           Language.Haskell.Exts (ParseResult(..))
+import           Language.Haskell.Exts        (ParseResult(..))
 import           Language.Haskell.Exts.Syntax
-import           Prelude hiding (exp)
+import           Prelude                      hiding (exp)
 
 -- | Extra the string from an ident.
 unname :: Name -> String
@@ -116,6 +114,7 @@ bindToplevel :: SrcLoc -> Bool -> Name -> JsExp -> Compile JsStmt
 bindToplevel srcloc toplevel name expr = do
   qname <- (if toplevel then qualify else return . UnQual) name
   exportAll <- gets stateExportAll
+  -- If exportAll is set this declaration has not been added to stateExports yet.
   when (toplevel && exportAll) $ emitExport (EVar qname)
   return (JsMappedVar srcloc (JsNameVar qname) expr)
 
@@ -144,12 +143,24 @@ bindVar name = do
 emitExport :: ExportSpec -> Compile ()
 emitExport spec =
   case spec of
-    EVar (UnQual name) -> qualify name >>= emitExport . EVar
+    EVar (UnQual name) -> emitVar name
     EVar name@Qual{} -> modify $ \s -> s { stateExports = name : stateExports s }
+    EThingAll (UnQual name) -> do
+      emitVar name
+      r <- lookup (UnQual name) <$> gets stateRecords
+      maybe (return ()) (mapM_ (\(UnQual n) -> emitVar n)) r
+    EThingWith (UnQual name) ns -> do
+      emitVar name
+      mapM_ emitCName ns
+    EAbs _ -> return () -- Type only, skip
     _ -> do
       name <- gets stateModuleName
       unless (name == "Language.Fay.Stdlib") $
         throwError (UnsupportedExportSpec spec)
+ where
+   emitVar n = qualify n >>= emitExport . EVar
+   emitCName (VarName n) = emitVar n
+   emitCName (ConName n) = emitVar n
 
 -- | Force an expression in a thunk.
 force :: JsExp -> JsExp

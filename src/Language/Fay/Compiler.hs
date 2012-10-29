@@ -218,6 +218,8 @@ compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
   modify $ \s -> s { stateModuleName = modulename
                    , stateExportAll = isNothing exports
                    }
+  -- If an export list is given we populate it beforehand,
+  -- if not then bindToplevel will export each declaration when it's visited.
   mapM_ emitExport (fromMaybe [] exports)
   imported <- fmap concat (mapM (compileImport . translateModuleName) imports)
   current <- compileDecls True decls

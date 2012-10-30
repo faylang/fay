@@ -66,16 +66,15 @@ compileFromToAndGenerateHtml config filein fileout = do
 compileFile :: CompileConfig -> FilePath -> IO (Either CompileError String)
 compileFile config filein = do
   runtime <- getDataFileName "js/runtime.js"
-  stdlibpath <- getDataFileName "hs/stdlib.hs"
   srcdir <- fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
   raw <- readFile runtime
-  stdlib <- readFile stdlibpath
   hscode <- readFile filein
   compileToModule filein
-                  config { configDirectoryIncludes = configDirectoryIncludes config ++ [srcdir] }
+                  config { configDirectoryIncludes = configDirectoryIncludes config ++ [srcdir]
+                         }
                   raw
                   compileToplevelModule
-                  (hscode ++ "\n" ++ stdlib)
+                  hscode
 
 -- | Compile the given module to a runnable module.
 compileToModule :: (Show from,Show to,CompilesTo from to)

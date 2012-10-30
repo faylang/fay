@@ -243,17 +243,21 @@ warn w = do
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
 
 findImport :: [FilePath] -> ModuleName -> Compile (FilePath,String)
-findImport alldirs = go alldirs where
+findImport alldirs mname = go alldirs mname where
   go (dir:dirs) name = do
     exists <- io (doesFileExist path)
     if exists
-      then fmap (path,) (io (readFile path))
+      then fmap (path,) (fmap stdlibHack (io (readFile path)))
       else go dirs name
     where
       path = dir </> replace '.' '/' (prettyPrint name) ++ ".hs"
       replace c r = map (\x -> if x == c then r else x)
   go [] name =
     throwError $ Couldn'tFindImport name alldirs
+
+  stdlibHack
+    | mname == ModuleName "Language.Fay.Stdlib" = \s -> s ++ "\n\ndata Maybe a = Just a | Nothing"
+    | otherwise = id
 
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]

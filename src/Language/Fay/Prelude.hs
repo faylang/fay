@@ -30,10 +30,12 @@ module Language.Fay.Prelude
   ,(&&)
   ,fail
   ,return
+  ,sync
   ,module Language.Fay.Stdlib)
   where
 
 import           Language.Fay.Stdlib
+import           Language.Fay.FFI (Foreign)
 import           Language.Fay.Types  (Fay)
 import           Data.Data
 import           Prelude             (Bool(..), Char, Double, Eq(..), Int, Integer, Maybe(..), Monad,
@@ -53,3 +55,6 @@ fail = error "Language.Fay.Prelude.fail: Used fail outside JS."
 
 return :: a -> Fay a
 return = error "Language.Fay.Prelude.return: Used return outside JS."
+
+sync :: (Foreign a) => ((a -> Fay ()) -> Fay ()) -> Fay a
+sync = error "Language.Fay.Prelude.sync: Used sync outside JS."

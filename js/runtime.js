@@ -45,26 +45,30 @@ function Fay$$Monad(value){
     this.value = value;
 }
 
-// >>
 // This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
+// >>
 function Fay$$then(a){
     return function(b){
-        return new $(function(){
-            _(a,true);
-            return b;
-        });
+      return Fay$$bind(a)(function(_){
+        return b;
+      });
     };
 }
 
 // >>=
 // This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
 function Fay$$bind(m){
-    return function(f){
-        return new $(function(){
-            var monad = _(m,true);
-            return f(monad.value);
-        });
-    };
+  return function(f){
+    return new $(function(){
+      var monad = _(m,true);
+      if(monad.cont) {
+        return _(monad.cont(f));
+      }
+      else {
+        return f(monad.value);
+      }
+    });
+  };
 }
 
 // This is used directly from Fay, but can be rebound or shadowed.
@@ -72,6 +76,14 @@ function Fay$$$_return(a){
     return new Fay$$Monad(a);
 }
 
+// This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
+function Fay$$sync($p1){
+  return new $(function(){
+    return { cont: $p1 };
+  });
+};
+
+// Unit: ().
 var Fay$$unit = null;
 
 /*******************************************************************************

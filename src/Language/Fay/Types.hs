@@ -113,6 +113,7 @@ primOps =
   [(Symbol ">>",[ScopeImported "Fay$" (Just "then")])
   ,(Symbol ">>=",[ScopeImported "Fay$" (Just "bind")])
   ,(Ident "return",[ScopeImported "Fay$" (Just "return")])
+  ,(Ident "sync",[ScopeImported "Fay$" (Just "sync")])
   ,(Symbol "*",[ScopeImported "Fay$" (Just "mult")])
   ,(Symbol "*",[ScopeImported "Fay$" (Just "mult")])
   ,(Symbol "+",[ScopeImported "Fay$" (Just "add")])

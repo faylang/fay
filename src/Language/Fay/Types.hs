@@ -2,8 +2,8 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 -- | All Fay types and instances.
 
@@ -27,14 +27,16 @@ module Language.Fay.Types
   ,Mapping(..))
   where
 
-import Control.Applicative
-import Control.Monad.Error    (Error, ErrorT, MonadError)
-import Control.Monad.Identity (Identity)
-import Control.Monad.State
-import Data.Default
-import Data.Map as M
-import Data.String
-import Language.Haskell.Exts
+import           Control.Applicative
+import           Control.Monad.Error    (Error, ErrorT, MonadError)
+import           Control.Monad.Identity (Identity)
+import           Control.Monad.State
+import           Data.Default
+import           Data.Map               as M
+import           Data.String
+import           Language.Haskell.Exts
+
+import           Paths_fay
 
 --------------------------------------------------------------------------------
 -- Compiler types
@@ -69,7 +71,7 @@ data CompileState = CompileState
   , stateRecords     :: [(QName,[QName])]
   , stateFayToJs     :: [JsStmt]
   , stateJsToFay     :: [JsStmt]
-  , stateImported    :: [ModuleName]
+  , stateImported    :: [(ModuleName,FilePath)]
   , stateNameDepth   :: Integer
   , stateScope       :: Map Name [NameScope]
 } deriving (Show)
@@ -82,8 +84,12 @@ data NameScope = ScopeImported ModuleName (Maybe Name)
   deriving (Show,Eq)
 
 -- | The default compiler state.
-defaultCompileState :: CompileConfig -> CompileState
-defaultCompileState config = CompileState {
+defaultCompileState :: CompileConfig -> IO CompileState
+defaultCompileState config = do
+  ffi <- getDataFileName "src/Language/Fay/Stdlib.hs"
+  types <- getDataFileName "src/Language/Fay/Types.hs"
+  prelude <- getDataFileName "src/Language/Fay/Prelude.hs"
+  return $ CompileState {
     stateConfig = config
   , stateExports = []
   , stateExportAll = True
@@ -91,7 +97,7 @@ defaultCompileState config = CompileState {
   , stateRecords = [("Nothing",[]),("Just",["slot1"])]
   , stateFayToJs = []
   , stateJsToFay = []
-  , stateImported = ["Language.Fay.FFI","Language.Fay.Types","Prelude"]
+  , stateImported = [("Language.Fay.FFI",ffi),("Language.Fay.Types",types),("Prelude",prelude)]
   , stateNameDepth = 1
   , stateFilePath = "<unknown>"
   , stateScope = M.fromList primOps

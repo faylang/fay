@@ -1,7 +1,7 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE ViewPatterns          #-}
 
@@ -14,16 +14,17 @@ module Language.Fay
   ,showCompileError)
    where
 
-import Language.Fay.Compiler    (compileToplevelModule, compileViaStr)
-import Language.Fay.Print
-import Language.Fay.Types
+import           Language.Fay.Compiler        (compileToplevelModule,
+                                               compileViaStr)
+import           Language.Fay.Print
+import           Language.Fay.Types
 
-import Control.Monad
-import Data.List
-import Language.Haskell.Exts.Syntax
-import Language.Haskell.Exts (prettyPrint)
-import Paths_fay
-import System.FilePath
+import           Control.Monad
+import           Data.List
+import           Language.Haskell.Exts        (prettyPrint)
+import           Language.Haskell.Exts.Syntax
+import           Paths_fay
+import           System.FilePath
 
 -- | Compile the given file and write the output to the given path, or
 -- if nothing given, stdout.

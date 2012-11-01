@@ -57,8 +57,9 @@ compileViaStr :: (Show from,Show to,CompilesTo from to)
               -> (from -> Compile to)
               -> String
               -> IO (Either CompileError (PrintState,CompileState))
-compileViaStr filepath config with from =
-  runCompile ((defaultCompileState config) { stateFilePath = filepath })
+compileViaStr filepath config with from = do
+  cs <- defaultCompileState config
+  runCompile (cs { stateFilePath = filepath })
              (parseResult (throwError . uncurry ParseError)
                           (fmap (\x -> execState (runPrinter (printJS x)) printConfig) . with)
                           (parseFay filepath from))
@@ -121,7 +122,8 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
     typecheck (configDirectoryIncludes cfg) [] (configWall cfg) $
       fromMaybe modulename $ configFilePath cfg
   initialPass mod
-  modify $ \s -> s { stateImported = stateImported (defaultCompileState def) }
+  cs <- liftIO $ defaultCompileState def
+  modify $ \s -> s { stateImported = stateImported cs }
   stmts <- compileModule mod
   fay2js <- gets (fayToJsDispatcher . stateFayToJs)
   js2fay <- gets (jsToFayDispatcher . stateJsToFay)
@@ -140,18 +142,16 @@ initialPass mod = throwError (UnsupportedModuleSyntax mod)
 initialPass_import :: ImportDecl -> Compile ()
 initialPass_import (ImportDecl _ "Prelude" _ _ _ _ _) = return ()
 initialPass_import (ImportDecl _ name False _ Nothing Nothing Nothing) = do
-  void $ unlessImported name $ do
-    dirs <- configDirectoryIncludes <$> gets stateConfig
-    (filepath,contents) <- findImport dirs name
-    cs <- gets id
-    result <- liftIO $ initialPass_records filepath cs initialPass contents
+  void $ unlessImported name $ \filepath contents -> do
+    state <- gets id
+    result <- liftIO $ initialPass_records filepath state initialPass contents
     case result of
-      Right ((),state) -> do
+      Right ((),st) -> do
         -- Merges the state gotten from passing through an imported
         -- module with the current state. We can assume no duplicate
         -- records exist since GHC would pick that up.
-        modify $ \s -> s { stateRecords = stateRecords state
-                         , stateImported = stateImported state
+        modify $ \s -> s { stateRecords = stateRecords st
+                         , stateImported = stateImported st
                          }
       Left err -> throwError err
     return []
@@ -265,9 +265,7 @@ findImport alldirs mname = go alldirs mname where
 compileImport :: ImportDecl -> Compile [JsStmt]
 compileImport (ImportDecl _ "Prelude" _ _ _ _ _) = return []
 compileImport (ImportDecl _ name False _ Nothing Nothing Nothing) = do
-  unlessImported name $ do
-    dirs <- configDirectoryIncludes <$> gets stateConfig
-    (filepath,contents) <- findImport dirs name
+  unlessImported name $ \filepath contents -> do
     state <- gets id
     result <- liftIO $ compileToAst filepath state { stateModuleName = name } compileModule contents
     case result of
@@ -298,14 +296,16 @@ addExportsToScope exports mapping = foldr copy mapping exports where
       Special{}         -> error $ "Don't be silly."
 
 -- | Don't re-import the same modules.
-unlessImported :: ModuleName -> Compile [JsStmt] -> Compile [JsStmt]
+unlessImported :: ModuleName -> (FilePath -> String -> Compile [JsStmt]) -> Compile [JsStmt]
 unlessImported name importIt = do
   imported <- gets stateImported
-  if elem name imported
-     then return []
-     else do
-       modify $ \s -> s { stateImported = name : imported }
-       importIt
+  case lookup name imported of
+    Just _ -> return []
+    Nothing -> do
+      dirs <- configDirectoryIncludes <$> gets stateConfig
+      (filepath,contents) <- findImport dirs name
+      modify $ \s -> s { stateImported = (name,filepath) : imported }
+      importIt filepath contents
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [Decl] -> Compile [JsStmt]

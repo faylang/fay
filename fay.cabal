@@ -162,7 +162,7 @@ library
                      groom,
                      random
 
-  if flag(devel)
+  if !flag(devel)
     build-depends:
                      -- Requirements for the executables which
                      -- `cabal-dev ghci' needs.

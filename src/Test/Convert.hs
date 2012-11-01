@@ -51,6 +51,10 @@ readTests =
   ,ReadTest $ LabelledRecord2 { bar = 123, bob = 66.6 }
   ,ReadTest $ FooBar "Tinkie Winkie" "Humanzee" Zot
   ,ReadTest $ Bar $ Foo "one" "two"
+  ,ReadTest $ StepcutFoo 123
+  ,ReadTest $ StepcutBar (StepcutFoo 456)
+  ,ReadTest $ StepcutFoo' 789
+  ,ReadTest $ Baz (StepcutFoo' 10112)
   ]
 
 -- | Test cases.
@@ -120,3 +124,15 @@ data SomeThing =
 -- | This triggers order difference. Go figure.
 data Zot = Zot
   deriving (Read,Data,Typeable,Show,Eq)
+
+data StepcutFoo = StepcutFoo { unStepcutFoo :: Int }
+    deriving (Eq, Show, Read, Typeable, Data)
+
+data StepcutBar = StepcutBar StepcutFoo
+    deriving (Eq, Show, Read, Typeable, Data)
+
+data StepcutFoo' = StepcutFoo' Int
+    deriving (Eq, Show, Read, Typeable, Data)
+
+data Baz = Baz StepcutFoo'
+    deriving (Eq, Show, Read, Typeable, Data)

@@ -103,12 +103,6 @@ qualify name = do
   modulename <- gets stateModuleName
   return (Qual modulename name)
 
--- | Qualify a name for the current module.
-qualifyQ :: QName -> Compile QName
-qualifyQ (Qual _ name) = qualify name
-qualifyQ (UnQual name) = qualify name
-qualifyQ e = return e
-
 -- | Make a top-level binding.
 bindToplevel :: SrcLoc -> Bool -> Name -> JsExp -> Compile JsStmt
 bindToplevel srcloc toplevel name expr = do

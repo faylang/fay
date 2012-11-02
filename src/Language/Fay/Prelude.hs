@@ -30,7 +30,6 @@ module Language.Fay.Prelude
   ,(&&)
   ,fail
   ,return
-  ,sync
   ,module Language.Fay.Stdlib)
   where
 
@@ -55,6 +54,3 @@ fail = error "Language.Fay.Prelude.fail: Used fail outside JS."
 
 return :: a -> Fay a
 return = error "Language.Fay.Prelude.return: Used return outside JS."
-
-sync :: (Foreign a) => ((a -> Fay ()) -> Fay ()) -> Fay a
-sync = error "Language.Fay.Prelude.sync: Used sync outside JS."

@@ -76,13 +76,6 @@ function Fay$$$_return(a){
     return new Fay$$Monad(a);
 }
 
-// This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
-function Fay$$sync($p1){
-  return new $(function(){
-    return { cont: $p1 };
-  });
-};
-
 // Unit: ().
 var Fay$$unit = null;
 

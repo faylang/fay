@@ -797,7 +797,7 @@ compilePAsPat exp name pat body = do
 compileRecConstr :: QName -> [FieldUpdate] -> Compile JsExp
 compileRecConstr name fieldUpdates = do
     -- var obj = new $_Type()
-    qname <- qualifyQ name
+    qname <- resolveName name
     let record = JsVar (JsNameVar name) (JsNew (JsConstructor qname) [])
     setFields <- liftM concat (forM fieldUpdates (updateStmt name))
     return $ JsApp (JsFun [] (record:setFields) (Just (JsName (JsNameVar name)))) []

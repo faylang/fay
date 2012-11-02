@@ -3,6 +3,7 @@ module Language.Fay.Stdlib
   (($)
   ,(++)
   ,(.)
+  ,(=<<)
   ,Ordering(..)
   ,show
   ,fromInteger
@@ -38,6 +39,7 @@ module Language.Fay.Stdlib
   ,otherwise
   ,prependToAll
   ,reverse
+  ,sequence
   ,snd
   ,sort
   ,sortBy
@@ -240,3 +242,15 @@ otherwise = True
 reverse :: [a] -> [a]
 reverse (x:xs) = reverse xs ++ [x]
 reverse [] = []
+
+(=<<) :: Monad m => (a -> m b) -> m a -> m b
+f =<< x = x >>= f
+infixl 1 =<<
+
+-- | Evaluate each action in the sequence from left to right,
+-- and collect the results.
+-- sequence :: [Fay a] -> Fay [a]
+sequence :: (Monad m) => [m a] -> m [a]
+sequence ms = foldr k (return []) ms
+            where
+              k m m' = do { x <- m; xs <- m'; return (x:xs) }

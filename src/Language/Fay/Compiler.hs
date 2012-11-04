@@ -217,6 +217,7 @@ compileModule :: Module -> Compile [JsStmt]
 compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
   modify $ \s -> s { stateModuleName = modulename
                    , stateExportAll = isNothing exports
+                   , stateExports = []
                    }
   -- If an export list is given we populate it beforehand,
   -- if not then bindToplevel will export each declaration when it's visited.
@@ -267,7 +268,7 @@ compileImport (ImportDecl _ "Prelude" _ _ _ _ _) = return []
 compileImport (ImportDecl _ name False _ Nothing Nothing Nothing) = do
   unlessImported name $ \filepath contents -> do
     state <- gets id
-    result <- liftIO $ compileToAst filepath state { stateModuleName = name } compileModule contents
+    result <- liftIO $ compileToAst filepath state compileModule contents
     case result of
       Right (stmts,state) -> do
         modify $ \s -> s { stateFayToJs  = stateFayToJs state

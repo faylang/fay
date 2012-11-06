@@ -869,12 +869,16 @@ compilePList [] body exp =
   return [JsIf (JsEq (force exp) JsNull) body []]
 compilePList pats body exp = do
   let forcedExp = force exp
-  foldM (\body (i,pat) -> compilePat (JsApp (JsApp (JsName (JsBuiltIn "index"))
+  stmts <- foldM (\body (i,pat) -> compilePat (JsApp (JsApp (JsName (JsBuiltIn "index"))
                                                    [JsLit (JsInt i)])
                                             [forcedExp])
                                      pat body)
         body
         (reverse (zip [0..] pats))
+  let patsLen = JsLit (JsInt (length pats))
+  return [JsIf (JsApp (JsName (JsBuiltIn "listLen")) [forcedExp,patsLen])
+               stmts
+               []]
 
 -- | Compile an infix pattern (e.g. cons and tuples.)
 compileInfixPat :: JsExp -> Pat -> [JsStmt] -> Compile [JsStmt]

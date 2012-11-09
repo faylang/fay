@@ -467,15 +467,19 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
             whereDecls' <- whereDecls match
             generateScope $ mapM (\(arg,pat) -> compilePat (JsName arg) pat []) (zip args pats)
             generateScope $ mapM compileLetDecl whereDecls'
-            exp  <- compileRhs rhs
+            rhsform <- compileRhs rhs
             body <- if null whereDecls'
-                      then return exp
+                      then return $ either id JsEarlyReturn rhsform
                       else do
                           binds <- mapM compileLetDecl whereDecls'
-                          return (JsApp (JsFun [] (concat binds) (Just exp)) [])
+                          return $ case rhsform of 
+                            Right exp -> 
+                              (JsEarlyReturn (JsApp (JsFun [] (concat binds) (Just exp)) []))
+                            Left stmt ->
+                              (JsEarlyReturn (JsApp (JsFun [] (concat binds ++ [stmt]) Nothing) []))
             foldM (\inner (arg,pat) ->
                     compilePat (JsName arg) pat inner)
-                  [JsEarlyReturn body]
+                  [body]
                   (zip args pats)
 
         whereDecls :: Match -> Compile [Decl]
@@ -489,18 +493,22 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
                                   (JsList (map JsName args))]
 
 -- | Compile a right-hand-side expression.
-compileRhs :: Rhs -> Compile JsExp
-compileRhs (UnGuardedRhs exp) = compileExp exp
-compileRhs (GuardedRhss rhss) = compileGuards rhss
+compileRhs :: Rhs -> Compile (Either JsStmt JsExp)
+compileRhs (UnGuardedRhs exp) = Right <$> compileExp exp
+compileRhs (GuardedRhss rhss) = Left <$> compileGuards rhss
 
 -- | Compile guards
-compileGuards :: [GuardedRhs] -> Compile JsExp
-compileGuards [] = return . JsThrowExp . JsLit . JsStr $ "Non-exhaustive guards"
-compileGuards ((GuardedRhs _ (Qualifier (Var (UnQual (Ident "otherwise"))):_) exp):_) = compileExp exp
+compileGuards :: [GuardedRhs] -> Compile JsStmt
+compileGuards ((GuardedRhs _ (Qualifier (Var (UnQual (Ident "otherwise"))):_) exp):_) =
+  (\e -> JsIf (JsLit (JsBool True)) [JsEarlyReturn e] []) <$> compileExp exp
 compileGuards (GuardedRhs _ (Qualifier guard:_) exp : rest) =
-  JsTernaryIf <$> fmap force (compileExp guard)
-              <*> compileExp exp
-              <*> compileGuards rest
+  makeIf <$> fmap force (compileExp guard) 
+         <*> compileExp exp 
+         <*> if null rest then (return []) else do
+           gs' <- compileGuards rest
+           return [gs']
+    where makeIf gs e gss = JsIf gs [JsEarlyReturn e] gss
+
 compileGuards rhss = throwError . UnsupportedRhs . GuardedRhss $ rhss
 
 -- | Compile Haskell expression.

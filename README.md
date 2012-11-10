@@ -35,7 +35,7 @@ To generate documentation (from within this directory):
 
 Try it out:
 
-    $ fay --autorun examples/console.hs
+    $ fay examples/console.hs
     $ node examples/console.js
     Hello, World!
 

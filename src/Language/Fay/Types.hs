@@ -285,6 +285,7 @@ data FundamentalType
  = FunctionType [FundamentalType]
  | JsType FundamentalType
  | ListType FundamentalType
+ | TupleType [FundamentalType]
  | UserDefined Name [FundamentalType]
  -- Simple types.
  | DateType

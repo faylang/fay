@@ -99,6 +99,7 @@ argType t =
     TyApp (TyCon "Fay") a -> JsType (argType a)
     TyFun x xs            -> FunctionType (argType x : functionTypeArgs xs)
     TyList x              -> ListType (argType x)
+    TyTuple _ xs          -> TupleType (map argType xs)
     TyParen st            -> argType st
     TyApp op arg          -> userDefined (reverse (arg : expandApp op))
     _                     ->
@@ -144,6 +145,7 @@ typeRep typ =
     FunctionType xs     -> JsList [JsLit $ JsStr "function",JsList (map typeRep xs)]
     JsType x            -> JsList [JsLit $ JsStr "action",JsList [typeRep x]]
     ListType x          -> JsList [JsLit $ JsStr "list",JsList [typeRep x]]
+    TupleType xs        -> JsList [JsLit $ JsStr "tuple",JsList (map typeRep xs)]
     UserDefined name xs -> JsList [JsLit $ JsStr "user"
                                   ,JsLit $ JsStr (unname name)
                                   ,JsList (map typeRep xs)]

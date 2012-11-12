@@ -28,6 +28,17 @@ instance Foreign Bool
 -- | Lists → arrays are OK.
 instance Foreign a => Foreign [a]
 
+-- | Tuples → arrays are OK.
+instance (Foreign a, Foreign b) => Foreign (a,b)
+instance (Foreign a, Foreign b, Foreign c) => Foreign (a,b,c)
+instance (Foreign a, Foreign b, Foreign c, Foreign d) => Foreign (a,b,c,d)
+instance (Foreign a, Foreign b, Foreign c, Foreign d,
+          Foreign e) => Foreign (a,b,c,d,e)
+instance (Foreign a, Foreign b, Foreign c, Foreign d,
+          Foreign e, Foreign f) => Foreign (a,b,c,d,e,f)
+instance (Foreign a, Foreign b, Foreign c, Foreign d,
+          Foreign e, Foreign f, Foreign g) => Foreign (a,b,c,d,e,f,g)
+
 -- | JS values are foreignable.
 instance Foreign a => Foreign (Fay a)
 

@@ -142,7 +142,7 @@ function Fay$$fayToJs(type,fayObj){
       jsObj = str;
       break;
     }
-    case "list": {
+    case "list": case "tuple": {
       // Serialize Fay list to JavaScript array.
       var arr = [];
       fayObj = _(fayObj);

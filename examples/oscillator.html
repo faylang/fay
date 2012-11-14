@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+  <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+  <script type="text/javascript" src="oscillator.js"></script>
+  <style>
+    .container { width: 100%; margin-left: 0; margin-right: 0; }
+    .animation { display: block; float: left; margin-left: 0; margin-right: 0; }
+    .controls { display: block; float: left; margin-left: 10px; margin-right: 0; }
+    .graph { display: block; float: left; margin-left: 10px; margin-right: 0; }
+    .clear { clear: both; }
+    .container .animation { width: 400px; }
+    .container .controls { width: 200px; }
+    .container .graph { width: 640px; }
+  </style>
+</head>
+<body>
+  <h1>Ring oscillator demo</h1>
+
+  <div class="container">
+    <div class="animation">
+      <canvas id="canvas" width=400 height=400></canvas>
+    </div>
+    <div class="controls">
+      <input id="go" type="button" style="background-image: url(play-icon.png); width: 20px;" value="">
+      <input id="stop" type="button" style="background-image: url(stop-icon.png); width: 20px;" value="">
+      <input id="reset" type="button" value="Reset">
+
+      <p>N = <select id="nosc">
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option selected value="5">5</option>
+          <option value="6">6</option>
+          <option value="10">10</option>
+        </select>
+      <br>
+      &alpha; = <select id="alpha">
+          <option value="0.6">0.6</option>
+          <option value="0.8">0.8</option>
+          <option selected value="1">1</option>
+          <option value="1.2">1.2</option>
+          <option value="1.4">1.4</option>
+        </select>
+      <br>
+      &omega; = <select id="omega">
+          <option value="1.0">1</option>
+          <option value="1.4">1.4</option>
+          <option selected value="1.8">1.8</option>
+          <option value="2.2">2.2</option>
+          <option value="2.6">2.6</option>
+        </select>
+      <br>
+      d<sub>even</sub> = <select id="deven">
+          <option value="0.0025">0.0025</option>
+          <option value="0.005">0.005</option>
+          <option selected value="0.0075">0.0075</option>
+          <option value="0.01">0.01</option>
+          <option value="0.0125">0.0125</option>
+        </select>
+      <br>
+      d<sub>odd</sub> = <select id="dodd">
+          <option value="0.0075">0.0075</option>
+          <option value="0.01">0.01</option>
+          <option selected value="0.0125">0.0125</option>
+          <option value="0.015">0.015</option>
+          <option value="0.0175">0.0175</option>
+        </select>
+      <br>
+      &beta; = <select id="beta">
+          <option value="0.6">0.6</option>
+          <option value="0.8">0.8</option>
+          <option selected value="1">1</option>
+          <option value="1.2">1.2</option>
+          <option value="1.4">1.4</option>
+        </select>
+      <br>
+      &sigma; = <select id="sigma">
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option selected value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+      </p>
+    </div>
+    <div class="clear"></div>
+    <div class="graph">
+      <canvas id="graph" width=640 height=200></canvas>
+    </div>
+  </div>
+</body>
+</html>

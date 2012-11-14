@@ -46,7 +46,7 @@ generate = do
           putStrLn $ "Generating " ++ file ++ " ..."
           result <- compileViaStr file
                                   def { configFlattenApps = True
-                                      , configTCO = True
+                                      , configOptimize = True
                                       , configTypecheck = False }
                                   compileForDocs contents
           case result of

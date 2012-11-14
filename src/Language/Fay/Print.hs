@@ -34,6 +34,9 @@ import           Prelude                      hiding (exp)
 printJSString :: Printable a => a -> String
 printJSString x = concat $ reverse $ psOutput $ execState (runPrinter (printJS x)) def
 
+printJSPretty :: Printable a => a -> String
+printJSPretty x = concat $ reverse $ psOutput $ execState (runPrinter (printJS x)) def { psPretty = True }
+
 -- | Print literals. These need some special encoding for
 -- JS-format literals. Could use the Text.JSON library.
 instance Printable JsLit where

@@ -35,6 +35,7 @@ data FayCompilerOptions = FayCompilerOptions
     , optOutput      :: Maybe String
     , optPretty      :: Bool
     , optFiles       :: [String]
+    , optOptimize    :: Bool
     }
 
 -- | Main entry point.
@@ -44,9 +45,9 @@ main = do
   if optVersion opts
     then runCommandVersion
     else do let config = def
-                  { configTCO               = False -- optTCO opts
+                  { configOptimize          = optOptimize opts
                   , configFlattenApps       = optFlattenApps opts
-                  , configExportBuiltins    = True -- optExportBuiltins opts
+                  , configExportBuiltins    = True
                   , configDirectoryIncludes = "." : optInclude opts
                   , configPrettyPrint       = optPretty opts
                   , configLibrary           = optLibrary opts
@@ -89,6 +90,7 @@ options = FayCompilerOptions
       & help "Output to specified file")
   <*> switch (long "pretty" & short 'p' & help "Pretty print the output")
   <*> arguments Just (metavar "- | <hs-file>...")
+  <*> switch (long "optimize" & short 'O' & help "Apply optimizations to generated code")
 
   where strsOption m =
           nullOption (m & reader (Just . wordsBy (== ',')) & value [])

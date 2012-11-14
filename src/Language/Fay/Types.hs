@@ -43,7 +43,7 @@ import           Paths_fay
 
 -- | Configuration of the compiler.
 data CompileConfig = CompileConfig
-  { configTCO               :: Bool
+  { configOptimize          :: Bool
   , configFlattenApps       :: Bool
   , configExportBuiltins    :: Bool
   , configDirectoryIncludes :: [FilePath]

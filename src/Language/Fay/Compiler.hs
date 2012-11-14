@@ -23,6 +23,7 @@ module Language.Fay.Compiler
   where
 
 import           Language.Fay.Compiler.FFI
+import           Language.Fay.Compiler.Optimizer
 import           Language.Fay.Compiler.Misc
 import           Language.Fay.Print         (printJSString)
 import           Language.Fay.Types
@@ -125,9 +126,12 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   cs <- liftIO $ defaultCompileState def
   modify $ \s -> s { stateImported = stateImported cs }
   stmts <- compileModule mod
-  fay2js <- gets (fayToJsDispatcher . stateFayToJs)
-  js2fay <- gets (jsToFayDispatcher . stateJsToFay)
-  return (stmts ++ [fay2js,js2fay])
+  fay2js <- do syms <- gets stateFayToJs
+               return $ if null syms then [] else [fayToJsDispatcher syms]
+  js2fay <- do syms <- gets stateJsToFay
+               return $ if null syms then [] else [jsToFayDispatcher syms]
+  let maybeOptimize = if configOptimize cfg then optimizeToplevel else id
+  return (maybeOptimize (stmts ++ fay2js ++ js2fay))
 
 --------------------------------------------------------------------------------
 -- Initial pass-through collecting record definitions

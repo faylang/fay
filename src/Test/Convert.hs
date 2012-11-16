@@ -125,7 +125,7 @@ data SomeThing =
 data Zot = Zot
   deriving (Read,Data,Typeable,Show,Eq)
 
-data StepcutFoo = StepcutFoo { unStepcutFoo :: Int }
+data StepcutFoo = StepcutFoo { _unStepcutFoo :: Int }
     deriving (Eq, Show, Read, Typeable, Data)
 
 data StepcutBar = StepcutBar StepcutFoo

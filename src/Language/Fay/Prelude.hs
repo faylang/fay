@@ -34,7 +34,6 @@ module Language.Fay.Prelude
   where
 
 import           Language.Fay.Stdlib
-import           Language.Fay.FFI (Foreign)
 import           Language.Fay.Types  (Fay)
 import           Data.Data
 import           Prelude             (Bool(..), Char, Double, Eq(..), Int, Integer, Maybe(..), Monad,

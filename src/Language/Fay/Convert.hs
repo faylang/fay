@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections     #-}
-{-# LANGUAGE ViewPatterns      #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TupleSections      #-}
 {-# OPTIONS -fno-warn-type-defaults #-}
 
 -- | Convert a Haskell value to a (JSON representation of a) Fay value.
@@ -13,9 +12,9 @@ module Language.Fay.Convert
 
 import           Control.Applicative
 import           Control.Monad
+import           Control.Monad.State
 import           Data.Aeson
 import           Data.Attoparsec.Number
-import           Control.Monad.State
 import           Data.Char
 import           Data.Data
 import           Data.Function
@@ -40,6 +39,9 @@ showToFay = Show.reify >=> convert where
     -- Special cases
     Show.Con "True" _    -> return (Bool True)
     Show.Con "False" _   -> return (Bool False)
+
+    Show.Con "Just"   [v] -> convert v
+    Show.Con "Nothing" [] -> return Null
 
     -- Objects/records
     Show.Con name values -> fmap (Object . Map.fromList . (("instance",string name) :))
@@ -92,9 +94,11 @@ showToFay = Show.reify >=> convert where
   keyval key val = fmap (Text.pack key,) (convert val)
 
 -- | Convert a value representing a Fay value to a Haskell value.
+
 readFromFay :: Data a => Value -> Maybe a
 readFromFay value = do
   parseData value
+  `ext1R` parseMaybe value
   `ext1R` parseArray value
   `extR` parseDouble value
   `extR` parseInt value
@@ -188,3 +192,10 @@ parseArray value =
   case value of
     Array xs -> mapM readFromFay (Vector.toList xs)
     _ -> mzero
+
+-- | Parse a nullable value to Maybe.
+parseMaybe :: Data a => Value -> Maybe (Maybe a)
+parseMaybe value =
+  case value of
+    Null -> Just Nothing
+    v -> fmap Just (readFromFay v)

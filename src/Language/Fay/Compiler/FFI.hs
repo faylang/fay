@@ -1,6 +1,6 @@
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE ViewPatterns      #-}
 {-# OPTIONS -Wall #-}
 
 -- | Compiling the FFI support.
@@ -13,19 +13,19 @@ module Language.Fay.Compiler.FFI
   ,fayToJsDispatcher)
   where
 
-import           Language.Fay.Print          (printJSString)
-import           Language.Fay.Types
 import           Language.Fay.Compiler.Misc
+import           Language.Fay.Print           (printJSString)
+import           Language.Fay.Types
 
 import           Control.Monad.Error
 import           Control.Monad.State
 import           Data.Char
 import           Data.List
 import           Data.Maybe
-import qualified Language.ECMAScript3.Parser as JS
-import           Language.Haskell.Exts (prettyPrint)
+import qualified Language.ECMAScript3.Parser  as JS
+import           Language.Haskell.Exts        (prettyPrint)
 import           Language.Haskell.Exts.Syntax
-import           Prelude hiding (exp)
+import           Prelude                      hiding (exp)
 import           Safe
 
 -- | Compile an FFI call.
@@ -61,12 +61,26 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
   where
     translator qname =
       JsIf (JsInstanceOf (JsName transcodingObjForced) (JsConstructor qname))
-           [JsEarlyReturn (JsObj (("instance",JsLit (JsStr (printJSString name)))
-                                  : zipWith declField [0..] fieldTypes))]
+           (obj : fieldStmts fieldTypes ++ [ret])
            []
+
+    obj :: JsStmt
+    obj = JsVar (JsNameVar (UnQual (Ident "obj__"))) $
+      JsObj [("instance",JsLit (JsStr (printJSString name)))]
+
+    fieldStmts :: [(Name,BangType)] -> [JsStmt]
+    fieldStmts [] = []
+    fieldStmts (fieldType:fts) =
+      (JsIf (JsNeq JsUndefined (snd (declField fieldType)))
+        [(\(a,b) -> (JsSetProp (JsNameVar "obj__")) (JsNameVar (UnQual (Ident a))) b) (declField fieldType)]
+        []) : fieldStmts fts
+
+    ret :: JsStmt
+    ret = JsEarlyReturn (JsName (JsNameVar (UnQual (Ident "obj__"))))
+
     -- Declare/encode Fay→JS field
-    declField :: Int -> (Name,BangType) -> (String,JsExp)
-    declField _i (fname,typ) =
+    declField :: (Name,BangType) -> (String,JsExp)
+    declField (fname,typ) =
       (prettyPrint fname
       ,fayToJs (case argType (bangType typ) of
                  known -> typeRep known)
@@ -96,6 +110,7 @@ argType t =
     TyCon "Double"        -> DoubleType
     TyCon "Int"           -> IntType
     TyCon "Bool"          -> BoolType
+    TyApp (TyCon "Defined") a -> Defined (argType a)
     TyApp (TyCon "Fay") a -> JsType (argType a)
     TyFun x xs            -> FunctionType (argType x : functionTypeArgs xs)
     TyList x              -> ListType (argType x)
@@ -149,6 +164,7 @@ typeRep typ =
     UserDefined name xs -> JsList [JsLit $ JsStr "user"
                                   ,JsLit $ JsStr (unname name)
                                   ,JsList (map typeRep xs)]
+    Defined x           -> JsList [JsLit $ JsStr "defined",JsList [typeRep x]]
     _ -> JsList [JsLit $ JsStr nom]
 
       where nom = case typ of

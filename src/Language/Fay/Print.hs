@@ -20,7 +20,7 @@ import           Language.Fay.Types
 import           Control.Monad
 import           Control.Monad.State
 import           Data.Aeson.Encode
-import qualified Data.ByteString.Lazy.UTF8 as UTF8
+import qualified Data.ByteString.Lazy.UTF8    as UTF8
 import           Data.Default
 import           Data.List
 import           Data.String
@@ -125,6 +125,8 @@ instance Printable JsExp where
     "(function(){ throw (" +> exp +> "); })()"
   printJS JsNull =
     printJS "null"
+  printJS JsUndefined =
+    printJS "undefined"
   printJS (JsLit lit) =
     printJS lit
   printJS (JsParen exp) =
@@ -137,6 +139,8 @@ instance Printable JsExp where
     "(" +> exp +> ")[" +> show i +> "]"
   printJS (JsEq exp1 exp2) =
     exp1 +> " === " +> exp2
+  printJS (JsNeq exp1 exp2) =
+    exp1 +> " !== " +> exp2
   printJS (JsGetProp exp prop) = exp +> "." +> prop
   printJS (JsLookup exp1 exp2) =
     exp1 +> "[" +> exp2 +> "]"

@@ -40,7 +40,9 @@ showToFay = Show.reify >=> convert where
     Show.Con "True" _    -> return (Bool True)
     Show.Con "False" _   -> return (Bool False)
 
+    -- Just x => x
     Show.Con "Just"   [v] -> convert v
+    -- Nothing -> null
     Show.Con "Nothing" [] -> return Null
 
     -- Objects/records

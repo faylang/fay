@@ -4,6 +4,7 @@ module Language.Fay.Stdlib
   ,(++)
   ,(.)
   ,(=<<)
+  ,Defined(..)
   ,Ordering(..)
   ,show
   ,fromInteger
@@ -51,11 +52,15 @@ module Language.Fay.Stdlib
   where
 
 import           Language.Fay.FFI
-import           Prelude (Bool(..), Double, Eq(..), Int, Maybe(..), Monad(..), Num((+)),
-                         Ord((>), (<)), (||),String,Show,Integer,Rational,Fractional)
+import           Prelude          (Bool (..), Double, Eq (..), Fractional, Int,
+                                   Integer, Maybe (..), Monad (..), Num ((+)),
+                                   Ord ((>), (<)), Rational, Show, String, (||))
 
 show :: (Foreign a,Show a) => a -> String
 show = ffi "JSON.stringify(%1)"
+
+data Defined a = Undefined | Defined a
+instance Foreign a => Foreign (Defined a)
 
 -- There is only Double in JS.
 fromInteger :: a -> a

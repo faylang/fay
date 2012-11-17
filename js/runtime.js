@@ -165,6 +165,15 @@ function Fay$$fayToJs(type,fayObj){
       jsObj = arr;
       break;
     }
+    case "defined": {
+      fayObj = _(fayObj);
+      if (fayObj instanceof $_Language$Fay$Stdlib$Undefined) {
+        jsObj = undefined;
+      } else {
+        jsObj = Fay$$fayToJs(args[0],fayObj["slot1"]);
+      }
+      break;
+    }
     case "double": {
       // Serialize double, just force the argument. Doubles are unboxed.
       jsObj = _(fayObj);

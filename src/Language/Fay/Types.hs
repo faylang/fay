@@ -249,8 +249,10 @@ data JsExp
   | JsInstanceOf JsExp JsName
   | JsIndex Int JsExp
   | JsEq JsExp JsExp
+  | JsNeq JsExp JsExp
   | JsInfix String JsExp JsExp -- Used to optimize *, /, +, etc
   | JsObj [(String,JsExp)]
+  | JsUndefined
   deriving (Show,Eq)
 
 -- | A name of some kind.
@@ -277,7 +279,7 @@ data JsLit
 
 -- | These are the data types that are serializable directly to native
 -- JS data types. Strings, floating points and arrays. The others are:
--- actiosn in the JS monad, which are thunks that shouldn't be forced
+-- actions in the JS monad, which are thunks that shouldn't be forced
 -- when serialized but wrapped up as JS zero-arg functions, and
 -- unknown types can't be converted but should at least be forced.
 data FundamentalType
@@ -287,6 +289,7 @@ data FundamentalType
  | ListType FundamentalType
  | TupleType [FundamentalType]
  | UserDefined Name [FundamentalType]
+ | Defined FundamentalType
  -- Simple types.
  | DateType
  | StringType

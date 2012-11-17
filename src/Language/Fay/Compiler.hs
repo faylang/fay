@@ -105,7 +105,7 @@ printCompile config with from = do
 -- | Compile a String of Fay and print it as beautified JavaScript.
 printTestCompile :: String -> IO ()
 printTestCompile = printCompile def { configWarn = False,
-  configDirectoryIncludes = ["/home/chris/Projects/me/fay/"] } compileModule
+  configDirectoryIncludes = [] } compileModule
 
 -- | Compile the given Fay code for the documentation. This is
 -- specialised because the documentation isn't really “real”
@@ -476,8 +476,8 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
                       then return $ either id JsEarlyReturn rhsform
                       else do
                           binds <- mapM compileLetDecl whereDecls'
-                          return $ case rhsform of 
-                            Right exp -> 
+                          return $ case rhsform of
+                            Right exp ->
                               (JsEarlyReturn (JsApp (JsFun [] (concat binds) (Just exp)) []))
                             Left stmt ->
                               (JsEarlyReturn (JsApp (JsFun [] (concat binds ++ [stmt]) Nothing) []))
@@ -506,8 +506,8 @@ compileGuards :: [GuardedRhs] -> Compile JsStmt
 compileGuards ((GuardedRhs _ (Qualifier (Var (UnQual (Ident "otherwise"))):_) exp):_) =
   (\e -> JsIf (JsLit (JsBool True)) [JsEarlyReturn e] []) <$> compileExp exp
 compileGuards (GuardedRhs _ (Qualifier guard:_) exp : rest) =
-  makeIf <$> fmap force (compileExp guard) 
-         <*> compileExp exp 
+  makeIf <$> fmap force (compileExp guard)
+         <*> compileExp exp
          <*> if null rest then (return []) else do
            gs' <- compileGuards rest
            return [gs']

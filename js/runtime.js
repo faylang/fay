@@ -239,6 +239,14 @@ function Fay$$jsToFay(type,jsObj){
       fayObj = Fay$$list(serializedTuple);
       break;
     }
+    case "defined": {
+      if (jsObj === undefined) {
+        fayObj = new $_Language$Fay$Stdlib$Undefined();
+      } else {
+        fayObj = new $_Language$Fay$Stdlib$Defined(Fay$$jsToFay(args[0],jsObj));
+      }
+      break;
+    }
     case "double": {
       // Doubles are unboxed, so there's nothing to do.
       fayObj = jsObj;

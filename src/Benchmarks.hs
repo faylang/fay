@@ -20,25 +20,20 @@ import Language.Fay.FFI
 import Language.Fay.Prelude
 
 --------------------------------------------------------------------------------
--- Configuration
-
-benchmarks :: Double
-benchmarks = 10
-
---------------------------------------------------------------------------------
 -- Main entry point
 
 main :: Fay ()
 main = do
   sumBenchmark
   lengthBenchmark
+  queensBenchmark
 
 --------------------------------------------------------------------------------
 -- Benchmarks
 
 -- | Benchmark a simple tail-recursive function.
 sumBenchmark :: Fay ()
-sumBenchmark = runAndSummarize "sum 1000000 0" $ benchmark (sum 1000000 0)
+sumBenchmark = runAndSummarize "sum 1000000 0" $ benchmark 5 (sum 1000000 0)
 
 -- A simple tail-recursive O(n) summing function.
 sum :: Double -> Double -> Double
@@ -51,7 +46,27 @@ lengthBenchmark = do
   let a = [1..1000000]
   echo "Forcing the list ..."
   force (length a) False
-  runAndSummarize "length [1..1000000]" $ benchmark (length a)
+  runAndSummarize "length [1..1000000]" $ benchmark 5 (length a)
+
+-- | Benchmark the n-queens problem.
+queensBenchmark :: Fay ()
+queensBenchmark = do
+  runAndSummarize "nqueens 11" $ benchmark 1 (nqueens 11)
+
+-- | Solve the n-queens problem for nq.
+nqueens :: Int -> Int
+nqueens nq = length (gen nq) where
+  gen 0 = [] : []
+  gen n = concat (map (\bs -> map (\q -> q : bs)
+                                  (filter (\q -> safe q 1 bs) nqs))
+                      (gen (n-1)))
+
+  nqs = [1..nq]
+
+safe x d (q:l) = if (x /= q) && (x /= (q+d)) && (x /= (q-d))
+                     then safe x (d+1) l
+                     else False
+safe _ _ _     = True
 
 --------------------------------------------------------------------------------
 -- Mini benchmarking library
@@ -69,10 +84,8 @@ runAndSummarize label m = do
          "\n"
 
 -- | Benchmark a double value.
-benchmark :: a -> Fay [Double]
-benchmark a = do
-  echo "Warming up ..."
-  forM_ [1..3] $ \_ -> force a True
+benchmark :: Double -> a -> Fay [Double]
+benchmark benchmarks a = do
   echo "Recording ..."
   go a 0 []
   where

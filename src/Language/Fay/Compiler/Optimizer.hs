@@ -1,3 +1,4 @@
+{-# OPTIONS -fno-warn-orphans #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE PatternGuards #-}
 
@@ -5,6 +6,8 @@ module Language.Fay.Compiler.Optimizer where
 
 import Control.Applicative
 import Control.Arrow (first)
+import Control.Monad.Error
+import Control.Monad.Writer
 import Control.Monad.State
 import Data.List
 import Data.Maybe
@@ -33,13 +36,57 @@ data OptState = OptState
 runOptimizer :: ([JsStmt] -> Optimize [JsStmt]) -> [JsStmt] -> [JsStmt]
 runOptimizer optimizer stmts =
   let (newstmts,OptState _ uncurried) = flip runState st $ optimizer stmts
-  in (newstmts ++ (catMaybes (map (uncurryBinding newstmts) uncurried)))
+  in (newstmts ++ (tco (catMaybes (map (uncurryBinding newstmts) uncurried))))
   where st = OptState stmts []
 
 -- | Perform any top-level cross-module optimizations and GO DEEP to
 -- optimize further.
 optimizeToplevel :: [JsStmt] -> Optimize [JsStmt]
 optimizeToplevel = stripAndUncurry
+
+-- | Perform tail-call optimization.
+tco :: [JsStmt] -> [JsStmt]
+tco = map inStmt where
+  inStmt stmt =
+    case stmt of
+      JsMappedVar srcloc name exp -> JsMappedVar srcloc name (inject name exp)
+      JsVar name exp -> JsVar name (inject name exp)
+      e -> e
+  inject name exp =
+    case exp of
+      JsFun params [] (Just (JsNew JsThunk [JsFun [] stmts ret])) ->
+        JsFun params
+              []
+              (Just
+                (JsNew JsThunk
+                       [JsFun []
+                              (optimize params name (stmts ++ [ JsEarlyReturn e | Just e <- [ret] ]))
+                              Nothing]))
+      _ -> exp
+  optimize params name stmts = result where
+    result = let (newstmts,w) = runWriter makeWhile
+             in if null w
+                   then stmts
+                   else newstmts
+    makeWhile = do
+      newstmts <- fmap concat (mapM swap stmts)
+      return [JsWhile (JsLit (JsBool True)) newstmts]
+    swap stmt =
+      case stmt of
+        JsEarlyReturn e
+          | tailCall e -> do tell [()]
+                             return (rebind e ++ [JsContinue])
+          | otherwise  -> return [stmt]
+        JsIf p ithen ielse -> do
+          newithen <- fmap concat (mapM swap ithen)
+          newielse <- fmap concat (mapM swap ielse)
+          return [JsIf p newithen newielse]
+        e -> return [e]
+    tailCall (JsApp (JsName cname) _) = cname == name
+    tailCall _ = False
+    rebind (JsApp _ args) = zipWith go args params where
+      go arg param = JsUpdate param arg
+    rebind e = error . show $ e
 
 -- | Strip redundant forcing from the whole generated code.
 stripAndUncurry :: [JsStmt] -> Optimize [JsStmt]
@@ -73,12 +120,12 @@ stripAndUncurry = applyToExpsInStmts stripFuncForces where
 -- | Strip redundant forcing from an application if possible.
 walkAndStripForces :: [FuncArity] -> JsExp -> Optimize (Maybe JsExp)
 walkAndStripForces arities = go True [] where
-  go first args app = case app of
-    JsApp (JsName JsForce) [e] -> if first
+  go frst args app = case app of
+    JsApp (JsName JsForce) [e] -> if frst
                                      then do result <- go False args e
                                              case result of
                                                Nothing -> return Nothing
-                                               Just e -> return (Just (JsApp (JsName JsForce) [e]))
+                                               Just ex -> return (Just (JsApp (JsName JsForce) [ex]))
                                      else go False args e
     JsApp op [arg] -> go False (arg:args) op
     JsName (JsNameVar f)
@@ -133,7 +180,7 @@ test = do
 
     where
       st = OptState stmts []
-      stmts = [JsMappedVar (SrcLoc {srcFilename = "<interactive>", srcLine = 1, srcColumn = 1}) (JsNameVar (Qual (ModuleName "Main") (Ident "f"))) (JsFun [JsParam 1] [] (Just (JsFun [JsParam 2] [] (Just (JsFun [JsParam 3] [] (Just (JsNew JsThunk [JsFun [] [JsVar (JsNameVar (UnQual (Ident "z"))) (JsName (JsParam 3)),JsVar (JsNameVar (UnQual (Ident "y"))) (JsName (JsParam 2)),JsVar (JsNameVar (UnQual (Ident "x"))) (JsName (JsParam 1)),JsEarlyReturn (JsLit (JsInt 1))] Nothing]))))))),JsMappedVar (SrcLoc {srcFilename = "<interactive>", srcLine = 1, srcColumn = 14}) (JsNameVar (Qual (ModuleName "Main") (Ident "a"))) (JsNew JsThunk [JsFun [] [] (Just (JsApp (JsApp (JsName JsForce) [JsApp (JsApp (JsName JsForce) [JsApp (JsApp (JsName JsForce) [JsName (JsNameVar (Qual (ModuleName "Main") (Ident "f")))]) [JsLit (JsInt 1)]]) [JsLit (JsInt 2)]]) [JsLit (JsInt 3)]))]),JsMappedVar (SrcLoc {srcFilename = "<interactive>", srcLine = 1, srcColumn = 27}) (JsNameVar (Qual (ModuleName "Main") (Ident "b"))) (JsNew JsThunk [JsFun [] [] (Just (JsApp (JsApp (JsName JsForce) [JsApp (JsApp (JsName JsForce) [JsName (JsNameVar (Qual (ModuleName "Main") (Ident "map")))]) [JsApp (JsApp (JsName JsForce) [JsApp (JsApp (JsName JsForce) [JsName (JsNameVar (Qual (ModuleName "Main") (Ident "f")))]) [JsLit (JsInt 1)]]) [JsLit (JsInt 2)]]]) [JsNull]))])]
+      stmts = [JsMappedVar (SrcLoc {srcFilename = "", srcLine = 1, srcColumn = 1}) (JsNameVar (Qual (ModuleName "Main") (Ident "sum$uncurried"))) (JsFun [JsParam 1,JsParam 2] [] (Just (JsNew JsThunk [JsFun [] [JsVar (JsNameVar (UnQual (Ident "acc"))) (JsName (JsParam 2)),JsIf (JsEq (JsApp (JsName JsForce) [JsName (JsParam 1)]) (JsLit (JsInt 0))) [JsEarlyReturn (JsName (JsNameVar (UnQual (Ident "acc"))))] [],JsVar (JsNameVar (UnQual (Ident "acc"))) (JsName (JsParam 2)),JsVar (JsNameVar (UnQual (Ident "n"))) (JsName (JsParam 1)),JsEarlyReturn (JsApp (JsName (JsNameVar (Qual (ModuleName "Main") (Ident "sum$uncurried")))) [JsApp (JsName (JsNameVar (Qual (ModuleName "Fay$") (Ident "sub$uncurried")))) [JsApp (JsName JsForce) [JsName (JsNameVar (UnQual (Ident "n")))],JsLit (JsInt 1)],JsApp (JsName (JsNameVar (Qual (ModuleName "Fay$") (Ident "add$uncurried")))) [JsApp (JsName JsForce) [JsName (JsNameVar (UnQual (Ident "acc")))],JsApp (JsName JsForce) [JsName (JsNameVar (UnQual (Ident "n")))]]])] Nothing])))]
 
 uncurryBinding :: [JsStmt] -> QName -> Maybe JsStmt
 uncurryBinding stmts qname = listToMaybe (mapMaybe funBinding stmts)

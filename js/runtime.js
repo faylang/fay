@@ -55,20 +55,30 @@ function Fay$$then(a){
   };
 }
 
+// This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
+// >>
+function Fay$$then$36$uncurried(a,b){
+  return Fay$$bind$36$uncurried(a,function(_){ return b; });
+}
+
 // >>=
 // This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
 function Fay$$bind(m){
   return function(f){
     return new $(function(){
       var monad = _(m,true);
-      if(monad.cont) {
-        return _(monad.cont(f));
-      }
-      else {
-        return f(monad.value);
-      }
+      return f(monad.value);
     });
   };
+}
+
+// >>=
+// This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
+function Fay$$bind$36$uncurried(m,f){
+    return new $(function(){
+      var monad = _(m,true);
+      return f(monad.value);
+    });
 }
 
 // This is used directly from Fay, but can be rebound or shadowed.
@@ -79,8 +89,16 @@ function Fay$$$_return(a){
 // Allow the programmer to access thunk forcing directly.
 function Fay$$force(thunk){
   return function(type){
-    return _(thunk,type);
+    return new $(function(){
+      _(thunk,type);
+      return new Fay$$Monad(Fay$$unit);
+    })
   }
+}
+
+// This is used directly from Fay, but can be rebound or shadowed.
+function Fay$$return$36$uncurried(a){
+  return new Fay$$Monad(a);
 }
 
 // Unit: ().
@@ -342,6 +360,14 @@ function Fay$$mult(x){
   };
 }
 
+function Fay$$mult$36$uncurried(x,y){
+
+    return new $(function(){
+      return _(x) * _(y);
+    });
+
+}
+
 // Built-in +.
 function Fay$$add(x){
   return function(y){
@@ -349,6 +375,15 @@ function Fay$$add(x){
       return _(x) + _(y);
     });
   };
+}
+
+// Built-in +.
+function Fay$$add$36$uncurried(x,y){
+
+    return new $(function(){
+      return _(x) + _(y);
+    });
+
 }
 
 // Built-in -.
@@ -359,6 +394,14 @@ function Fay$$sub(x){
     });
   };
 }
+// Built-in -.
+function Fay$$sub$36$uncurried(x,y){
+
+    return new $(function(){
+      return _(x) - _(y);
+    });
+
+}
 
 // Built-in /.
 function Fay$$div(x){
@@ -367,6 +410,15 @@ function Fay$$div(x){
       return _(x) / _(y);
     });
   };
+}
+
+// Built-in /.
+function Fay$$div$36$uncurried(x,y){
+
+    return new $(function(){
+      return _(x) / _(y);
+    });
+
 }
 
 /*******************************************************************************
@@ -418,6 +470,14 @@ function Fay$$eq(x){
   };
 }
 
+function Fay$$eq$36$uncurried(x,y){
+
+    return new $(function(){
+      return Fay$$equal(x,y);
+    });
+
+}
+
 // Built-in /=.
 function Fay$$neq(x){
   return function(y){
@@ -425,6 +485,15 @@ function Fay$$neq(x){
       return !(Fay$$equal(x,y));
     });
   };
+}
+
+// Built-in /=.
+function Fay$$neq$36$uncurried(x,y){
+
+    return new $(function(){
+      return !(Fay$$equal(x,y));
+    });
+
 }
 
 // Built-in >.
@@ -436,6 +505,15 @@ function Fay$$gt(x){
   };
 }
 
+// Built-in >.
+function Fay$$gt$36$uncurried(x,y){
+
+    return new $(function(){
+      return _(x) > _(y);
+    });
+
+}
+
 // Built-in <.
 function Fay$$lt(x){
   return function(y){
@@ -445,6 +523,17 @@ function Fay$$lt(x){
   };
 }
 
+
+// Built-in <.
+function Fay$$lt$36$uncurried(x,y){
+
+    return new $(function(){
+      return _(x) < _(y);
+    });
+
+}
+
+
 // Built-in >=.
 function Fay$$gte(x){
   return function(y){
@@ -452,6 +541,15 @@ function Fay$$gte(x){
       return _(x) >= _(y);
     });
   };
+}
+
+// Built-in >=.
+function Fay$$gte$36$uncurried(x,y){
+
+    return new $(function(){
+      return _(x) >= _(y);
+    });
+
 }
 
 // Built-in <=.
@@ -463,6 +561,15 @@ function Fay$$lte(x){
   };
 }
 
+// Built-in <=.
+function Fay$$lte$36$uncurried(x,y){
+
+    return new $(function(){
+      return _(x) <= _(y);
+    });
+
+}
+
 // Built-in &&.
 function Fay$$and(x){
   return function(y){
@@ -472,6 +579,15 @@ function Fay$$and(x){
   };
 }
 
+// Built-in &&.
+function Fay$$and$36$uncurried(x,y){
+
+    return new $(function(){
+      return _(x) && _(y);
+    });
+ ;
+}
+
 // Built-in ||.
 function Fay$$or(x){
   return function(y){
@@ -479,6 +595,15 @@ function Fay$$or(x){
       return _(x) || _(y);
     });
   };
+}
+
+// Built-in ||.
+function Fay$$or$36$uncurried(x,y){
+
+    return new $(function(){
+      return _(x) || _(y);
+    });
+
 }
 
 /*******************************************************************************

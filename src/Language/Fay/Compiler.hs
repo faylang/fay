@@ -130,7 +130,7 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
                return $ if null syms then [] else [fayToJsDispatcher syms]
   js2fay <- do syms <- gets stateJsToFay
                return $ if null syms then [] else [jsToFayDispatcher syms]
-  let maybeOptimize = if configOptimize cfg then optimizeToplevel else id
+  let maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
   return (maybeOptimize (stmts ++ fay2js ++ js2fay))
 
 --------------------------------------------------------------------------------

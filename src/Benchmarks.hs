@@ -23,23 +23,35 @@ import Language.Fay.Prelude
 -- Configuration
 
 benchmarks :: Double
-benchmarks = 5
+benchmarks = 10
 
 --------------------------------------------------------------------------------
 -- Main entry point
 
 main :: Fay ()
 main = do
-  runAndSummarize "sum 1000000 0" $ benchmarkDouble (sum 1000000 0)
-  runAndSummarize "length [1..1000000]" $ benchmarkDouble (fromIntegral (length [1..1000000]))
+  sumBenchmark
+  lengthBenchmark
 
 --------------------------------------------------------------------------------
 -- Benchmarks
+
+-- | Benchmark a simple tail-recursive function.
+sumBenchmark :: Fay ()
+sumBenchmark = runAndSummarize "sum 1000000 0" $ benchmark (sum 1000000 0)
 
 -- A simple tail-recursive O(n) summing function.
 sum :: Double -> Double -> Double
 sum 0 acc = acc
 sum n acc = sum (n - 1) (acc + n)
+
+-- | Benchmark a simple tail-recursive function walking a list.
+lengthBenchmark :: Fay ()
+lengthBenchmark = do
+  let a = [1..1000000]
+  echo "Forcing the list ..."
+  force (length a) False
+  runAndSummarize "length [1..1000000]" $ benchmark (length a)
 
 --------------------------------------------------------------------------------
 -- Mini benchmarking library
@@ -57,15 +69,20 @@ runAndSummarize label m = do
          "\n"
 
 -- | Benchmark a double value.
-benchmarkDouble :: Double -> Fay [Double]
-benchmarkDouble a = go a 0 [] where
-  go a count results = do
-    start <- getSeconds
-    force a True
-    end <- getSeconds
-    if count == benchmarks
-       then return results
-       else go a (count+1) ((end-start) : results)
+benchmark :: a -> Fay [Double]
+benchmark a = do
+  echo "Warming up ..."
+  forM_ [1..3] $ \_ -> force a True
+  echo "Recording ..."
+  go a 0 []
+  where
+    go a count results = do
+      start <- getSeconds
+      force a True
+      end <- getSeconds
+      if count == benchmarks
+         then return results
+         else go a (count+1) ((end-start) : results)
 
 --------------------------------------------------------------------------------
 -- Utility functions

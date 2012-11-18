@@ -7,23 +7,23 @@
 
 module Main where
 
-import           Language.Fay                (compileFromTo)
-import           Language.Fay.Compiler       (compileForDocs, compileViaStr)
-import           Language.Fay.Types          (CompileConfig (..),
-                                              PrintState (..))
-
-
 import           Control.Monad
 import qualified Data.ByteString.Lazy        as L
 import           Data.Char
 import           Data.Default
 import           Data.Time
+import           Language.Fay                (compileFromTo)
+import           Language.Fay.Compiler       (compileForDocs, compileViaStr)
+import           Language.Fay.Types          (CompileConfig (..),
+                                              PrintState (..))
+
 import           Prelude                     hiding (div, head)
 import           System.FilePath
 import           Text.Blaze.Extra
 import           Text.Blaze.Html5            as H hiding (contents, map, style)
 import           Text.Blaze.Html5.Attributes as A hiding (title)
 import           Text.Blaze.Renderer.Utf8    (renderMarkup)
+
 
 -- | Main entry point.
 main :: IO ()
@@ -104,8 +104,11 @@ fork =
         ! alt "Fork me on GitHub"
 
 theheading = do
-  h1 "Fay programming language"
-  div !. "subheadline" $ "A proper subset of Haskell that compiles to JavaScript"
+  div !. "head" $ do
+    img !. "head-logo" ! src "logo-large.png"
+    div !. "head-text" $ do
+      h1 "Fay programming language"
+      div !. "subheadline" $ "A proper subset of Haskell that compiles to JavaScript"
 
 theexamples examples = do
   a ! name "examples" $ return ()

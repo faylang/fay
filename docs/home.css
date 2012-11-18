@@ -25,6 +25,7 @@ h1 {
     font-size: 2em;
     margin-bottom:0;
     padding-bottom:0;
+    margin-top:0;
     color: #F40095
 }
 h2 {
@@ -36,6 +37,18 @@ h3 {
     color: #948091;
     font-style: italic;
 }
+.head {
+    margin-top: 2em;
+}
+.head-logo {
+    height: 50px;
+    margin-top:5px;
+    float: left;
+}
+.head-text {
+    float: left;
+    margin-left: 1em;
+}
 .subheadline {
     font-size: 20px;
     margin-bottom: 1em;
@@ -44,7 +57,7 @@ h3 {
 
 /* Syntax highlighting */
 .example {  }
-.example pre { margin-top:0; 
+.example pre { margin-top:0;
 word-wrap: break-word; }
 .example pre .diff { color:#555 }
 .example pre code .title { color:#333 }

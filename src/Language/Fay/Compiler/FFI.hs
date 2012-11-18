@@ -65,18 +65,26 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
            []
 
     obj :: JsStmt
-    obj = JsVar (JsNameVar (UnQual (Ident "obj__"))) $
+    obj = JsVar obj_ $
       JsObj [("instance",JsLit (JsStr (printJSString name)))]
 
     fieldStmts :: [(Name,BangType)] -> [JsStmt]
     fieldStmts [] = []
     fieldStmts (fieldType:fts) =
-      (JsIf (JsNeq JsUndefined (snd (declField fieldType)))
-        [(\(a,b) -> (JsSetProp (JsNameVar "obj__")) (JsNameVar (UnQual (Ident a))) b) (declField fieldType)]
-        []) : fieldStmts fts
+      (JsVar obj_v field) :
+        (JsIf (JsNeq JsUndefined (JsName obj_v))
+          [JsSetProp obj_ decl (JsName obj_v)]
+          []) :
+        fieldStmts fts
+      where
+        obj_v = JsNameVar (UnQual (Ident $ "obj_" ++ d))
+        decl = JsNameVar (UnQual (Ident d))
+        (d, field) = declField fieldType
+
+    obj_ = JsNameVar (UnQual (Ident "obj_"))
 
     ret :: JsStmt
-    ret = JsEarlyReturn (JsName (JsNameVar (UnQual (Ident "obj__"))))
+    ret = JsEarlyReturn (JsName obj_)
 
     -- Declare/encode Fay→JS field
     declField :: (Name,BangType) -> (String,JsExp)

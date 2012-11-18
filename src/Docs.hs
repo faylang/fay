@@ -1,6 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 {-# OPTIONS -fno-warn-missing-signatures -fno-warn-unused-do-bind #-}
 
 -- | Generate documentation for Fay.
@@ -9,7 +9,8 @@ module Main where
 
 import           Language.Fay                (compileFromTo)
 import           Language.Fay.Compiler       (compileForDocs, compileViaStr)
-import           Language.Fay.Types          (CompileConfig(..),PrintState(..))
+import           Language.Fay.Types          (CompileConfig (..),
+                                              PrintState (..))
 
 
 import           Control.Monad
@@ -87,6 +88,7 @@ thebody now analytics examples = do
   div !. "wrap" $ do
     theheading
     theintro
+    thelinks
     thesetup
     thejsproblem
     thecomparisons
@@ -249,3 +251,43 @@ thereference = do
          "For now it is best to simply try and see if you get an “Unsupported X” compile error or not. "
          "It will not accept things that it doesn't support, apart from class and instance declarations, "
          "which it ignores entirely. Inspect the compiler source if you are unsure, it is rather simple."
+
+thelinks = do
+  h2 "Fay in the Wild"
+  ul $ do
+    li $ do
+      "Yesod Blog: "
+      a ! href
+        "http://www.yesodweb.com/blog/2012/10/yesod-fay-js" $
+          "Yesod, AngularJS and Fay"
+    li $ do
+      "Happstack Blog: "
+      a ! href
+        "http://www.happstack.com/c/view-page-slug/15/happstack-fay-acid-state-shared-datatypes-are-awesome" $
+          "Happstack, Fay, & Acid-State: Shared Datatypes are Awesome"
+    li $ do
+      a ! href
+        "http://www.skybluetrades.net/blog/posts/2012/11/13/fay-ring-oscillator/index.html" $
+          "Fun with Fay - A Ring Oscillator"
+    li $ do
+      a ! href
+        "http://ide.fay-lang.org/" $
+          "A Fay IDE written in Fay"
+      ": "
+      a ! href "https://github.com/faylang/fay-server" $ "github"
+    li $ do
+      "happstack-fay: "
+      a ! href "http://hackage.haskell.org/package/happstack-fay" $ "hackage"
+    li $ do
+      H.span $ "snaplet-fay: "
+      a ! href "https://github.com/faylang/snaplet-fay" $ "github"
+      ", "
+      a ! href "http://hackage.haskell.org/package/snaplet-fay" $ "hackage"
+    li $ do
+      "yesod-fay: "
+      a ! href "https://github.com/snoyberg/yesod-fay" $ "github"
+      ", "
+      a ! href "http://hackage.haskell.org/package/yesod-fay" $ "hackage"
+    li $ do
+      "fay-jquery: "
+      a ! href "https://github.com/faylang/fay-jquery" $ "hackage"

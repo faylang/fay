@@ -226,8 +226,9 @@ const :: a -> b -> a
 const a _ = a
 
 length :: [a] -> Int
-length (_:xs) = 1 + length xs
-length [] = 0
+length = go 0 where
+  go acc (_:xs) = go (acc+1) xs
+  go acc _ = acc
 
 mod :: Double -> Double -> Double
 mod = ffi "%1 %% %2"

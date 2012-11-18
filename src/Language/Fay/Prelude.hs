@@ -30,6 +30,7 @@ module Language.Fay.Prelude
   ,(&&)
   ,fail
   ,return
+  ,force
   ,module Language.Fay.Stdlib)
   where
 
@@ -53,3 +54,6 @@ fail = error "Language.Fay.Prelude.fail: Used fail outside JS."
 
 return :: a -> Fay a
 return = error "Language.Fay.Prelude.return: Used return outside JS."
+
+force :: a -> Bool -> Fay a
+force = error "Language.Fay.Prelude.force: Used force outside JS."

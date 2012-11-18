@@ -10,3 +10,4 @@ docs/home.js
 *.o
 *.hcr
 hackage-test/
+src/*.js

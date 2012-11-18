@@ -76,6 +76,13 @@ function Fay$$$_return(a){
   return new Fay$$Monad(a);
 }
 
+// Allow the programmer to access thunk forcing directly.
+function Fay$$force(thunk){
+  return function(type){
+    return _(thunk,type);
+  }
+}
+
 // Unit: ().
 var Fay$$unit = null;
 

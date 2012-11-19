@@ -44,9 +44,9 @@ h3 {
     height: 50px;
     margin-top:5px;
     float: left;
+    margin-right:1em
 }
 .head-text {
-    float: left;
     margin-left: 1em;
 }
 .subheadline {

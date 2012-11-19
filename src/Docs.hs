@@ -274,6 +274,10 @@ thelinks = do
           "Fun with Fay - A Ring Oscillator"
     li $ do
       a ! href
+        "http://cdsmith.wordpress.com/2012/11/18/codeworld-and-the-future/" $
+          "CodeWorld and the Future"
+    li $ do
+      a ! href
         "http://ide.fay-lang.org/" $
           "A Fay IDE written in Fay"
       ": "

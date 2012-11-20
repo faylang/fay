@@ -1,5 +1,5 @@
 name:                fay
-version:             0.9.2.0
+version:             0.10.0.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which can be compiled (type-checked)
                      with GHC, and compiled to JavaScript. It is lazy, pure, with a Fay monad,
@@ -22,43 +22,38 @@ description:         Fay is a proper subset of Haskell which can be compiled (ty
                      .
                      /Release Notes/
                      .
-                     * Fix name encoding.
+                     * Add TCO optimization.
                      .
-                     * Add content-type to HTML generation.
+                     * Added uncurrying optimization for non-partial applications.
                      .
-                     * Add calculator example.
+                     * Add simple benchmarking program.
                      .
-                     * Support built-in operators as (+), (*), etc.
+                     * Add SVG logo.
                      .
-                     * Fix self-referential thunks (see #89).
+                     * Added Defined type and appropriate serialization.
                      .
-                     * Don't import modules twice.
+                     * Treat Maybe as a nullable value in conversions.
                      .
-                     * Handle where bindings in function definitions.
+                     * Added oscillator example.
                      .
-                     * Support record updates.
+                     * Add optimization flag.
+
+                     * Support tuple serialization.
+                     * Fix list length in pats (closes #145).
                      .
-                     * Move to GHC type-checking (with --no-ghc).
+                     * Name resolution and some export list support.
+
+                     * Add codeworld space invaders example.
                      .
-                     * Remove invalid chars from UTF-8 tests.
+                     * NoImplicitPrelude is now passed automatically to GHC. Does not break code that uses the pragma (see #134).
                      .
-                     * Remove --autorun, now it's the default.
+                     * Add support for list comprehensions using desugaring from Haskell report. See #40 and #132.
                      .
-                     * Fix nullary constructor comparison.
+                     * Make error messages a tiny bit friendlier, and some general house-keeping.
                      .
-                     * Replace . with $ in module name generation.
+                     * Support negation expressions (see #116).
                      .
-                     * Reverse -fdevel flag.
-                     .
-                     * Skip type declarations in where.
-                     .
-                     * Add true/false to keywords.
-                     .
-                     * Add laziness back to infix operators.
-                     .
-                     * Switch to applicative parsing of options.
-                     .
-                     * Fix parens in conversion functions.
+                     * Rewrite readFromFay using only Data, no Read/Show requirements (see #112).
                      .
                      See full history at: <https://github.com/faylang/fay/commits>
 homepage:            http://fay-lang.org/

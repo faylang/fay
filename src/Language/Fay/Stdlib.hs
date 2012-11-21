@@ -228,6 +228,7 @@ const a _ = a
 length :: [a] -> Int
 length xs = length' 0 xs
 
+length' :: Int -> [a] -> Int
 length' acc (_:xs) = length' (acc+1) xs
 length' acc _ = acc
 

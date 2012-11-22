@@ -17,6 +17,7 @@ module Language.Fay.Stdlib
   ,elem
   ,enumFrom
   ,enumFromTo
+  ,enumFromThenTo
   ,fromIntegral
   ,filter
   ,find
@@ -53,7 +54,7 @@ module Language.Fay.Stdlib
 
 import           Language.Fay.FFI
 import           Prelude          (Bool (..), Double, Eq (..), Fractional, Int,
-                                   Integer, Maybe (..), Monad (..), Num ((+)),
+                                   Integer, Maybe (..), Monad (..), Num ((+), (-)),
                                    Ord ((>), (<)), Rational, Show, String, (||))
 
 show :: (Foreign a,Show a) => a -> String
@@ -150,6 +151,22 @@ enumFromTo i n =
   if i == n
      then [i]
      else i : enumFromTo (i + 1) n
+
+enumFromBy :: (Num t) => t -> t -> [t]
+enumFromBy fr by = fr : enumFromBy (fr + by) by
+
+enumFromThen :: (Num t) => t -> t -> [t]
+enumFromThen fr th = enumFromBy fr (th - fr)
+
+enumFromByTo :: (Ord t, Num t) => t -> t -> t -> [t]
+enumFromByTo fr by to = if by < 0 then neg fr else pos fr
+  where neg fr | fr < to   = []
+               | otherwise = fr : neg (fr + by)
+        pos fr | fr > to   = []
+               | otherwise = fr : pos (fr + by)
+
+enumFromThenTo :: (Ord t, Num t) => t -> t -> t -> [t]
+enumFromThenTo fr th to = enumFromByTo fr (th - fr) to
 
 zipWith :: (a->b->c) -> [a]->[b]->[c]
 zipWith f (a:as) (b:bs) = f a b : zipWith f as bs

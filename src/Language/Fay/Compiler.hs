@@ -544,6 +544,14 @@ compileExp exp =
                                         name <- resolveName "enumFromTo"
                                         return (JsApp (JsApp (JsName (JsNameVar name)) [f])
                                                       [t])
+    EnumFromThenTo a b z          -> do fr <- compileExp a
+                                        th <- compileExp b
+                                        to <- compileExp z
+                                        name <- resolveName "enumFromThenTo"
+                                        return (JsApp (JsApp (JsApp (JsName (JsNameVar name))
+                                                                    [fr])
+                                                             [th])
+                                                      [to])
     RecConstr name fieldUpdates -> compileRecConstr name fieldUpdates
     RecUpdate rec  fieldUpdates -> updateRec rec fieldUpdates
     ListComp exp stmts            -> compileExp =<< desugarListComp exp stmts

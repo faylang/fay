@@ -1,9 +1,4 @@
 -- | This is to test tail-recursive calls are iterative.
-
-
-
-module Tail where
-
 import           Language.Fay.FFI
 import           Language.Fay.Prelude
 

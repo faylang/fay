@@ -1,7 +1,3 @@
-
-
-module Circular where
-
 import Language.Fay.Prelude
 import Language.Fay.FFI
 

@@ -1,7 +1,3 @@
-
-
-module Double4 where
-
 import           Language.Fay.FFI
 import           Language.Fay.Prelude
 

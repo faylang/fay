@@ -2,9 +2,6 @@
 
 {-# LANGUAGE EmptyDataDecls    #-}
 
-
-module MutableReference where
-
 import           Language.Fay.FFI
 import           Language.Fay.Prelude
 

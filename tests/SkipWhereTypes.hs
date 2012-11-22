@@ -1,7 +1,3 @@
-
-
-module SkipWhereTypes where
-
 import Language.Fay.Prelude
 import Language.Fay.FFI
 

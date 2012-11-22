@@ -1,7 +1,3 @@
-
-
-module WhereBind2 where
-
 import           Language.Fay.FFI
 import           Language.Fay.Prelude
 

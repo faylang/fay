@@ -1,5 +1,3 @@
-import Language.Fay.Prelude
-
 main :: Fay ()
 main =
       case [1,2] of

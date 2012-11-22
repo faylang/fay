@@ -2,8 +2,6 @@
 
 -- | Unicode test.
 
-module Utf8 where
-
 import           Language.Fay.FFI
 import           Language.Fay.Prelude
 

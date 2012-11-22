@@ -1,7 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module NamedFieldPuns where
-
 import           Language.Fay.FFI
 import           Language.Fay.Prelude
 

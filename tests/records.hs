@@ -1,7 +1,3 @@
-
-
-module Records where
-
 import           Language.Fay.FFI
 import           Language.Fay.Prelude
 

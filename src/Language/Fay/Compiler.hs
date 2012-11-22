@@ -207,7 +207,8 @@ initialPass_dataDecl _ _decl constructors =
 typecheck :: [FilePath] -> [String] -> Bool -> String -> Compile ()
 typecheck includeDirs ghcFlags wall fp = do
   res <- liftIO $ readAllFromProcess' "ghc" (
-    ["-fno-code", "-package fay", "-XNoImplicitPrelude", fp] ++ map ("-i" ++) includeDirs ++ ghcFlags ++ wallF) ""
+    ["-fno-code", "-package fay", "-XNoImplicitPrelude", "-main-is", "Language.Fay.DummyMain", fp]
+    ++ map ("-i" ++) includeDirs ++ ghcFlags ++ wallF) ""
   either error (warn . fst) res
    where
     wallF | wall = ["-Wall"]

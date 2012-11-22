@@ -1,8 +1,6 @@
 {-# LANGUAGE NamedFieldPuns  #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module RecordWildcards where
-
 import           Language.Fay.FFI
 import           Language.Fay.Prelude
 

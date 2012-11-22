@@ -1,8 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-
-module PatternGuards where
-
 -- | As pattern matches
 
 import           Language.Fay.FFI

@@ -1,7 +1,3 @@
-
-
-module ListComprehensions where
-
 import Language.Fay.Prelude
 import Language.Fay.FFI
 

@@ -1,5 +1,3 @@
-module ReExport3 where
-
 import Language.Fay.Prelude
 import Language.Fay.FFI
 import ReExport2

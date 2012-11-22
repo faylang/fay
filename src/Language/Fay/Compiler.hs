@@ -542,8 +542,15 @@ compileExp exp =
     EnumFromTo i i'               -> do f <- compileExp i
                                         t <- compileExp i'
                                         name <- resolveName "enumFromTo"
-                                        return (JsApp (JsApp (JsName (JsNameVar name)) [f])
+                                        return (JsApp (JsApp (JsName (JsNameVar name))
+                                                             [f])
                                                       [t])
+    EnumFromThen a b              -> do fr <- compileExp a
+                                        th <- compileExp b
+                                        name <- resolveName "enumFromThen"
+                                        return (JsApp (JsApp (JsName (JsNameVar name))
+                                                             [fr])
+                                                      [th])
     EnumFromThenTo a b z          -> do fr <- compileExp a
                                         th <- compileExp b
                                         to <- compileExp z

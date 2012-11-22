@@ -16,6 +16,7 @@ module Language.Fay.Stdlib
   ,const
   ,elem
   ,enumFrom
+  ,enumFromThen
   ,enumFromTo
   ,enumFromThenTo
   ,fromIntegral
@@ -160,10 +161,8 @@ enumFromThen fr th = enumFromBy fr (th - fr)
 
 enumFromByTo :: (Ord t, Num t) => t -> t -> t -> [t]
 enumFromByTo fr by to = if by < 0 then neg fr else pos fr
-  where neg fr | fr < to   = []
-               | otherwise = fr : neg (fr + by)
-        pos fr | fr > to   = []
-               | otherwise = fr : pos (fr + by)
+  where neg x = if x < to then [] else x : neg (x + by)
+        pos x = if x > to then [] else x : pos (x + by)
 
 enumFromThenTo :: (Ord t, Num t) => t -> t -> t -> [t]
 enumFromThenTo fr th to = enumFromByTo fr (th - fr) to

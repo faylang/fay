@@ -121,7 +121,6 @@ primOps =
   ,(Ident "return",[ScopeImported "Fay$" (Just "return")])
   ,(Ident "force",[ScopeImported "Fay$" (Just "force")])
   ,(Symbol "*",[ScopeImported "Fay$" (Just "mult")])
-  ,(Symbol "*",[ScopeImported "Fay$" (Just "mult")])
   ,(Symbol "+",[ScopeImported "Fay$" (Just "add")])
   ,(Symbol "-",[ScopeImported "Fay$" (Just "sub")])
   ,(Symbol "/",[ScopeImported "Fay$" (Just "div")])

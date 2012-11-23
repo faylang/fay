@@ -5,20 +5,27 @@ module Language.Fay.Stdlib
   ,(.)
   ,(=<<)
   ,Defined(..)
+  ,Either(..)
   ,Ordering(..)
   ,show
   ,fromInteger
   ,fromRational
+  ,abs
   ,any
   ,compare
   ,concat
   ,concatMap
   ,const
+  ,curry
+  ,div
+  ,divMod
+  ,either
   ,elem
   ,enumFrom
   ,enumFromThen
   ,enumFromTo
   ,enumFromThenTo
+  ,error
   ,fromIntegral
   ,filter
   ,find
@@ -29,6 +36,7 @@ module Language.Fay.Stdlib
   ,fst
   ,length
   ,mod
+  ,negate
   ,insertBy
   ,intercalate
   ,intersperse
@@ -40,12 +48,20 @@ module Language.Fay.Stdlib
   ,nub
   ,null
   ,otherwise
+  ,pred
   ,prependToAll
+  ,quot
+  ,quotRem
+  ,recip
+  ,rem
   ,reverse
   ,sequence
+  ,signum
   ,snd
   ,sort
   ,sortBy
+  ,succ
+  ,uncurry
   ,when
   ,zip
   ,zipWith
@@ -56,7 +72,14 @@ module Language.Fay.Stdlib
 import           Language.Fay.FFI
 import           Prelude          (Bool (..), Double, Eq (..), Fractional, Int,
                                    Integer, Maybe (..), Monad (..), Num ((+), (-)),
-                                   Ord ((>), (<)), Rational, Show, String, (||))
+                                   Fractional ((/)), Ord ((>), (<)), Rational, Show,
+                                   String, (&&), (||))
+
+error :: String -> a
+error str = case error' str of 0 -> error str ; _ -> error str
+
+error' :: String -> Int
+error' = ffi "(function() { throw %1 })()"
 
 show :: (Foreign a,Show a) => a -> String
 show = ffi "JSON.stringify(%1)"
@@ -64,12 +87,33 @@ show = ffi "JSON.stringify(%1)"
 data Defined a = Undefined | Defined a
 instance Foreign a => Foreign (Defined a)
 
+data Either a b = Left a | Right b
+
+either :: (a -> c) -> (b -> c) -> Either a b -> c
+either f _ (Left a) = f a
+either _ g (Right b) = g b
+
 -- There is only Double in JS.
 fromInteger :: a -> a
 fromInteger x = x
 
 fromRational :: a -> a
 fromRational x = x
+
+negate :: Num a => a -> a
+negate x = (-x)
+
+abs :: (Num a, Ord a) => a -> a
+abs x = if x < 0 then negate x else x
+
+signum :: (Num a, Ord a) => a -> a
+signum x = if x > 0 then 1 else if x == 0 then 0 else -1
+
+curry :: ((a, b) -> c) -> a -> b -> c
+curry f x y = f (x, y)
+
+uncurry :: (a -> b -> c) -> (a, b) -> c
+uncurry f p = case p of (x, y) -> f x y
 
 snd :: (t, t1) -> t1
 snd (_,x) = x
@@ -144,14 +188,18 @@ insertBy cmp x ys =
 when :: Monad m => Bool -> m a -> m ()
 when p m = if p then m >> return () else return ()
 
+succ :: Num a => a -> a
+succ x = x + 1
+
+pred :: Num a => a -> a
+pred x = x - 1
+
 enumFrom :: Num a => a -> [a]
 enumFrom i = i : enumFrom (i + 1)
 
-enumFromTo :: (Eq t, Num t) => t -> t -> [t]
+enumFromTo :: (Ord t, Num t) => t -> t -> [t]
 enumFromTo i n =
-  if i == n
-     then [i]
-     else i : enumFromTo (i + 1) n
+  if i > n then [] else i : enumFromTo (i + 1) n
 
 enumFromBy :: (Num t) => t -> t -> [t]
 enumFromBy fr by = fr : enumFromBy (fr + by) by
@@ -248,14 +296,47 @@ length' :: Int -> [a] -> Int
 length' acc (_:xs) = length' (acc+1) xs
 length' acc _ = acc
 
-mod :: Double -> Double -> Double
-mod = ffi "%1 %% %2"
+rem :: Int -> Int -> Int
+rem x y = if y == 0 then error "Division by zero" else rem' x y
 
-min :: Double -> Double -> Double
+rem' :: Int -> Int -> Int
+rem' = ffi "%1 %% %2"
+
+quot :: Int -> Int -> Int
+quot x y = if y == 0 then error "Division by zero" else quot' x y
+
+quot' :: Int -> Int -> Int
+quot' = ffi "~~(%1/%2)"
+
+quotRem :: Int -> Int -> (Int, Int)
+quotRem x y = (quot x y, rem x y)
+
+div :: Int -> Int -> Int
+div x y
+  | x > 0 && y < 0 = quot (x-1) y - 1
+  | x < 0 && y > 0 = quot (x+1) y - 1
+div x y            = quot x y
+
+mod :: Int -> Int -> Int
+mod x y
+  | x > 0 && y < 0 = rem (x-1) y + y + 1
+  | x < 0 && y > 0 = rem (x+1) y + y - 1
+mod x y            = rem x y
+
+divMod :: Int -> Int -> (Int, Int)
+divMod x y
+  | x > 0 && y < 0 = case (x-1) `quotRem` y of (q,r) -> (q-1, r+y+1)
+  | x < 0 && y > 1 = case (x+1) `quotRem` y of (q,r) -> (q-1, r+y-1)
+divMod x y         = quotRem x y
+
+min :: (Num a, Foreign a) => a -> a -> a
 min = ffi "Math.min(%1,%2)"
 
-max :: Double -> Double -> Double
+max :: (Num a, Foreign a) => a -> a -> a
 max = ffi "Math.max(%1,%2)"
+
+recip :: Double -> Double
+recip x = 1 / x
 
 fromIntegral :: Int -> Double
 fromIntegral = ffi "%1"

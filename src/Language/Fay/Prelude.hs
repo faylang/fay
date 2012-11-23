@@ -38,8 +38,8 @@ import           Language.Fay.Stdlib
 import           Language.Fay.Types  (Fay)
 import           Data.Data
 import           Prelude             (Bool(..), Char, Double, Eq(..), Int, Integer, Maybe(..), Monad,
- Ord, Read(..), Show(), String, error, read, (&&), (*), (+), (-),
- (/), (/=), (<), (<=), (==), (>), (>=), (||))
+                                      Ord, Read(..), Show(), String, read, (&&), (*), (+), (-),
+                                      (/), (/=), (<), (<=), (==), (>), (>=), (||))
 
 (>>) :: Fay a -> Fay b -> Fay b
 (>>) = error "Language.Fay.Prelude.(>>): Used (>>) outside JS."

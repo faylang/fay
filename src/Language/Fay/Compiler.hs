@@ -539,29 +539,10 @@ compileExp exp =
     Lambda _ pats exp             -> compileLambda pats exp
     LeftSection e o               -> compileExp =<< desugarLeftSection e o
     RightSection o e              -> compileExp =<< desugarRightSection o e
-    EnumFrom i                    -> do e <- compileExp i
-                                        name <- resolveName "enumFrom"
-                                        return (JsApp (JsName (JsNameVar name)) [e])
-    EnumFromTo i i'               -> do f <- compileExp i
-                                        t <- compileExp i'
-                                        name <- resolveName "enumFromTo"
-                                        return (JsApp (JsApp (JsName (JsNameVar name))
-                                                             [f])
-                                                      [t])
-    EnumFromThen a b              -> do fr <- compileExp a
-                                        th <- compileExp b
-                                        name <- resolveName "enumFromThen"
-                                        return (JsApp (JsApp (JsName (JsNameVar name))
-                                                             [fr])
-                                                      [th])
-    EnumFromThenTo a b z          -> do fr <- compileExp a
-                                        th <- compileExp b
-                                        to <- compileExp z
-                                        name <- resolveName "enumFromThenTo"
-                                        return (JsApp (JsApp (JsApp (JsName (JsNameVar name))
-                                                                    [fr])
-                                                             [th])
-                                                      [to])
+    EnumFrom i                    -> compileEnumFrom i
+    EnumFromTo i i'               -> compileEnumFromTo i i'
+    EnumFromThen a b              -> compileEnumFromThen a b
+    EnumFromThenTo a b z          -> compileEnumFromThenTo a b z
     RecConstr name fieldUpdates -> compileRecConstr name fieldUpdates
     RecUpdate rec  fieldUpdates -> updateRec rec fieldUpdates
     ListComp exp stmts            -> compileExp =<< desugarListComp exp stmts
@@ -976,3 +957,93 @@ compileLit lit =
     String string -> return (JsApp (JsName (JsBuiltIn "list"))
                                    [JsLit (JsStr string)])
     lit           -> throwError (UnsupportedLiteral lit)
+
+-- | Compile [e1..] arithmetic sequences.
+compileEnumFrom :: Exp -> Compile JsExp
+compileEnumFrom i = do
+  e <- compileExp i
+  name <- resolveName "enumFrom"
+  return (JsApp (JsName (JsNameVar name)) [e])
+
+-- | Compile [e1..e3] arithmetic sequences.
+compileEnumFromTo :: Exp -> Exp -> Compile JsExp
+compileEnumFromTo i i' = do
+  f <- compileExp i
+  t <- compileExp i'
+  name <- resolveName "enumFromTo"
+  let s = case (f,t) of
+        (JsLit fl, JsLit tl) -> strictEnumFromTo fl tl
+        _ -> Nothing
+  return $ case s of
+    Just s' -> s'
+    _ -> JsApp (JsApp (JsName (JsNameVar name)) [f]) [t]
+
+-- | Compile [e1,e2..] arithmetic sequences.
+compileEnumFromThen :: Exp -> Exp -> Compile JsExp
+compileEnumFromThen a b = do
+  fr <- compileExp a
+  th <- compileExp b
+  name <- resolveName "enumFromThen"
+  return (JsApp (JsApp (JsName (JsNameVar name)) [fr]) [th])
+
+-- | Compile [e1,e2..e3] arithmetic sequences.
+compileEnumFromThenTo :: Exp -> Exp -> Exp -> Compile JsExp
+compileEnumFromThenTo a b z = do
+  fr <- compileExp a
+  th <- compileExp b
+  to <- compileExp z
+  name <- resolveName "enumFromThenTo"
+  let s = case (fr,th,to) of
+        (JsLit frl, JsLit thl, JsLit tol) -> strictEnumFromThenTo frl thl tol
+        _ -> Nothing
+  return $ case s of
+    Just s' -> s'
+    _ -> JsApp (JsApp (JsApp (JsName (JsNameVar name)) [fr]) [th]) [to]
+
+-- | Maximum number of elements to allow in strict list representation
+-- of arithmetic sequences.
+maxStrictASLen :: Int
+maxStrictASLen = 10
+
+-- | Generate strict lists for sufficiently short [e1..e3] constant
+-- arithmetic sequences.
+strictEnumFromTo :: JsLit -> JsLit -> Maybe JsExp
+strictEnumFromTo (JsChar f) (JsChar t) =
+  mkEnumFromTo (JsLit . JsChar) f t
+strictEnumFromTo (JsInt f) (JsInt t) =
+  mkEnumFromTo (JsLit . JsInt) f t
+strictEnumFromTo (JsFloating f) (JsFloating t) =
+  mkEnumFromTo (JsLit . JsFloating) f t
+strictEnumFromTo _ _ = Nothing
+
+-- | Helper function to generate strict representations of [e1..e3]
+-- constant arithmetic sequences.
+mkEnumFromTo :: Enum t => (t -> JsExp) -> t -> t -> Maybe JsExp
+mkEnumFromTo mk f t =
+  if (t' - f' < maxStrictASLen)
+  then Just . makeList $ map mk [f..t]
+  else Nothing
+    where f' = fromEnum f
+          t' = fromEnum t
+
+-- | Generate strict lists for sufficiently short [e1,e2..e3] constant
+-- arithmetic sequences.
+strictEnumFromThenTo :: JsLit -> JsLit -> JsLit -> Maybe JsExp
+strictEnumFromThenTo (JsChar fr) (JsChar th) (JsChar to) =
+  mkEnumFromThenTo (JsLit . JsChar) fr th to
+strictEnumFromThenTo (JsInt fr) (JsInt th) (JsInt to) =
+  mkEnumFromThenTo (JsLit . JsInt) fr th to
+strictEnumFromThenTo (JsFloating fr) (JsFloating th) (JsFloating to) =
+  mkEnumFromThenTo (JsLit . JsFloating) fr th to
+strictEnumFromThenTo _ _ _ = Nothing
+
+-- | Helper function to generate strict representations of [e1,e2..e3]
+-- constant arithmetic sequences.
+mkEnumFromThenTo :: Enum t => (t -> JsExp) -> t -> t -> t -> Maybe JsExp
+mkEnumFromThenTo mk fr th to =
+  if ((to' - fr') `div` (th' - fr') < maxStrictASLen)
+  then Just . makeList $ map mk [fr,th..to]
+  else Nothing
+    where fr' = fromEnum fr
+          th' = fromEnum th
+          to' = fromEnum to

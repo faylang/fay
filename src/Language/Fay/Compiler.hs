@@ -537,6 +537,8 @@ compileExp exp =
     Con qname                     -> compileVar qname
     Do stmts                      -> compileDoBlock stmts
     Lambda _ pats exp             -> compileLambda pats exp
+    LeftSection e o               -> compileExp =<< desugarLeftSection e o
+    RightSection o e              -> compileExp =<< desugarRightSection o e
     EnumFrom i                    -> do e <- compileExp i
                                         name <- resolveName "enumFrom"
                                         return (JsApp (JsName (JsNameVar name)) [e])
@@ -660,7 +662,7 @@ compileLambda pats exp = do
                 [JsEarlyReturn exp]
                 (reverse (zip uniqueNames pats))
 
--- | Compile list comprehensions.
+-- | Desugar list comprehensions.
 desugarListComp :: Exp -> [QualStmt] -> Compile Exp
 desugarListComp e [] =
     return (List [ e ])
@@ -679,6 +681,16 @@ desugarListComp e (QualStmt (LetStmt bs)         : stmts) = do
     return (Let bs nested)
 desugarListComp _ (s                             : _    ) =
     throwError (UnsupportedQualStmt s)
+
+-- | Desugar left sections to lambdas.
+desugarLeftSection :: Exp -> QOp -> Compile Exp
+desugarLeftSection e o = withScopedTmpName $ \tmp ->
+    return (Lambda undefined [PVar tmp] (InfixApp e o (Var (UnQual tmp))))
+
+-- | Desugar left sections to lambdas.
+desugarRightSection :: QOp -> Exp -> Compile Exp
+desugarRightSection o e = withScopedTmpName $ \tmp ->
+    return (Lambda undefined [PVar tmp] (InfixApp (Var (UnQual tmp)) o e))
 
 -- | Compile case expressions.
 compileCase :: Exp -> [Alt] -> Compile JsExp

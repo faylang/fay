@@ -5,11 +5,11 @@
 import Language.Fay.Prelude
 import Language.Fay.FFI
 
-log :: String -> Fay ()
-log = ffi "console.log(%1)"
+putStrLn :: String -> Fay ()
+putStrLn = ffi "console.log(%1)"
 
 main :: Fay ()
-main = log doTest
+main = putStrLn doTest
 
 doTest :: String
 doTest = case ("x","") of

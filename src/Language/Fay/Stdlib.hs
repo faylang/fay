@@ -4,6 +4,7 @@ module Language.Fay.Stdlib
   ,(++)
   ,(.)
   ,(=<<)
+  ,(**)
   ,Defined(..)
   ,Either(..)
   ,Ordering(..)
@@ -11,11 +12,19 @@ module Language.Fay.Stdlib
   ,fromInteger
   ,fromRational
   ,abs
+  ,acos
+  ,acosh
   ,any
+  ,atan
+  ,atanh
+  ,asin
+  ,asinh
   ,compare
   ,concat
   ,concatMap
   ,const
+  ,cos
+  ,cosh
   ,curry
   ,div
   ,divMod
@@ -26,6 +35,7 @@ module Language.Fay.Stdlib
   ,enumFromTo
   ,enumFromThenTo
   ,error
+  ,exp
   ,fromIntegral
   ,filter
   ,find
@@ -35,6 +45,8 @@ module Language.Fay.Stdlib
   ,forM_
   ,fst
   ,length
+  ,log
+  ,logBase
   ,mod
   ,negate
   ,insertBy
@@ -48,6 +60,7 @@ module Language.Fay.Stdlib
   ,nub
   ,null
   ,otherwise
+  ,pi
   ,pred
   ,prependToAll
   ,quot
@@ -57,10 +70,15 @@ module Language.Fay.Stdlib
   ,reverse
   ,sequence
   ,signum
+  ,sin
+  ,sinh
   ,snd
   ,sort
   ,sortBy
+  ,sqrt
   ,succ
+  ,tan
+  ,tanh
   ,uncurry
   ,when
   ,zip
@@ -108,6 +126,60 @@ abs x = if x < 0 then negate x else x
 
 signum :: (Num a, Ord a) => a -> a
 signum x = if x > 0 then 1 else if x == 0 then 0 else -1
+
+pi :: Double
+pi = ffi "Math.PI"
+
+exp :: Double -> Double
+exp = ffi "Math.exp(%1)"
+
+sqrt :: Double -> Double
+sqrt = ffi "Math.sqrt(%1)"
+
+log :: Double -> Double
+log = ffi "Math.log(%1)"
+
+(**) :: Double -> Double -> Double
+(**) = ffi "Math.pow(%1,%2)"
+
+logBase :: Double -> Double -> Double
+logBase b x = log x / log b
+
+sin :: Double -> Double
+sin = ffi "Math.sin(%1)"
+
+tan :: Double -> Double
+tan = ffi "Math.tan(%1)"
+
+cos :: Double -> Double
+cos = ffi "Math.cos(%1)"
+
+asin :: Double -> Double
+asin = ffi "Math.asin(%1)"
+
+atan :: Double -> Double
+atan = ffi "Math.atan(%1)"
+
+acos :: Double -> Double
+acos = ffi "Math.acos(%1)"
+
+sinh :: Double -> Double
+sinh x = (exp x - exp (-x)) / 2
+
+tanh :: Double -> Double
+tanh x = let a = exp x ; b = exp (-x) in (a - b) / (a + b)
+
+cosh :: Double -> Double
+cosh x = (exp x + exp (-x)) / 2
+
+asinh :: Double -> Double
+asinh x = log (x + sqrt(x**2 + 1))
+
+atanh :: Double -> Double
+atanh x = log ((1 + x) / (1 - x)) / 2
+
+acosh :: Double -> Double
+acosh x = log (x + sqrt (x**2 - 1))
 
 curry :: ((a, b) -> c) -> a -> b -> c
 curry f x y = f (x, y)

@@ -18,10 +18,10 @@ main = runContT demo (const (return ()))
 demo :: Deferred ()
 demo = case contT of
   CC return (>>=) (>>) callCC lift -> do
-    print "Hello!"
-    sleep 500
-    contents <- readFile "README.md"
-    print ("File contents is: " ++ take 10 contents ++ "...")
+    lift (print "Hello!")
+    sync setTimeout 500
+    contents <- sync readFile "README.md"
+    lift (print ("File contents is: " ++ take 10 contents ++ "..."))
 
 --------------------------------------------------------------------------------
 -- Deferred library.
@@ -29,28 +29,19 @@ demo = case contT of
 -- | An example deferred monad.
 type Deferred a = ContT () Fay a
 
--- | Sleep synchronously for n milliseconds.
-sleep :: Int -> Deferred ()
-sleep n = ContT $ \c -> setTimeout n (c ())
-
 -- | Set an asynchronous timeout.
-setTimeout :: Int -> Fay () -> Fay ()
+setTimeout :: Int -> (() -> Fay ()) -> Fay ()
 setTimeout = ffi "global.setTimeout(%2,%1)"
 
--- | Read the given file synchronously.
-readFile :: String -> Deferred String
-readFile path = ContT $ \c -> readFile' path c
-
-readFile' :: Foreign b => String -> (String -> Fay b) -> Fay b
-readFile' = ffi "require('fs').readFile(%1,'utf-8',function(_,s){ %2(s); })"
-
--- | Print something in the deferred monad.
-print :: String -> Deferred ()
-print x = cc_lift contT (print' x)
+readFile :: Foreign b => String -> (String -> Fay b) -> Fay b
+readFile = ffi "require('fs').readFile(%1,'utf-8',function(_,s){ %2(s); })"
 
 -- | Print using console.log.
-print' :: String -> Fay ()
-print' = ffi "console.log(%1)"
+print :: String -> Fay ()
+print = ffi "console.log(%1)"
+
+sync :: (t -> (a -> Fay r) -> Fay r) -> t -> ContT r Fay a
+sync m a = ContT $ \c -> m a c
 
 --------------------------------------------------------------------------------
 -- Continuation library.

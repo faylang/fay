@@ -2,6 +2,7 @@
 module Language.Fay.Stdlib
   (($)
   ,($!)
+  ,(!!)
   ,(++)
   ,(.)
   ,(=<<)
@@ -14,12 +15,15 @@ module Language.Fay.Stdlib
   ,abs
   ,acos
   ,acosh
+  ,all
+  ,and
   ,any
   ,asin
   ,asinh
   ,asTypeOf
   ,atan
   ,atanh
+  ,break
   ,ceiling
   ,compare
   ,concat
@@ -28,8 +32,11 @@ module Language.Fay.Stdlib
   ,cos
   ,cosh
   ,curry
+  ,cycle
   ,div
   ,divMod
+  ,drop
+  ,dropWhile
   ,either
   ,elem
   ,enumFrom
@@ -44,44 +51,62 @@ module Language.Fay.Stdlib
   ,flip
   ,floor
   ,foldl
+  ,foldl1
   ,foldr
+  ,foldr1
   ,forM_
   ,fromInteger
   ,fromIntegral
   ,fromRational
   ,fst
   ,gcd
+  ,head
   ,id
+  ,init
   ,insertBy
   ,intercalate
   ,intersperse
+  ,iterate
+  ,last
   ,lcm
   ,length
+  ,lines
   ,log
   ,logBase
   ,lookup
   ,map
   ,mapM_
   ,max
+  ,maximum
   ,maybe
   ,min
+  ,minimum
   ,mod
   ,negate
   ,not
+  ,notElem
   ,nub
   ,null
   ,odd
+  ,or
   ,otherwise
   ,pi
   ,pred
   ,prependToAll
+  ,product
   ,properFraction
   ,quot
   ,quotRem
   ,recip
   ,rem
+  ,repeat
+  ,replicate
   ,reverse
   ,round
+  ,scanl
+  ,scanl1
+  ,scanr
+  ,scanr1
   ,seq
   ,sequence
   ,sequence_
@@ -92,18 +117,31 @@ module Language.Fay.Stdlib
   ,snd
   ,sort
   ,sortBy
+  ,span
+  ,splitAt
   ,sqrt
   ,subtract
   ,succ
+  ,sum
+  ,tail
+  ,take
+  ,takeWhile
   ,tan
   ,tanh
   ,truncate
   ,uncurry
   ,undefined
+  ,unlines
   ,until
+  ,unwords
+  ,unzip
+  ,unzip3
   ,when
+  ,words
   ,zip
-  ,zipWith)
+  ,zip3
+  ,zipWith
+  ,zipWith3)
   where
 
 import           Language.Fay.FFI
@@ -269,10 +307,6 @@ find :: (a -> Bool) -> [a] -> Maybe a
 find p (x:xs) = if p x then Just x else find p xs
 find _ [] = Nothing
 
-any :: (t -> Bool) -> [t] -> Bool
-any p (x:xs) = if p x then True else any p xs
-any _ [] = False
-
 filter :: (a -> Bool) -> [a] -> [a]
 filter p (x:xs) = if p x then x : filter p xs else filter p xs
 filter _ []     = []
@@ -301,6 +335,9 @@ nub' (x:xs) ls =
 elem :: Eq a => a -> [a] -> Bool
 elem x (y:ys)   = x == y || elem x ys
 elem _ []       = False
+
+notElem :: Eq a => a -> [a] -> Bool
+notElem x ys = not (elem x ys)
 
 data Ordering = GT | LT | EQ
 
@@ -359,13 +396,47 @@ enumFromByTo fr by to = if by < 0 then neg fr else pos fr
 enumFromThenTo :: (Ord t, Num t) => t -> t -> t -> [t]
 enumFromThenTo fr th to = enumFromByTo fr (th - fr) to
 
-zipWith :: (a->b->c) -> [a]->[b]->[c]
+zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
 zipWith f (a:as) (b:bs) = f a b : zipWith f as bs
 zipWith _ _      _      = []
+
+zipWith3 :: (a -> b -> c -> d) -> [a] -> [b] -> [c] -> [d]
+zipWith3 f (a:as) (b:bs) (c:cs) = f a b c : zipWith3 f as bs cs
+zipWith3 _ _      _      _      = []
 
 zip :: [a] -> [b] -> [(a,b)]
 zip (a:as) (b:bs) = (a,b) : zip as bs
 zip _      _      = []
+
+zip3 :: [a] -> [b] -> [c] -> [(a, b, c)]
+zip3 (a:as) (b:bs) (c:cs) = (a,b,c) : zip3 as bs cs
+zip3 _      _      _      = []
+
+unzip :: [(a, b)] -> ([a], [b])
+unzip ((x,y):ps) = case unzip ps of (xs,ys) -> (x:xs, y:ys)
+unzip []         = ([], [])
+
+unzip3 :: [(a, b, c)] -> ([a], [b], [c])
+unzip3 ((x,y,z):ps) = case unzip3 ps of (xs,ys,zs) -> (x:xs, y:ys, z:zs)
+unzip3 []           = ([], [], [])
+
+lines :: String -> [String]
+lines []   = []
+lines s    = case break isLineBreak s of (a, [])   -> [a]
+                                         (a, _:cs) -> a : lines cs
+  where isLineBreak c = c == '\r' || c == '\n'
+
+unlines :: [String] -> String
+unlines = intercalate "\n"
+
+words :: String -> [String]
+words str = words' (dropWhile isSpace str)
+  where words' []  = []
+        words' s = case break isSpace s of (a,b) -> a : words b
+        isSpace c  = c `elem` " \t\r\n\f\v"
+
+unwords :: [String] -> String
+unwords = intercalate " "
 
 flip :: (t1 -> t2 -> t) -> t2 -> t1 -> t
 flip f x y = f y x
@@ -401,9 +472,67 @@ foldr :: (t -> t1 -> t1) -> t1 -> [t] -> t1
 foldr _ z []     = z
 foldr f z (x:xs) = f x (foldr f z xs)
 
+foldr1 :: (a -> a -> a) -> [a] -> a
+foldr1 _ [x]    = x
+foldr1 f (x:xs) = f x (foldr1 f xs)
+foldr1 _ []     = error "foldr1: empty list"
+
 foldl :: (t1 -> t -> t1) -> t1 -> [t] -> t1
 foldl _ z []     = z
 foldl f z (x:xs) = foldl f (f z x) xs
+
+foldl1 :: (a -> a -> a) -> [a] -> a
+foldl1 f (x:xs) = foldl f x xs
+foldl1 _ []     = error "foldl1: empty list"
+
+and :: [Bool] -> Bool
+and []     = True
+and (x:xs) = x && and xs
+
+or :: [Bool] -> Bool
+or []     = False
+or (x:xs) = x || or xs
+
+any :: (a -> Bool) -> [a] -> Bool
+any _ []     = False
+any p (x:xs) = p x || any p xs
+
+all :: (a -> Bool) -> [a] -> Bool
+all _ []     = True
+all p (x:xs) = p x && all p xs
+
+maximum :: (Num a, Foreign a) => [a] -> a
+maximum [] = error "maximum: empty list"
+maximum xs = foldl1 max xs
+
+minimum :: (Num a, Foreign a) => [a] -> a
+minimum [] = error "minimum: empty list"
+minimum xs = foldl1 min xs
+
+product :: Num a => [a] -> a
+product [] = error "product: empty list"
+product xs = foldl (*) 1 xs
+
+sum :: Num a => [a] -> a
+sum [] = error "sum: empty list"
+sum xs = foldl (+) 0 xs
+
+scanl :: (a -> b -> a) -> a -> [b] -> [a]
+scanl f z l = z : case l of [] -> []
+                            (x:xs) -> scanl f (f z x) xs
+
+scanl1 :: (a -> a -> a) -> [a] -> [a]
+scanl1 _ [] = []
+scanl1 f (x:xs) = scanl f x xs
+
+scanr :: (a -> b -> b) -> b -> [a] -> [b]
+scanr _ z [] = [z]
+scanr f z (x:xs) = case scanr f z xs of (h:t) -> f x h : h : t
+
+scanr1 :: (a -> a -> a) -> [a] -> [a]
+scanr1 _ []     = []
+scanr1 _ [x]    = [x]
+scanr1 f (x:xs) = case scanr1 f xs of (h:t) -> f x h : h : t
 
 lookup :: Eq a1 => a1 -> [(a1, a)] -> Maybe a
 lookup _key []          =  Nothing
@@ -525,4 +654,77 @@ until p f x = if p x then x else until p f (f x)
 ($!) :: (a -> b) -> a -> b
 f $! x = x `seq` f x
 infixr 0 $!
+
+(!!) :: [a] -> Int -> a
+a !! b = if b < 0 then error "(!!): negative index" else go a b
+  where go []    _ = error "(!!): index too large"
+        go (h:_) 0 = h
+        go (_:t) n = go t (n-1)
+infixl 9 !!
+
+head :: [a] -> a
+head []    = error "head: empty list"
+head (h:_) = h
+
+tail :: [a] -> [a]
+tail []    = error "tail: empty list"
+tail (_:t) = t
+
+init :: [a] -> [a]
+init []    = error "init: empty list"
+init [a]   = [a]
+init (h:t) = h : init t
+
+last :: [a] -> a
+last []    = error "last: empty list"
+last [a]   = a
+last (_:t) = last t
+
+iterate :: (a -> a) -> a -> [a]
+iterate f x = x : iterate f (f x)
+
+repeat :: a -> [a]
+repeat x = x : repeat x
+
+replicate :: Int -> a -> [a]
+replicate 0 _ = []
+replicate n x = if n < 0 then error "replicate: negative length"
+                         else x : replicate (n-1) x
+
+cycle :: [a] -> [a]
+cycle [] = error "cycle: empty list"
+cycle xs = xs' where xs' = xs ++ xs'
+
+take :: Int -> [a] -> [a]
+take 0 _  = []
+take _ [] = []
+take n (x:xs) = if n < 0 then error "take: negative length"
+                         else x : take (n-1) xs
+
+drop :: Int -> [a] -> [a]
+drop 0 xs = xs
+drop _ [] = []
+drop n (_:xs) = if n < 0 then error "drop: negative length"
+                         else drop (n-1) xs
+
+splitAt :: Int -> [a] -> ([a], [a])
+splitAt 0 xs     = ([], xs)
+splitAt _ []     = ([], [])
+splitAt n (x:xs) = if n < 0 then error "splitAt: negative length"
+                            else case splitAt (n-1) xs of (a,b) -> (x:a, b)
+
+takeWhile :: (a -> Bool) -> [a] -> [a]
+takeWhile _ []     = []
+takeWhile p (x:xs) = if p x then x : takeWhile p xs else []
+
+dropWhile :: (a -> Bool) -> [a] -> [a]
+dropWhile _ []     = []
+dropWhile p (x:xs) = if p x then dropWhile p xs else x:xs
+
+span :: (a -> Bool) -> [a] -> ([a], [a])
+span _ []     = ([], [])
+span p (x:xs) = if p x then case span p xs of (a,b) -> (x:a, b) else ([], x:xs)
+
+break :: (a -> Bool) -> [a] -> ([a], [a])
+break p = span (not . p)
 

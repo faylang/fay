@@ -37,6 +37,18 @@ $.prototype.force = function(nocache) {
      (this.value = this.value(), this.forced = true, this.value));
 };
 
+function Fay$$seq(x) {
+  return function(y) {
+    _(x,false);
+    return y;
+  }
+}
+
+function Fay$$seq$36$uncurried(x,y) {
+  _(x,false);
+  return y;
+}
+
 /*******************************************************************************
  * Monad.
  */

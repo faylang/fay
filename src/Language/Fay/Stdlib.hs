@@ -1,6 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 module Language.Fay.Stdlib
   (($)
+  ,($!)
   ,(++)
   ,(.)
   ,(=<<)
@@ -16,6 +17,7 @@ module Language.Fay.Stdlib
   ,any
   ,asin
   ,asinh
+  ,asTypeOf
   ,atan
   ,atanh
   ,ceiling
@@ -49,6 +51,7 @@ module Language.Fay.Stdlib
   ,fromRational
   ,fst
   ,gcd
+  ,id
   ,insertBy
   ,intercalate
   ,intersperse
@@ -79,7 +82,9 @@ module Language.Fay.Stdlib
   ,rem
   ,reverse
   ,round
+  ,seq
   ,sequence
+  ,sequence_
   ,show
   ,signum
   ,sin
@@ -94,6 +99,8 @@ module Language.Fay.Stdlib
   ,tanh
   ,truncate
   ,uncurry
+  ,undefined
+  ,until
   ,when
   ,zip
   ,zipWith)
@@ -104,13 +111,16 @@ import           Prelude          (Bool (..), Double, Eq (..), Fractional, Int,
                                    Integer, Maybe (..), Monad (..),
                                    Num ((+), (-), (*)), Fractional ((/)),
                                    Ord ((>), (<)), Rational, Show, String,
-                                   (&&), (||))
+                                   (&&), (||), seq)
 
 error :: String -> a
 error str = case error' str of 0 -> error str ; _ -> error str
 
 error' :: String -> Int
 error' = ffi "(function() { throw %1 })()"
+
+undefined :: a
+undefined = error "Prelude.undefined"
 
 show :: (Foreign a,Show a) => a -> String
 show = ffi "JSON.stringify(%1)"
@@ -490,3 +500,20 @@ sequence :: (Monad m) => [m a] -> m [a]
 sequence ms = foldr k (return []) ms
             where
               k m m' = do { x <- m; xs <- m'; return (x:xs) }
+
+sequence_ :: Monad m => [m a] -> m ()
+sequence_ []     = return ()
+sequence_ (m:ms) = m >> sequence_ ms
+
+id :: a -> a
+id x = x
+
+asTypeOf :: a -> a -> a
+asTypeOf = const
+
+until :: (a -> Bool) -> (a -> a) -> a -> a
+until p f x = if p x then x else until p f (f x)
+
+($!) :: (a -> b) -> a -> b
+f $! x = x `seq` f x
+

@@ -27,19 +27,23 @@ main = do
 -- | Make the case-by-case unit tests.
 makeCompilerTests :: IO Test
 makeCompilerTests = do
-  files <- fmap (map ("tests" </>) . sort . filter dotHs) $ getDirectoryContents "tests"
-  return $ testGroup "Tests" $ flip map files $ \file ->
-    testCase file $ do
-      let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
-          out = toJsName file
-      outExists <- doesFileExist root
-      compileFromTo def { configTypecheck = False, configDirectoryIncludes = ["tests/"] } file (Just out)
-      result <- runJavaScriptFile out
-      if outExists
-         then do output <- readFile root
-                 assertEqual file output (either show id result)
-         else assertEqual file True (either (const True) (const False) result)
-  where dotHs = isSuffixOf ".hs"
+  files <- fmap (map ("tests" </>) . sort . filter (isSuffixOf ".hs")) $ getDirectoryContents "tests"
+  return $ testGroup "Tests" $ flip map files $ \file -> testCase file $ do
+    testFile False file
+    testFile True file
+
+testFile :: Bool -> String -> IO ()
+testFile opt file = do
+  let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
+      out = toJsName file
+      config = def { configOptimize = opt }
+  outExists <- doesFileExist root
+  compileFromTo config { configTypecheck = False, configDirectoryIncludes = ["tests/"] } file (Just out)
+  result <- runJavaScriptFile out
+  if outExists
+     then do output <- readFile root
+             assertEqual file output (either show id result)
+     else assertEqual file True (either (const True) (const False) result)
 
 -- | Run a JS file.
 runJavaScriptFile :: String -> IO (Either String String)

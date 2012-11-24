@@ -5,20 +5,20 @@ module Language.Fay.Stdlib
   ,(.)
   ,(=<<)
   ,(**)
+  ,(^^)
+  ,(^)
   ,Defined(..)
   ,Either(..)
   ,Ordering(..)
-  ,show
-  ,fromInteger
-  ,fromRational
   ,abs
   ,acos
   ,acosh
   ,any
-  ,atan
-  ,atanh
   ,asin
   ,asinh
+  ,atan
+  ,atanh
+  ,ceiling
   ,compare
   ,concat
   ,concatMap
@@ -32,43 +32,55 @@ module Language.Fay.Stdlib
   ,elem
   ,enumFrom
   ,enumFromThen
-  ,enumFromTo
   ,enumFromThenTo
+  ,enumFromTo
   ,error
+  ,even
   ,exp
-  ,fromIntegral
   ,filter
   ,find
   ,flip
+  ,floor
   ,foldl
   ,foldr
   ,forM_
+  ,fromInteger
+  ,fromIntegral
+  ,fromRational
   ,fst
-  ,length
-  ,log
-  ,logBase
-  ,mod
-  ,negate
+  ,gcd
   ,insertBy
   ,intercalate
   ,intersperse
+  ,lcm
+  ,length
+  ,log
+  ,logBase
   ,lookup
   ,map
   ,mapM_
+  ,max
   ,maybe
+  ,min
+  ,mod
+  ,negate
   ,not
   ,nub
   ,null
+  ,odd
   ,otherwise
   ,pi
   ,pred
   ,prependToAll
+  ,properFraction
   ,quot
   ,quotRem
   ,recip
   ,rem
   ,reverse
+  ,round
   ,sequence
+  ,show
   ,signum
   ,sin
   ,sinh
@@ -76,22 +88,23 @@ module Language.Fay.Stdlib
   ,sort
   ,sortBy
   ,sqrt
+  ,subtract
   ,succ
   ,tan
   ,tanh
+  ,truncate
   ,uncurry
   ,when
   ,zip
-  ,zipWith
-  ,max
-  ,min)
+  ,zipWith)
   where
 
 import           Language.Fay.FFI
 import           Prelude          (Bool (..), Double, Eq (..), Fractional, Int,
-                                   Integer, Maybe (..), Monad (..), Num ((+), (-)),
-                                   Fractional ((/)), Ord ((>), (<)), Rational, Show,
-                                   String, (&&), (||))
+                                   Integer, Maybe (..), Monad (..),
+                                   Num ((+), (-), (*)), Fractional ((/)),
+                                   Ord ((>), (<)), Rational, Show, String,
+                                   (&&), (||))
 
 error :: String -> a
 error str = case error' str of 0 -> error str ; _ -> error str
@@ -140,7 +153,19 @@ log :: Double -> Double
 log = ffi "Math.log(%1)"
 
 (**) :: Double -> Double -> Double
-(**) = ffi "Math.pow(%1,%2)"
+(**) = unsafePow
+
+(^^) :: Double -> Int -> Double
+(^^) = unsafePow
+
+unsafePow :: (Foreign a, Num a, Foreign b, Num b) => a -> b -> a
+unsafePow = ffi "Math.pow(%1,%2)"
+
+(^) :: Num a => a -> Int -> a
+a ^ b | b < 0  = error "(^): negative exponent"
+      | b == 0 = 1
+      | even b = let x = a ^ (b `quot` 2) in x * x
+a ^ b          = a * a ^ (b - 1)
 
 logBase :: Double -> Double -> Double
 logBase b x = log x / log b
@@ -180,6 +205,40 @@ atanh x = log ((1 + x) / (1 - x)) / 2
 
 acosh :: Double -> Double
 acosh x = log (x + sqrt (x**2 - 1))
+
+properFraction :: Double -> (Int, Double)
+properFraction x = let a = truncate x in (a, x - fromIntegral a)
+
+truncate :: Double -> Int
+truncate x = if x < 0 then ceiling x else floor x
+
+round :: Double -> Int
+round = ffi "Math.round(%1)"
+
+ceiling :: Double -> Int
+ceiling = ffi "Math.ceil(%1)"
+
+floor :: Double -> Int
+floor = ffi "Math.floor(%1)"
+
+subtract :: Num a => a -> a -> a
+subtract = flip (-)
+
+even :: Int -> Bool
+even x = x `rem` 2 == 0
+
+odd :: Int -> Bool
+odd x = not (even x)
+
+gcd :: Int -> Int -> Int
+gcd a b = go (abs a) (abs b)
+  where go x 0 = x
+        go x y = go y (x `rem` y)
+
+lcm :: Int -> Int -> Int
+lcm _ 0 = 0
+lcm 0 _ = 0
+lcm a b = abs ((a `quot` (gcd a b)) * b)
 
 curry :: ((a, b) -> c) -> a -> b -> c
 curry f x y = f (x, y)

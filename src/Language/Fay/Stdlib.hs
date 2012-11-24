@@ -530,11 +530,13 @@ scanl1 f (x:xs) = scanl f x xs
 scanr :: (a -> b -> b) -> b -> [a] -> [b]
 scanr _ z [] = [z]
 scanr f z (x:xs) = case scanr f z xs of (h:t) -> f x h : h : t
+                                        _     -> undefined
 
 scanr1 :: (a -> a -> a) -> [a] -> [a]
 scanr1 _ []     = []
 scanr1 _ [x]    = [x]
 scanr1 f (x:xs) = case scanr1 f xs of (h:t) -> f x h : h : t
+                                      _     -> undefined
 
 lookup :: Eq a1 => a1 -> [(a1, a)] -> Maybe a
 lookup _key []          =  Nothing
@@ -735,4 +737,3 @@ print = ffi "(function(x) { if (console && console.log) console.log(x) })(%1)"
 
 putStrLn :: String -> Fay ()
 putStrLn = ffi "(function(x) { if (console && console.log) console.log(x) })(%1)"
-

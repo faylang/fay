@@ -971,9 +971,12 @@ compileEnumFromTo i i' = do
   f <- compileExp i
   t <- compileExp i'
   name <- resolveName "enumFromTo"
-  let s = case (f,t) of
-        (JsLit fl, JsLit tl) -> strictEnumFromTo fl tl
-        _ -> Nothing
+  cfg <- gets stateConfig
+  let s = if configOptimize cfg
+          then case (f,t) of
+            (JsLit fl, JsLit tl) -> strictEnumFromTo fl tl
+            _ -> Nothing
+          else Nothing
   return $ case s of
     Just s' -> s'
     _ -> JsApp (JsApp (JsName (JsNameVar name)) [f]) [t]
@@ -993,9 +996,12 @@ compileEnumFromThenTo a b z = do
   th <- compileExp b
   to <- compileExp z
   name <- resolveName "enumFromThenTo"
-  let s = case (fr,th,to) of
-        (JsLit frl, JsLit thl, JsLit tol) -> strictEnumFromThenTo frl thl tol
-        _ -> Nothing
+  cfg <- gets stateConfig
+  let s = if configOptimize cfg
+          then case (fr,th,to) of
+            (JsLit frl, JsLit thl, JsLit tol) -> strictEnumFromThenTo frl thl tol
+            _ -> Nothing
+          else Nothing
   return $ case s of
     Just s' -> s'
     _ -> JsApp (JsApp (JsApp (JsName (JsNameVar name)) [fr]) [th]) [to]

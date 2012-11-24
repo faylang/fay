@@ -1,9 +1,9 @@
+import Language.Fay.Prelude
+
 main :: Fay ()
 main =
       case [1,2] of
-        []    -> alert "got []"
-        [a]   -> alert "got one value."
-        [a,b] -> alert "got two values."
+        []    -> putStrLn "got []"
+        [a]   -> putStrLn "got one value."
+        [a,b] -> putStrLn "got two values."
 
-alert :: String -> Fay ()
-alert = ffi "console.log(%1)"

@@ -10,7 +10,7 @@ main = do
   ref <- newRef "Hello, World!"
   x <- readRef ref
   writeRef ref "Hai!"
-  readRef ref >>= print
+  readRef ref >>= putStrLn
 
 data Ref a
 instance Show (Ref a)
@@ -25,5 +25,3 @@ writeRef = ffi "Fay$$writeRef(%1,%2)"
 readRef :: Foreign a => Ref a -> Fay a
 readRef = ffi "Fay$$readRef(%1)"
 
-print :: String -> Fay ()
-print = ffi "console.log(%1)"

@@ -14,9 +14,6 @@ main = do
   print $ r2
   return ()
 
-print :: Foreign f => f -> Fay ()
-print = ffi "console.log(%1)"
-
 printD :: Foreign f => Defined f -> Fay ()
 printD = ffi "console.log(%1)"
 

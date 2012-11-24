@@ -2,7 +2,11 @@
 {-# LANGUAGE NoImplicitPrelude    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Language.Fay.FFI where
+module Language.Fay.FFI
+  (Fay
+  ,Foreign
+  ,ffi)
+  where
 
 import           Language.Fay.Types (Fay)
 import           Prelude            (Bool, Char, Double, String, Int, Maybe, error)

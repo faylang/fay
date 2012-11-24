@@ -45,8 +45,8 @@ main = do
   print r''
 
   print r1
-  printS (show (i r1))
-  printS (show (c r1))
+  putStrLn (show (i r1))
+  putStrLn (show (c r1))
   print r2
   print r'
   print r3
@@ -54,8 +54,3 @@ main = do
   print x1
   print x2
 
-printS :: String -> Fay ()
-printS = ffi "console.log(%1)"
-
-print :: Foreign f => f -> Fay ()
-print = ffi "console.log(%1)"

@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoImplicitPrelude         #-}
 module Language.Fay.Stdlib
   (($)
   ,($!)
@@ -93,8 +93,10 @@ module Language.Fay.Stdlib
   ,pi
   ,pred
   ,prependToAll
+  ,print
   ,product
   ,properFraction
+  ,putStrLn
   ,quot
   ,quotRem
   ,recip
@@ -160,7 +162,7 @@ error' = ffi "(function() { throw %1 })()"
 undefined :: a
 undefined = error "Prelude.undefined"
 
-show :: (Foreign a,Show a) => a -> String
+show :: (Foreign a, Show a) => a -> String
 show = ffi "JSON.stringify(%1)"
 
 data Defined a = Undefined | Defined a
@@ -727,4 +729,10 @@ span p (x:xs) = if p x then case span p xs of (a,b) -> (x:a, b) else ([], x:xs)
 
 break :: (a -> Bool) -> [a] -> ([a], [a])
 break p = span (not . p)
+
+print :: (Foreign a) => a -> Fay ()
+print = ffi "(function(x) { if (console && console.log) console.log(x) })(%1)"
+
+putStrLn :: String -> Fay ()
+putStrLn = ffi "(function(x) { if (console && console.log) console.log(x) })(%1)"
 

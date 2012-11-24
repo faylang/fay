@@ -1,8 +1,4 @@
 import Language.Fay.Prelude
-import Language.Fay.FFI
-
-putStrLn :: String -> Fay ()
-putStrLn = ffi "console.log(%1)"
 
 quote s = "\"" ++ s ++ "\""
 

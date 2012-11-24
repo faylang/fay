@@ -2,8 +2,8 @@
 
 -- | As pattern matches
 
-import           Language.Fay.FFI
 import           Language.Fay.Prelude
+import           Language.Fay.FFI
 
 isPositive :: Double -> Bool
 isPositive x | x > 0 = True
@@ -19,13 +19,12 @@ withOtherwise x | x > 1 = True
 -- Not called, throws "non-exhaustive guard"
 nonExhaustive x | x > 1 = True
 
-printD :: [Double] -> Fay ()
-printD = ffi "console.log(%1)"
-printB :: [Bool] -> Fay ()
-printB = ffi "console.log(%1)"
-
 main :: Fay ()
 main = do
-  printB [isPositive 1, isPositive 0]
-  printD [threeConds 3, threeConds 1, threeConds 0]
-  printB [withOtherwise 2, withOtherwise 0]
+  putStrLn $ showList [isPositive 1, isPositive 0]
+  putStrLn $ showList [threeConds 3, threeConds 1, threeConds 0]
+  putStrLn $ showList [withOtherwise 2, withOtherwise 0]
+
+showList :: [a] -> String
+showList = ffi "JSON.stringify(%1)"
+

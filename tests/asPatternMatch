@@ -1,3 +1,6 @@
-{"car":{"car":1,"cdr":{"car":2,"cdr":{"car":3,"cdr":null}}},"cdr":{"car":{"car":1,"cdr":{"car":2,"cdr":{"car":3,"cdr":null}}},"cdr":null}}
-{"car":{"car":1,"cdr":{"car":2,"cdr":{"car":3,"cdr":null}}},"cdr":{"car":1,"cdr":{"car":{"car":2,"cdr":{"car":3,"cdr":null}},"cdr":null}}}
-{"car":{"car":1,"cdr":{"car":2,"cdr":{"car":3,"cdr":null}}},"cdr":{"car":1,"cdr":{"car":{"car":2,"cdr":{"car":3,"cdr":null}},"cdr":null}}}
+{ car: { car: 1, cdr: { car: 2, cdr: [Object] } },
+  cdr: { car: { car: 1, cdr: [Object] }, cdr: null } }
+{ car: { car: 1, cdr: { car: 2, cdr: [Object] } },
+  cdr: { car: 1, cdr: { car: [Object], cdr: null } } }
+{ car: { car: 1, cdr: { car: 2, cdr: [Object] } },
+  cdr: { car: 1, cdr: { car: [Object], cdr: null } } }

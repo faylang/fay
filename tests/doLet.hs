@@ -1,4 +1,3 @@
-import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
 main = do
@@ -45,5 +44,3 @@ sixth = do
   print y
   print x
 
-print :: Double -> Fay ()
-print = ffi "console.log(%1)"

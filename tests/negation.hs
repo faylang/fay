@@ -1,4 +1,3 @@
-import Language.Fay.FFI
 import Language.Fay.Prelude
 
 main = do print $ (-7/2)
@@ -8,5 +7,3 @@ main = do print $ (-7/2)
            x = 5
            y = 2
 
-print :: Double -> Fay ()
-print = ffi "console.log(%1)"

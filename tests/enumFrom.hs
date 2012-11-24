@@ -1,4 +1,3 @@
-import Language.Fay.FFI
 import Language.Fay.Prelude
 
 take :: Int -> [a] -> [a]
@@ -13,5 +12,3 @@ main = do
     forM_ [1,3..9] $ \i -> print i
     forM_ (take 3 [1,3..]) $ \i -> print i
 
-print :: Double -> Fay ()
-print = ffi "console.log(%1)"

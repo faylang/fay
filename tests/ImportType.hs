@@ -1,4 +1,3 @@
-import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
 import           ExportType
@@ -16,5 +15,3 @@ main = do
   print (V 1 2)
   print (v1 (V 1 2))
 
-print :: Foreign f => f -> Fay ()
-print = ffi "console.log(%1)"

@@ -14,18 +14,13 @@ fun2 r = let a = 5 in r{a}
 
 main = do
     let r = SomeRec{a=1, b=2}
-    print_rec r
-    print_rec (fun r)
-    print_rec (fun2 r)
+    print r
+    print (fun r)
+    print (fun2 r)
 
     -- https://github.com/faylang/fay/issues/121
     let t = Y
-    print_str $ case t of
+    putStrLn $ case t of
                     SomeRec{a} -> "Bad"
                     Y -> "OK."
 
-print_rec :: SomeRec -> Fay ()
-print_rec = ffi "console.log(%1)"
-
-print_str :: String -> Fay ()
-print_str = ffi "console.log(%1)"

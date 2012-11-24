@@ -1,9 +1,4 @@
 import Language.Fay.Prelude
-import Language.Fay.FFI
-
-print :: Foreign a => a -> Fay ()
-print = ffi "console.log(%1)"
-
 
 main = do
   print $ fst $ properFraction 1.5

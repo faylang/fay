@@ -1,4 +1,3 @@
-import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
 import           Hierarchical.RecordDefined
@@ -12,5 +11,3 @@ main = do
 
 data R = R Double
 
-print :: Double -> Fay ()
-print = ffi "console.log(%1)"

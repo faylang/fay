@@ -17,8 +17,3 @@ main = do
   print $ fst (h ("abc",12))
   putStrLn $ snd (h ("abc",12))
 
-print :: Foreign f => f -> Fay ()
-print = ffi "console.log(%1)"
-
-putStrLn :: String -> Fay ()
-putStrLn = ffi "console.log(%1)"

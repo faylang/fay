@@ -20,19 +20,13 @@ test2 X{..} = foo
 
 main = do
     let r = C{a=1, b=2, c=3, d=4}
-    print_int (f r)
-    print_c test_fun
+    print (f r)
+    print test_fun
 
     let x = X{foo=9}
-    print_int (test2 x)
+    print (test2 x)
 
     -- TODO: is there a way to test for exceptions ?
     --let y = Y{foo=6}
-    --print_int (test2 y)
+    --print (test2 y)
 
-
-print_int :: Int -> Fay ()
-print_int = ffi "console.log(%1)"
-
-print_c :: C -> Fay ()
-print_c = ffi "console.log(%1)"

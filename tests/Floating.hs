@@ -1,8 +1,4 @@
 import Language.Fay.Prelude
-import Language.Fay.FFI
-
-print :: Double -> Fay ()
-print = ffi "console.log(%1)"
 
 main = do
   print $ exp 0

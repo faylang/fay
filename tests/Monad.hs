@@ -1,9 +1,7 @@
 {-# LANGUAGE EmptyDataDecls    #-}
 
-
 -- | Monads test.
 
-import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
 main :: Fay ()
@@ -16,5 +14,3 @@ main = do
   print x
   print y
 
-print :: Double -> Fay ()
-print = ffi "console.log(%1)"

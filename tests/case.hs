@@ -1,9 +1,6 @@
-import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
-main = print (case True of
-               True -> "Hello!"
-               False -> "Ney!")
+main = putStrLn (case True of
+                   True -> "Hello!"
+                   False -> "Ney!")
 
-print :: String -> Fay ()
-print = ffi "console.log(%1)"

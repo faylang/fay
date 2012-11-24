@@ -1,7 +1,6 @@
-import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
-main = print (concat' ["Hello, ","World!"])
+main = putStrLn (concat' ["Hello, ","World!"])
 
 concat' = foldr' append []
 
@@ -11,5 +10,3 @@ foldr' f z (x:xs) = f x (foldr f z xs)
 append (x:xs) ys = x : append xs ys
 append []     ys = ys
 
-print :: String -> Fay ()
-print = ffi "console.log(%1)"

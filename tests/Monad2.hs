@@ -4,16 +4,12 @@
 
 -- | Monads test.
 
-import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
 main :: Fay ()
 main = do
   -- State monad test
-  return (let result = runState demo 60 in fst result ++ ": " ++ show (snd result)) >>= print
-
-print :: String -> Fay ()
-print = ffi "console.log(%1)"
+  return (let result = runState demo 60 in fst result ++ ": " ++ show (snd result)) >>= putStrLn
 
 --------------------------------------------------------------------------------
 -- A monad interface

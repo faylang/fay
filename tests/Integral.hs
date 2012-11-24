@@ -1,8 +1,4 @@
 import Language.Fay.Prelude
-import Language.Fay.FFI
-
-print :: Int -> Fay ()
-print = ffi "console.log(%1)"
 
 printPair :: (Int,Int) -> Fay ()
 printPair (x,y) = print x >> print y

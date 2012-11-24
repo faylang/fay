@@ -1,8 +1,4 @@
 import Language.Fay.Prelude
-import Language.Fay.FFI
-
-print :: Int -> Fay ()
-print = ffi "console.log(%1)"
 
 withTwo :: (Int -> Int) -> Int
 withTwo f = f 2

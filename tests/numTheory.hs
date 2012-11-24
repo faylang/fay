@@ -1,8 +1,4 @@
 import Language.Fay.Prelude
-import Language.Fay.FFI
-
-print :: Foreign a => a -> Fay ()
-print = ffi "console.log(%1)"
 
 main = do
   print $ (subtract 3 5 :: Int)

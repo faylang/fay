@@ -1,4 +1,3 @@
-import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
 import           RecordImport_Export
@@ -16,10 +15,7 @@ showR (R i) = "R " ++ show i
 showFields :: Fields -> String
 showFields (Fields a b) = "Fields " ++ show a ++ " " ++ show b
 
-printS :: String -> Fay ()
-printS = ffi "console.log(%1)"
-
 main = do
-  printS $ showR $ R 1
-  printS $ showFields $ Fields { fieldFoo = 2, fieldBar = 3 }
+  putStrLn $ showR $ R 1
+  putStrLn $ showFields $ Fields { fieldFoo = 2, fieldBar = 3 }
 

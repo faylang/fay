@@ -1,48 +1,46 @@
 {-# LANGUAGE EmptyDataDecls    #-}
 
-import           Language.Fay.FFI
 import           Language.Fay.Prelude
 
 main = do
   -- All reserved words
-  let break = "break" in printS break
-  let catch = "catch" in printS catch
-  let const = "const" in printS const
-  let continue = "continue" in printS continue
-  let debugger = "debugger" in printS debugger
-  let delete = "delete" in printS delete
-  let enum = "enum" in printS enum
-  let export = "export" in printS export
-  let extends = "extends" in printS extends
-  let finally = "finally" in printS finally
-  let for = "for" in printS for
-  let function = "function" in printS function
-  let implements = "implements" in printS implements
-  let instanceof = "instanceof" in printS instanceof
-  let interface = "interface" in printS interface
-  let new = "new" in printS new
-  let null = "null" in printS null
-  let package = "package" in printS package
-  let private = "private" in printS private
-  let protected = "protected" in printS protected
-  let public = "public" in printS public
-  let return = "return" in printS return
-  let static = "static" in printS static
-  let super = "super" in printS super
-  let switch = "switch" in printS switch
-  let this = "this" in printS this
-  let throw = "throw" in printS throw
-  let try = "try" in printS try
-  let typeof = "typeof" in printS typeof
-  let undefined = "undefined" in printS undefined
-  let var = "var" in printS var
-  let void = "void" in printS void
-  let while = "while" in printS while
-  let with = "with" in printS with
-  let yield = "yield" in printS yield
+  let break = "break" in putStrLn break
+  let catch = "catch" in putStrLn catch
+  let const = "const" in putStrLn const
+  let continue = "continue" in putStrLn continue
+  let debugger = "debugger" in putStrLn debugger
+  let delete = "delete" in putStrLn delete
+  let enum = "enum" in putStrLn enum
+  let export = "export" in putStrLn export
+  let extends = "extends" in putStrLn extends
+  let finally = "finally" in putStrLn finally
+  let for = "for" in putStrLn for
+  let function = "function" in putStrLn function
+  let implements = "implements" in putStrLn implements
+  let instanceof = "instanceof" in putStrLn instanceof
+  let interface = "interface" in putStrLn interface
+  let new = "new" in putStrLn new
+  let null = "null" in putStrLn null
+  let package = "package" in putStrLn package
+  let private = "private" in putStrLn private
+  let protected = "protected" in putStrLn protected
+  let public = "public" in putStrLn public
+  let return = "return" in putStrLn return
+  let static = "static" in putStrLn static
+  let super = "super" in putStrLn super
+  let switch = "switch" in putStrLn switch
+  let this = "this" in putStrLn this
+  let throw = "throw" in putStrLn throw
+  let try = "try" in putStrLn try
+  let typeof = "typeof" in putStrLn typeof
+  let undefined = "undefined" in putStrLn undefined
+  let var = "var" in putStrLn var
+  let void = "void" in putStrLn void
+  let while = "while" in putStrLn while
+  let with = "with" in putStrLn with
+  let yield = "yield" in putStrLn yield
 
-  printS ""
+  putStrLn ""
   -- Stdlib functions that need to be encoded
-  printS $ const "stdconst" 2
-printS :: String -> Fay ()
-printS = ffi "console.log(%1)"
+  putStrLn $ const "stdconst" 2
+

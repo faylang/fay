@@ -164,9 +164,11 @@ log = ffi "Math.log(%1)"
 
 (**) :: Double -> Double -> Double
 (**) = unsafePow
+infixr 8 **
 
 (^^) :: Double -> Int -> Double
 (^^) = unsafePow
+infixr 8 ^^
 
 unsafePow :: (Foreign a, Num a, Foreign b, Num b) => a -> b -> a
 unsafePow = ffi "Math.pow(%1,%2)"
@@ -176,6 +178,7 @@ a ^ b | b < 0  = error "(^): negative exponent"
       | b == 0 = 1
       | even b = let x = a ^ (b `quot` 2) in x * x
 a ^ b          = a * a ^ (b - 1)
+infixr 8 ^
 
 logBase :: Double -> Double -> Double
 logBase b x = log x / log b
@@ -373,6 +376,7 @@ maybe _ f (Just x) = f x
 
 (.) :: (t1 -> t) -> (t2 -> t1) -> t2 -> t
 (f . g) x = f (g x)
+infixr 9 .
 
 (++) :: [a] -> [a] -> [a]
 x ++ y = conc x y
@@ -439,12 +443,14 @@ length' acc _ = acc
 
 rem :: Int -> Int -> Int
 rem x y = if y == 0 then error "Division by zero" else rem' x y
+infixl 7 `rem`
 
 rem' :: Int -> Int -> Int
 rem' = ffi "%1 %% %2"
 
 quot :: Int -> Int -> Int
 quot x y = if y == 0 then error "Division by zero" else quot' x y
+infixl 7 `quot`
 
 quot' :: Int -> Int -> Int
 quot' = ffi "~~(%1/%2)"
@@ -457,12 +463,14 @@ div x y
   | x > 0 && y < 0 = quot (x-1) y - 1
   | x < 0 && y > 0 = quot (x+1) y - 1
 div x y            = quot x y
+infixl 7 `div`
 
 mod :: Int -> Int -> Int
 mod x y
   | x > 0 && y < 0 = rem (x-1) y + y + 1
   | x < 0 && y > 0 = rem (x+1) y + y - 1
 mod x y            = rem x y
+infixl 7 `mod`
 
 divMod :: Int -> Int -> (Int, Int)
 divMod x y
@@ -516,4 +524,5 @@ until p f x = if p x then x else until p f (f x)
 
 ($!) :: (a -> b) -> a -> b
 f $! x = x `seq` f x
+infixr 0 $!
 

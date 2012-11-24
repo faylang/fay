@@ -27,7 +27,7 @@ import           Language.Fay.Compiler.Optimizer
 import           Language.Fay.Compiler.Misc
 import           Language.Fay.Print         (printJSString)
 import           Language.Fay.Types
-
+import qualified Language.Fay.Stdlib as Stdlib (enumFromTo,enumFromThenTo)
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.IO
@@ -958,6 +958,11 @@ compileLit lit =
                                    [JsLit (JsStr string)])
     lit           -> throwError (UnsupportedLiteral lit)
 
+-- | Maximum number of elements to allow in strict list representation
+-- of arithmetic sequences.
+maxStrictASLen :: Int
+maxStrictASLen = 10
+
 -- | Compile [e1..] arithmetic sequences.
 compileEnumFrom :: Exp -> Compile JsExp
 compileEnumFrom i = do
@@ -972,14 +977,25 @@ compileEnumFromTo i i' = do
   t <- compileExp i'
   name <- resolveName "enumFromTo"
   cfg <- gets stateConfig
-  let s = if configOptimize cfg
-          then case (f,t) of
-            (JsLit fl, JsLit tl) -> strictEnumFromTo fl tl
-            _ -> Nothing
-          else Nothing
-  return $ case s of
-    Just s' -> s'
+  return $ case optEnumFromTo cfg f t of
+    Just s -> s
     _ -> JsApp (JsApp (JsName (JsNameVar name)) [f]) [t]
+
+-- | Optimize short literal [e1..e3] arithmetic sequences.
+optEnumFromTo :: CompileConfig -> JsExp -> JsExp -> Maybe JsExp
+optEnumFromTo cfg (JsLit f) (JsLit t) =
+  if configOptimize cfg
+  then case (f,t) of
+    (JsInt fl, JsInt tl) -> strict JsInt fl tl
+    (JsFloating fl, JsFloating tl) -> strict JsFloating fl tl
+    _ -> Nothing
+  else Nothing
+    where strict :: (Enum a, Ord a, Num a) => (a -> JsLit) -> a -> a -> Maybe JsExp
+          strict litfn f t =
+            if fromEnum t - fromEnum f < maxStrictASLen
+            then Just . makeList . map (JsLit . litfn) $ Stdlib.enumFromTo f t
+            else Nothing
+optEnumFromTo _ _ _ = Nothing
 
 -- | Compile [e1,e2..] arithmetic sequences.
 compileEnumFromThen :: Exp -> Exp -> Compile JsExp
@@ -997,59 +1013,23 @@ compileEnumFromThenTo a b z = do
   to <- compileExp z
   name <- resolveName "enumFromThenTo"
   cfg <- gets stateConfig
-  let s = if configOptimize cfg
-          then case (fr,th,to) of
-            (JsLit frl, JsLit thl, JsLit tol) -> strictEnumFromThenTo frl thl tol
-            _ -> Nothing
-          else Nothing
-  return $ case s of
-    Just s' -> s'
+  return $ case optEnumFromThenTo cfg fr th to of
+    Just s -> s
     _ -> JsApp (JsApp (JsApp (JsName (JsNameVar name)) [fr]) [th]) [to]
 
--- | Maximum number of elements to allow in strict list representation
--- of arithmetic sequences.
-maxStrictASLen :: Int
-maxStrictASLen = 10
-
--- | Generate strict lists for sufficiently short [e1..e3] constant
--- arithmetic sequences.
-strictEnumFromTo :: JsLit -> JsLit -> Maybe JsExp
-strictEnumFromTo (JsChar f) (JsChar t) =
-  mkEnumFromTo (JsLit . JsChar) f t
-strictEnumFromTo (JsInt f) (JsInt t) =
-  mkEnumFromTo (JsLit . JsInt) f t
-strictEnumFromTo (JsFloating f) (JsFloating t) =
-  mkEnumFromTo (JsLit . JsFloating) f t
-strictEnumFromTo _ _ = Nothing
-
--- | Helper function to generate strict representations of [e1..e3]
--- constant arithmetic sequences.
-mkEnumFromTo :: Enum t => (t -> JsExp) -> t -> t -> Maybe JsExp
-mkEnumFromTo mk f t =
-  if (t' - f' < maxStrictASLen)
-  then Just . makeList $ map mk [f..t]
+-- | Optimize short literal [e1,e2..e3] arithmetic sequences.
+optEnumFromThenTo :: CompileConfig -> JsExp -> JsExp -> JsExp -> Maybe JsExp
+optEnumFromThenTo cfg (JsLit fr) (JsLit th) (JsLit to) =
+  if configOptimize cfg
+  then case (fr,th,to) of
+    (JsInt frl, JsInt thl, JsInt tol) -> strict JsInt frl thl tol
+    (JsFloating frl, JsFloating thl, JsFloating tol) -> strict JsFloating frl thl tol
+    _ -> Nothing
   else Nothing
-    where f' = fromEnum f
-          t' = fromEnum t
-
--- | Generate strict lists for sufficiently short [e1,e2..e3] constant
--- arithmetic sequences.
-strictEnumFromThenTo :: JsLit -> JsLit -> JsLit -> Maybe JsExp
-strictEnumFromThenTo (JsChar fr) (JsChar th) (JsChar to) =
-  mkEnumFromThenTo (JsLit . JsChar) fr th to
-strictEnumFromThenTo (JsInt fr) (JsInt th) (JsInt to) =
-  mkEnumFromThenTo (JsLit . JsInt) fr th to
-strictEnumFromThenTo (JsFloating fr) (JsFloating th) (JsFloating to) =
-  mkEnumFromThenTo (JsLit . JsFloating) fr th to
-strictEnumFromThenTo _ _ _ = Nothing
-
--- | Helper function to generate strict representations of [e1,e2..e3]
--- constant arithmetic sequences.
-mkEnumFromThenTo :: Enum t => (t -> JsExp) -> t -> t -> t -> Maybe JsExp
-mkEnumFromThenTo mk fr th to =
-  if ((to' - fr') `div` (th' - fr') < maxStrictASLen)
-  then Just . makeList $ map mk [fr,th..to]
-  else Nothing
-    where fr' = fromEnum fr
-          th' = fromEnum th
-          to' = fromEnum to
+    where strict :: (Enum a, Ord a, Num a) => (a -> JsLit) -> a -> a -> a -> Maybe JsExp
+          strict litfn fr th to =
+            if (fromEnum to - fromEnum fr) `div`
+               (fromEnum th - fromEnum fr) + 1 < maxStrictASLen
+            then Just . makeList . map (JsLit . litfn) $ Stdlib.enumFromThenTo fr th to
+            else Nothing
+optEnumFromThenTo _ _ _ _ = Nothing

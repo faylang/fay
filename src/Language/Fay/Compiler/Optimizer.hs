@@ -36,7 +36,7 @@ data OptState = OptState
 runOptimizer :: ([JsStmt] -> Optimize [JsStmt]) -> [JsStmt] -> [JsStmt]
 runOptimizer optimizer stmts =
   let (newstmts,OptState _ uncurried) = flip runState st $ optimizer stmts
-  in (newstmts ++ (tco (catMaybes (map (uncurryBinding newstmts) uncurried))))
+  in (newstmts ++ (tco (catMaybes (map (uncurryBinding newstmts) (nub uncurried)))))
   where st = OptState stmts []
 
 -- | Perform any top-level cross-module optimizations and GO DEEP to

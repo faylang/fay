@@ -41,7 +41,7 @@ import           Data.Maybe
 import           Language.Haskell.Exts
 import           System.Directory           (doesFileExist)
 import           System.FilePath            ((</>))
-import           System.IO
+
 import           System.Process.Extra
 
 --------------------------------------------------------------------------------
@@ -241,12 +241,6 @@ translateModuleName :: ImportDecl -> ImportDecl
 translateModuleName (ImportDecl a (ModuleName "Language.Fay.Prelude") b c d e f) =
   (ImportDecl a (ModuleName "Language.Fay.Stdlib") b c d e f)
 translateModuleName x = x
-
-warn :: String -> Compile ()
-warn "" = return ()
-warn w = do
-  shouldWarn <- configWarn <$> gets stateConfig
-  when shouldWarn . liftIO . hPutStrLn stderr $ "Warning: " ++ w
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
 

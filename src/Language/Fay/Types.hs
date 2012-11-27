@@ -55,11 +55,12 @@ data CompileConfig = CompileConfig
   , configFilePath          :: Maybe FilePath
   , configTypecheck         :: Bool
   , configWall              :: Bool
+  , configGClosure          :: Bool
   } deriving (Show)
 
 -- | Default configuration.
 instance Default CompileConfig where
-  def = CompileConfig False False True [] False False [] False True Nothing True False
+  def = CompileConfig False False True [] False False [] False True Nothing True False False
 
 -- | State of the compiler.
 data CompileState = CompileState
@@ -201,7 +202,7 @@ data CompileError
   | FfiFormatBadChars String
   | FfiFormatNoSuchArg Int
   | FfiFormatIncompleteArg
-  | FfiFormatInvalidJavaScript String String
+  | FfiFormatInvalidJavaScript SrcLoc String String
   | UnableResolveUnqualified Name
   | UnableResolveQualified QName
   deriving (Show)

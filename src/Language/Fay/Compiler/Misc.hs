@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS -Wall -fno-warn-orphans  #-}
 
@@ -17,6 +18,7 @@ import           Data.String
 import           Language.Haskell.Exts        (ParseResult(..))
 import           Language.Haskell.Exts.Syntax
 import           Prelude                      hiding (exp)
+import           System.IO
 
 -- | Extra the string from an ident.
 unname :: Name -> String
@@ -232,3 +234,14 @@ withScopedTmpName withName = do
   ret <- withName $ Ident $ "$gen" ++ show depth
   modify $ \s -> s { stateNameDepth = depth }
   return ret
+
+-- | Print out a compiler warning.
+warn :: String -> Compile ()
+warn "" = return ()
+warn w = do
+  shouldWarn <- configWarn <$> gets stateConfig
+  when shouldWarn . liftIO . hPutStrLn stderr $ "Warning: " ++ w
+
+-- | Pretty print a source location.
+printSrcLoc :: SrcLoc -> String
+printSrcLoc SrcLoc{..} = srcFilename ++ ":" ++ show srcLine ++ ":" ++ show srcColumn

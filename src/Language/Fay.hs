@@ -17,6 +17,7 @@ module Language.Fay
 import           Language.Fay.Compiler        (compileToplevelModule,
                                                compileViaStr)
 import           Language.Fay.Print
+import           Language.Fay.Compiler.Misc (printSrcLoc)
 import           Language.Fay.Types
 
 import           Control.Monad
@@ -158,7 +159,9 @@ showCompileError e =
     FfiFormatBadChars cs -> "invalid characters for FFI format string: " ++ show cs
     FfiFormatNoSuchArg i -> "no such argument in FFI format string: " ++ show i
     FfiFormatIncompleteArg -> "incomplete `%' syntax in FFI format string"
-    FfiFormatInvalidJavaScript code err -> "invalid JavaScript code in FFI format string:\n"
+    FfiFormatInvalidJavaScript srcloc code err ->
+      printSrcLoc srcloc ++ ":" ++
+      "\ninvalid JavaScript code in FFI format string:\n"
                                            ++ err ++ "\nin " ++ code
     UnsupportedFieldPattern p -> "unsupported field pattern: " ++ prettyPrint p
     UnsupportedImport i -> "unsupported import syntax, we're too lazy: " ++ prettyPrint i

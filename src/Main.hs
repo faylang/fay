@@ -36,6 +36,7 @@ data FayCompilerOptions = FayCompilerOptions
     , optPretty      :: Bool
     , optFiles       :: [String]
     , optOptimize    :: Bool
+    , optGClosure    :: Bool
     }
 
 -- | Main entry point.
@@ -55,6 +56,7 @@ main = do
                   , configHtmlJSLibs        = optHTMLJSLibs opts
                   , configTypecheck         = not $ optNoGHC opts
                   , configWall              = optWall opts
+                  , configGClosure          = optGClosure opts
                   }
             void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
             case optFiles opts of
@@ -91,6 +93,7 @@ options = FayCompilerOptions
   <*> switch (long "pretty" & short 'p' & help "Pretty print the output")
   <*> arguments Just (metavar "- | <hs-file>...")
   <*> switch (long "optimize" & short 'O' & help "Apply optimizations to generated code")
+  <*> switch (long "closure" & help "Provide help with Google Closure")
 
   where strsOption m =
           nullOption (m & reader (Just . wordsBy (== ',')) & value [])

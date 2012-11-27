@@ -73,7 +73,7 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
     fieldStmts (fieldType:fts) =
       (JsVar obj_v field) :
         (JsIf (JsNeq JsUndefined (JsName obj_v))
-          [JsSetProp obj_ decl (JsName obj_v)]
+          [JsSetPropExtern obj_ decl (JsName obj_v)]
           []) :
         fieldStmts fts
       where

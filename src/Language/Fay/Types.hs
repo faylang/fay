@@ -224,6 +224,7 @@ data JsStmt
   | JsWhile JsExp [JsStmt]
   | JsUpdate JsName JsExp
   | JsSetProp JsName JsName JsExp
+  | JsSetPropExtern JsName JsName JsExp
   | JsContinue
   | JsBlock [JsStmt]
   deriving (Show,Eq)

@@ -40,11 +40,6 @@ showToFay = Show.reify >=> convert where
     Show.Con "True" _    -> return (Bool True)
     Show.Con "False" _   -> return (Bool False)
 
-    -- Just x => x
-    Show.Con "Just"   [v] -> convert v
-    -- Nothing -> null
-    Show.Con "Nothing" [] -> return Null
-
     -- Objects/records
     Show.Con name values -> fmap (Object . Map.fromList . (("instance",string name) :))
                                  (slots values)
@@ -158,7 +153,6 @@ parseDouble value = do
   case number of
     I n -> return (fromIntegral n)
     D n -> return n
-    _ -> mzero
 
 -- | Parse an int.
 parseInt :: Value -> Maybe Int

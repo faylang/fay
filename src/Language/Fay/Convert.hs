@@ -156,6 +156,7 @@ parseDouble :: Value -> Maybe Double
 parseDouble value = do
   number <- parseNumber value
   case number of
+    I n -> return (fromIntegral n)
     D n -> return n
     _ -> mzero
 

@@ -323,6 +323,7 @@ data FundamentalType
  | TupleType [FundamentalType]
  | UserDefined Name [FundamentalType]
  | Defined FundamentalType
+ | Nullable FundamentalType
  -- Simple types.
  | DateType
  | StringType

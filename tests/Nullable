@@ -1,0 +1,6 @@
+1
+null
+{ instance: 'R', slot1: 1 }
+{ instance: 'R', slot1: null }
+{ instance: 'R', slot1: 1 }
+{ instance: 'R', slot1: null }

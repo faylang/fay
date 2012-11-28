@@ -9,7 +9,8 @@ module Language.Fay.FFI
   where
 
 import           Language.Fay.Types (Fay)
-import           Prelude            (Bool, Char, Double, String, Int, Maybe, error)
+import           Prelude            (Bool, Char, Double, Int, Maybe, String,
+                                     error)
 
 -- | Contains allowed foreign function types.
 class Foreign a

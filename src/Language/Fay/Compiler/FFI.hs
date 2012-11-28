@@ -1,5 +1,5 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE ViewPatterns      #-}
 {-# OPTIONS -Wall #-}
@@ -23,8 +23,8 @@ import           Control.Monad.State
 import           Data.Char
 import           Data.List
 import           Data.Maybe
-import Language.ECMAScript3.Parser  as JS
-import Language.ECMAScript3.Syntax
+import           Language.ECMAScript3.Parser  as JS
+import           Language.ECMAScript3.Syntax
 import           Language.Haskell.Exts        (prettyPrint)
 import           Language.Haskell.Exts.Syntax
 import           Prelude                      hiding (exp)
@@ -181,6 +181,7 @@ argType t =
     TyCon "Int"           -> IntType
     TyCon "Bool"          -> BoolType
     TyApp (TyCon "Defined") a -> Defined (argType a)
+    TyApp (TyCon "Nullable") a -> Nullable (argType a)
     TyApp (TyCon "Fay") a -> JsType (argType a)
     TyFun x xs            -> FunctionType (argType x : functionTypeArgs xs)
     TyList x              -> ListType (argType x)
@@ -235,6 +236,7 @@ typeRep typ =
                                   ,JsLit $ JsStr (unname name)
                                   ,JsList (map typeRep xs)]
     Defined x           -> JsList [JsLit $ JsStr "defined",JsList [typeRep x]]
+    Nullable x          -> JsList [JsLit $ JsStr "nullable",JsList [typeRep x]]
     _ -> JsList [JsLit $ JsStr nom]
 
       where nom = case typ of

@@ -55,8 +55,6 @@ readTests =
   ,ReadTest $ StepcutBar (StepcutFoo 456)
   ,ReadTest $ StepcutFoo' 789
   ,ReadTest $ Baz (StepcutFoo' 10112)
-  ,ReadTest $ (Just 1 :: Maybe Double)
-  ,ReadTest $ (Nothing :: Maybe Double)
   ]
 
 -- | Test cases.

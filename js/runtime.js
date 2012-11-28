@@ -211,6 +211,15 @@ function Fay$$fayToJs(type,fayObj){
       }
       break;
     }
+    case "nullable": {
+      fayObj = _(fayObj);
+      if (fayObj instanceof $_Language$Fay$Stdlib$Null) {
+        jsObj = null;
+      } else {
+        jsObj = Fay$$fayToJs(args[0],fayObj["slot1"]);
+      }
+      break;
+    }
     case "double": {
       // Serialize double, just force the argument. Doubles are unboxed.
       jsObj = _(fayObj);
@@ -281,6 +290,14 @@ function Fay$$jsToFay(type,jsObj){
         fayObj = new $_Language$Fay$Stdlib$Undefined();
       } else {
         fayObj = new $_Language$Fay$Stdlib$Defined(Fay$$jsToFay(args[0],jsObj));
+      }
+      break;
+    }
+    case "nullable": {
+      if (jsObj === null) {
+        fayObj = new $_Language$Fay$Stdlib$Null();
+      } else {
+        fayObj = new $_Language$Fay$Stdlib$Nullable(Fay$$jsToFay(args[0],jsObj));
       }
       break;
     }

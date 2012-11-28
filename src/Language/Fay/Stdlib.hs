@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude         #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 module Language.Fay.Stdlib
   (($)
   ,($!)
@@ -10,6 +10,7 @@ module Language.Fay.Stdlib
   ,(^^)
   ,(^)
   ,Defined(..)
+  ,Nullable(..)
   ,Either(..)
   ,Ordering(..)
   ,abs
@@ -147,11 +148,11 @@ module Language.Fay.Stdlib
   where
 
 import           Language.Fay.FFI
-import           Prelude          (Bool (..), Double, Eq (..), Fractional, Int,
-                                   Integer, Maybe (..), Monad (..),
-                                   Num ((+), (-), (*)), Fractional ((/)),
-                                   Ord ((>), (<)), Rational, Show, String,
-                                   (&&), (||), seq)
+import           Prelude          (Bool (..), Double, Eq (..), Fractional,
+                                   Fractional ((/)), Int, Integer, Maybe (..),
+                                   Monad (..), Num ((+), (-), (*)),
+                                   Ord ((>), (<)), Rational, Show, String, seq,
+                                   (&&), (||))
 
 error :: String -> a
 error str = case error' str of 0 -> error str ; _ -> error str
@@ -167,6 +168,9 @@ show = ffi "JSON.stringify(%1)"
 
 data Defined a = Undefined | Defined a
 instance Foreign a => Foreign (Defined a)
+
+data Nullable a = Null | Nullable a
+instance Foreign a => Foreign (Nullable a)
 
 data Either a b = Left a | Right b
 

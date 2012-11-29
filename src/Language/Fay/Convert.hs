@@ -95,7 +95,6 @@ showToFay = Show.reify >=> convert where
 readFromFay :: Data a => Value -> Maybe a
 readFromFay value = do
   parseData value
-  `ext1R` parseMaybe value
   `ext1R` parseArray value
   `extR` parseDouble value
   `extR` parseInt value
@@ -189,10 +188,3 @@ parseArray value =
   case value of
     Array xs -> mapM readFromFay (Vector.toList xs)
     _ -> mzero
-
--- | Parse a nullable value to Maybe.
-parseMaybe :: Data a => Value -> Maybe (Maybe a)
-parseMaybe value =
-  case value of
-    Null -> Just Nothing
-    v -> fmap Just (readFromFay v)

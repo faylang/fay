@@ -71,9 +71,6 @@ showTests =
   ,((1,2) :: (Int,Int)) → "[1,2]"
   ,"abc" → "\"abc\""
   ,'a' → "\"a\""
-  -- Special cases
-  , Just (1 :: Double) → "1.0"
-  , (Nothing :: Maybe Double) → "null"
   -- Data records
   ,NullaryConstructor → "{\"instance\":\"NullaryConstructor\"}"
   ,NAryConstructor 123 4.5 → "{\"slot1\":123,\"slot2\":4.5,\"instance\":\"NAryConstructor\"}"

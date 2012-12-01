@@ -1,7 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS -fno-warn-orphans #-}
-{-# OPTIONS -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RecordWildCards  #-}
+{-# OPTIONS -fno-warn-orphans #-}
 -- | Main compiler executable.
 
 module Main where
@@ -9,7 +8,6 @@ module Main where
 import           Language.Fay
 import           Language.Fay.Compiler
 
-import           Paths_fay                (version)
 import qualified Control.Exception        as E
 import           Control.Monad
 import           Control.Monad.Error
@@ -18,6 +16,7 @@ import           Data.List.Split          (wordsBy)
 import           Data.Maybe
 import           Data.Version             (showVersion)
 import           Options.Applicative
+import           Paths_fay                (version)
 import           System.Console.Haskeline
 import           System.IO
 
@@ -45,14 +44,13 @@ main = do
   opts <- execParser parser
   if optVersion opts
     then runCommandVersion
-    else do let config = def
+    else do let config = flip (foldl (flip addConfigDirectoryInclude)) ("." : optInclude opts) $ def
                   { configOptimize          = optOptimize opts
                   , configFlattenApps       = optFlattenApps opts
-                  , configExportBuiltins    = True
-                  , configDirectoryIncludes = "." : optInclude opts
+                  , configExportBuiltins    = True -- optExportBuiltins opts
                   , configPrettyPrint       = optPretty opts
                   , configLibrary           = optLibrary opts
-                  , configHtmlWrapper       =  optHTMLWrapper opts
+                  , configHtmlWrapper       = optHTMLWrapper opts
                   , configHtmlJSLibs        = optHTMLJSLibs opts
                   , configTypecheck         = not $ optNoGHC opts
                   , configWall              = optWall opts

@@ -1,5 +1,6 @@
-import           Language.Fay.Prelude
+{- NOTE: This file is also used in the Api tests. -}
 
+import           Language.Fay.Prelude
 import           RecordImport_Export
 
 f :: R -> R
@@ -18,4 +19,3 @@ showFields (Fields a b) = "Fields " ++ show a ++ " " ++ show b
 main = do
   putStrLn $ showR $ R 1
   putStrLn $ showFields $ Fields { fieldFoo = 2, fieldBar = 3 }
-

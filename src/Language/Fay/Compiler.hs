@@ -22,25 +22,26 @@ module Language.Fay.Compiler
   ,compileToplevelModule)
   where
 
-import           Language.Fay.Compiler.FFI
-import           Language.Fay.Compiler.Optimizer
-import           Language.Fay.Compiler.Misc
-import           Language.Fay.Print         (printJSString)
-import           Language.Fay.Types
-import qualified Language.Fay.Stdlib as Stdlib (enumFromTo,enumFromThenTo)
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.IO
 import           Control.Monad.State
-import           Data.Default               (def)
+import           Data.Default                    (def)
 import           Data.List
 import           Data.List.Extra
-import           Data.Map                   (Map)
-import qualified Data.Map                   as M
+import           Data.Map                        (Map)
+import qualified Data.Map                        as M
 import           Data.Maybe
+import           Language.Fay.Compiler.FFI
+import           Language.Fay.Compiler.Misc
+import           Language.Fay.Compiler.Optimizer
+import           Language.Fay.Print              (printJSString)
+import qualified Language.Fay.Stdlib             as Stdlib (enumFromThenTo,
+                                                            enumFromTo)
+import           Language.Fay.Types
 import           Language.Haskell.Exts
-import           System.Directory           (doesFileExist)
-import           System.FilePath            ((</>))
+import           System.Directory                (doesFileExist)
+import           System.FilePath                 ((</>))
 
 import           System.Process.Extra
 
@@ -104,8 +105,7 @@ printCompile config with from = do
 
 -- | Compile a String of Fay and print it as beautified JavaScript.
 printTestCompile :: String -> IO ()
-printTestCompile = printCompile def { configWarn = False,
-  configDirectoryIncludes = [] } compileModule
+printTestCompile = printCompile def { configWarn = False } compileModule
 
 -- | Compile the given Fay code for the documentation. This is
 -- specialised because the documentation isn't really “real”

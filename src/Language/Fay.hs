@@ -8,6 +8,7 @@
 module Language.Fay
   (module Language.Fay.Types
   ,compileFile
+  ,compileFileWithState
   ,compileFromTo
   ,compileFromToAndGenerateHtml
   ,toJsName
@@ -16,10 +17,11 @@ module Language.Fay
 
 import           Language.Fay.Compiler        (compileToplevelModule,
                                                compileViaStr)
+import           Language.Fay.Compiler.Misc   (printSrcLoc)
 import           Language.Fay.Print
-import           Language.Fay.Compiler.Misc (printSrcLoc)
 import           Language.Fay.Types
 
+import           Control.Applicative
 import           Control.Monad
 import           Data.List
 import           Language.Haskell.Exts        (prettyPrint)
@@ -67,22 +69,21 @@ compileFromToAndGenerateHtml config filein fileout = do
 -- | Compile the given file.
 compileFile :: CompileConfig -> FilePath -> IO (Either CompileError String)
 compileFile config filein = do
+  either Left (Right . fst) <$> compileFileWithState config filein
+
+compileFileWithState :: CompileConfig -> FilePath -> IO (Either CompileError (String,CompileState))
+compileFileWithState config filein = do
   runtime <- getDataFileName "js/runtime.js"
-  srcdir <- fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
-  raw <- readFile runtime
   hscode <- readFile filein
-  compileToModule filein
-                  config { configDirectoryIncludes = configDirectoryIncludes config ++ [srcdir]
-                         }
-                  raw
-                  compileToplevelModule
-                  hscode
+  raw <- readFile runtime
+  compileToModule filein config raw compileToplevelModule hscode
+
 
 -- | Compile the given module to a runnable module.
 compileToModule :: (Show from,Show to,CompilesTo from to)
                => FilePath
                -> CompileConfig -> String -> (from -> Compile to) -> String
-               -> IO (Either CompileError String)
+               -> IO (Either CompileError (String,CompileState))
 compileToModule filepath config raw with hscode = do
   result <- compileViaStr filepath config with hscode
   case result of
@@ -90,7 +91,7 @@ compileToModule filepath config raw with hscode = do
     Right (PrintState{..},state) ->
       return $ Right $ (generate (concat (reverse psOutput))
                                  (stateExports state)
-                                 (stateModuleName state))
+                                 (stateModuleName state), state)
 
   where generate jscode exports (ModuleName (clean -> modulename)) = unlines
           ["/** @constructor"

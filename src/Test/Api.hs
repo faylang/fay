@@ -3,14 +3,11 @@
 
 module Test.Api (tests) where
 
-import           Language.Fay                   hiding (compileFile)
-import           Language.Fay.Compiler
-import           Paths_fay
+import           Language.Fay
 
 import           Data.Default
 import           Data.Maybe
 import           Language.Haskell.Exts.Syntax
-import           System.FilePath
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Test.Framework.TH
@@ -27,23 +24,14 @@ case_imports = do
 
 case_importedList :: Assertion
 case_importedList = do
-  res <- compileFile defConf fp
+  res <- compileFileWithState defConf fp
   case res of
     Left err -> error (show err)
-    Right r -> assertBool "RecordImport_Export was not added to stateImported" $
-                 isJust $ lookup (ModuleName "RecordImport_Export") (stateImported r)
+    Right (_,r) -> assertBool "RecordImport_Export was not added to stateImported" .
+                     isJust . lookup (ModuleName "RecordImport_Export") $ stateImported r
 
 fp :: FilePath
 fp = "tests/RecordImport_Import.hs"
 
 defConf :: CompileConfig
-defConf = def { configTypecheck = False, configDirectoryIncludes = ["tests"] }
-
-compileFile :: CompileConfig -> FilePath -> IO (Either CompileError CompileState)
-compileFile config filein = do
-  srcdir <- fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
-  hscode <- readFile filein
-  result <- compileViaStr filein
-    (config { configDirectoryIncludes = configDirectoryIncludes config ++ [srcdir] })
-    compileToplevelModule hscode
-  return $ either Left (Right . snd) result
+defConf = addConfigDirectoryInclude "tests/" $ def { configTypecheck = False }

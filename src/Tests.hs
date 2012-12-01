@@ -36,9 +36,9 @@ testFile :: Bool -> String -> IO ()
 testFile opt file = do
   let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
       out = toJsName file
-      config = def { configOptimize = opt }
+      config = addConfigDirectoryInclude "tests/" $ def { configOptimize = opt, configTypecheck = False }
   outExists <- doesFileExist root
-  compileFromTo config { configTypecheck = False, configDirectoryIncludes = ["tests/"] } file (Just out)
+  compileFromTo config file (Just out)
   result <- runJavaScriptFile out
   if outExists
      then do output <- readFile root

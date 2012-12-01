@@ -1,3 +1,5 @@
+{- NOTE: This file is also used in the Api tests. -}
+
 module RecordImport_Export where
 
 import           Language.Fay.Prelude

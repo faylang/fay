@@ -61,6 +61,7 @@ cabal-version:       >=1.8
 data-files:          js/runtime.js
                      hs/stdlib.hs
                      src/Language/Fay/Stdlib.hs
+                     src/Language/Fay/FFI.hs
 extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examples/dom.hs
                      examples/tailrecursive.hs examples/data.hs examples/canvaswater.hs
                      examples/canvaswater.html examples/haskell.png

@@ -204,7 +204,7 @@ function Fay$$fayToJs(type,fayObj){
     }
     case "defined": {
       fayObj = _(fayObj);
-      if (fayObj instanceof $_Language$Fay$Stdlib$Undefined) {
+      if (fayObj instanceof $_Language$Fay$FFI$Undefined) {
         jsObj = undefined;
       } else {
         jsObj = Fay$$fayToJs(args[0],fayObj["slot1"]);
@@ -213,7 +213,7 @@ function Fay$$fayToJs(type,fayObj){
     }
     case "nullable": {
       fayObj = _(fayObj);
-      if (fayObj instanceof $_Language$Fay$Stdlib$Null) {
+      if (fayObj instanceof $_Language$Fay$FFI$Null) {
         jsObj = null;
       } else {
         jsObj = Fay$$fayToJs(args[0],fayObj["slot1"]);
@@ -287,17 +287,17 @@ function Fay$$jsToFay(type,jsObj){
     }
     case "defined": {
       if (jsObj === undefined) {
-        fayObj = new $_Language$Fay$Stdlib$Undefined();
+        fayObj = new $_Language$Fay$FFI$Undefined();
       } else {
-        fayObj = new $_Language$Fay$Stdlib$Defined(Fay$$jsToFay(args[0],jsObj));
+        fayObj = new $_Language$Fay$FFI$Defined(Fay$$jsToFay(args[0],jsObj));
       }
       break;
     }
     case "nullable": {
       if (jsObj === null) {
-        fayObj = new $_Language$Fay$Stdlib$Null();
+        fayObj = new $_Language$Fay$FFI$Null();
       } else {
-        fayObj = new $_Language$Fay$Stdlib$Nullable(Fay$$jsToFay(args[0],jsObj));
+        fayObj = new $_Language$Fay$FFI$Nullable(Fay$$jsToFay(args[0],jsObj));
       }
       break;
     }

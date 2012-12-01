@@ -117,7 +117,6 @@ data NameScope = ScopeImported ModuleName (Maybe Name)
 defaultCompileState :: CompileConfig -> IO CompileState
 defaultCompileState config = do
   srcdir <- fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
-  ffi <- getDataFileName "src/Language/Fay/Stdlib.hs"
   types <- getDataFileName "src/Language/Fay/Types.hs"
   prelude <- getDataFileName "src/Language/Fay/Prelude.hs"
   return $ CompileState {
@@ -128,7 +127,7 @@ defaultCompileState config = do
   , stateRecords = [("Nothing",[]),("Just",["slot1"])]
   , stateFayToJs = []
   , stateJsToFay = []
-  , stateImported = [("Language.Fay.FFI",ffi),("Language.Fay.Types",types),("Prelude",prelude)]
+  , stateImported = [("Language.Fay.Types",types),("Prelude",prelude)]
   , stateNameDepth = 1
   , stateFilePath = "<unknown>"
   , stateScope = M.fromList primOps

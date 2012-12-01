@@ -5,10 +5,12 @@
 module Language.Fay.FFI
   (Fay
   ,Foreign
+  ,Nullable (..)
+  ,Defined (..)
   ,ffi)
   where
 
-import           Language.Fay.Types (Fay)
+import           Language.Fay.Types
 import           Prelude            (Bool, Char, Double, Int, Maybe, String,
                                      error)
 
@@ -52,6 +54,17 @@ instance (Foreign a,Foreign b) => Foreign (a -> b)
 
 -- | Maybes are pretty common.
 instance Foreign a => Foreign (Maybe a)
+
+-- | Values that may be null
+--  Nullable x decodes to x, Null decodes to null.
+data Nullable a = Nullable a | Null
+instance Foreign a => Foreign (Nullable a)
+
+-- | Values that may be undefined
+-- Defined x encodes to x, Undefined decodes to undefined.
+-- An undefined property in a record will be removed when encoding.
+data Defined a = Defined a | Undefined
+instance Foreign a => Foreign (Defined a)
 
 -- | Declare a foreign action.
 ffi

@@ -9,8 +9,6 @@ module Language.Fay.Stdlib
   ,(**)
   ,(^^)
   ,(^)
-  ,Defined(..)
-  ,Nullable(..)
   ,Either(..)
   ,Ordering(..)
   ,abs
@@ -165,12 +163,6 @@ undefined = error "Prelude.undefined"
 
 show :: (Foreign a, Show a) => a -> String
 show = ffi "JSON.stringify(%1)"
-
-data Defined a = Undefined | Defined a
-instance Foreign a => Foreign (Defined a)
-
-data Nullable a = Null | Nullable a
-instance Foreign a => Foreign (Nullable a)
 
 data Either a b = Left a | Right b
 

@@ -274,6 +274,7 @@ findImport alldirs mname = go alldirs mname where
 
   stdlibHack
     | mname == ModuleName "Language.Fay.Stdlib" = \s -> s ++ "\n\ndata Maybe a = Just a | Nothing"
+    | mname == ModuleName "Language.Fay.FFI"    = const "module Language.Fay.FFI where\n\ndata Nullable a = Nullable a | Null\n\ndata Defined a = Defined a | Undefined"
     | otherwise = id
 
 -- | Compile the given import.

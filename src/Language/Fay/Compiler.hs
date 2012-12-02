@@ -41,11 +41,14 @@ import           Data.List.Extra
 import           Data.Map                        (Map)
 import qualified Data.Map                        as M
 import           Data.Maybe
+import           Data.Version                    (parseVersion)
 import qualified GHC.Paths as GHCPaths
 import           Language.Haskell.Exts
 import           System.Directory                (doesFileExist)
 import           System.FilePath                 ((</>))
+import           System.Process                  (readProcess)
 import           System.Process.Extra
+import           Text.ParserCombinators.ReadP    (readP_to_S)
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -208,6 +211,12 @@ initialPass_dataDecl _ _decl constructors =
 
 typecheck :: Maybe FilePath -> [FilePath] -> [String] -> Bool -> String -> Compile ()
 typecheck packageConf includeDirs ghcFlags wall fp = do
+  ghcPackageDbArgs <-
+    case packageConf of
+      Nothing -> return []
+      Just pk -> do
+        flag <- liftIO getGhcPackageDbFlag
+        return [flag ++ '=' : pk]
   res <- liftIO $ readAllFromProcess' GHCPaths.ghc (
     ["-fno-code"
     ,"-package fay"
@@ -215,19 +224,22 @@ typecheck packageConf includeDirs ghcFlags wall fp = do
     ,"-main-is"
     ,"Language.Fay.DummyMain"
     ,fp]
-    ++ [ ghcPackageDbFlag ++ "=" ++ pk | Just pk <- [packageConf] ]
+    ++ ghcPackageDbArgs
     ++ map ("-i" ++) includeDirs ++ ghcFlags ++ wallF) ""
   either error (warn . fst) res
    where
     wallF | wall = ["-Wall"]
           | otherwise = []
 
-ghcPackageDbFlag :: String
-#if __GLASGOW_HASKELL__ >= 706
-ghcPackageDbFlag = "-package-db"
-#else
-ghcPackageDbFlag = "-package-conf"
-#endif
+getGhcPackageDbFlag :: IO String
+getGhcPackageDbFlag = do
+    s <- readProcess "ghc" ["--version"] ""
+    return $
+        case (mapMaybe readVersion $ words s, readVersion "7.6.0") of
+            (v:_, Just min) | v > min -> "-package-db"
+            _ -> "-package-conf"
+  where
+    readVersion = listToMaybe . filter (null . snd) . readP_to_S parseVersion
 
 --------------------------------------------------------------------------------
 -- Compilers

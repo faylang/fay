@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -22,6 +23,14 @@ module Language.Fay.Compiler
   ,compileToplevelModule)
   where
 
+import           Language.Fay.Compiler.FFI
+import           Language.Fay.Compiler.Misc
+import           Language.Fay.Compiler.Optimizer
+import           Language.Fay.Print              (printJSString)
+import qualified Language.Fay.Stdlib             as Stdlib (enumFromThenTo,enumFromTo)
+import           Language.Fay.Types
+
+
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.IO
@@ -32,17 +41,10 @@ import           Data.List.Extra
 import           Data.Map                        (Map)
 import qualified Data.Map                        as M
 import           Data.Maybe
-import           Language.Fay.Compiler.FFI
-import           Language.Fay.Compiler.Misc
-import           Language.Fay.Compiler.Optimizer
-import           Language.Fay.Print              (printJSString)
-import qualified Language.Fay.Stdlib             as Stdlib (enumFromThenTo,
-                                                            enumFromTo)
-import           Language.Fay.Types
+import qualified GHC.Paths as GHCPaths
 import           Language.Haskell.Exts
 import           System.Directory                (doesFileExist)
 import           System.FilePath                 ((</>))
-
 import           System.Process.Extra
 
 --------------------------------------------------------------------------------
@@ -206,19 +208,26 @@ initialPass_dataDecl _ _decl constructors =
 
 typecheck :: Maybe FilePath -> [FilePath] -> [String] -> Bool -> String -> Compile ()
 typecheck packageConf includeDirs ghcFlags wall fp = do
-  res <- liftIO $ readAllFromProcess' "ghc" (
+  res <- liftIO $ readAllFromProcess' GHCPaths.ghc (
     ["-fno-code"
     ,"-package fay"
     ,"-XNoImplicitPrelude"
     ,"-main-is"
     ,"Language.Fay.DummyMain"
     ,fp]
-    ++ [ "-package-conf=" ++ pk | Just pk <- [packageConf] ]
+    ++ [ ghcPackageDbFlag ++ "=" ++ pk | Just pk <- [packageConf] ]
     ++ map ("-i" ++) includeDirs ++ ghcFlags ++ wallF) ""
   either error (warn . fst) res
    where
     wallF | wall = ["-Wall"]
           | otherwise = []
+
+ghcPackageDbFlag :: String
+#if __GLASGOW_HASKELL__ >= 706
+ghcPackageDbFlag = "-package-db"
+#else
+ghcPackageDbFlag = "-package-conf"
+#endif
 
 --------------------------------------------------------------------------------
 -- Compilers

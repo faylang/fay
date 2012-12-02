@@ -129,6 +129,7 @@ library
   other-modules:     Language.Fay.Print, Control.Monad.IO, Language.Fay.Stdlib, System.Process.Extra, Data.List.Extra, Paths_fay
   ghc-options:       -O2 -Wall
   build-depends:     base >= 4 && < 5,
+                     ghc-paths,
                      mtl,
                      haskell-src-exts,
                      aeson,
@@ -171,6 +172,7 @@ executable fay
   ghc-prof-options:  -fprof-auto
   main-is:           Main.hs
   build-depends:     base >= 4 && < 5,
+                     ghc-paths,
                      mtl,
                      haskell-src-exts,
                      aeson,
@@ -204,6 +206,7 @@ executable fay-tests
   main-is:           Tests.hs
   other-modules:     Language.Fay.Compiler Test.Convert Test.Api Test.CommandLine Test.Util
   build-depends:     base >= 4 && < 5,
+                     ghc-paths,
                      mtl,
                      haskell-src-exts,
                      aeson,
@@ -237,6 +240,7 @@ executable fay-docs
   main-is:           Docs.hs
   other-modules:     Text.Blaze.Extra
   build-depends:     base >= 4 && < 5,
+                     ghc-paths,
                      mtl,
                      haskell-src-exts,
                      aeson,

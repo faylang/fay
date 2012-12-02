@@ -18,6 +18,7 @@ import           Data.Version             (showVersion)
 import           Options.Applicative
 import           Paths_fay                (version)
 import           System.Console.Haskeline
+import           System.Environment
 import           System.IO
 
 -- | Options and help.
@@ -41,6 +42,7 @@ data FayCompilerOptions = FayCompilerOptions
 -- | Main entry point.
 main :: IO ()
 main = do
+  packageConf <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
   opts <- execParser parser
   if optVersion opts
     then runCommandVersion
@@ -55,6 +57,7 @@ main = do
                   , configTypecheck         = not $ optNoGHC opts
                   , configWall              = optWall opts
                   , configGClosure          = optGClosure opts
+                  , configPackageConf       = packageConf
                   }
             void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
             case optFiles opts of

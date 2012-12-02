@@ -49,6 +49,12 @@ Cabal-dev also works:
     $ node examples/console.js
     Hello, World!
 
+If you only installed with cabal-dev then you will probably get a 'no
+package fay' error from GHC, so you can tell it where to get the
+package from with an environment variable:
+
+    HASKELL_PACKAGE_SANDBOX=cabal-dev/packages-7.4.1.conf cabal-dev/bin/fay examples/alert.hs
+
 ## Contributing
 
 If you intend on submitting a pull request, whichever branch you

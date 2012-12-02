@@ -120,7 +120,7 @@ compileToplevelModule :: Module -> Compile [JsStmt]
 compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   cfg <- gets stateConfig
   when (configTypecheck cfg) $
-    typecheck (configDirectoryIncludes cfg) [] (configWall cfg) $
+    typecheck (configPackageConf cfg) (configDirectoryIncludes cfg) [] (configWall cfg) $
       fromMaybe modulename $ configFilePath cfg
   initialPass mod
   cs <- liftIO $ defaultCompileState def
@@ -204,10 +204,16 @@ initialPass_dataDecl _ _decl constructors =
 --------------------------------------------------------------------------------
 -- Typechecking
 
-typecheck :: [FilePath] -> [String] -> Bool -> String -> Compile ()
-typecheck includeDirs ghcFlags wall fp = do
+typecheck :: Maybe FilePath -> [FilePath] -> [String] -> Bool -> String -> Compile ()
+typecheck packageConf includeDirs ghcFlags wall fp = do
   res <- liftIO $ readAllFromProcess' "ghc" (
-    ["-fno-code", "-package fay", "-XNoImplicitPrelude", "-main-is", "Language.Fay.DummyMain", fp]
+    ["-fno-code"
+    ,"-package fay"
+    ,"-XNoImplicitPrelude"
+    ,"-main-is"
+    ,"Language.Fay.DummyMain"
+    ,fp]
+    ++ [ "-package-conf=" ++ pk | Just pk <- [packageConf] ]
     ++ map ("-i" ++) includeDirs ++ ghcFlags ++ wallF) ""
   either error (warn . fst) res
    where

@@ -17,7 +17,7 @@ myFunction a b = (xVar a) + (xVar b)
 main = do
 	jsonSerialized <- toJSON myData
 	jsonDeserialized <- toMyData jsonSerialized
-	fromStringData <- toMyData "{\"xVar\":3,\"yVar\":-1}"
+	fromStringData <- toMyData "{\"xVar\":3,\"yVar\":-1,\"instance\":\"MyData\"}"
 	printInt $ myFunction jsonDeserialized fromStringData
 
 -- | Print using console.log.

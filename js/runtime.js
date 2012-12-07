@@ -79,7 +79,7 @@ function Fay$$bind(m){
   return function(f){
     return new $(function(){
       var monad = _(m,true);
-      return f(monad.value);
+      return _(f)(monad.value);
     });
   };
 }
@@ -89,7 +89,7 @@ function Fay$$bind(m){
 function Fay$$bind$36$uncurried(m,f){
     return new $(function(){
       var monad = _(m,true);
-      return f(monad.value);
+      return _(f)(monad.value);
     });
 }
 

@@ -492,7 +492,7 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
         compileCase match@(Match _ _ pats _ rhs _) = do
           withScope $ do
             whereDecls' <- whereDecls match
-            generateScope $ mapM (\(arg,pat) -> compilePat (JsName arg) pat []) (zip args pats)
+            generateScope $ zipWithM (\arg pat -> compilePat (JsName arg) pat []) args pats
             generateScope $ mapM compileLetDecl whereDecls'
             rhsform <- compileRhs rhs
             body <- if null whereDecls'
@@ -834,7 +834,7 @@ compilePAsPat :: JsExp -> Name -> Pat -> [JsStmt] -> Compile [JsStmt]
 compilePAsPat exp name pat body = do
   bindVar name
   x <- compilePat exp pat body
-  return ([JsVar (JsNameVar (UnQual name)) exp] ++ x ++ body)
+  return ([JsVar (JsNameVar (UnQual name)) exp] ++ x)
 
 -- | Compile a record construction with named fields
 -- | GHC will warn on uninitialized fields, they will be undefined in JS.

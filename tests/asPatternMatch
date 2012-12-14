@@ -4,3 +4,4 @@
   cdr: { car: 1, cdr: { car: [Object], cdr: null } } }
 { car: { car: 1, cdr: { car: 2, cdr: [Object] } },
   cdr: { car: 1, cdr: { car: [Object], cdr: null } } }
+{ car: 'o', cdr: { car: 'k', cdr: null } }

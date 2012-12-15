@@ -389,7 +389,7 @@ compilePatBind toplevel sig pat =
 -- | Compile a normal simple pattern binding.
 compileUnguardedRhs :: SrcLoc -> Bool -> Name -> Exp -> Compile [JsStmt]
 compileUnguardedRhs srcloc toplevel ident rhs = do
-  bindVar ident
+  unless toplevel $ bindVar ident
   withScope $ do
     body <- compileExp rhs
     bind <- bindToplevel srcloc toplevel ident (thunk body)

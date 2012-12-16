@@ -12,6 +12,8 @@ main = do
   print' $ R Null
   print' $ r1
   print' $ r2
+  print' $ parseInt "3"
+  print' $ parseInt "x"
   return ()
 
 printD :: Foreign f => Nullable f -> Fay ()
@@ -25,3 +27,6 @@ r1 = ffi "{ instance: 'R', slot1 : 1 }"
 
 r2 :: R
 r2 = ffi "{ instance : 'R', slot1 : null }"
+
+parseInt :: String -> Nullable Int
+parseInt = ffi "(function () { var n = global.parseInt(%1, 10); if (isNaN(n)) return null; return n; })()"

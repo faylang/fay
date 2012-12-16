@@ -51,7 +51,7 @@ compileFFI srcloc name formatstr sig = do
         wrapReturn inner = thunk $
           case lastMay funcFundamentalTypes of
             -- Returns a “pure” value;
-            Just{} -> jsToFay returnType (JsRawExp inner)
+            Just{} -> jsToFay SerializeAnywhere returnType (JsRawExp inner)
             -- Base case:
             Nothing -> JsRawExp inner
         funcFundamentalTypes = functionTypeArgs sig
@@ -123,16 +123,16 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
   where
     translator qname =
       JsIf (JsInstanceOf (JsName transcodingObjForced) (JsConstructor qname))
-           (obj : fieldStmts fieldTypes ++ [ret])
+           (obj : fieldStmts (zip [0..] fieldTypes) ++ [ret])
            []
 
     obj :: JsStmt
     obj = JsVar obj_ $
       JsObj [("instance",JsLit (JsStr (printJSString name)))]
 
-    fieldStmts :: [(Name,BangType)] -> [JsStmt]
+    fieldStmts :: [(Int,(Name,BangType))] -> [JsStmt]
     fieldStmts [] = []
-    fieldStmts (fieldType:fts) =
+    fieldStmts ((i,fieldType):fts) =
       (JsVar obj_v field) :
         (JsIf (JsNeq JsUndefined (JsName obj_v))
           [JsSetPropExtern obj_ decl (JsName obj_v)]
@@ -141,7 +141,7 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
       where
         obj_v = JsNameVar (UnQual (Ident $ "obj_" ++ d))
         decl = JsNameVar (UnQual (Ident d))
-        (d, field) = declField fieldType
+        (d, field) = declField i fieldType
 
     obj_ = JsNameVar (UnQual (Ident "obj_"))
 
@@ -149,11 +149,11 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
     ret = JsEarlyReturn (JsName obj_)
 
     -- Declare/encode Fay→JS field
-    declField :: (Name,BangType) -> (String,JsExp)
-    declField (fname,typ) =
+    declField :: Int -> (Name,BangType) -> (String,JsExp)
+    declField i (fname,typ) =
       (prettyPrint fname
       ,fayToJs (case argType (bangType typ) of
-                 known -> typeRep known)
+                 known -> typeRep (SerializeUserArg i) known)
                (force (JsGetProp (JsName transcodingObjForced)
                                  (JsNameVar (UnQual fname)))))
 
@@ -215,9 +215,10 @@ userDefined (TyCon (UnQual name):typs) = UserDefined name (map argType typs)
 userDefined _ = UnknownType
 
 -- | Translate: JS → Fay.
-jsToFay :: FundamentalType -> JsExp -> JsExp
-jsToFay typ exp = JsApp (JsName (JsBuiltIn "jsToFay"))
-                        [typeRep typ,exp]
+jsToFay :: SerializeContext -> FundamentalType -> JsExp -> JsExp
+jsToFay context typ exp =
+  JsApp (JsName (JsBuiltIn "jsToFay"))
+        [typeRep context typ,exp]
 
 -- | Translate: Fay → JS.
 fayToJs :: JsExp -> JsExp -> JsExp
@@ -225,27 +226,41 @@ fayToJs typ exp = JsApp (JsName (JsBuiltIn "fayToJs"))
                         [typ,exp]
 
 -- | Get a JS-representation of a fundamental type for encoding/decoding.
-typeRep :: FundamentalType -> JsExp
-typeRep typ =
+typeRep :: SerializeContext -> FundamentalType -> JsExp
+typeRep context typ =
   case typ of
-    FunctionType xs     -> JsList [JsLit $ JsStr "function",JsList (map typeRep xs)]
-    JsType x            -> JsList [JsLit $ JsStr "action",JsList [typeRep x]]
-    ListType x          -> JsList [JsLit $ JsStr "list",JsList [typeRep x]]
-    TupleType xs        -> JsList [JsLit $ JsStr "tuple",JsList (map typeRep xs)]
+    FunctionType xs     -> JsList [JsLit $ JsStr "function",JsList (map (typeRep context) xs)]
+    JsType x            -> JsList [JsLit $ JsStr "action",JsList [typeRep context x]]
+    ListType x          -> JsList [JsLit $ JsStr "list",JsList [typeRep context x]]
+    TupleType xs        -> JsList [JsLit $ JsStr "tuple",JsList (map (typeRep context) xs)]
     UserDefined name xs -> JsList [JsLit $ JsStr "user"
                                   ,JsLit $ JsStr (unname name)
-                                  ,JsList (map typeRep xs)]
-    Defined x           -> JsList [JsLit $ JsStr "defined",JsList [typeRep x]]
-    Nullable x          -> JsList [JsLit $ JsStr "nullable",JsList [typeRep x]]
-    _ -> JsList [JsLit $ JsStr nom]
+                                  ,JsList (zipWith (\t i -> typeRep (setArg i context) t) xs [0..])]
+    Defined x           -> JsList [JsLit $ JsStr "defined",JsList [typeRep context x]]
+    Nullable x          -> JsList [JsLit $ JsStr "nullable",JsList [typeRep context x]]
+    _ -> nom
 
-      where nom = case typ of
-              StringType -> "string"
-              DoubleType -> "double"
-              IntType    -> "int"
-              BoolType   -> "bool"
-              DateType   -> "date"
-              _          -> "unknown"
+    where setArg i SerializeUserArg{}   = SerializeUserArg i
+          setArg _ c = c
+          ret = JsList . return . JsLit . JsStr
+          nom = case typ of
+            StringType -> ret "string"
+            DoubleType -> ret "double"
+            IntType    -> ret "int"
+            BoolType   -> ret "bool"
+            DateType   -> ret "date"
+            _          ->
+              case context of
+                SerializeAnywhere -> ret "unknown"
+                SerializeUserArg i ->
+                  let args = JsIndex 2 (JsName JsParametrizedType)
+                      thisArg = JsIndex i args
+                      unknown = ret "unknown"
+                  in JsTernaryIf args
+                                 (JsTernaryIf thisArg
+                                              thisArg
+                                              unknown)
+                                 unknown
 
 -- | Get the arity of a type.
 typeArity :: Type -> Int
@@ -284,7 +299,7 @@ formatFFI formatstr args = go formatstr where
     case listToMaybe (drop (n-1) args) of
       Nothing -> throwError (FfiFormatNoSuchArg n)
       Just (arg,typ) -> do
-        return (printJSString (fayToJs (typeRep typ) (JsName arg)))
+        return (printJSString (fayToJs (typeRep SerializeAnywhere typ) (JsName arg)))
 
 explodeFields :: [([a], t)] -> [(a, t)]
 explodeFields = concatMap $ \(names,typ) -> map (,typ) names
@@ -325,11 +340,12 @@ emitJsToFay name (explodeFields -> fieldTypes) = do
       JsIf (JsEq (JsGetPropExtern (JsName transcodingObj) "instance")
                  (JsLit (JsStr (printJSString name))))
            [JsEarlyReturn (JsNew (JsConstructor qname)
-                                 (map decodeField fieldTypes))]
+                                 (zipWith decodeField fieldTypes [0..]))]
            []
     -- Decode JS→Fay field
-    decodeField :: (Name,BangType) -> JsExp
-    decodeField (fname,typ) =
-      jsToFay (argType (bangType typ))
+    decodeField :: (Name,BangType) -> Int -> JsExp
+    decodeField (fname,typ) i =
+      jsToFay (SerializeUserArg i)
+              (argType (bangType typ))
               (JsGetPropExtern (JsName transcodingObj)
                                (prettyPrint fname))

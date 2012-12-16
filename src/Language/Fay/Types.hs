@@ -41,7 +41,8 @@ module Language.Fay.Types
   ,PrintState(..)
   ,Printer(..)
   ,NameScope(..)
-  ,Mapping(..))
+  ,Mapping(..)
+  ,SerializeContext(..))
   where
 
 import           Control.Applicative
@@ -291,6 +292,7 @@ data JsExp
 data JsName
   = JsNameVar QName
   | JsThis
+  | JsParametrizedType
   | JsThunk
   | JsForce
   | JsApply
@@ -344,3 +346,6 @@ instance IsString QName where
 -- | Helpful for writing qualified symbols (Fay.*).
 instance IsString ModuleName where
   fromString = ModuleName
+
+data SerializeContext = SerializeAnywhere | SerializeUserArg Int
+  deriving (Read,Show,Eq)

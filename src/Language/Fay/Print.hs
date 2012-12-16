@@ -183,15 +183,16 @@ instance Printable JsExp where
 instance Printable JsName where
   printJS name =
     case name of
-      JsNameVar qname -> printJS qname
-      JsThis -> write "this"
-      JsThunk -> write "$"
-      JsForce -> write "_"
-      JsApply -> write "__"
-      JsParam i -> write ("$p" ++ show i)
-      JsTmp i -> write ("$tmp" ++ show i)
+      JsNameVar qname     -> printJS qname
+      JsThis              -> write "this"
+      JsThunk             -> write "$"
+      JsForce             -> write "_"
+      JsApply             -> write "__"
+      JsParam i           -> write ("$p" ++ show i)
+      JsTmp i             -> write ("$tmp" ++ show i)
       JsConstructor qname -> "$_" +> printJS qname
-      JsBuiltIn qname -> "Fay$$" +> printJS qname
+      JsBuiltIn qname     -> "Fay$$" +> printJS qname
+      JsParametrizedType  -> write "type"
 
 instance Printable String where
   printJS = write

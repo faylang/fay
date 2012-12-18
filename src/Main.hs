@@ -89,8 +89,7 @@ options = FayCompilerOptions
   <*> switch (long "no-ghc" & help "Don't typecheck, specify when not working with files")
   <*> switch (long "stdout" & short 's' & help "Output to stdout")
   <*> switch (long "version" & help "Output version number")
-  <*> nullOption (long "output" & short 'o' & reader (Just . Just) & value Nothing
-      & help "Output to specified file")
+  <*> optional (strOption (long "output" & short 'o' & metavar "file" & help "Output to specified file"))
   <*> switch (long "pretty" & short 'p' & help "Pretty print the output")
   <*> arguments Just (metavar "- | <hs-file>...")
   <*> switch (long "optimize" & short 'O' & help "Apply optimizations to generated code")

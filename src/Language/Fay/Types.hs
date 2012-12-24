@@ -220,6 +220,7 @@ data CompileError
   | UnsupportedFieldPattern PatField
   | UnsupportedRhs Rhs
   | UnsupportedGuardedAlts GuardedAlts
+  | UnsupportedWhereInAlt Alt
   | UnsupportedImport ImportDecl
   | UnsupportedQualStmt QualStmt
   | EmptyDoBlock

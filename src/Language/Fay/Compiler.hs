@@ -746,8 +746,10 @@ compileStmt inner stmt =
 
 -- | Compile the given pattern against the given expression.
 compilePatAlt :: JsExp -> Alt -> Compile [JsStmt]
-compilePatAlt exp (Alt _ pat rhs _) = do
-  withScope $ do
+compilePatAlt exp alt@(Alt _ pat rhs wheres) = case wheres of
+  BDecls (_ : _) -> throwError (UnsupportedWhereInAlt alt)
+  IPBinds (_ : _) -> throwError (UnsupportedWhereInAlt alt)
+  _ -> withScope $ do
     generateScope $ compilePat exp pat []
     alt <- compileGuardedAlt rhs
     compilePat exp pat [JsEarlyReturn alt]

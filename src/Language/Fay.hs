@@ -143,6 +143,7 @@ showCompileError e =
     UnsupportedExportSpec es -> "unsupported export specification: " ++ prettyPrint es
     UnsupportedMatchSyntax m -> "unsupported match/binding syntax: " ++ prettyPrint m
     UnsupportedWhereInMatch m -> "unsupported `where' syntax: " ++ prettyPrint m
+    UnsupportedWhereInAlt alt -> "`where' not supported here: " ++ prettyPrint alt
     UnsupportedExpression expr -> "unsupported expression syntax: " ++ prettyPrint expr
     UnsupportedQualStmt stmt -> "unsupported list qualifier: " ++ prettyPrint stmt
     UnsupportedLiteral lit -> "unsupported literal syntax: " ++ prettyPrint lit

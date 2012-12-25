@@ -124,8 +124,14 @@ compileForDocs mod = do
 compileToplevelModule :: Module -> Compile [JsStmt]
 compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   cfg <- gets stateConfig
+
+  -- Remove the fay source dir from the includes, -package fay is already supplied.
+  -- This will prevent errors on FFI instance declarations.
+  faydir <- liftIO $ faySourceDir
+  let includeDirs = filter (/= faydir) (configDirectoryIncludes cfg)
+
   when (configTypecheck cfg) $
-    typecheck (configPackageConf cfg) (configDirectoryIncludes cfg) [] (configWall cfg) $
+    typecheck (configPackageConf cfg) includeDirs [] (configWall cfg) $
       fromMaybe modulename $ configFilePath cfg
   initialPass mod
   cs <- liftIO $ defaultCompileState def

@@ -37,6 +37,7 @@ module Language.Fay.Types
   ,addConfigDirectoryIncludes
   ,CompileState(..)
   ,defaultCompileState
+  ,faySourceDir
   ,FundamentalType(..)
   ,PrintState(..)
   ,Printer(..)
@@ -114,10 +115,13 @@ data NameScope = ScopeImported ModuleName (Maybe Name)
 
   deriving (Show,Eq)
 
+faySourceDir :: IO FilePath
+faySourceDir = fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
+
 -- | The default compiler state.
 defaultCompileState :: CompileConfig -> IO CompileState
 defaultCompileState config = do
-  srcdir <- fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
+  srcdir <- faySourceDir
   types <- getDataFileName "src/Language/Fay/Types.hs"
   prelude <- getDataFileName "src/Language/Fay/Prelude.hs"
   return $ CompileState {

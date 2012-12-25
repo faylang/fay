@@ -106,6 +106,7 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      tests/Double2 tests/String
                      tests/Hierarchical/Export.hs
                      tests/Hierarchical/RecordDefined.hs
+                     tests/Api/Records.hs tests/Api/ImportRecords.hs
                      -- Documentation files
                      docs/beautify.js docs/highlight.pack.js docs/home.css docs/jquery.js
                      docs/analytics.js

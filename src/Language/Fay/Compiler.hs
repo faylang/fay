@@ -6,6 +6,7 @@
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE ViewPatterns          #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# OPTIONS -Wall -fno-warn-name-shadowing -fno-warn-orphans #-}
 
 -- | The Haskell→Javascript compiler.
@@ -27,7 +28,8 @@ import           Language.Fay.Compiler.FFI
 import           Language.Fay.Compiler.Misc
 import           Language.Fay.Compiler.Optimizer
 import           Language.Fay.Print              (printJSString)
-import qualified Language.Fay.Stdlib             as Stdlib (enumFromThenTo,enumFromTo)
+import qualified Language.Fay.Stdlib             as Stdlib (enumFromThenTo,
+                                                            enumFromTo)
 import           Language.Fay.Types
 
 
@@ -42,7 +44,7 @@ import           Data.Map                        (Map)
 import qualified Data.Map                        as M
 import           Data.Maybe
 import           Data.Version                    (parseVersion)
-import qualified GHC.Paths as GHCPaths
+import qualified GHC.Paths                       as GHCPaths
 import           Language.Haskell.Exts
 import           System.Directory                (doesFileExist)
 import           System.FilePath                 ((</>))
@@ -156,7 +158,7 @@ initialPass mod = throwError (UnsupportedModuleSyntax mod)
 
 initialPass_import :: ImportDecl -> Compile ()
 initialPass_import (ImportDecl _ "Prelude" _ _ _ _ _) = return ()
-initialPass_import (ImportDecl _ name False _ Nothing Nothing Nothing) = do
+initialPass_import (ImportDecl _ name False _ Nothing Nothing _) = do
   void $ unlessImported name $ \filepath contents -> do
     state <- gets id
     result <- liftIO $ initialPass_records filepath state initialPass contents
@@ -171,7 +173,6 @@ initialPass_import (ImportDecl _ name False _ Nothing Nothing Nothing) = do
                          }
       Left err -> throwError err
     return []
-
 initialPass_import i = throwError $ UnsupportedImport i
 
 initialPass_records :: (Show from,Parseable from)
@@ -315,21 +316,55 @@ findImport alldirs mname = go alldirs mname where
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]
 compileImport (ImportDecl _ "Prelude" _ _ _ _ _) = return []
-compileImport (ImportDecl _ name False _ Nothing Nothing Nothing) = do
-  unlessImported name $ \filepath contents -> do
-    state <- gets id
-    result <- liftIO $ compileToAst filepath state compileModule contents
-    case result of
-      Right (stmts,state) -> do
-        modify $ \s -> s { stateFayToJs  = stateFayToJs state
-                         , stateJsToFay  = stateJsToFay state
-                         , stateImported = stateImported state
-                         , stateScope    = mergeScopes (addExportsToScope (stateExports state) (stateScope s))
-                                                       (stateScope state)
-                         }
-        return stmts
-      Left err -> throwError err
-compileImport i = throwError $ UnsupportedImport i
+compileImport (ImportDecl _ name False _ Nothing Nothing Nothing) =
+  compileImportWithFilter name (const $ return True)
+compileImport (ImportDecl _ name False _ Nothing Nothing (Just (True, specs))) =
+  compileImportWithFilter name (fmap not . imported specs)
+compileImport (ImportDecl _ name False _ Nothing Nothing (Just (False, specs))) =
+  compileImportWithFilter name (imported specs)
+compileImport i =
+  throwError $ UnsupportedImport i
+
+imported :: [ImportSpec] -> QName -> Compile Bool
+imported is qn = anyM (matching qn) is
+  where
+    matching :: QName -> ImportSpec -> Compile Bool
+    matching (Qual _ name) (IVar var) = return $ name == var
+    matching (Qual _ name) (IThingAll typ) = do
+      recs <- typeToRecs $ UnQual typ
+      if UnQual name `elem` recs
+        then return True
+        else do
+          fields <- typeToFields $ UnQual typ
+          return $ UnQual name `elem` fields
+    matching (Qual _ name) (IThingWith typ cns) =
+      flip anyM cns $ \cn -> case cn of
+        ConName _ -> do
+          recs <- typeToRecs $ UnQual typ
+          return $ UnQual name `elem` recs
+        VarName _ -> do
+          fields <- typeToFields $ UnQual typ
+          return $ UnQual name `elem` fields
+    matching q is = error $ "compileImport: Unsupported QName ImportSpec combination " ++ show (q, is) ++ ", this is a bug!"
+
+
+compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile [JsStmt]
+compileImportWithFilter name filter =
+      unlessImported name $ \filepath contents -> do
+        state <- gets id
+        result <- liftIO $ compileToAst filepath state compileModule contents
+        case result of
+          Right (stmts,state) -> do
+            exports <- filterM filter $ stateExports state
+            modify $ \s -> s { stateFayToJs  = stateFayToJs state
+                             , stateJsToFay  = stateJsToFay state
+                             , stateImported = stateImported state
+                             , stateScope    = mergeScopes (addExportsToScope exports (stateScope s))
+                                                           (stateScope state)
+                             }
+            return stmts
+          Left err -> throwError err
+
 
 -- | Add the new scopes to the old one, stripping out local bindings.
 mergeScopes :: Map Name [NameScope] -> Map Name [NameScope] -> Map Name [NameScope]

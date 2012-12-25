@@ -32,7 +32,7 @@ case_importedList = do
 
 case_stateRecordTypes :: Assertion
 case_stateRecordTypes = do
-  res <- compileFileWithState defConf "tests/api/Records.hs"
+  res <- compileFileWithState defConf "tests/Api/Records.hs"
   case res of
     Left err -> error (show err)
     Right (_,r) -> do
@@ -46,7 +46,7 @@ case_stateRecordTypes = do
 
 case_importStateRecordTypes :: Assertion
 case_importStateRecordTypes = do
-  res <- compileFileWithState defConf "tests/api/ImportRecords.hs"
+  res <- compileFileWithState defConf "tests/Api/ImportRecords.hs"
   case res of
     Left err -> error (show err)
     Right (_,r) -> do

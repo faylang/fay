@@ -245,3 +245,15 @@ warn w = do
 -- | Pretty print a source location.
 printSrcLoc :: SrcLoc -> String
 printSrcLoc SrcLoc{..} = srcFilename ++ ":" ++ show srcLine ++ ":" ++ show srcColumn
+
+anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
+anyM p l = return . not . null =<< filterM p l
+
+typeToRecs :: QName -> Compile [QName]
+typeToRecs typ = fromMaybe [] . lookup typ <$> gets stateRecordTypes
+
+typeToFields :: QName -> Compile [QName]
+typeToFields typ = do
+  allrecs <- gets stateRecords
+  typerecs <- typeToRecs typ
+  return . concatMap snd . filter ((`elem` typerecs) . fst) $ allrecs

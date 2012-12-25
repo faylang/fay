@@ -70,7 +70,7 @@ main = do
                            else compileFromTo config file (Just (outPutFile opts file))
 
   where
-    parser = info (helper <*> options) (fullDesc & header helpTxt)
+    parser = info (helper <*> options) (fullDesc <> header helpTxt)
 
     outPutFile :: FayCompilerOptions -> String -> FilePath
     outPutFile opts file = fromMaybe (toJsName file) $ optOutput opts
@@ -78,25 +78,25 @@ main = do
 -- | All Fay's command-line options.
 options :: Parser FayCompilerOptions
 options = FayCompilerOptions
-  <$> switch (long "library" & help "Don't automatically call main in generated JavaScript")
-  <*> switch (long "flatten-apps" & help "flatten function applicaton")
-  <*> switch (long "html-wrapper" & help "Create an html file that loads the javascript")
-  <*> strsOption (long "html-js-lib" & metavar "file1[, ..]"
-      & help "javascript files to add to <head> if using option html-wrapper")
-  <*> strsOption (long "include" & metavar "dir1[, ..]"
-      & help "additional directories for include")
-  <*> switch (long "Wall" & help "Typecheck with -Wall")
-  <*> switch (long "no-ghc" & help "Don't typecheck, specify when not working with files")
-  <*> switch (long "stdout" & short 's' & help "Output to stdout")
-  <*> switch (long "version" & help "Output version number")
-  <*> optional (strOption (long "output" & short 'o' & metavar "file" & help "Output to specified file"))
-  <*> switch (long "pretty" & short 'p' & help "Pretty print the output")
+  <$> switch (long "library" <> help "Don't automatically call main in generated JavaScript")
+  <*> switch (long "flatten-apps" <> help "flatten function applicaton")
+  <*> switch (long "html-wrapper" <> help "Create an html file that loads the javascript")
+  <*> strsOption (long "html-js-lib" <> metavar "file1[, ..]"
+      <> help "javascript files to add to <head> if using option html-wrapper")
+  <*> strsOption (long "include" <> metavar "dir1[, ..]"
+      <> help "additional directories for include")
+  <*> switch (long "Wall" <> help "Typecheck with -Wall")
+  <*> switch (long "no-ghc" <> help "Don't typecheck, specify when not working with files")
+  <*> switch (long "stdout" <> short 's' <> help "Output to stdout")
+  <*> switch (long "version" <> help "Output version number")
+  <*> optional (strOption (long "output" <> short 'o' <> metavar "file" <> help "Output to specified file"))
+  <*> switch (long "pretty" <> short 'p' <> help "Pretty print the output")
   <*> arguments Just (metavar "- | <hs-file>...")
-  <*> switch (long "optimize" & short 'O' & help "Apply optimizations to generated code")
-  <*> switch (long "closure" & help "Provide help with Google Closure")
+  <*> switch (long "optimize" <> short 'O' <> help "Apply optimizations to generated code")
+  <*> switch (long "closure" <> help "Provide help with Google Closure")
 
   where strsOption m =
-          nullOption (m & reader (Just . wordsBy (== ',')) & value [])
+          nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])
 
 -- | Make incompatible options.
 incompatible :: Monad m => (FayCompilerOptions -> Bool)

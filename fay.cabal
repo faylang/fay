@@ -163,7 +163,7 @@ library
                      blaze-markup,
                      bytestring,
                      time,
-                     optparse-applicative < 0.5,
+                     optparse-applicative >= 0.5,
                      split,
                      test-framework,
                      test-framework-hunit,
@@ -196,7 +196,7 @@ executable fay
                      filepath,
                      groom,
                      random,
-                     optparse-applicative < 0.5,
+                     optparse-applicative >= 0.5,
                      split,
                      haskeline
 

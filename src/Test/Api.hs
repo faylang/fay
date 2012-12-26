@@ -11,7 +11,7 @@ import           Language.Haskell.Exts.Syntax
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Test.Framework.TH
-import           Test.HUnit                     (Assertion, assertBool)
+import           Test.HUnit                     (Assertion, assertBool, assertEqual)
 import           Test.Util
 
 tests :: Test
@@ -29,6 +29,34 @@ case_importedList = do
     Left err -> error (show err)
     Right (_,r) -> assertBool "RecordImport_Export was not added to stateImported" .
                      isJust . lookup (ModuleName "RecordImport_Export") $ stateImported r
+
+case_stateRecordTypes :: Assertion
+case_stateRecordTypes = do
+  res <- compileFileWithState defConf "tests/api/Records.hs"
+  case res of
+    Left err -> error (show err)
+    Right (_,r) -> do
+      -- TODO order should not matter
+      assertEqual "stateRecordTypes mismatch"
+        [ (UnQual (Ident "T"),[UnQual (Symbol ":+")])
+        , (UnQual (Ident "R"),[UnQual (Ident "R"), UnQual (Ident "S")])
+        , (UnQual (Ident "Maybe"),[UnQual (Ident "Nothing"), UnQual (Ident "Just")])
+        ]
+        (stateRecordTypes r)
+
+case_importStateRecordTypes :: Assertion
+case_importStateRecordTypes = do
+  res <- compileFileWithState defConf "tests/api/ImportRecords.hs"
+  case res of
+    Left err -> error (show err)
+    Right (_,r) -> do
+      -- TODO order should not matter
+      assertEqual "stateRecordTypes mismatch"
+        [ (UnQual (Ident "T"),[UnQual (Symbol ":+")])
+        , (UnQual (Ident "R"),[UnQual (Ident "R"), UnQual (Ident "S")])
+        , (UnQual (Ident "Maybe"),[UnQual (Ident "Nothing"), UnQual (Ident "Just")])
+        ]
+        (stateRecordTypes r)
 
 fp :: FilePath
 fp = "tests/RecordImport_Import.hs"

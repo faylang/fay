@@ -100,7 +100,8 @@ data CompileState = CompileState
   , stateExportAll   :: Bool
   , stateModuleName  :: ModuleName
   , stateFilePath    :: FilePath
-  , stateRecords     :: [(QName,[QName])]
+  , stateRecordTypes :: [(QName,[QName])] -- Map types to constructors
+  , stateRecords     :: [(QName,[QName])] -- Map constructors to fields
   , stateFayToJs     :: [JsStmt]
   , stateJsToFay     :: [JsStmt]
   , stateImported    :: [(ModuleName,FilePath)]
@@ -129,6 +130,7 @@ defaultCompileState config = do
   , stateExports = []
   , stateExportAll = True
   , stateModuleName = ModuleName "Main"
+  , stateRecordTypes = [("Maybe",["Nothing","Just"])]
   , stateRecords = [("Nothing",[]),("Just",["slot1"])]
   , stateFayToJs = []
   , stateJsToFay = []

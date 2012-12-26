@@ -371,7 +371,7 @@ function Fay$$index(index){
 // List length.
 function Fay$$listLen(list,max){
   for(var i = 0; list !== null && i < max + 1; i++) {
-    list = _(list).cdr;
+    list = _(_(list).cdr);
   }
   return i == max;
 }

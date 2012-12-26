@@ -758,7 +758,7 @@ compilePatAlt exp alt@(Alt _ pat rhs wheres) = case wheres of
   _ -> withScope $ do
     generateScope $ compilePat exp pat []
     alt <- compileGuardedAlt rhs
-    compilePat exp pat [JsEarlyReturn alt]
+    compilePat exp pat [alt]
 
 -- | Compile the given pattern against the given expression.
 compilePat :: JsExp -> Pat -> [JsStmt] -> Compile [JsStmt]
@@ -950,11 +950,13 @@ compileInfixPat exp pat@(PInfixApp left (Special cons) right) body =
 compileInfixPat _ pat _ = throwError (UnsupportedPattern pat)
 
 -- | Compile a guarded alt.
-compileGuardedAlt :: GuardedAlts -> Compile JsExp
+compileGuardedAlt :: GuardedAlts -> Compile JsStmt
 compileGuardedAlt alt =
   case alt of
-    UnGuardedAlt exp -> compileExp exp
-    alt -> throwError (UnsupportedGuardedAlts alt)
+    UnGuardedAlt exp -> JsEarlyReturn <$> compileExp exp
+    GuardedAlts alts -> compileGuards (map altToRhs alts)
+   where
+    altToRhs (GuardedAlt l s e) = GuardedRhs l s e
 
 -- | Compile a let expression.
 compileLet :: [Decl] -> Exp -> Compile JsExp

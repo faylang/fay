@@ -27,6 +27,3 @@ writeRef = ffi "Fay$$writeRef(%1,%2)"
 
 readRef :: Foreign a => Ref a -> Fay a
 readRef = ffi "Fay$$readRef(%1)"
-
-print :: String -> Fay ()
-print = ffi "console.log(%1)"

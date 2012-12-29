@@ -10,9 +10,6 @@ import Language.Fay.FFI
 main :: Fay ()
 main = benchmark $ print (nsoln 11)
 
-print :: Int -> Fay ()
-print = ffi "console.log(%1)"
-
 listLength :: [a] -> Int -> Int
 listLength [] acc = acc
 listLength (_:l) acc = listLength l (1 + acc)

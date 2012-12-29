@@ -25,10 +25,6 @@ printList = ffi "console.log(%1)"
 print' :: String -> Fay ()
 print' = ffi "console['log'](%1)"
 
--- | Print using window.print.
-print :: Foreign a => a -> Fay ()
-print = ffi "console['log'](%1)"
-
 addEventListener :: String -> Fay () -> Bool -> Fay ()
 addEventListener = ffi "window['addEventListener'](%1,%2,%3)"
 

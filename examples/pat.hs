@@ -1,5 +1,7 @@
 import Language.Fay.Prelude
 
+import Language.Fay.FFI
+
 main :: Fay ()
 main =
       case [1,2] of

@@ -22,26 +22,6 @@ module CodeWorld where
 import Language.Fay.Prelude
 import Language.Fay.FFI
 
-take 0 _ = []
-take n (x:xs) = x : take (n-1) xs
-
-_ ^ 0 = 1
-x ^ n = x * x ^ (n-1)
-
-pi :: Double
-pi = ffi "Math.PI"
-
-sin :: Double -> Double
-sin = ffi "Math.sin(%1)"
-
-cos :: Double -> Double
-cos = ffi "Math.cos(%1)"
-
-abs :: Double -> Double
-abs = ffi "Math.abs(%1)"
-
-floor :: Double -> Int
-floor = ffi "Math.floor(%1)"
 
 data Element
 instance Foreign Element

@@ -14,9 +14,6 @@ printBody = do
   result <- documentGetElements "body"
   print result
 
-print :: Foreign a => [a] -> Fay ()
-print = ffi "console.log(%1)"
-
 data Element
 instance Foreign Element
 instance Show (Element)

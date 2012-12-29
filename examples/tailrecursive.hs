@@ -14,18 +14,12 @@ import           Language.Fay.Prelude
 main = do
   benchmark $ printI (map (\x -> x+1) fibs !! 10)
   benchmark $ printI (fibs !! 80)
-  benchmark $ printD (sum 1000000 0)
-  benchmark $ printD (sum 1000000 0)
-  benchmark $ printD (sum 1000000 0)
-  benchmark $ printD (sum 1000000 0)
+  benchmark $ printD (sum' 1000000 0)
+  benchmark $ printD (sum' 1000000 0)
+  benchmark $ printD (sum' 1000000 0)
+  benchmark $ printD (sum' 1000000 0)
 
 fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
-
-tail (_:xs) = xs
-
-xs !! k = go 0 xs where
-  go n (x:xs) | n == k = x
-              | otherwise = go (n+1) xs
 
 benchmark m = do
   start <- getSeconds
@@ -39,8 +33,8 @@ length' = go 0 where
   go acc [] = acc
 
 -- tail recursive
-sum 0 acc = acc
-sum n acc = sum (n - 1) (acc + n)
+sum' 0 acc = acc
+sum' n acc = sum' (n - 1) (acc + n)
 
 getSeconds :: Fay Double
 getSeconds = ffi "new Date()"

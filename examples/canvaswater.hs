@@ -146,9 +146,5 @@ log :: String -> Fay ()
 log = ffi "console['log'](%1)"
 
 -- | Alert using window.alert.
-sin :: Double -> Double
-sin = ffi "window.Math['sin'](%1)"
-
--- | Alert using window.alert.
 setInterval :: Fay () -> Double -> Fay ()
 setInterval = ffi "window['setInterval'](%1,%2)"

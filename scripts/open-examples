@@ -1,1 +1,6 @@
-for i in `ls examples/*.html`; do gnome-open $i; done
+#!/bin/sh
+
+for i in `ls examples/*.html`
+do
+  gnome-open $i
+done

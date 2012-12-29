@@ -16,6 +16,3 @@ data Foo = Foo { x :: Double, y :: String, z :: Foo } | Bar
 instance Foreign Foo
 
 main = print (show (Foo 123 "abc" Bar))
-
-print :: String -> Fay ()
-print = ffi "console.log(%1)"

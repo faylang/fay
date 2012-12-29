@@ -9,16 +9,16 @@ import           Language.Fay.Prelude
 main :: Fay ()
 main = do
   ready $ do
-    print (showDouble 123)
+    putStrLn (showDouble 123)
     body <- select "body"
     printArg body
-    addClassWith (\i s -> do print ("i… " ++ showDouble i)
-                             print ("s… " ++ showString s)
+    addClassWith (\i s -> do putStrLn ("i… " ++ showDouble i)
+                             putStrLn ("s… " ++ showString s)
                              return "abc")
                  body
-    addClassWith (\i s -> do print ("i… " ++ showDouble i)
-                             print ("s… " ++ showString s)
-                             print (showString ("def: " ++ s))
+    addClassWith (\i s -> do putStrLn ("i… " ++ showDouble i)
+                             putStrLn ("s… " ++ showString s)
+                             putStrLn (showString ("def: " ++ s))
                              return "foo")
                  body
     printArg body
@@ -30,9 +30,6 @@ instance Show JQuery
 
 data Element
 instance Foreign Element
-
-print :: String -> Fay ()
-print = ffi "console.log(%1)"
 
 printArg :: Foreign a => a -> Fay ()
 printArg = ffi "console.log(\"%%o\",%1)"

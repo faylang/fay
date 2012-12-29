@@ -416,63 +416,10 @@ renderGraph cg pref gdataref x rng = do
 --------------------------------------------------------------------------------
 -- Utilities
 
-pi :: Double
-pi = ffi "Math.PI"
-
-sin :: Double -> Double
-sin = ffi "Math.sin(%1)"
-
-cos :: Double -> Double
-cos = ffi "Math.cos(%1)"
-
-replicate :: Int -> a -> [a]
-replicate 0 _ = []
-replicate n x = x : (replicate (n-1) x)
-
-take :: Int -> [a] -> [a]
-take n _      | n <= 0 =  []
-take _ []              =  []
-take n (x:xs)          =  x : take (n-1) xs
-
-drop :: Int -> [a] -> [a]
-drop n xs     | n <= 0 =  xs
-drop _ []              =  []
-drop n (_:xs)          =  drop (n-1) xs
-
-splitAt :: Int -> [a] -> ([a],[a])
-splitAt n xs = (take n xs, drop n xs)
-
-takeWhile :: (a -> Bool) -> [a] -> [a]
-takeWhile _ []          =  []
-takeWhile p (x:xs)
-  | p x       =  x : takeWhile p xs
-  | otherwise =  []
-
-_ ^ 0 = 1
-x ^ n = x * x ^ (n-1)
-
-head :: [a] -> a
-head (x:_) = x
-
-tail :: [a] -> [a]
-tail (_:xs) =  xs
-
-zip3 :: [a]->[b]->[c]->[(a,b,c)]
-zip3 (a:as) (b:bs) (c:cs) =  (a,b,c) : zip3 as bs cs
-zip3 _ _ _ =  []
-
-zipWith3 :: (a->b->c->d) -> [a]->[b]->[c]->[d]
-zipWith3 z (a:as) (b:bs) (c:cs) =  z a b c : zipWith3 z as bs cs
-zipWith3 _ _ _ _ =  []
-
 zipWith5 :: (a->b->c->d->e->f) -> [a]->[b]->[c]->[d]->[e]->[f]
 zipWith5 z (a:as) (b:bs) (c:cs) (d:ds) (e:es) = z a b c d e :
                                                 zipWith5 z as bs cs ds es
 zipWith5 _ _ _ _ _ _ = []
-
-(!!) :: [a] -> Int -> a
-(x:_)  !! 0 = x
-(_:xs) !! n = xs !! (n-1)
 
 mapM :: (a -> Fay b) -> [a] -> Fay [b]
 mapM m (x:xs) = m x >>= (\mx -> mapM m xs >>= (\mxs -> return (mx:mxs)))
@@ -484,17 +431,6 @@ forM [] _ = return []
 
 replicateM :: Int -> Fay a -> Fay [a]
 replicateM n x = sequence (replicate n x)
-
-sum l = sum' l 0
-  where
-    sum' []     a = a
-    sum' (x:xs) a = sum' xs (a+x)
-
-cycle :: [a] -> [a]
-cycle xs = xs' where xs' = xs ++ xs'
-
-repeat :: a -> [a]
-repeat x = xs where xs = x : xs
 
 parseDouble :: String -> Double
 parseDouble = ffi "parseFloat(%1)"
@@ -540,9 +476,6 @@ selectValue = ffi "%1[%1['selectedIndex']]['value']"
 
 setSelectIndex :: Element -> Int -> Fay ()
 setSelectIndex = ffi "%1['selectedIndex']=%2"
-
-floor :: Double -> Int
-floor = ffi "Math.floor(%1)"
 
 --------------------------------------------------------------------------------
 -- Ref
@@ -693,6 +626,3 @@ setArrayVal = ffi "%1[%2]=%3"
 
 arrayVal :: Array -> Int -> Fay Double
 arrayVal = ffi "%1[%2]"
-
-rem :: Int -> Int -> Int
-rem = ffi "%1 %% %2"

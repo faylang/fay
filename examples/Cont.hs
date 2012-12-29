@@ -36,10 +36,6 @@ setTimeout = ffi "global.setTimeout(%2,%1)"
 readFile :: Foreign b => String -> (String -> Fay b) -> Fay b
 readFile = ffi "require('fs').readFile(%1,'utf-8',function(_,s){ %2(s); })"
 
--- | Print using console.log.
-print :: String -> Fay ()
-print = ffi "console.log(%1)"
-
 sync :: (t -> (a -> Fay r) -> Fay r) -> t -> ContT r Fay a
 sync m a = ContT $ \c -> m a c
 
@@ -66,9 +62,3 @@ contT =
       callCC f = ContT $ \c -> runContT (f (\a -> ContT $ \_ -> c a)) c
       lift m = ContT (\x -> m >>=* x)
   in CC return (>>=) (>>) callCC lift where (>>=*) = (>>=)
-
---------------------------------------------------------------------------------
--- Crap.
-
-take 0 _ = []
-take n (x:xs) = x : take (n-1) xs

@@ -329,6 +329,7 @@ imported :: [ImportSpec] -> QName -> Compile Bool
 imported is qn = anyM (matching qn) is
   where
     matching :: QName -> ImportSpec -> Compile Bool
+    matching (Qual _ _) (IAbs _) = return True -- Types are always OK
     matching (Qual _ name) (IVar var) = return $ name == var
     matching (Qual _ name) (IThingAll typ) = do
       recs <- typeToRecs $ UnQual typ

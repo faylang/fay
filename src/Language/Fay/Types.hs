@@ -31,6 +31,7 @@ module Language.Fay.Types
     ,configTypecheck
     ,configWall
     ,configPackageConf
+    ,configPackages
   )
   ,configDirectoryIncludes
   ,addConfigDirectoryInclude
@@ -78,11 +79,12 @@ data CompileConfig = CompileConfig
   , configWall              :: Bool
   , configGClosure          :: Bool
   , configPackageConf       :: Maybe FilePath
+  , configPackages          :: [String]
   } deriving (Show)
 
 -- | Default configuration.
 instance Default CompileConfig where
-  def = CompileConfig False False True [] False False [] False True Nothing True False False Nothing
+  def = CompileConfig False False True [] False False [] False True Nothing True False False Nothing []
 
 configDirectoryIncludes :: CompileConfig -> [FilePath]
 configDirectoryIncludes cfg = _configDirectoryIncludes cfg

@@ -18,6 +18,7 @@ module Language.Fay
 import           Language.Fay.Compiler        (compileToplevelModule,
                                                compileViaStr)
 import           Language.Fay.Compiler.Misc   (printSrcLoc)
+import           Language.Fay.Compiler.Packages
 import           Language.Fay.Print
 import           Language.Fay.Types
 
@@ -76,8 +77,8 @@ compileFileWithState config filein = do
   runtime <- getDataFileName "js/runtime.js"
   hscode <- readFile filein
   raw <- readFile runtime
-  compileToModule filein config raw compileToplevelModule hscode
-
+  config' <- resolvePackages config
+  compileToModule filein config' raw compileToplevelModule hscode
 
 -- | Compile the given module to a runnable module.
 compileToModule :: (Show from,Show to,CompilesTo from to)

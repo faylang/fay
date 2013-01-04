@@ -28,10 +28,8 @@ import           Language.Fay.Compiler.FFI
 import           Language.Fay.Compiler.Misc
 import           Language.Fay.Compiler.Optimizer
 import           Language.Fay.Print              (printJSString)
-import qualified Language.Fay.Stdlib             as Stdlib (enumFromThenTo,
-                                                            enumFromTo)
+import qualified Language.Fay.Stdlib             as Stdlib
 import           Language.Fay.Types
-
 
 import           Control.Applicative
 import           Control.Monad.Error
@@ -43,14 +41,11 @@ import           Data.List.Extra
 import           Data.Map                        (Map)
 import qualified Data.Map                        as M
 import           Data.Maybe
-import           Data.Version                    (parseVersion)
 import qualified GHC.Paths                       as GHCPaths
 import           Language.Haskell.Exts
 import           System.Directory                (doesFileExist)
 import           System.FilePath                 ((</>))
-import           System.Process                  (readProcess)
 import           System.Process.Extra
-import           Text.ParserCombinators.ReadP    (readP_to_S)
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -241,7 +236,7 @@ typecheck packageConf includeDirs ghcFlags wall fp = do
       Just pk -> do
         flag <- liftIO getGhcPackageDbFlag
         return [flag ++ '=' : pk]
-  res <- liftIO $ readAllFromProcess' GHCPaths.ghc (
+  res <- liftIO $ readAllFromProcess GHCPaths.ghc (
     ["-fno-code"
     ,"-package fay"
     ,"-XNoImplicitPrelude"
@@ -254,16 +249,6 @@ typecheck packageConf includeDirs ghcFlags wall fp = do
    where
     wallF | wall = ["-Wall"]
           | otherwise = []
-
-getGhcPackageDbFlag :: IO String
-getGhcPackageDbFlag = do
-    s <- readProcess "ghc" ["--version"] ""
-    return $
-        case (mapMaybe readVersion $ words s, readVersion "7.6.0") of
-            (v:_, Just min) | v > min -> "-package-db"
-            _ -> "-package-conf"
-  where
-    readVersion = listToMaybe . filter (null . snd) . readP_to_S parseVersion
 
 --------------------------------------------------------------------------------
 -- Compilers

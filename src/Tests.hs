@@ -47,4 +47,4 @@ testFile opt file = do
 
 -- | Run a JS file.
 runJavaScriptFile :: String -> IO (Either String String)
-runJavaScriptFile file = readAllFromProcess "node" file
+runJavaScriptFile file = fmap (fmap snd) (readAllFromProcess "node" [file] "")

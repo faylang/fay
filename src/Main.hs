@@ -28,6 +28,7 @@ data FayCompilerOptions = FayCompilerOptions
     , optHTMLWrapper :: Bool
     , optHTMLJSLibs  :: [String]
     , optInclude     :: [String]
+    , optPackages    :: [String]
     , optWall        :: Bool
     , optNoGHC       :: Bool
     , optStdout      :: Bool
@@ -58,6 +59,7 @@ main = do
                   , configWall              = optWall opts
                   , configGClosure          = optGClosure opts
                   , configPackageConf       = packageConf
+                  , configPackages          = optPackages opts
                   }
             void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
             case optFiles opts of
@@ -85,6 +87,8 @@ options = FayCompilerOptions
       <> help "javascript files to add to <head> if using option html-wrapper")
   <*> strsOption (long "include" <> metavar "dir1[, ..]"
       <> help "additional directories for include")
+  <*> strsOption (long "package" <> metavar "package[, ..]"
+      <> help "packages to use for compilation")
   <*> switch (long "Wall" <> help "Typecheck with -Wall")
   <*> switch (long "no-ghc" <> help "Don't typecheck, specify when not working with files")
   <*> switch (long "stdout" <> short 's' <> help "Output to stdout")

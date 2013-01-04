@@ -17,7 +17,7 @@ tests = $testGroupGenerator
 compileFile :: [String] -> IO (Either String String)
 compileFile flags = do
   fay <- fromJust <$> fayPath
-  r <- readAllFromProcess' fay flags ""
+  r <- readAllFromProcess fay flags ""
   return $ case r of
     Left l -> Left l
     Right t -> Right $ snd t

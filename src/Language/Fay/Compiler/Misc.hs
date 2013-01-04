@@ -8,6 +8,9 @@ module Language.Fay.Compiler.Misc where
 
 import           Language.Fay.Types
 
+import           System.Process                  (readProcess)
+import           Text.ParserCombinators.ReadP    (readP_to_S)
+import           Data.Version                    (parseVersion)
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.State
@@ -257,3 +260,16 @@ typeToFields typ = do
   allrecs <- gets stateRecords
   typerecs <- typeToRecs typ
   return . concatMap snd . filter ((`elem` typerecs) . fst) $ allrecs
+
+-- | Get the flag used for GHC, this differs between GHC-7.6.0 and
+-- GHC-everything-else so we need to specially test for that. It's
+-- lame, but that's random flag name changes for you.
+getGhcPackageDbFlag :: IO String
+getGhcPackageDbFlag = do
+    s <- readProcess "ghc" ["--version"] ""
+    return $
+        case (mapMaybe readVersion $ words s, readVersion "7.6.0") of
+            (v:_, Just min') | v > min' -> "-package-db"
+            _ -> "-package-conf"
+  where
+    readVersion = listToMaybe . filter (null . snd) . readP_to_S parseVersion

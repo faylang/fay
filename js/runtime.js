@@ -23,18 +23,19 @@ function __(){
 }
 
 // Thunk object.
-function $(value){
+function $(thunk){
   this.forced = false;
-  this.value = value;
+  this.thunk = thunk;
+  this.value = null;
 }
 
 // Force the thunk.
 $.prototype.force = function(nocache) {
-  return nocache ?
-    this.value() :
-    (this.forced ?
-     this.value :
-     (this.value = this.value(), this.forced = true, this.value));
+  return nocache
+    ? this.thunk()
+    : this.forced
+    ? this.value
+    : (this.value = this.thunk(), this.forced = true, this.value);
 };
 
 function Fay$$seq(x) {

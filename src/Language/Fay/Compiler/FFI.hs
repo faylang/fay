@@ -28,6 +28,7 @@ import           Language.ECMAScript3.Syntax
 import           Language.Haskell.Exts        (prettyPrint)
 import           Language.Haskell.Exts.Syntax
 import           Prelude                      hiding (exp)
+import Data.Generics.Schemes
 import           Safe
 
 -- | Compile an FFI call.
@@ -58,61 +59,30 @@ compileFFI srcloc name formatstr sig = do
         returnType = last funcFundamentalTypes
 
 -- | Warn about uses of naked x.y which will not play nicely with Google Closure.
-warnDotUses :: SrcLoc -> String -> JS.ParsedExpression -> Compile ()
-warnDotUses srcloc string = go where
-  gom = maybe (return ()) go
-  go exp = case exp of
-    DotRef _ (VarRef _ (Id _ name)) _
-      | elem name globalNames -> return ()
-    DotRef _ _ _ -> warn $ printSrcLoc srcloc ++ ":\nDot ref syntax used in FFI JS code: " ++ string
-    -- Walk down the tree. Don't have a Traversable instance.
-    ArrayLit _ es -> mapM_ go es
-    ObjectLit _ pairs -> mapM_ go (map snd pairs)
-    BracketRef _ a b -> do go a; go b
-    NewExpr _ a xs -> do go a; mapM_ go xs
-    PrefixExpr _ _ e -> go e
-    UnaryAssignExpr _ _ lvalue -> golvalue lvalue
-    InfixExpr _ _ a b -> do go a; go b
-    CondExpr _ a b c -> do go a; go b; go c
-    AssignExpr _ _ lvalue e -> do golvalue lvalue; go e
-    ListExpr _ xs -> mapM_ go xs
-    CallExpr _ e xs -> do go e; mapM_ go xs
-    FuncExpr _ _ _ stmts -> mapM_ gostmt stmts
-    _ -> return ()
-  globalNames = ["Math","console","JSON"]
-  golvalue lvalue =
-    case lvalue of
-      LDot _ (VarRef _ (Id _ name)) _
-       | elem name globalNames -> return ()
-      LDot _ _ _ -> warn $ printSrcLoc srcloc ++ ":\nDot ref syntax used in FFI JS code: " ++ string
-      LBracket _ a b -> do go a; go b
-      _ -> return ()
-  gostmt stmt =
-    case stmt of
-      BlockStmt _ ss -> do mapM_ gostmt ss
-      ExprStmt _ e -> do go e
-      IfStmt _ e s s' -> do gostmt s; go e; gostmt s'
-      IfSingleStmt _ e s -> do gostmt s; go e; gostmt s
-      SwitchStmt _ e _ -> do go e
-      WhileStmt _ e s -> do gostmt s; go e; gostmt s
-      DoWhileStmt _ s e -> do gostmt s; go e; gostmt s
-      LabelledStmt _ _ s -> do gostmt s
-      ForInStmt _ (ForInLVal lvalue) e s -> do golvalue lvalue; gostmt s; go e; gostmt s
-      ForInStmt _ _ e s -> do gostmt s; go e; gostmt s
-      ForStmt _ _ me me' s -> do gostmt s; gostmt s; gom me; gom me'
-      TryStmt _ s cc ms -> do
-        maybe (return ()) gostmt ms
-        gostmt s
-        case cc of
-          Just (CatchClause _ _ s') -> gostmt s'
-          _ -> return ()
-      ThrowStmt _ e -> go e
-      WithStmt _ e s -> do gostmt s; go e; gostmt s
-      VarDeclStmt _ decls -> mapM_ godecl decls
-      FunctionStmt _ _ _ ss -> do mapM_ gostmt ss
-      ReturnStmt _ me -> gom me
-      _ -> return ()
-  godecl _ = return ()
+warnDotUses :: SrcLoc -> String -> ParsedExpression -> Compile ()
+warnDotUses srcloc string expr =
+  when anyrefs $
+    warn $ printSrcLoc srcloc ++ ":\nDot ref syntax used in FFI JS code: " ++ string
+
+  where anyrefs = not (null (listify dotref expr)) ||
+                  not (null (listify ldot expr))
+
+        dotref :: ParsedExpression -> Bool
+        dotref x = case x of
+          DotRef _ (VarRef _ (Id _ name)) _
+             | elem name globalNames -> False
+          DotRef{}                   -> True
+          _                          -> False
+
+        ldot :: LValue SourcePos -> Bool
+        ldot x =
+          case x of
+            LDot _ (VarRef _ (Id _ name)) _
+             | elem name globalNames -> False
+            LDot{}                   -> True
+            _                        -> False
+
+        globalNames = ["Math","console","JSON"]
 
 -- Make a Fay→JS encoder.
 emitFayToJs :: Name -> [([Name],BangType)] -> Compile ()

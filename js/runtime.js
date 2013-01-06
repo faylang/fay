@@ -128,6 +128,10 @@ function Fay$$fayToJs(type,fayObj){
   var args = type[1];
   var jsObj;
   switch(base){
+    case "ptr": {
+      jsObj = fayObj;
+      break;
+    }
     case "action": {
       // A nullary monadic action. Should become a nullary JS function.
       // Fay () -> function(){ return ... }
@@ -254,6 +258,10 @@ function Fay$$jsToFay(type,jsObj){
   var args = type[1];
   var fayObj;
   switch(base){
+    case "ptr": {
+      fayObj = jsObj;
+      break;
+    }
     case "action": {
       // Unserialize a "monadic" JavaScript return value into a monadic value.
       fayObj = new Fay$$Monad(Fay$$jsToFay(args[0],jsObj));

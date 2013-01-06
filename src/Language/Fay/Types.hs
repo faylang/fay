@@ -340,6 +340,7 @@ data FundamentalType
  | DoubleType
  | IntType
  | BoolType
+ | PtrType
  -- | Unknown.
  | UnknownType
    deriving (Show)

@@ -150,6 +150,7 @@ argType t =
     TyCon "Double"        -> DoubleType
     TyCon "Int"           -> IntType
     TyCon "Bool"          -> BoolType
+    TyApp (TyCon "Ptr") a -> PtrType
     TyApp (TyCon "Defined") a -> Defined (argType a)
     TyApp (TyCon "Nullable") a -> Nullable (argType a)
     TyApp (TyCon "Fay") a -> JsType (argType a)
@@ -216,6 +217,7 @@ typeRep context typ =
           nom = case typ of
             StringType -> ret "string"
             DoubleType -> ret "double"
+            PtrType    -> ret "ptr"
             IntType    -> ret "int"
             BoolType   -> ret "bool"
             DateType   -> ret "date"

@@ -23,22 +23,22 @@ import           System.IO
 
 -- | Options and help.
 data FayCompilerOptions = FayCompilerOptions
-    { optLibrary     :: Bool
-    , optFlattenApps :: Bool
-    , optHTMLWrapper :: Bool
-    , optHTMLJSLibs  :: [String]
-    , optInclude     :: [String]
-    , optPackages    :: [String]
-    , optWall        :: Bool
-    , optNoGHC       :: Bool
-    , optStdout      :: Bool
-    , optVersion     :: Bool
-    , optOutput      :: Maybe String
-    , optPretty      :: Bool
-    , optFiles       :: [String]
-    , optOptimize    :: Bool
-    , optGClosure    :: Bool
-    }
+  { optLibrary     :: Bool
+  , optFlattenApps :: Bool
+  , optHTMLWrapper :: Bool
+  , optHTMLJSLibs  :: [String]
+  , optInclude     :: [String]
+  , optPackages    :: [String]
+  , optWall        :: Bool
+  , optNoGHC       :: Bool
+  , optStdout      :: Bool
+  , optVersion     :: Bool
+  , optOutput      :: Maybe String
+  , optPretty      :: Bool
+  , optFiles       :: [String]
+  , optOptimize    :: Bool
+  , optGClosure    :: Bool
+  }
 
 -- | Main entry point.
 main :: IO ()
@@ -64,13 +64,12 @@ main = do
               }
       void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
       case optFiles opts of
-           ["-"] -> do
-                   hGetContents stdin >>= printCompile config compileModule
-           [] -> runInteractive
-           files  -> forM_ files $ \file -> do
-                   if optStdout opts
-                     then compileFromTo config file Nothing
-                     else compileFromTo config file (Just (outPutFile opts file))
+           ["-"] -> hGetContents stdin >>= printCompile config compileModule
+           []    -> runInteractive
+           files -> forM_ files $ \file -> do
+             if optStdout opts
+               then compileFromTo config file Nothing
+               else compileFromTo config file (Just (outPutFile opts file))
 
   where
     parser = info (helper <*> options) (fullDesc <> header helpTxt)
@@ -104,11 +103,12 @@ options = FayCompilerOptions
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])
 
 -- | Make incompatible options.
-incompatible :: Monad m => (FayCompilerOptions -> Bool)
-                        -> FayCompilerOptions -> String -> m Bool
+incompatible :: Monad m
+  => (FayCompilerOptions -> Bool)
+  -> FayCompilerOptions -> String -> m Bool
 incompatible test opts message = case test opts of
-             True -> E.throw $ userError message
-             False -> return True
+  True -> E.throw $ userError message
+  False -> return True
 
 -- | The basic help text.
 helpTxt :: String
@@ -132,22 +132,22 @@ htmlAndStdout opts = optHTMLWrapper opts && optStdout opts
 runInteractive :: IO ()
 runInteractive = runInputT defaultSettings loop where
   loop = do
-      minput <- getInputLine "> "
-      case minput of
-          Nothing -> return ()
-          Just "" -> loop
-          Just input -> do
-              result <- liftIO $ compileViaStr "<interactive>" config compileExp input
-              case result of
-                  Left err -> do
-                    -- an error occured, maybe input was not an expression,
-                    -- but a declaration, try compiling the input as a declaration
-                    outputStrLn ("can't parse input as expression: " ++ show err)
-                    result' <- liftIO $ compileViaStr "<interactive>" config (compileDecl True) input
-                    case result' of
-                      Right (PrintState{..},_) -> outputStr (concat (reverse psOutput))
-                      Left err' ->
-                        outputStrLn ("can't parse input as declaration: " ++ show err')
-                  Right (PrintState{..},_) -> outputStr (concat (reverse psOutput))
-              loop
+    minput <- getInputLine "> "
+    case minput of
+      Nothing -> return ()
+      Just "" -> loop
+      Just input -> do
+        result <- liftIO $ compileViaStr "<interactive>" config compileExp input
+        case result of
+          Left err -> do
+            -- an error occured, maybe input was not an expression,
+            -- but a declaration, try compiling the input as a declaration
+            outputStrLn ("can't parse input as expression: " ++ show err)
+            result' <- liftIO $ compileViaStr "<interactive>" config (compileDecl True) input
+            case result' of
+              Right (PrintState{..},_) -> outputStr (concat (reverse psOutput))
+              Left err' ->
+                outputStrLn ("can't parse input as declaration: " ++ show err')
+          Right (PrintState{..},_) -> outputStr (concat (reverse psOutput))
+        loop
   config = def { configPrettyPrint = True }

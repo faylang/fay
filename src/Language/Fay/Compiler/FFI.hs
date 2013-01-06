@@ -144,36 +144,34 @@ functionTypeArgs t =
 
 -- | Convert a Haskell type to an internal FFI representation.
 argType :: Type -> FundamentalType
-argType t =
-  case t of
-    TyCon "String"              -> StringType
-    TyCon "Double"              -> DoubleType
-    TyCon "Int"                 -> IntType
-    TyCon "Bool"                -> BoolType
-    TyApp (TyCon "Ptr") _       -> PtrType
-    TyApp (TyCon "Automatic") _ -> Automatic
-    TyApp (TyCon "Defined") a   -> Defined (argType a)
-    TyApp (TyCon "Nullable") a  -> Nullable (argType a)
-    TyApp (TyCon "Fay") a       -> JsType (argType a)
-    TyFun x xs                  -> FunctionType (argType x : functionTypeArgs xs)
-    TyList x                    -> ListType (argType x)
-    TyTuple _ xs                -> TupleType (map argType xs)
-    TyParen st                  -> argType st
-    TyApp op arg                -> userDefined (reverse (arg : expandApp op))
-    _                     ->
-      -- No semantic point to this, merely to avoid GHC's broken
-      -- warning.
-      case t of
-        TyCon (UnQual user)   -> UserDefined user []
-        _ -> UnknownType
+argType t = case t of
+  TyCon "String"              -> StringType
+  TyCon "Double"              -> DoubleType
+  TyCon "Int"                 -> IntType
+  TyCon "Bool"                -> BoolType
+  TyApp (TyCon "Ptr") _       -> PtrType
+  TyApp (TyCon "Automatic") _ -> Automatic
+  TyApp (TyCon "Defined") a   -> Defined (argType a)
+  TyApp (TyCon "Nullable") a  -> Nullable (argType a)
+  TyApp (TyCon "Fay") a       -> JsType (argType a)
+  TyFun x xs                  -> FunctionType (argType x : functionTypeArgs xs)
+  TyList x                    -> ListType (argType x)
+  TyTuple _ xs                -> TupleType (map argType xs)
+  TyParen st                  -> argType st
+  TyApp op arg                -> userDefined (reverse (arg : expandApp op))
+  _                     ->
+    -- No semantic point to this, merely to avoid GHC's broken
+    -- warning.
+    case t of
+      TyCon (UnQual user)   -> UserDefined user []
+      _ -> UnknownType
 
 -- | Extract the type.
 bangType :: BangType -> Type
-bangType typ =
-  case typ of
-    BangedTy ty   -> ty
-    UnBangedTy ty -> ty
-    UnpackedTy ty -> ty
+bangType typ = case typ of
+  BangedTy ty   -> ty
+  UnBangedTy ty -> ty
+  UnpackedTy ty -> ty
 
 -- | Expand a type application.
 expandApp :: Type -> [Type]
@@ -199,51 +197,50 @@ fayToJs typ exp = JsApp (JsName (JsBuiltIn "fayToJs"))
 
 -- | Get a JS-representation of a fundamental type for encoding/decoding.
 typeRep :: SerializeContext -> FundamentalType -> JsExp
-typeRep context typ =
-  case typ of
-    FunctionType xs     -> JsList [JsLit $ JsStr "function",JsList (map (typeRep context) xs)]
-    JsType x            -> JsList [JsLit $ JsStr "action",JsList [typeRep context x]]
-    ListType x          -> JsList [JsLit $ JsStr "list",JsList [typeRep context x]]
-    TupleType xs        -> JsList [JsLit $ JsStr "tuple",JsList (map (typeRep context) xs)]
-    UserDefined name xs -> JsList [JsLit $ JsStr "user"
-                                  ,JsLit $ JsStr (unname name)
-                                  ,JsList (zipWith (\t i -> typeRep (setArg i context) t) xs [0..])]
-    Defined x           -> JsList [JsLit $ JsStr "defined",JsList [typeRep context x]]
-    Nullable x          -> JsList [JsLit $ JsStr "nullable",JsList [typeRep context x]]
-    _ -> nom
+typeRep context typ = case typ of
+  FunctionType xs     -> JsList [JsLit $ JsStr "function",JsList (map (typeRep context) xs)]
+  JsType x            -> JsList [JsLit $ JsStr "action",JsList [typeRep context x]]
+  ListType x          -> JsList [JsLit $ JsStr "list",JsList [typeRep context x]]
+  TupleType xs        -> JsList [JsLit $ JsStr "tuple",JsList (map (typeRep context) xs)]
+  UserDefined name xs -> JsList [JsLit $ JsStr "user"
+                                ,JsLit $ JsStr (unname name)
+                                ,JsList (zipWith (\t i -> typeRep (setArg i context) t) xs [0..])]
+  Defined x           -> JsList [JsLit $ JsStr "defined",JsList [typeRep context x]]
+  Nullable x          -> JsList [JsLit $ JsStr "nullable",JsList [typeRep context x]]
+  _ -> nom
 
-    where setArg i SerializeUserArg{}   = SerializeUserArg i
-          setArg _ c = c
-          ret = JsList . return . JsLit . JsStr
-          nom = case typ of
-            StringType -> ret "string"
-            DoubleType -> ret "double"
-            PtrType    -> ret "ptr"
-            Automatic  -> ret "automatic"
-            IntType    -> ret "int"
-            BoolType   -> ret "bool"
-            DateType   -> ret "date"
-            _          ->
-              case context of
-                SerializeAnywhere -> ret "unknown"
-                SerializeUserArg i ->
-                  let args = JsIndex 2 (JsName JsParametrizedType)
-                      thisArg = JsIndex i args
-                      unknown = ret "unknown"
-                  in JsTernaryIf args
-                                 (JsTernaryIf thisArg
-                                              thisArg
-                                              unknown)
-                                 unknown
+  where
+    setArg i SerializeUserArg{}   = SerializeUserArg i
+    setArg _ c = c
+    ret = JsList . return . JsLit . JsStr
+    nom = case typ of
+      StringType -> ret "string"
+      DoubleType -> ret "double"
+      PtrType    -> ret "ptr"
+      Automatic  -> ret "automatic"
+      IntType    -> ret "int"
+      BoolType   -> ret "bool"
+      DateType   -> ret "date"
+      _          ->
+        case context of
+          SerializeAnywhere -> ret "unknown"
+          SerializeUserArg i ->
+            let args = JsIndex 2 (JsName JsParametrizedType)
+                thisArg = JsIndex i args
+                unknown = ret "unknown"
+            in JsTernaryIf args
+                           (JsTernaryIf thisArg
+                                        thisArg
+                                        unknown)
+                           unknown
 
 -- | Get the arity of a type.
 typeArity :: Type -> Int
-typeArity t =
-  case t of
-    TyForall _ _ i -> typeArity i
-    TyFun _ b      -> 1 + typeArity b
-    TyParen st     -> typeArity st
-    _              -> 0
+typeArity t = case t of
+  TyForall _ _ i -> typeArity i
+  TyFun _ b      -> 1 + typeArity b
+  TyParen st     -> typeArity st
+  _              -> 0
 
 -- | Format the FFI format string with the given arguments.
 formatFFI :: String                      -- ^ The format string.

@@ -74,11 +74,12 @@ resolveName (UnQual name) = do
             Just (ScopeImportedAs _ modulename _) -> return (Qual modulename name)
             _ -> throwError $ UnableResolveUnqualified name
 
-  where asImport ScopeImportedAs{} = True
-        asImport _ = False
+  where
+    asImport ScopeImportedAs{} = True
+    asImport _ = False
 
-        localBinding ScopeBinding = True
-        localBinding _ = False
+    localBinding ScopeBinding = True
+    localBinding _ = False
 
 resolveName (Qual modulename name) = do
   names <- gets stateScope
@@ -91,11 +92,12 @@ resolveName (Qual modulename name) = do
         Just (ScopeImported realname replacement) -> return (Qual realname (fromMaybe name replacement))
         _ -> throwError $ UnableResolveQualified (Qual modulename name)
 
-  where asMatch i = case i of
-          ScopeImported{} -> True
-          ScopeImportedAs _ _ qmodulename -> qmodulename == moduleToName modulename
-          ScopeBinding -> False
-          where moduleToName (ModuleName n) = Ident n
+  where
+    asMatch i = case i of
+      ScopeImported{} -> True
+      ScopeImportedAs _ _ qmodulename -> qmodulename == moduleToName modulename
+        where moduleToName (ModuleName n) = Ident n
+      ScopeBinding -> False
 
 -- | Do have have a simple "import X" import on our hands?
 simpleImport :: NameScope -> Bool
@@ -140,22 +142,21 @@ bindVar name = do
 
 -- | Emit exported names.
 emitExport :: ExportSpec -> Compile ()
-emitExport spec =
-  case spec of
-    EVar (UnQual name) -> emitVar (UnQual name)
-    EVar name@Qual{} -> modify $ \s -> s { stateExports = name : stateExports s }
-    EThingAll (UnQual name) -> do
-      emitVar (UnQual name)
-      r <- lookup (UnQual name) <$> gets stateRecords
-      maybe (return ()) (mapM_ emitVar) r
-    EThingWith (UnQual name) ns -> do
-      emitVar (UnQual name)
-      mapM_ emitCName ns
-    EAbs _ -> return () -- Type only, skip
-    _ -> do
-      name <- gets stateModuleName
-      unless (name == "Language.Fay.Stdlib") $
-        throwError (UnsupportedExportSpec spec)
+emitExport spec = case spec of
+  EVar (UnQual name) -> emitVar (UnQual name)
+  EVar name@Qual{} -> modify $ \s -> s { stateExports = name : stateExports s }
+  EThingAll (UnQual name) -> do
+    emitVar (UnQual name)
+    r <- lookup (UnQual name) <$> gets stateRecords
+    maybe (return ()) (mapM_ emitVar) r
+  EThingWith (UnQual name) ns -> do
+    emitVar (UnQual name)
+    mapM_ emitCName ns
+  EAbs _ -> return () -- Type only, skip
+  _ -> do
+    name <- gets stateModuleName
+    unless (name == "Language.Fay.Stdlib") $
+      throwError (UnsupportedExportSpec spec)
  where
    emitVar n = resolveName n >>= emitExport . EVar
    emitCName (VarName n) = emitVar (UnQual n)
@@ -180,10 +181,9 @@ isConstant _       = False
 
 -- | Deconstruct a parse result (a la maybe, foldr, either).
 parseResult :: ((SrcLoc,String) -> b) -> (a -> b) -> ParseResult a -> b
-parseResult die ok result =
-  case result of
-    ParseOk a -> ok a
-    ParseFailed srcloc msg -> die (srcloc,msg)
+parseResult die ok result = case result of
+  ParseOk a -> ok a
+  ParseFailed srcloc msg -> die (srcloc,msg)
 
 -- | Get a config option.
 config :: (CompileConfig -> a) -> Compile a
@@ -266,10 +266,10 @@ typeToFields typ = do
 -- lame, but that's random flag name changes for you.
 getGhcPackageDbFlag :: IO String
 getGhcPackageDbFlag = do
-    s <- readProcess "ghc" ["--version"] ""
-    return $
-        case (mapMaybe readVersion $ words s, readVersion "7.6.0") of
-            (v:_, Just min') | v > min' -> "-package-db"
-            _ -> "-package-conf"
+  s <- readProcess "ghc" ["--version"] ""
+  return $
+      case (mapMaybe readVersion $ words s, readVersion "7.6.0") of
+          (v:_, Just min') | v > min' -> "-package-db"
+          _ -> "-package-conf"
   where
     readVersion = listToMaybe . filter (null . snd) . readP_to_S parseVersion

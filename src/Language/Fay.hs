@@ -82,9 +82,9 @@ compileFileWithState config filein = do
 
 -- | Compile the given module to a runnable module.
 compileToModule :: (Show from,Show to,CompilesTo from to)
-               => FilePath
-               -> CompileConfig -> String -> (from -> Compile to) -> String
-               -> IO (Either CompileError (String,CompileState))
+                => FilePath
+                -> CompileConfig -> String -> (from -> Compile to) -> String
+                -> IO (Either CompileError (String,CompileState))
 compileToModule filepath config raw with hscode = do
   result <- compileViaStr filepath config with hscode
   case result of
@@ -132,44 +132,43 @@ printExport name =
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String
 toJsName x = case reverse x of
-               ('s':'h':'.': (reverse -> file)) -> file ++ ".js"
-               _ -> x
+  ('s':'h':'.': (reverse -> file)) -> file ++ ".js"
+  _ -> x
 
 -- | Print a compile error for human consumption.
 showCompileError :: CompileError -> String
-showCompileError e =
-  case e of
-    ParseError _ err -> err
-    UnsupportedDeclaration d -> "unsupported declaration: " ++ prettyPrint d
-    UnsupportedExportSpec es -> "unsupported export specification: " ++ prettyPrint es
-    UnsupportedMatchSyntax m -> "unsupported match/binding syntax: " ++ prettyPrint m
-    UnsupportedWhereInMatch m -> "unsupported `where' syntax: " ++ prettyPrint m
-    UnsupportedWhereInAlt alt -> "`where' not supported here: " ++ prettyPrint alt
-    UnsupportedExpression expr -> "unsupported expression syntax: " ++ prettyPrint expr
-    UnsupportedQualStmt stmt -> "unsupported list qualifier: " ++ prettyPrint stmt
-    UnsupportedLiteral lit -> "unsupported literal syntax: " ++ prettyPrint lit
-    UnsupportedLetBinding d -> "unsupported let binding: " ++ prettyPrint d
-    UnsupportedOperator qop -> "unsupported operator syntax: " ++ prettyPrint qop
-    UnsupportedPattern pat -> "unsupported pattern syntax: " ++ prettyPrint pat
-    UnsupportedRhs rhs -> "unsupported right-hand side syntax: " ++ prettyPrint rhs
-    UnsupportedGuardedAlts ga -> "unsupported guarded alts: " ++ prettyPrint ga
-    EmptyDoBlock -> "empty `do' block"
-    UnsupportedModuleSyntax{} -> "unsupported module syntax (may be supported later)"
-    LetUnsupported -> "let not supported here"
-    InvalidDoBlock -> "invalid `do' block"
-    RecursiveDoUnsupported -> "recursive `do' isn't supported"
-    FfiNeedsTypeSig d -> "your FFI declaration needs a type signature: " ++ prettyPrint d
-    FfiFormatBadChars cs -> "invalid characters for FFI format string: " ++ show cs
-    FfiFormatNoSuchArg i -> "no such argument in FFI format string: " ++ show i
-    FfiFormatIncompleteArg -> "incomplete `%' syntax in FFI format string"
-    FfiFormatInvalidJavaScript srcloc code err ->
-      printSrcLoc srcloc ++ ":" ++
-      "\ninvalid JavaScript code in FFI format string:\n"
-                                           ++ err ++ "\nin " ++ code
-    UnsupportedFieldPattern p -> "unsupported field pattern: " ++ prettyPrint p
-    UnsupportedImport i -> "unsupported import syntax, we're too lazy: " ++ prettyPrint i
-    Couldn'tFindImport i places ->
-      "could not find an import in the path: " ++ prettyPrint i ++ ", \n" ++
-      "searched in these places: " ++ intercalate ", " places
-    UnableResolveUnqualified name -> "unable to resolve unqualified name " ++ prettyPrint name
-    UnableResolveQualified qname -> "unable to resolve qualified names " ++ prettyPrint qname
+showCompileError e = case e of
+  ParseError _ err -> err
+  UnsupportedDeclaration d -> "unsupported declaration: " ++ prettyPrint d
+  UnsupportedExportSpec es -> "unsupported export specification: " ++ prettyPrint es
+  UnsupportedMatchSyntax m -> "unsupported match/binding syntax: " ++ prettyPrint m
+  UnsupportedWhereInMatch m -> "unsupported `where' syntax: " ++ prettyPrint m
+  UnsupportedWhereInAlt alt -> "`where' not supported here: " ++ prettyPrint alt
+  UnsupportedExpression expr -> "unsupported expression syntax: " ++ prettyPrint expr
+  UnsupportedQualStmt stmt -> "unsupported list qualifier: " ++ prettyPrint stmt
+  UnsupportedLiteral lit -> "unsupported literal syntax: " ++ prettyPrint lit
+  UnsupportedLetBinding d -> "unsupported let binding: " ++ prettyPrint d
+  UnsupportedOperator qop -> "unsupported operator syntax: " ++ prettyPrint qop
+  UnsupportedPattern pat -> "unsupported pattern syntax: " ++ prettyPrint pat
+  UnsupportedRhs rhs -> "unsupported right-hand side syntax: " ++ prettyPrint rhs
+  UnsupportedGuardedAlts ga -> "unsupported guarded alts: " ++ prettyPrint ga
+  EmptyDoBlock -> "empty `do' block"
+  UnsupportedModuleSyntax{} -> "unsupported module syntax (may be supported later)"
+  LetUnsupported -> "let not supported here"
+  InvalidDoBlock -> "invalid `do' block"
+  RecursiveDoUnsupported -> "recursive `do' isn't supported"
+  FfiNeedsTypeSig d -> "your FFI declaration needs a type signature: " ++ prettyPrint d
+  FfiFormatBadChars cs -> "invalid characters for FFI format string: " ++ show cs
+  FfiFormatNoSuchArg i -> "no such argument in FFI format string: " ++ show i
+  FfiFormatIncompleteArg -> "incomplete `%' syntax in FFI format string"
+  FfiFormatInvalidJavaScript srcloc code err ->
+    printSrcLoc srcloc ++ ":" ++
+    "\ninvalid JavaScript code in FFI format string:\n"
+                                         ++ err ++ "\nin " ++ code
+  UnsupportedFieldPattern p -> "unsupported field pattern: " ++ prettyPrint p
+  UnsupportedImport i -> "unsupported import syntax, we're too lazy: " ++ prettyPrint i
+  Couldn'tFindImport i places ->
+    "could not find an import in the path: " ++ prettyPrint i ++ ", \n" ++
+    "searched in these places: " ++ intercalate ", " places
+  UnableResolveUnqualified name -> "unable to resolve unqualified name " ++ prettyPrint name
+  UnableResolveQualified qname -> "unable to resolve qualified names " ++ prettyPrint qname

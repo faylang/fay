@@ -609,8 +609,8 @@ compileExp exp =
     EnumFromTo i i'               -> compileEnumFromTo i i'
     EnumFromThen a b              -> compileEnumFromThen a b
     EnumFromThenTo a b z          -> compileEnumFromThenTo a b z
-    RecConstr name fieldUpdates -> compileRecConstr name fieldUpdates
-    RecUpdate rec  fieldUpdates -> updateRec rec fieldUpdates
+    RecConstr name fieldUpdates   -> compileRecConstr name fieldUpdates
+    RecUpdate rec  fieldUpdates   -> updateRec rec fieldUpdates
     ListComp exp stmts            -> compileExp =<< desugarListComp exp stmts
     ExpTypeSig _ e _ -> compileExp e
 

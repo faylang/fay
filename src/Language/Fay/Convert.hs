@@ -100,6 +100,7 @@ readFromFay value = do
   `extR` parseInt value
   `extR` parseBool value
   `extR` parseString value
+  `extR` parseText value
 
 -- | Parse a data type or record.
 parseData :: Data a => Value -> Maybe a
@@ -180,6 +181,13 @@ parseString :: Value -> Maybe String
 parseString value =
   case value of
     String s -> return (Text.unpack s)
+    _ -> mzero
+
+-- | Parse a Text.
+parseText :: Value -> Maybe Text
+parseText value =
+  case value of
+    String s -> return s
     _ -> mzero
 
 -- | Parse an array.

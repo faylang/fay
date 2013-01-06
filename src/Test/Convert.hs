@@ -9,6 +9,7 @@ import qualified Data.ByteString                as Bytes
 import qualified Data.ByteString.UTF8           as UTF8
 import           Data.Data
 import           Data.Ratio
+import           Data.Text                      (Text, pack)
 import           Language.Fay.Convert
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
@@ -55,6 +56,7 @@ readTests =
   ,ReadTest $ StepcutBar (StepcutFoo 456)
   ,ReadTest $ StepcutFoo' 789
   ,ReadTest $ Baz (StepcutFoo' 10112)
+  ,ReadTest $ TextConstructor $ pack "This is \"some text\n\n\""
   ]
 
 -- | Test cases.
@@ -75,6 +77,7 @@ showTests =
   ,LabelledRecord { barInt = 123, barDouble = 4.5 }
      → "{\"barDouble\":4.5,\"barInt\":123,\"instance\":\"LabelledRecord\"}"
   ,Bar (Foo "one" "two") → "{\"slot1\":{\"slot1\":\"one\",\"slot2\":\"two\",\"instance\":\"Foo\"},\"instance\":\"Bar\"}"
+  ,TextConstructor (pack "foo bar baz") → "{\"slot1\":\"foo bar baz\",\"instance\":\"TextConstructor\"}"
   -- Unicode
   ,"¡ ¢ £ ¤ ¥ " → "\"¡ ¢ £ ¤ ¥ \""
   ,"Ā ā Ă ă Ą " → "\"Ā ā Ă ă Ą \""
@@ -135,4 +138,7 @@ data StepcutFoo' = StepcutFoo' Int
     deriving (Eq, Show, Read, Typeable, Data)
 
 data Baz = Baz StepcutFoo'
+    deriving (Eq, Show, Read, Typeable, Data)
+
+data TextConstructor = TextConstructor Text
     deriving (Eq, Show, Read, Typeable, Data)

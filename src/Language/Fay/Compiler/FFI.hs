@@ -146,19 +146,20 @@ functionTypeArgs t =
 argType :: Type -> FundamentalType
 argType t =
   case t of
-    TyCon "String"        -> StringType
-    TyCon "Double"        -> DoubleType
-    TyCon "Int"           -> IntType
-    TyCon "Bool"          -> BoolType
-    TyApp (TyCon "Ptr") a -> PtrType
-    TyApp (TyCon "Defined") a -> Defined (argType a)
-    TyApp (TyCon "Nullable") a -> Nullable (argType a)
-    TyApp (TyCon "Fay") a -> JsType (argType a)
-    TyFun x xs            -> FunctionType (argType x : functionTypeArgs xs)
-    TyList x              -> ListType (argType x)
-    TyTuple _ xs          -> TupleType (map argType xs)
-    TyParen st            -> argType st
-    TyApp op arg          -> userDefined (reverse (arg : expandApp op))
+    TyCon "String"              -> StringType
+    TyCon "Double"              -> DoubleType
+    TyCon "Int"                 -> IntType
+    TyCon "Bool"                -> BoolType
+    TyApp (TyCon "Ptr") a       -> PtrType
+    TyApp (TyCon "Automatic") a -> Automatic
+    TyApp (TyCon "Defined") a   -> Defined (argType a)
+    TyApp (TyCon "Nullable") a  -> Nullable (argType a)
+    TyApp (TyCon "Fay") a       -> JsType (argType a)
+    TyFun x xs                  -> FunctionType (argType x : functionTypeArgs xs)
+    TyList x                    -> ListType (argType x)
+    TyTuple _ xs                -> TupleType (map argType xs)
+    TyParen st                  -> argType st
+    TyApp op arg                -> userDefined (reverse (arg : expandApp op))
     _                     ->
       -- No semantic point to this, merely to avoid GHC's broken
       -- warning.
@@ -218,6 +219,7 @@ typeRep context typ =
             StringType -> ret "string"
             DoubleType -> ret "double"
             PtrType    -> ret "ptr"
+            Automatic  -> ret "automatic"
             IntType    -> ret "int"
             BoolType   -> ret "bool"
             DateType   -> ret "date"

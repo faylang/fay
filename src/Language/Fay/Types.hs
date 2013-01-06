@@ -341,7 +341,9 @@ data FundamentalType
  | IntType
  | BoolType
  | PtrType
- -- | Unknown.
+ --  Automatically serialize this type.
+ | Automatic
+ -- Unknown.
  | UnknownType
    deriving (Show)
 

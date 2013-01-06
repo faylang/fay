@@ -242,6 +242,7 @@ function Fay$$fayToJs(type,fayObj){
     }
     case "unknown":
       return fayObj;
+    case "automatic":
     case "user": {
       if(fayObj instanceof $)
         fayObj = _(fayObj);
@@ -331,6 +332,7 @@ function Fay$$jsToFay(type,jsObj){
     }
     case "unknown":
       return jsObj;
+    case "automatic":
     case "user": {
       if (jsObj && jsObj['instance']) {
         fayObj = Fay$$jsToFayUserDefined(type,jsObj);

@@ -7,6 +7,8 @@ module Language.Fay.FFI
   ,Foreign
   ,Nullable (..)
   ,Defined (..)
+  ,Ptr
+  ,Automatic
   ,ffi)
   where
 
@@ -65,6 +67,25 @@ instance Foreign a => Foreign (Nullable a)
 -- An undefined property in a record will be removed when encoding.
 data Defined a = Defined a | Undefined
 instance Foreign a => Foreign (Defined a)
+
+-- | Do not serialize the specified type. This is useful for, e.g.
+--
+-- > foo :: String -> String
+-- > foo = ffi "%1"
+--
+-- This would normally serialize and unserialize the string, for no
+-- reason, in this case. Instead:
+--
+-- > foo :: Ptr String -> Ptr String
+--
+-- Will just give an identity function.
+type Ptr a = a
+
+-- | The opposite of "Ptr". Serialize the specified polymorphic type.
+--
+-- > foo :: Automatic a -> String
+--
+type Automatic a = a
 
 -- | Declare a foreign action.
 ffi

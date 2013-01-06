@@ -212,7 +212,7 @@ function Fay$$fayToJs(type,fayObj){
       if (fayObj instanceof $_Language$Fay$FFI$Undefined) {
         jsObj = undefined;
       } else {
-        jsObj = Fay$$fayToJs(args[0],fayObj["slot1"]);
+        jsObj = Fay$$fayToJsUserDefined(args[0],fayObj["slot1"]);
       }
       break;
     }
@@ -221,7 +221,7 @@ function Fay$$fayToJs(type,fayObj){
       if (fayObj instanceof $_Language$Fay$FFI$Null) {
         jsObj = null;
       } else {
-        jsObj = Fay$$fayToJs(args[0],fayObj["slot1"]);
+        jsObj = Fay$$fayToJsUserDefined(args[0],fayObj["slot1"]);
       }
       break;
     }

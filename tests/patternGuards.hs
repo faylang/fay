@@ -25,6 +25,5 @@ main = do
   putStrLn $ showList [threeConds 3, threeConds 1, threeConds 0]
   putStrLn $ showList [withOtherwise 2, withOtherwise 0]
 
-showList :: [a] -> String
+showList :: [Double] -> String
 showList = ffi "JSON.stringify(%1)"
-

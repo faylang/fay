@@ -16,10 +16,10 @@ main = do
   print' $ parseInt "x"
   return ()
 
-printD :: Foreign f => Nullable f -> Fay ()
+printD :: Foreign f => Nullable Double -> Fay ()
 printD = ffi "console.log(%1)"
 
-print' :: Foreign f => f -> Fay ()
+print' :: Foreign f => Automatic f -> Fay ()
 print' = ffi "console.log(%1)"
 
 r1 :: R

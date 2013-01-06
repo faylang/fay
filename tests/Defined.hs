@@ -14,7 +14,7 @@ main = do
   print $ r2
   return ()
 
-printD :: Foreign f => Defined f -> Fay ()
+printD :: Defined Double -> Fay ()
 printD = ffi "console.log(%1)"
 
 r1 :: R

@@ -9,5 +9,5 @@ take n (x:xs) = x : take (n - 1) xs
 map' f []     = []
 map' f (x:xs) = f x : map' f xs
 
-showList :: [a] -> String
+showList :: [Int] -> String
 showList = ffi "JSON.stringify(%1)"

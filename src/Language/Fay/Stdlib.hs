@@ -161,7 +161,7 @@ error' = ffi "(function() { throw %1 })()"
 undefined :: a
 undefined = error "Prelude.undefined"
 
-show :: (Foreign a, Show a) => a -> String
+show :: (Foreign a, Show a) => Automatic a -> String
 show = ffi "JSON.stringify(%1)"
 
 data Either a b = Left a | Right b
@@ -728,7 +728,7 @@ span p (x:xs) = if p x then case span p xs of (a,b) -> (x:a, b) else ([], x:xs)
 break :: (a -> Bool) -> [a] -> ([a], [a])
 break p = span (not . p)
 
-print :: (Foreign a) => a -> Fay ()
+print :: (Foreign a) => Automatic a -> Fay ()
 print = ffi "(function(x) { if (console && console.log) console.log(x) })(%1)"
 
 putStrLn :: String -> Fay ()

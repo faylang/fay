@@ -55,6 +55,30 @@ package from with an environment variable:
 
     HASKELL_PACKAGE_SANDBOX=cabal-dev/packages-7.4.1.conf cabal-dev/bin/fay examples/alert.hs
 
+## The FFI
+
+Here are the rules for serialization. All serialization is based on
+the type you specify at the ffi declaration, e.g.:
+
+    foo :: Int -> String
+    foo = ffi "JSON.stringify(%1)"
+
+The rules are simple:
+
+1. Concrete type, e.g. `String`, `Maybe Int`: yes, will be de/serialized.
+2. Polymorphic, e.g. `a`, `Maybe a`: will not be touched.
+
+There are two helpers for turning on/off serialization for the above:
+
+1. `Ptr Foo`: will not be touched.
+2. `Automatic a`: will attempt to automatically serialize the `a` at runtime.
+
+There are two utility types for interfacing with JS APIs:
+
+* `Nullable a`: Will be serialized to `null`.
+* `Defined a`: Will be serialized to `undefined`, and will be ommitted
+   from serialized objects e.g. `Foo Undefined` → `{"instance":"Foo"}`.
+
 ## Contributing
 
 If you intend on submitting a pull request, whichever branch you

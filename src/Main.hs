@@ -47,29 +47,30 @@ main = do
   opts <- execParser parser
   if optVersion opts
     then runCommandVersion
-    else do let config = addConfigDirectoryIncludes ("." : optInclude opts) $ def
-                  { configOptimize          = optOptimize opts
-                  , configFlattenApps       = optFlattenApps opts
-                  , configExportBuiltins    = True -- optExportBuiltins opts
-                  , configPrettyPrint       = optPretty opts
-                  , configLibrary           = optLibrary opts
-                  , configHtmlWrapper       = optHTMLWrapper opts
-                  , configHtmlJSLibs        = optHTMLJSLibs opts
-                  , configTypecheck         = not $ optNoGHC opts
-                  , configWall              = optWall opts
-                  , configGClosure          = optGClosure opts
-                  , configPackageConf       = packageConf
-                  , configPackages          = optPackages opts
-                  }
-            void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
-            case optFiles opts of
-                 ["-"] -> do
-                         hGetContents stdin >>= printCompile config compileModule
-                 [] -> runInteractive
-                 files  -> forM_ files $ \file -> do
-                         if optStdout opts
-                           then compileFromTo config file Nothing
-                           else compileFromTo config file (Just (outPutFile opts file))
+    else do
+      let config = addConfigDirectoryIncludes ("." : optInclude opts) $
+            addConfigPackages (optPackages opts) $ def
+              { configOptimize       = optOptimize opts
+              , configFlattenApps    = optFlattenApps opts
+              , configExportBuiltins = True -- optExportBuiltins opts
+              , configPrettyPrint    = optPretty opts
+              , configLibrary        = optLibrary opts
+              , configHtmlWrapper    = optHTMLWrapper opts
+              , configHtmlJSLibs     = optHTMLJSLibs opts
+              , configTypecheck      = not $ optNoGHC opts
+              , configWall           = optWall opts
+              , configGClosure       = optGClosure opts
+              , configPackageConf    = packageConf
+              }
+      void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
+      case optFiles opts of
+           ["-"] -> do
+                   hGetContents stdin >>= printCompile config compileModule
+           [] -> runInteractive
+           files  -> forM_ files $ \file -> do
+                   if optStdout opts
+                     then compileFromTo config file Nothing
+                     else compileFromTo config file (Just (outPutFile opts file))
 
   where
     parser = info (helper <*> options) (fullDesc <> header helpTxt)

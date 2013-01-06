@@ -31,11 +31,13 @@ module Language.Fay.Types
     ,configTypecheck
     ,configWall
     ,configPackageConf
-    ,configPackages
   )
   ,configDirectoryIncludes
   ,addConfigDirectoryInclude
   ,addConfigDirectoryIncludes
+  ,configPackages
+  ,addConfigPackage
+  ,addConfigPackages
   ,CompileState(..)
   ,defaultCompileState
   ,faySourceDir
@@ -79,21 +81,32 @@ data CompileConfig = CompileConfig
   , configWall              :: Bool
   , configGClosure          :: Bool
   , configPackageConf       :: Maybe FilePath
-  , configPackages          :: [String]
+  , _configPackages         :: [String]
   } deriving (Show)
 
 -- | Default configuration.
 instance Default CompileConfig where
   def = CompileConfig False False True [] False False [] False True Nothing True False False Nothing []
 
+-- Restrict these setters so elements aren't accidentally removed.
+
 configDirectoryIncludes :: CompileConfig -> [FilePath]
-configDirectoryIncludes cfg = _configDirectoryIncludes cfg
+configDirectoryIncludes = _configDirectoryIncludes
 
 addConfigDirectoryInclude :: FilePath -> CompileConfig -> CompileConfig
 addConfigDirectoryInclude fp cfg = cfg { _configDirectoryIncludes = fp : _configDirectoryIncludes cfg }
 
 addConfigDirectoryIncludes :: [FilePath] -> CompileConfig -> CompileConfig
 addConfigDirectoryIncludes fps cfg = foldl (flip addConfigDirectoryInclude) cfg fps
+
+configPackages :: CompileConfig -> [String]
+configPackages = _configPackages
+
+addConfigPackage :: String -> CompileConfig -> CompileConfig
+addConfigPackage pkg cfg = cfg { _configPackages = pkg : _configPackages cfg }
+
+addConfigPackages :: [String] -> CompileConfig -> CompileConfig
+addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 
 -- | State of the compiler.
 data CompileState = CompileState

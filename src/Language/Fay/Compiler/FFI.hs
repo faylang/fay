@@ -150,8 +150,8 @@ argType t =
     TyCon "Double"              -> DoubleType
     TyCon "Int"                 -> IntType
     TyCon "Bool"                -> BoolType
-    TyApp (TyCon "Ptr") a       -> PtrType
-    TyApp (TyCon "Automatic") a -> Automatic
+    TyApp (TyCon "Ptr") _       -> PtrType
+    TyApp (TyCon "Automatic") _ -> Automatic
     TyApp (TyCon "Defined") a   -> Defined (argType a)
     TyApp (TyCon "Nullable") a  -> Nullable (argType a)
     TyApp (TyCon "Fay") a       -> JsType (argType a)

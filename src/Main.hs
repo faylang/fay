@@ -47,7 +47,7 @@ main = do
   opts <- execParser parser
   if optVersion opts
     then runCommandVersion
-    else do let config = flip (foldl (flip addConfigDirectoryInclude)) ("." : optInclude opts) $ def
+    else do let config = addConfigDirectoryIncludes ("." : optInclude opts) $ def
                   { configOptimize          = optOptimize opts
                   , configFlattenApps       = optFlattenApps opts
                   , configExportBuiltins    = True -- optExportBuiltins opts

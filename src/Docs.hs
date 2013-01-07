@@ -302,5 +302,10 @@ thelinks = do
       ", "
       a ! href "http://hackage.haskell.org/package/yesod-fay" $ "hackage"
     li $ do
+      "fay-uri: "
+      a ! href "https://github.com/faylang/fay-uri" $ "github"
+      " Includes a tutorial to the Fay FFI"
+    li $ do
       "fay-jquery: "
-      a ! href "https://github.com/faylang/fay-jquery" $ "hackage"
+      a ! href "https://github.com/faylang/fay-jquery" $ "github"
+      " With a lot of FFI trickery"

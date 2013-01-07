@@ -11,6 +11,9 @@ main :: Fay ()
 
 #ifndef FAY
 more invalid code
+#if FAY
+this should not be used
+#endif
 #else
 #if FAY
 main = print True

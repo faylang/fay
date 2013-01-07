@@ -111,8 +111,8 @@ applyCPP =
     loop state (x:rest) = (if toInclude state then x else "") : loop state rest
 
     toInclude NoCPP = True
-    toInclude (CPPIf x _) = x
-    toInclude (CPPElse x _) = x
+    toInclude (CPPIf x state) = x && toInclude state
+    toInclude (CPPElse x state) = x && toInclude state
 
 data CPPState = NoCPP
               | CPPIf Bool CPPState

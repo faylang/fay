@@ -1,6 +1,6 @@
 module ImportList1.C where
 
-import           Language.Fay.Prelude
+import           Prelude
 import           Language.Fay.FFI
 
 data A = B1 { b1 :: Double } | B2 Double

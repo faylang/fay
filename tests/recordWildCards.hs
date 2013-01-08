@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 import           Language.Fay.FFI
-import           Language.Fay.Prelude
+import           Prelude
 
 data C = C { a :: Int, b :: Int, c :: Int, d :: Int }
 instance Foreign C

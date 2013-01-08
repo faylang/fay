@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 fakeSeq :: a -> b -> b
 fakeSeq x y = y

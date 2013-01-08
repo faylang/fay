@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 main = print (5 * 3 / 2)
 

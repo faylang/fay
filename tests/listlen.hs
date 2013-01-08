@@ -1,7 +1,7 @@
 module Listlen (main) where
 
 import Language.Fay.FFI
-import Language.Fay.Prelude
+import Prelude
 
 go :: [Double] -> [Double]
 go  [] = []

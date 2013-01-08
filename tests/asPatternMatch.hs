@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 matchSame :: [a] -> ([a],[a])
 matchSame x@y = (x,y)

@@ -1,4 +1,4 @@
-import Language.Fay.Prelude (Fay, putStrLn)
+import Prelude (Fay, putStrLn)
 
 main :: Fay ()
 main = putStrLn "ok"

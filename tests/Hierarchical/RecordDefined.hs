@@ -3,7 +3,7 @@
 module Hierarchical.RecordDefined where
 
 import           Language.Fay.FFI
-import           Language.Fay.Prelude
+import           Prelude
 
 data Callback a = Callback Double
 

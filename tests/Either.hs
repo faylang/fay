@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 raw :: Either Int Int -> Int
 raw x = case x of Left a -> a + 1

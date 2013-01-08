@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 import           Language.Fay.FFI
 
 import           ImportList1.C        (A (..))

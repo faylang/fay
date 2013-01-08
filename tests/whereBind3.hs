@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 f :: String -> String
 f x = friends ++ family

@@ -2,25 +2,34 @@
 
 module Test.CommandLine (tests) where
 
-import           Control.Applicative
-import           Data.Maybe
-import           System.Process.Extra
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
-import           Test.Framework.TH
-import           Test.HUnit                     (Assertion, assertBool)
-import           Test.Util
+import Control.Applicative
+import Data.Maybe
+import System.Directory
+import System.Environment
+import System.FilePath
+import System.Process.Extra
+import Test.Framework
+import Test.Framework.Providers.HUnit
+import Test.Framework.TH
+import Test.HUnit                     (Assertion, assertBool)
+import Test.Util
 
 tests :: Test
 tests = $testGroupGenerator
 
 compileFile :: [String] -> IO (Either String String)
 compileFile flags = do
-  fay <- fromJust <$> fayPath
-  r <- readAllFromProcess fay flags ""
-  return $ case r of
-    Left l -> Left l
-    Right t -> Right $ snd t
+  whatAGreatFramework <- fmap (fmap (\x -> x</>"bin"</>"fay") . (lookup "HASKELL_SANDBOX"))
+                              getEnvironment
+  fay <- fayPath
+  let path = fromMaybe "couldn't find fay" (whatAGreatFramework <|> fay)
+  exists <- doesFileExist path
+  if exists
+     then do r <- readAllFromProcess path flags ""
+             return $ case r of
+               Left l -> Left ("Reason: " ++ l)
+               Right t -> Right $ snd t
+     else error $ "fay path not are existing: " ++ path
 
 case_executable :: Assertion
 case_executable = do
@@ -29,5 +38,7 @@ case_executable = do
 
 case_compile :: Assertion
 case_compile = do
-  res <- compileFile ["--include=tests", "tests/RecordImport_Import.hs","--no-ghc"]
+  whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
+  res <- compileFile (["--include=tests", "tests/RecordImport_Import.hs","--no-ghc"] ++
+                      ["--package-conf=" ++ packageConf | Just packageConf <- [whatAGreatFramework] ])
   assertBool (fromLeft res) (isRight res)

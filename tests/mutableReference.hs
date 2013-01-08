@@ -3,7 +3,7 @@
 {-# LANGUAGE EmptyDataDecls    #-}
 
 import           Language.Fay.FFI
-import           Language.Fay.Prelude
+import           Prelude
 
 main :: Fay ()
 main = do

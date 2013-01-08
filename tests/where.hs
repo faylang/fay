@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 main = putStrLn $ "Hello " ++ friends ++ family
   where friends = "my friends"

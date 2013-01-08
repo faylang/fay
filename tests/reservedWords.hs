@@ -1,6 +1,6 @@
 {-# LANGUAGE EmptyDataDecls    #-}
 
-import           Language.Fay.Prelude
+import           Prelude
 
 main = do
   -- All reserved words

@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 sum :: [Double] -> Double
 sum [] = 0

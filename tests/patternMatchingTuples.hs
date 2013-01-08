@@ -2,7 +2,7 @@
 -- error thrown as soon as HTML page is loaded:
 -- Uncaught TypeError: Cannot read property 'car' of null
 
-import Language.Fay.Prelude
+import Prelude
 
 main :: Fay ()
 main = putStrLn doTest

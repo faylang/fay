@@ -1,3 +1,3 @@
-import Language.Fay.Prelude
+import Prelude
 
 main = mapM_ putStrLn (take 5 (cycle ["a", "b", "c"]))

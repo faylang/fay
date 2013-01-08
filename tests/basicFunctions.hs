@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 main = putStrLn (concat' ["Hello, ","World!"])
 

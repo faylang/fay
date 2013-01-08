@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 f :: Int -> Int -> Int
 f x y = x + y

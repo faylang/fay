@@ -86,7 +86,9 @@ data CompileConfig = CompileConfig
 
 -- | Default configuration.
 instance Default CompileConfig where
-  def = CompileConfig False False True [] False False [] False True Nothing True False False Nothing []
+  def =
+    addConfigPackage "fay-base" $
+      CompileConfig False False True [] False False [] False True Nothing True False False Nothing []
 
 -- Restrict these setters so elements aren't accidentally removed.
 
@@ -139,17 +141,16 @@ defaultCompileState :: CompileConfig -> IO CompileState
 defaultCompileState config = do
   srcdir <- faySourceDir
   types <- getDataFileName "src/Language/Fay/Types.hs"
-  prelude <- getDataFileName "src/Language/Fay/Prelude.hs"
   return $ CompileState {
     stateConfig = addConfigDirectoryInclude srcdir config
   , stateExports = []
   , stateExportAll = True
   , stateModuleName = ModuleName "Main"
-  , stateRecordTypes = [("Maybe",["Nothing","Just"])]
-  , stateRecords = [("Nothing",[]),("Just",["slot1"])]
+  , stateRecordTypes = []
+  , stateRecords = []
   , stateFayToJs = []
   , stateJsToFay = []
-  , stateImported = [("Language.Fay.Types",types),("Prelude",prelude)]
+  , stateImported = [("Language.Fay.Types",types)]
   , stateNameDepth = 1
   , stateFilePath = "<unknown>"
   , stateScope = M.fromList primOps

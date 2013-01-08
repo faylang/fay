@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 main :: Fay ()
 main = let y = x + 1

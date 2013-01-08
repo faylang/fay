@@ -121,7 +121,7 @@ data CPPState = NoCPP
 -- | The parse mode for Fay.
 parseMode :: ParseMode
 parseMode = defaultParseMode { extensions =
-  [GADTs,StandaloneDeriving,EmptyDataDecls,TypeOperators,RecordWildCards,NamedFieldPuns] }
+  [GADTs,StandaloneDeriving,PackageImports,EmptyDataDecls,TypeOperators,RecordWildCards,NamedFieldPuns] }
 
 -- | Compile the given input and print the output out prettily.
 printCompile :: (Show from,Show to,CompilesTo from to)
@@ -177,13 +177,15 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
 
 initialPass :: Module -> Compile ()
 initialPass (Module _ _ _ Nothing _ imports decls) = do
-  mapM_ initialPass_import (map translateModuleName imports)
+  mapM_ initialPass_import imports
   mapM_ initialPass_decl decls
 
 initialPass mod = throwError (UnsupportedModuleSyntax mod)
 
 initialPass_import :: ImportDecl -> Compile ()
-initialPass_import (ImportDecl _ "Prelude" _ _ _ _ _) = return ()
+initialPass_import i@(ImportDecl _ _ _ _ Just{} _ _) = do
+  return ()
+--  warn $ "import with package syntax ignored: " ++ prettyPrint i
 initialPass_import (ImportDecl _ name False _ Nothing Nothing _) = do
   void $ unlessImported name $ \filepath contents -> do
     state <- gets id
@@ -270,7 +272,6 @@ typecheck packageConf includeDirs ghcFlags wall fp = do
   res <- liftIO $ readAllFromProcess GHCPaths.ghc (
     ["-fno-code"
     ,"-package fay"
-    ,"-XNoImplicitPrelude"
     ,"-main-is"
     ,"Language.Fay.DummyMain"
     ,fp]
@@ -291,23 +292,13 @@ compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
                    , stateExportAll = isNothing exports
                    , stateExports = []
                    }
-  imported <- fmap concat (mapM (compileImport . translateModuleName) imports)
+  imported <- fmap concat (mapM compileImport imports)
   current <- compileDecls True decls
   -- If an export list is given we populate it beforehand,
   -- if not then bindToplevel will export each declaration when it's visited.
   mapM_ emitExport (fromMaybe [] exports)
   return (imported ++ current)
 compileModule mod = throwError (UnsupportedModuleSyntax mod)
-
-translateModuleName :: ImportDecl -> ImportDecl
--- The *.Prelude module doesn't contain actual code, but code to
--- appease GHC. The real code is in Stdlib, which could also be
--- imported directly, but it seems nicer to use Prelude. And maybe we
--- can fix this in the future so that Prelude contains the real
--- code. Doubt it, but it could happen.
-translateModuleName (ImportDecl a (ModuleName "Language.Fay.Prelude") b c d e f) =
-  (ImportDecl a (ModuleName "Language.Fay.Stdlib") b c d e f)
-translateModuleName x = x
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
 
@@ -331,7 +322,9 @@ findImport alldirs mname = go alldirs mname where
 
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]
-compileImport (ImportDecl _ "Prelude" _ _ _ _ _) = return []
+compileImport i@(ImportDecl _ _ _ _ Just{} _ _) = do
+--  warn $ "import with package syntax ignored: " ++ prettyPrint i
+  return []
 compileImport (ImportDecl _ name False _ Nothing Nothing Nothing) =
   compileImportWithFilter name (const $ return True)
 compileImport (ImportDecl _ name False _ Nothing Nothing (Just (True, specs))) =

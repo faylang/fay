@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 main = do
   print $ (subtract 3 5 :: Int)

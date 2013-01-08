@@ -2,7 +2,7 @@
 
 -- | Monads test.
 
-import           Language.Fay.Prelude
+import           Prelude
 
 main :: Fay ()
 main = do

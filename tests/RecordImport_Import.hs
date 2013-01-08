@@ -1,6 +1,6 @@
 {- NOTE: This file is also used in the Api tests. -}
 
-import           Language.Fay.Prelude
+import           Prelude
 import           RecordImport_Export
 
 f :: R -> R

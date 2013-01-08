@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 main = putStrLn (case False of
                   True -> "Hello!"

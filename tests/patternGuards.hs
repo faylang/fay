@@ -2,7 +2,7 @@
 
 -- | As pattern matches
 
-import           Language.Fay.Prelude
+import           Prelude
 import           Language.Fay.FFI
 
 isPositive :: Double -> Bool

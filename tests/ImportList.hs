@@ -1,6 +1,6 @@
 module ImportList where
 
-import           Language.Fay.Prelude
+import           Prelude
 import           Language.Fay.FFI
 
 import           ImportList1.A        (x)

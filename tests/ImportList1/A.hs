@@ -1,6 +1,6 @@
 module ImportList1.A where
 
-import           Language.Fay.Prelude
+import           Prelude
 import           Language.Fay.FFI
 
 x :: Double

@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 main = putStrLn ((\a 'a' -> "OK.") 0 'b')
 

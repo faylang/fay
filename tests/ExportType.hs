@@ -8,7 +8,7 @@ module ExportType (
   ) where
 
 import           Language.Fay.FFI
-import           Language.Fay.Prelude
+import           Prelude
 
 data X = X
 instance Foreign X

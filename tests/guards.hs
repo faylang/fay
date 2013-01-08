@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 f n | n <= 0 = 0
     | n >= 10 = 11

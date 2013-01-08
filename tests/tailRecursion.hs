@@ -1,5 +1,5 @@
 -- | This is to test tail-recursive calls are iterative.
-import           Language.Fay.Prelude
+import           Prelude
 
 main = do
   print (sumTo 100000 0 :: Double)

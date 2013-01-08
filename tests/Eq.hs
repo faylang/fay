@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 main = do
   when (1 == 1) $ putStrLn "Expected =="

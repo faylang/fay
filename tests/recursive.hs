@@ -1,6 +1,6 @@
 module Main where
 
-import Language.Fay.Prelude
+import Prelude
 
 ones :: [Int]
 ones = 1 : ones

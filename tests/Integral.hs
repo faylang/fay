@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 printPair :: (Int,Int) -> Fay ()
 printPair (x,y) = print x >> print y

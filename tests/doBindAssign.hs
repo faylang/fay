@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 main = do
   x <- return "Hello, World!" >>= return

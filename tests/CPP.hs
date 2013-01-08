@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP #-}
 #ifdef FAY
-import           Language.Fay.Prelude
+import           Prelude
 #else
 this is invalid code
 #endif

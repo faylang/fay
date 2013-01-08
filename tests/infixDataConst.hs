@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 data Ty1 = Integer `InfixConst1` Integer
 instance Foreign Ty1

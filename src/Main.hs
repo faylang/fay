@@ -38,6 +38,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optFiles       :: [String]
   , optOptimize    :: Bool
   , optGClosure    :: Bool
+  , optPackageConf :: Maybe String
   }
 
 -- | Main entry point.
@@ -60,7 +61,7 @@ main = do
               , configTypecheck      = not $ optNoGHC opts
               , configWall           = optWall opts
               , configGClosure       = optGClosure opts
-              , configPackageConf    = packageConf
+              , configPackageConf    = optPackageConf opts <|> packageConf
               }
       void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
       case optFiles opts of
@@ -98,9 +99,11 @@ options = FayCompilerOptions
   <*> arguments Just (metavar "- | <hs-file>...")
   <*> switch (long "optimize" <> short 'O' <> help "Apply optimizations to generated code")
   <*> switch (long "closure" <> help "Provide help with Google Closure")
+  <*> optional (strOption (long "package-conf" <> help "Specify the Cabal package config file"))
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])
+
 
 -- | Make incompatible options.
 incompatible :: Monad m

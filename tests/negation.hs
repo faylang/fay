@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 main = do print $ (-7/2)
           print $ (-7)/2

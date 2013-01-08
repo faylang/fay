@@ -88,8 +88,6 @@ type Ptr a = a
 type Automatic a = a
 
 -- | Declare a foreign action.
-ffi
-  :: Foreign a
-  => String        -- ^ The foreign value.
-  -> a             -- ^ Bottom.
+ffi :: String        -- ^ The foreign value.
+    -> a             -- ^ Bottom.
 ffi = error "Language.Fay.FFI.foreignFay: Used foreign function not in a JS engine context."

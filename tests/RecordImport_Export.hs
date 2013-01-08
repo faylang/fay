@@ -2,7 +2,7 @@
 
 module RecordImport_Export where
 
-import           Language.Fay.Prelude
+import           Prelude
 
 data R = R Integer
 data Fields = Fields { fieldFoo :: Integer, fieldBar :: Integer }

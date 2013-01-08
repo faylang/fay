@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 withTwo :: (Int -> Int) -> Int
 withTwo f = f 2

@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 data Bool = True | False
 

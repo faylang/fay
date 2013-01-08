@@ -1,5 +1,5 @@
 import Language.Fay.FFI
-import Language.Fay.Prelude
+import Prelude
 
 f :: (Int,Double) -> Double
 f = ffi "%1[0]+%1[1]"

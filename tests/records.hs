@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 data Person1 = Person1 String String Int
 data Person2 = Person2 { fname :: String, sname :: String, age :: Int }

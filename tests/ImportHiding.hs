@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 import ImportList1.A hiding (y)
 import ImportList1.B hiding (x)

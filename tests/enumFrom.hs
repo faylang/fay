@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 take :: Int -> [a] -> [a]
 take 0 _      = []

@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 main = print (head (tail (fix (\xs -> 123 : xs))))
 

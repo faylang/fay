@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 import           Language.Fay.FFI
-import           Language.Fay.Prelude
+import           Prelude
 
 data SomeRec = SomeRec { a :: Integer, b :: Integer } | Y | X
 instance Foreign SomeRec

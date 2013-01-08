@@ -1,4 +1,4 @@
-import Language.Fay.Prelude
+import Prelude
 
 main = do
   print (1 + 2)

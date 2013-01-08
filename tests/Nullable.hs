@@ -1,5 +1,5 @@
 import           Language.Fay.FFI
-import           Language.Fay.Prelude
+import           Prelude
 
 data R = R (Nullable Double)
 instance Foreign R

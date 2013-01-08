@@ -1,4 +1,4 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 someFun x = fun x
   where fun x | x < 50 = "ok"

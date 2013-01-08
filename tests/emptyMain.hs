@@ -1,3 +1,3 @@
-import           Language.Fay.Prelude
+import           Prelude
 
 main = return ()

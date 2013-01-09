@@ -1,1 +1,5 @@
-dist/build/fay-tests/fay-tests --plain && scripts/test-sdist
+git clone https://github.com/faylang/fay-base.git
+cd fay-base
+cabal install
+cd ..
+dist/build/fay-tests/fay-tests --plain

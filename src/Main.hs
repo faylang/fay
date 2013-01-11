@@ -45,6 +45,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optNaked        :: Bool
   , optNoDispatcher :: Bool
   , optDispatcher   :: Bool
+  , optStdlibOnly   :: Bool
   }
 
 -- | Main entry point.
@@ -60,26 +61,27 @@ main = do
          else do
            let config = addConfigDirectoryIncludes ("." : optInclude opts) $
                  addConfigPackages (optPackages opts) $ def
-                   { configOptimize       = optOptimize opts
-                   , configFlattenApps    = optFlattenApps opts
-                   , configExportBuiltins = True -- optExportBuiltins opts
-                   , configPrettyPrint    = optPretty opts
-                   , configLibrary        = optLibrary opts
-                   , configHtmlWrapper    = optHTMLWrapper opts
-                   , configHtmlJSLibs     = optHTMLJSLibs opts
-                   , configTypecheck      = not $ optNoGHC opts
-                   , configWall           = optWall opts
-                   , configGClosure       = optGClosure opts
-                   , configPackageConf    = optPackageConf opts <|> packageConf
-                   , configExportRuntime  = not (optNoRTS opts)
-                   , configNaked          = optNaked opts
-                   , configExportStdlib   = not (optNoStdlib opts)
-                   , configDispatchers    = not (optNoDispatcher opts)
-                   , configDispatcherOnly = optDispatcher opts
+                   { configOptimize         = optOptimize opts
+                   , configFlattenApps      = optFlattenApps opts
+                   , configExportBuiltins   = True -- optExportBuiltins opts
+                   , configPrettyPrint      = optPretty opts
+                   , configLibrary          = optLibrary opts
+                   , configHtmlWrapper      = optHTMLWrapper opts
+                   , configHtmlJSLibs       = optHTMLJSLibs opts
+                   , configTypecheck        = not $ optNoGHC opts
+                   , configWall             = optWall opts
+                   , configGClosure         = optGClosure opts
+                   , configPackageConf      = optPackageConf opts <|> packageConf
+                   , configExportRuntime    = not (optNoRTS opts)
+                   , configNaked            = optNaked opts
+                   , configExportStdlib     = not (optNoStdlib opts)
+                   , configDispatchers      = not (optNoDispatcher opts)
+                   , configDispatcherOnly   = optDispatcher opts
+                   , configExportStdlibOnly = optStdlibOnly opts
                    }
            void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
            case optFiles opts of
-                ["-"] -> hGetContents stdin >>= printCompile config compileModule
+                ["-"] -> hGetContents stdin >>= printCompile config (compileModule True)
                 []    -> runInteractive
                 files -> forM_ files $ \file -> do
                   if optStdout opts
@@ -120,6 +122,7 @@ options = FayCompilerOptions
   <*> switch (long "naked" <> help "Print all declarations naked at the top-level (unwrapped)")
   <*> switch (long "no-dispatcher" <> help "Don't output a type serialization dispatcher")
   <*> switch (long "dispatcher" <> help "Only output the type serialization dispatchers")
+  <*> switch (long "stdlib" <> help "Only output the stdlib")
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

@@ -97,7 +97,9 @@ compileToModule filepath config raw with hscode = do
 
   where generate | configNaked config = generateNaked
                  | otherwise          = generateWrapped
-        generateNaked jscode _exports _module = jscode
+        generateNaked jscode _exports _module = unlines $
+          [if configExportRuntime config then raw else ""
+          ,jscode]
         generateWrapped jscode exports (ModuleName (clean -> modulename)) = unlines $ filter (not . null) $
           ["/** @constructor"
           ,"*/"

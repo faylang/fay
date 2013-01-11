@@ -138,7 +138,7 @@ printCompile config with from = do
 
 -- | Compile a String of Fay and print it as beautified JavaScript.
 printTestCompile :: String -> IO ()
-printTestCompile = printCompile def { configWarn = False } compileModule
+printTestCompile = printCompile def { configWarn = False } (compileModule False)
 
 -- | Compile the given Fay code for the documentation. This is
 -- specialised because the documentation isn't really “real”
@@ -146,7 +146,7 @@ printTestCompile = printCompile def { configWarn = False } compileModule
 compileForDocs :: Module -> Compile [JsStmt]
 compileForDocs mod = do
   initialPass mod
-  compileModule mod
+  compileModule False mod
 
 -- | Compile the top-level Fay module.
 compileToplevelModule :: Module -> Compile [JsStmt]
@@ -164,7 +164,7 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   initialPass mod
   cs <- liftIO $ defaultCompileState def
   modify $ \s -> s { stateImported = stateImported cs }
-  stmts <- compileModule mod
+  stmts <- compileModule True mod
   fay2js <- do syms <- gets stateFayToJs
                return $ if null syms then [] else [fayToJsDispatcher syms]
   js2fay <- do syms <- gets stateJsToFay
@@ -289,8 +289,8 @@ typecheck packageConf includeDirs ghcFlags wall fp = do
 -- Compilers
 
 -- | Compile Haskell module.
-compileModule :: Module -> Compile [JsStmt]
-compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
+compileModule :: Bool -> Module -> Compile [JsStmt]
+compileModule toplevel (Module _ modulename _pragmas Nothing exports imports decls) = do
   modify $ \s -> s { stateModuleName = modulename
                    , stateExportAll = isNothing exports
                    , stateExports = []
@@ -300,18 +300,25 @@ compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
   -- If an export list is given we populate it beforehand,
   -- if not then bindToplevel will export each declaration when it's visited.
   mapM_ emitExport (fromMaybe [] exports)
-  exportStdlib <- gets (configExportStdlib . stateConfig)
-  if not exportStdlib && anStdlibModule modulename
-     then return []
-     else return (imported ++ current)
-compileModule mod = throwError (UnsupportedModuleSyntax mod)
+  exportStdlib     <- gets (configExportStdlib . stateConfig)
+  exportStdlibOnly <- gets (configExportStdlibOnly . stateConfig)
+  if exportStdlibOnly
+     then if anStdlibModule modulename || toplevel
+             then if toplevel
+                     then return imported
+                     else return (current ++ imported)
+             else return []
+     else if not exportStdlib && anStdlibModule modulename
+             then return []
+             else return (imported ++ current)
+compileModule _ mod = throwError (UnsupportedModuleSyntax mod)
 
-instance CompilesTo Module [JsStmt] where compileTo = compileModule
+instance CompilesTo Module [JsStmt] where compileTo = compileModule False
 
 -- | Is the module a standard module, i.e., one that we'd rather not
 -- output code for if we're compiling separate files.
 anStdlibModule :: ModuleName -> Bool
-anStdlibModule (ModuleName name) = elem name ["Prelude","FFI","Language.Fay.FFI"]
+anStdlibModule (ModuleName name) = elem name ["Prelude","FFI","Language.Fay.FFI","Data.Data"]
 
 findImport :: [FilePath] -> ModuleName -> Compile (FilePath,String)
 findImport alldirs mname = go alldirs mname where
@@ -373,7 +380,7 @@ compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile [JsS
 compileImportWithFilter name filter =
       unlessImported name $ \filepath contents -> do
         state <- gets id
-        result <- liftIO $ compileToAst filepath state compileModule contents
+        result <- liftIO $ compileToAst filepath state (compileModule False) contents
         case result of
           Right (stmts,state) -> do
             exports <- filterM filter $ stateExports state

@@ -44,6 +44,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optPrintRuntime :: Bool
   , optNaked        :: Bool
   , optNoDispatcher :: Bool
+  , optDispatcher   :: Bool
   }
 
 -- | Main entry point.
@@ -74,6 +75,7 @@ main = do
                    , configNaked          = optNaked opts
                    , configExportStdlib   = not (optNoStdlib opts)
                    , configDispatchers    = not (optNoDispatcher opts)
+                   , configDispatcherOnly = optDispatcher opts
                    }
            void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
            case optFiles opts of
@@ -117,6 +119,7 @@ options = FayCompilerOptions
   <*> switch (long "print-runtime" <> help "Print the runtime JS source to stdout")
   <*> switch (long "naked" <> help "Print all declarations naked at the top-level (unwrapped)")
   <*> switch (long "no-dispatcher" <> help "Don't output a type serialization dispatcher")
+  <*> switch (long "dispatcher" <> help "Only output the type serialization dispatchers")
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

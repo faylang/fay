@@ -330,10 +330,18 @@ compileModule (Module _ modulename _pragmas Nothing exports imports decls) =
         exps <- moduleLocals modulename <$> gets stateModuleScope
         modify $ \s -> s { stateExports = exps ++ stateExports s }
 
-    return (imported ++ current)
+    exportStdlib <- gets (configExportStdlib . stateConfig)
+    if not exportStdlib && anStdlibModule modulename
+       then return []
+       else return (imported ++ current)
 compileModule mod = throwError (UnsupportedModuleSyntax mod)
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
+
+-- | Is the module a standard module, i.e., one that we'd rather not
+-- output code for if we're compiling separate files.
+anStdlibModule :: ModuleName -> Bool
+anStdlibModule (ModuleName name) = elem name ["Prelude","FFI","Language.Fay.FFI"]
 
 findImport :: [FilePath] -> ModuleName -> Compile (FilePath,String)
 findImport alldirs mname = go alldirs mname where

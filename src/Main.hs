@@ -40,6 +40,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optGClosure     :: Bool
   , optPackageConf  :: Maybe String
   , optNoRTS        :: Bool
+  , optNoStdlib     :: Bool
   , optPrintRuntime :: Bool
   , optNaked        :: Bool
   }
@@ -70,6 +71,7 @@ main = do
                    , configPackageConf    = optPackageConf opts <|> packageConf
                    , configExportRuntime  = not (optNoRTS opts)
                    , configNaked          = optNaked opts
+                   , configExportStdlib   = not (optNoStdlib opts)
                    }
            void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
            case optFiles opts of
@@ -109,6 +111,7 @@ options = FayCompilerOptions
   <*> switch (long "closure" <> help "Provide help with Google Closure")
   <*> optional (strOption (long "package-conf" <> help "Specify the Cabal package config file"))
   <*> switch (long "no-rts" <> short 'r' <> help "Don't export the RTS")
+  <*> switch (long "no-stdlib" <> help "Don't generate code for the Prelude/FFI")
   <*> switch (long "print-runtime" <> help "Print the runtime JS source to stdout")
   <*> switch (long "naked" <> help "Print all declarations naked at the top-level (unwrapped)")
 

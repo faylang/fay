@@ -185,9 +185,9 @@ instance Printable JsName where
     case name of
       JsNameVar qname     -> printJS qname
       JsThis              -> write "this"
-      JsThunk             -> write "$"
-      JsForce             -> write "_"
-      JsApply             -> write "__"
+      JsThunk             -> write "Fay$$$"
+      JsForce             -> write "Fay$$_"
+      JsApply             -> write "Fay$$__"
       JsParam i           -> write ("$p" ++ show i)
       JsTmp i             -> write ("$tmp" ++ show i)
       JsConstructor qname -> "$_" +> printJS qname

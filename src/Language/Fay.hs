@@ -107,9 +107,9 @@ compileToModule filepath config raw with hscode = do
           ,"// Exports"
           ,unlines (map printExport exports)
           ,"// Built-ins"
-          ,"this._ = _;"
+          ,"this._ = Fay$$_;"
           ,if configExportBuiltins config
-              then unlines ["this.$           = $;"
+              then unlines ["this.$           = Fay$$$;"
                            ,"this.$fayToJs    = Fay$$fayToJs;"
                            ,"this.$jsToFay    = Fay$$jsToFay;"
                            ]

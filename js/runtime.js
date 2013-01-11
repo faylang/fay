@@ -372,19 +372,20 @@ function Fay$$cons(x){
 }
 
 // List index.
-function Fay$$index(index){
-  return function(list){
-    for(var i = 0; i < index; i++) {
-      list = _(list).cdr;
-    }
-    return list.car;
-  };
+// `list' is already forced by the time it's passed to this function.
+// `list' cannot be null and `index' cannot be out of bounds.
+function Fay$$index(index,list){
+  for(var i = 0; i < index; i++) {
+    list = _(list.cdr);
+  }
+  return list.car;
 }
 
 // List length.
+// `list' is already forced by the time it's passed to this function.
 function Fay$$listLen(list,max){
   for(var i = 0; list !== null && i < max + 1; i++) {
-    list = _(_(list).cdr);
+    list = _(list.cdr);
   }
   return i == max;
 }

@@ -982,10 +982,10 @@ compilePList [] body exp =
   return [JsIf (JsEq (force exp) JsNull) body []]
 compilePList pats body exp = do
   let forcedExp = force exp
-  stmts <- foldM (\body (i,pat) -> compilePat (JsApp (JsApp (JsName (JsBuiltIn "index"))
-                                                   [JsLit (JsInt i)])
-                                            [forcedExp])
-                                     pat body)
+  stmts <- foldM (\body (i,pat) -> compilePat (JsApp (JsName (JsBuiltIn "index"))
+                                                     [JsLit (JsInt i),forcedExp])
+                                              pat
+                                              body)
         body
         (reverse (zip [0..] pats))
   let patsLen = JsLit (JsInt (length pats))

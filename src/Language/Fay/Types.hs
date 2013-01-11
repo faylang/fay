@@ -23,6 +23,7 @@ module Language.Fay.Types
     ,configOptimize
     ,configGClosure
     ,configExportBuiltins
+    ,configExportRuntime
     ,configPrettyPrint
     ,configHtmlWrapper
     ,configHtmlJSLibs
@@ -75,6 +76,7 @@ data CompileConfig = CompileConfig
   { configOptimize          :: Bool
   , configFlattenApps       :: Bool
   , configExportBuiltins    :: Bool
+  , configExportRuntime     :: Bool
   , _configDirectoryIncludes :: [FilePath]
   , configPrettyPrint       :: Bool
   , configHtmlWrapper       :: Bool
@@ -93,7 +95,7 @@ data CompileConfig = CompileConfig
 instance Default CompileConfig where
   def =
     addConfigPackage "fay-base" $
-      CompileConfig False False True [] False False [] False True Nothing True False False Nothing []
+      CompileConfig False False True True [] False False [] False True Nothing True False False Nothing []
 
 -- Restrict these setters so elements aren't accidentally removed.
 

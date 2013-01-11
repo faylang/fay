@@ -39,6 +39,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optOptimize    :: Bool
   , optGClosure    :: Bool
   , optPackageConf :: Maybe String
+  , optNoRTS       :: Bool
   }
 
 -- | Main entry point.
@@ -62,6 +63,7 @@ main = do
               , configWall           = optWall opts
               , configGClosure       = optGClosure opts
               , configPackageConf    = optPackageConf opts <|> packageConf
+              , configExportRuntime  = not (optNoRTS opts)
               }
       void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
       case optFiles opts of
@@ -100,6 +102,7 @@ options = FayCompilerOptions
   <*> switch (long "optimize" <> short 'O' <> help "Apply optimizations to generated code")
   <*> switch (long "closure" <> help "Provide help with Google Closure")
   <*> optional (strOption (long "package-conf" <> help "Specify the Cabal package config file"))
+  <*> switch (long "no-rts" <> short 'r' <> help "Don't export the RTS")
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

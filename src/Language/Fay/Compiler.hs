@@ -183,7 +183,7 @@ initialPass (Module _ _ _ Nothing _ imports decls) = do
 initialPass mod = throwError (UnsupportedModuleSyntax mod)
 
 initialPass_import :: ImportDecl -> Compile ()
-initialPass_import i@(ImportDecl _ _ _ _ Just{} _ _) = do
+initialPass_import (ImportDecl _ _ _ _ Just{} _ _) = do
   return ()
 --  warn $ "import with package syntax ignored: " ++ prettyPrint i
 initialPass_import (ImportDecl _ name False _ Nothing Nothing _) = do
@@ -322,7 +322,7 @@ findImport alldirs mname = go alldirs mname where
 
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]
-compileImport i@(ImportDecl _ _ _ _ Just{} _ _) = do
+compileImport (ImportDecl _ _ _ _ Just{} _ _) = do
 --  warn $ "import with package syntax ignored: " ++ prettyPrint i
   return []
 compileImport (ImportDecl _ name False _ Nothing Nothing Nothing) =

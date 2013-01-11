@@ -12,7 +12,8 @@ module Language.Fay
   ,compileFromTo
   ,compileFromToAndGenerateHtml
   ,toJsName
-  ,showCompileError)
+  ,showCompileError
+  ,getRuntime)
    where
 
 import           Language.Fay.Compiler        (compileToplevelModule,
@@ -74,7 +75,7 @@ compileFile config filein = do
 
 compileFileWithState :: CompileConfig -> FilePath -> IO (Either CompileError (String,CompileState))
 compileFileWithState config filein = do
-  runtime <- getDataFileName "js/runtime.js"
+  runtime <- getRuntime
   hscode <- readFile filein
   raw <- readFile runtime
   config' <- resolvePackages config
@@ -173,3 +174,7 @@ showCompileError e = case e of
   UnableResolveUnqualified name -> "unable to resolve unqualified name " ++ prettyPrint name
   UnableResolveQualified qname -> "unable to resolve qualified names " ++ prettyPrint qname
   UnableResolveCachedImport name -> "unable to resolve cached import " ++ prettyPrint name
+
+-- | Get the JS runtime source.
+getRuntime :: IO String
+getRuntime = getDataFileName "js/runtime.js"

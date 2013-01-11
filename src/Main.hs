@@ -23,23 +23,24 @@ import           System.IO
 
 -- | Options and help.
 data FayCompilerOptions = FayCompilerOptions
-  { optLibrary     :: Bool
-  , optFlattenApps :: Bool
-  , optHTMLWrapper :: Bool
-  , optHTMLJSLibs  :: [String]
-  , optInclude     :: [String]
-  , optPackages    :: [String]
-  , optWall        :: Bool
-  , optNoGHC       :: Bool
-  , optStdout      :: Bool
-  , optVersion     :: Bool
-  , optOutput      :: Maybe String
-  , optPretty      :: Bool
-  , optFiles       :: [String]
-  , optOptimize    :: Bool
-  , optGClosure    :: Bool
-  , optPackageConf :: Maybe String
-  , optNoRTS       :: Bool
+  { optLibrary      :: Bool
+  , optFlattenApps  :: Bool
+  , optHTMLWrapper  :: Bool
+  , optHTMLJSLibs   :: [String]
+  , optInclude      :: [String]
+  , optPackages     :: [String]
+  , optWall         :: Bool
+  , optNoGHC        :: Bool
+  , optStdout       :: Bool
+  , optVersion      :: Bool
+  , optOutput       :: Maybe String
+  , optPretty       :: Bool
+  , optFiles        :: [String]
+  , optOptimize     :: Bool
+  , optGClosure     :: Bool
+  , optPackageConf  :: Maybe String
+  , optNoRTS        :: Bool
+  , optPrintRuntime :: Bool
   }
 
 -- | Main entry point.
@@ -50,29 +51,32 @@ main = do
   if optVersion opts
     then runCommandVersion
     else do
-      let config = addConfigDirectoryIncludes ("." : optInclude opts) $
-            addConfigPackages (optPackages opts) $ def
-              { configOptimize       = optOptimize opts
-              , configFlattenApps    = optFlattenApps opts
-              , configExportBuiltins = True -- optExportBuiltins opts
-              , configPrettyPrint    = optPretty opts
-              , configLibrary        = optLibrary opts
-              , configHtmlWrapper    = optHTMLWrapper opts
-              , configHtmlJSLibs     = optHTMLJSLibs opts
-              , configTypecheck      = not $ optNoGHC opts
-              , configWall           = optWall opts
-              , configGClosure       = optGClosure opts
-              , configPackageConf    = optPackageConf opts <|> packageConf
-              , configExportRuntime  = not (optNoRTS opts)
-              }
-      void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
-      case optFiles opts of
-           ["-"] -> hGetContents stdin >>= printCompile config compileModule
-           []    -> runInteractive
-           files -> forM_ files $ \file -> do
-             if optStdout opts
-               then compileFromTo config file Nothing
-               else compileFromTo config file (Just (outPutFile opts file))
+      if optPrintRuntime opts
+         then getRuntime >>= putStr
+         else do
+           let config = addConfigDirectoryIncludes ("." : optInclude opts) $
+                 addConfigPackages (optPackages opts) $ def
+                   { configOptimize       = optOptimize opts
+                   , configFlattenApps    = optFlattenApps opts
+                   , configExportBuiltins = True -- optExportBuiltins opts
+                   , configPrettyPrint    = optPretty opts
+                   , configLibrary        = optLibrary opts
+                   , configHtmlWrapper    = optHTMLWrapper opts
+                   , configHtmlJSLibs     = optHTMLJSLibs opts
+                   , configTypecheck      = not $ optNoGHC opts
+                   , configWall           = optWall opts
+                   , configGClosure       = optGClosure opts
+                   , configPackageConf    = optPackageConf opts <|> packageConf
+                   , configExportRuntime  = not (optNoRTS opts)
+                   }
+           void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
+           case optFiles opts of
+                ["-"] -> hGetContents stdin >>= printCompile config compileModule
+                []    -> runInteractive
+                files -> forM_ files $ \file -> do
+                  if optStdout opts
+                    then compileFromTo config file Nothing
+                    else compileFromTo config file (Just (outPutFile opts file))
 
   where
     parser = info (helper <*> options) (fullDesc <> header helpTxt)
@@ -103,6 +107,7 @@ options = FayCompilerOptions
   <*> switch (long "closure" <> help "Provide help with Google Closure")
   <*> optional (strOption (long "package-conf" <> help "Specify the Cabal package config file"))
   <*> switch (long "no-rts" <> short 'r' <> help "Don't export the RTS")
+  <*> switch (long "print-runtime" <> help "Print the runtime JS source to stdout")
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

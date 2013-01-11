@@ -297,10 +297,18 @@ compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
   -- If an export list is given we populate it beforehand,
   -- if not then bindToplevel will export each declaration when it's visited.
   mapM_ emitExport (fromMaybe [] exports)
-  return (imported ++ current)
+  exportStdlib <- gets (configExportStdlib . stateConfig)
+  if not exportStdlib && anStdlibModule modulename
+     then return []
+     else return (imported ++ current)
 compileModule mod = throwError (UnsupportedModuleSyntax mod)
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
+
+-- | Is the module a standard module, i.e., one that we'd rather not
+-- output code for if we're compiling separate files.
+anStdlibModule :: ModuleName -> Bool
+anStdlibModule (ModuleName name) = elem name ["Prelude","FFI","Language.Fay.FFI"]
 
 findImport :: [FilePath] -> ModuleName -> Compile (FilePath,String)
 findImport alldirs mname = go alldirs mname where

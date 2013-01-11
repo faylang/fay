@@ -94,11 +94,11 @@ compileToModule filepath config raw with hscode = do
                                  (stateExports state)
                                  (stateModuleName state), state)
 
-  where generate jscode exports (ModuleName (clean -> modulename)) = unlines
+  where generate jscode exports (ModuleName (clean -> modulename)) = unlines $ filter (not . null) $
           ["/** @constructor"
           ,"*/"
           ,"var " ++ modulename ++ " = function(){"
-          ,raw
+          ,if configExportRuntime config then raw else ""
           ,jscode
           ,"// Exports"
           ,unlines (map printExport exports)

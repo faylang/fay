@@ -56,7 +56,7 @@ main = do
     then runCommandVersion
     else do
       if optPrintRuntime opts
-         then getRuntime >>= putStr
+         then getRuntime >>= readFile >>= putStr
          else do
            let config = addConfigDirectoryIncludes ("." : optInclude opts) $
                  addConfigPackages (optPackages opts) $ def

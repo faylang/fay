@@ -136,6 +136,7 @@ data CompileState = CompileState
   , stateImported    :: [(ModuleName,FilePath)]
   , stateNameDepth   :: Integer
   , stateScope       :: Map Name [NameScope]
+  , stateCons        :: [JsStmt]
 } deriving (Show)
 
 -- | A name's scope, either imported or bound locally.
@@ -166,6 +167,7 @@ defaultCompileState config = do
   , stateNameDepth = 1
   , stateFilePath = "<unknown>"
   , stateScope = M.fromList primOps
+  , stateCons = []
   }
 
 -- | The built-in operations that aren't actually compiled from

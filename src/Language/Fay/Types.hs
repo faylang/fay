@@ -35,6 +35,7 @@ module Language.Fay.Types
     ,configPackageConf
     ,configExportStdlib
     ,configDispatchers
+    ,configDispatcherOnly
   )
   ,configDirectoryIncludes
   ,addConfigDirectoryInclude
@@ -77,6 +78,7 @@ data CompileConfig = CompileConfig
   , configExportRuntime     :: Bool
   , configExportStdlib      :: Bool
   , configDispatchers       :: Bool
+  , configDispatcherOnly    :: Bool
   , configNaked             :: Bool
   , _configDirectoryIncludes :: [FilePath]
   , configPrettyPrint       :: Bool
@@ -96,7 +98,7 @@ data CompileConfig = CompileConfig
 instance Default CompileConfig where
   def =
     addConfigPackage "fay-base" $
-      CompileConfig False False True True True True False [] False False [] False True Nothing True False False Nothing []
+      CompileConfig False False True True True True False False [] False False [] False True Nothing True False False Nothing []
 
 -- Restrict these setters so elements aren't accidentally removed.
 

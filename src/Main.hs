@@ -41,6 +41,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optPackageConf  :: Maybe String
   , optNoRTS        :: Bool
   , optPrintRuntime :: Bool
+  , optNaked        :: Bool
   }
 
 -- | Main entry point.
@@ -68,6 +69,7 @@ main = do
                    , configGClosure       = optGClosure opts
                    , configPackageConf    = optPackageConf opts <|> packageConf
                    , configExportRuntime  = not (optNoRTS opts)
+                   , configNaked          = optNaked opts
                    }
            void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
            case optFiles opts of
@@ -108,6 +110,7 @@ options = FayCompilerOptions
   <*> optional (strOption (long "package-conf" <> help "Specify the Cabal package config file"))
   <*> switch (long "no-rts" <> short 'r' <> help "Don't export the RTS")
   <*> switch (long "print-runtime" <> help "Print the runtime JS source to stdout")
+  <*> switch (long "naked" <> help "Print all declarations naked at the top-level (unwrapped)")
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

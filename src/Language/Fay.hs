@@ -92,10 +92,13 @@ compileToModule filepath config raw with hscode = do
     Left err -> return (Left err)
     Right (PrintState{..},state) ->
       return $ Right $ (generate (concat (reverse psOutput))
-                                 (stateExports state)
-                                 (stateModuleName state), state)
+                                        (stateExports state)
+                                        (stateModuleName state), state)
 
-  where generate jscode exports (ModuleName (clean -> modulename)) = unlines $ filter (not . null) $
+  where generate | configNaked config = generateNaked
+                 | otherwise          = generateWrapped
+        generateNaked jscode _exports _module = jscode
+        generateWrapped jscode exports (ModuleName (clean -> modulename)) = unlines $ filter (not . null) $
           ["/** @constructor"
           ,"*/"
           ,"var " ++ modulename ++ " = function(){"

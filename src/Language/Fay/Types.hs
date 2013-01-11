@@ -105,9 +105,29 @@ data CompileConfig = CompileConfig
 instance Default CompileConfig where
   def =
     addConfigPackage "fay-base" $
-      CompileConfig False False True True True False True False False [] False False [] False True Nothing True False False Nothing []
-
--- Restrict these setters so elements aren't accidentally removed.
+      CompileConfig
+      { configOptimize           = False
+      , configFlattenApps        = False
+      , configExportBuiltins     = True
+      , configExportRuntime      = True
+      , configExportStdlib       = True
+      , configExportStdlibOnly   = False
+      , configDispatchers        = True
+      , configDispatcherOnly     = False
+      , configNaked              = False
+      , _configDirectoryIncludes = []
+      , configPrettyPrint        = False
+      , configHtmlWrapper        = False
+      , configHtmlJSLibs         = []
+      , configLibrary            = False
+      , configWarn               = True
+      , configFilePath           = Nothing
+      , configTypecheck          = True
+      , configWall               = False
+      , configGClosure           = False
+      , configPackageConf        = Nothing
+      , _configPackages          = []
+      }
 
 configDirectoryIncludes :: CompileConfig -> [FilePath]
 configDirectoryIncludes = _configDirectoryIncludes
@@ -141,6 +161,7 @@ data CompileState = CompileState
   , stateNameDepth    :: Integer
   , stateLocalScope   :: Set Name
   , stateModuleScope  :: ModuleScope
+  , stateCons        :: [JsStmt]
 } deriving (Show)
 
 data CompileReader = CompileReader
@@ -175,6 +196,7 @@ defaultCompileState = do
   , stateFilePath = "<unknown>"
   , stateLocalScope = S.empty
   , stateModuleScope = def
+  , stateCons = []
   }
 
 -- | Compile monad.

@@ -180,10 +180,11 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   js2fay <- do syms <- gets stateJsToFay
                return $ if null syms then [] else [jsToFayDispatcher syms]
   let maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
+  conses <- gets stateCons
   if configDispatcherOnly cfg
-     then return (fay2js ++ js2fay)
+     then return (maybeOptimize (conses ++ fay2js ++ js2fay))
      else return (maybeOptimize (stmts ++
-                    if configDispatchers cfg then fay2js ++ js2fay else []))
+                    if configDispatchers cfg then conses ++ fay2js ++ js2fay else []))
 
 --------------------------------------------------------------------------------
 -- Initial pass-through collecting record definitions
@@ -423,6 +424,7 @@ compileImportWithFilter name importFilter =
                          , stateImported    = stateImported state
                          , stateLocalScope  = S.empty
                          , stateModuleScope = bindAsLocals imports (stateModuleScope s)
+                         , stateCons        = stateCons state
                          }
         return stmts
       Left err -> throwError err
@@ -540,7 +542,8 @@ compileDataDecl toplevel _decl constructors =
           func <- makeFunc name fields
           emitFayToJs name fields'
           emitJsToFay name fields'
-          return [cons, func]
+          emitCons cons
+          return [func]
         InfixConDecl t1 name t2 -> do
           let slots = ["slot1","slot2"]
               fields = zip (map return slots) [t1, t2]
@@ -548,7 +551,8 @@ compileDataDecl toplevel _decl constructors =
           func <- makeFunc name slots
           emitFayToJs name fields
           emitJsToFay name fields
-          return [cons, func]
+          emitCons cons
+          return [func]
         RecDecl name fields' -> do
           let fields = concatMap fst fields'
           cons <- makeConstructor name fields
@@ -556,9 +560,12 @@ compileDataDecl toplevel _decl constructors =
           funs <- makeAccessors srcloc fields
           emitFayToJs name fields'
           emitJsToFay name fields'
-          return (cons : func : funs)
+          emitCons cons
+          return (func : funs)
 
   where
+    emitCons cons = modify $ \s -> s { stateCons = cons : stateCons s }
+
     -- Creates a constructor R_RecConstr for a Record
     makeConstructor :: Name -> [Name] -> Compile JsStmt
     makeConstructor name (map (JsNameVar . UnQual) -> fields) = do

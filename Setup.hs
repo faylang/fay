@@ -1,5 +1,9 @@
+{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+
 module Main where
 
+import "base" Prelude
 import Distribution.PackageDescription
 import Distribution.Simple
 

@@ -1,6 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Language.Fay.ModuleScope (ModuleScope, resolveName, findTopLevelNames, addExports) where
+module Language.Fay.ModuleScope
+  (ModuleScope
+  ,addExports
+  ,findTopLevelNames
+  ,resolveName
+  ,moduleLocals)
+  where
 
 import           Control.Arrow
 import           Control.Monad.State
@@ -9,6 +15,7 @@ import           Data.Map (Map)
 import qualified Data.Map as M
 import           Language.Haskell.Exts hiding (name, binds)
 import           Prelude hiding (mod, lookup)
+
 
 newtype ModuleScope = ModuleScope (Map QName QName)
   deriving Show
@@ -30,8 +37,7 @@ lookup q (ModuleScope binds) = M.lookup q binds
 -- no conflicts if a user decicdes to use a module named Fay.
 --
 -- So e.g. will compile to (*) Fay$$mult, which is in runtime.js.
-type PrimModuleScope = Map Name QName
-envPrimOpsMap :: PrimModuleScope
+envPrimOpsMap :: Map Name QName
 envPrimOpsMap = M.fromList
   [ (Symbol ">>",    (Qual (ModuleName "Fay$") (Ident "then")))
   , (Symbol ">>=",   (Qual (ModuleName "Fay$") (Ident "bind")))
@@ -52,10 +58,11 @@ envPrimOpsMap = M.fromList
   , (Symbol "||",    (Qual (ModuleName "Fay$") (Ident "or")))
   ]
 
+type ModuleScopeSt = State (ModuleName, ModuleScope) ()
+
 findTopLevelNames :: ModuleName -> [Decl] -> ModuleScope
 findTopLevelNames mod decls = snd $ execState (mapM_ d_decl decls) (mod,def)
 
-type ModuleScopeSt = State (ModuleName, ModuleScope) ()
 
 bindName :: Name -> ModuleScopeSt
 bindName k = modify $ \st -> case st of
@@ -106,3 +113,9 @@ addExports qs (ModuleScope binds) =
     where unqual (Qual _ n) = (UnQual n)
           unqual u@UnQual{} = u
           unqual Special{} = error "LOL"
+
+moduleLocals :: ModuleName -> ModuleScope -> [QName]
+moduleLocals mod (ModuleScope binds) = filter isLocal . M.elems $ binds
+  where
+    isLocal (Qual m _) = mod == m
+    isLocal _ = False

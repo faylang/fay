@@ -27,7 +27,7 @@ module Language.Fay.Compiler
 import           Language.Fay.Compiler.FFI
 import           Language.Fay.Compiler.Misc
 import           Language.Fay.Compiler.Optimizer
-import           Language.Fay.ModuleScope        (findTopLevelNames, addExports)
+import           Language.Fay.ModuleScope        (addExports, findTopLevelNames, moduleLocals)
 import           Language.Fay.Print              (printJSString)
 import qualified Language.Fay.Stdlib             as Stdlib
 import           Language.Fay.Types
@@ -179,7 +179,6 @@ initialPass :: Module -> Compile ()
 initialPass (Module _ _ _ Nothing _ imports decls) = do
   mapM_ initialPass_import imports
   mapM_ initialPass_decl decls
-
 initialPass mod = throwError (UnsupportedModuleSyntax mod)
 
 initialPass_import :: ImportDecl -> Compile ()
@@ -296,9 +295,13 @@ compileModule (Module _ modulename _pragmas Nothing exports imports decls) =
                      }
     imported <- fmap concat (mapM compileImport imports)
     current <- compileDecls True decls
-    -- If an export list is given we populate it beforehand,
-    -- if not then bindToplevel will export each declaration when it's visited.
-    mapM_ emitExport (fromMaybe [] exports)
+
+    case exports of
+      Just exps -> mapM_ emitExport exps
+      Nothing -> do
+        exps <- moduleLocals modulename <$> gets stateModuleScope
+        modify $ \s -> s { stateExports = exps ++ stateExports s }
+
     return (imported ++ current)
 compileModule mod = throwError (UnsupportedModuleSyntax mod)
 

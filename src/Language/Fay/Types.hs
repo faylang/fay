@@ -44,7 +44,6 @@ module Language.Fay.Types
   ,FundamentalType(..)
   ,PrintState(..)
   ,Printer(..)
-  ,NameScope(..)
   ,Mapping(..)
   ,SerializeContext(..))
   where
@@ -54,12 +53,13 @@ import           Control.Monad.Error    (Error, ErrorT, MonadError)
 import           Control.Monad.Identity (Identity)
 import           Control.Monad.State
 import           Data.Default
-import           Data.Map               (Map)
-import qualified Data.Map               as M
+import           Data.Set (Set)
+import qualified Data.Set as S
 import           Data.String
 import           Language.Haskell.Exts
 import           System.FilePath
 
+import           Language.Fay.ModuleScope (ModuleScope)
 import           Paths_fay
 
 --------------------------------------------------------------------------------
@@ -123,15 +123,9 @@ data CompileState = CompileState
   , stateJsToFay     :: [JsStmt]
   , stateImported    :: [(ModuleName,FilePath)]
   , stateNameDepth   :: Integer
-  , stateScope       :: Map Name [NameScope]
+  , stateLocalScope  :: Set Name
+  , stateModuleScope :: ModuleScope
 } deriving (Show)
-
--- | A name's scope, either imported or bound locally.
-data NameScope = ScopeImported ModuleName (Maybe Name)
-               | ScopeImportedAs Bool ModuleName Name
-               | ScopeBinding
-
-  deriving (Show,Eq)
 
 faySourceDir :: IO FilePath
 faySourceDir = fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
@@ -153,39 +147,9 @@ defaultCompileState config = do
   , stateImported = [("Language.Fay.Types",types)]
   , stateNameDepth = 1
   , stateFilePath = "<unknown>"
-  , stateScope = M.fromList primOps
+  , stateLocalScope = S.empty
+  , stateModuleScope = def
   }
-
--- | The built-in operations that aren't actually compiled from
--- anywhere, they come from runtime.js.
---
--- They're in the names list so that they can be overriden by the user
--- in e.g. let a * b = a - b in 1 * 2.
---
--- So we resolve them to Fay$, i.e. the prefix used for the runtime
--- support. $ is not allowed in Haskell module names, so there will be
--- no conflicts if a user decicdes to use a module named Fay.
---
--- So e.g. will compile to (*) Fay$$mult, which is in runtime.js.
-primOps :: [(Name, [NameScope])]
-primOps =
-  [(Symbol ">>",[ScopeImported "Fay$" (Just "then")])
-  ,(Symbol ">>=",[ScopeImported "Fay$" (Just "bind")])
-  ,(Ident "return",[ScopeImported "Fay$" (Just "return")])
-  ,(Ident "force",[ScopeImported "Fay$" (Just "force")])
-  ,(Ident "seq",[ScopeImported "Fay$" (Just "seq")])
-  ,(Symbol "*",[ScopeImported "Fay$" (Just "mult")])
-  ,(Symbol "+",[ScopeImported "Fay$" (Just "add")])
-  ,(Symbol "-",[ScopeImported "Fay$" (Just "sub")])
-  ,(Symbol "/",[ScopeImported "Fay$" (Just "div")])
-  ,(Symbol "==",[ScopeImported "Fay$" (Just "eq")])
-  ,(Symbol "/=",[ScopeImported "Fay$" (Just "neq")])
-  ,(Symbol ">",[ScopeImported "Fay$" (Just "gt")])
-  ,(Symbol "<",[ScopeImported "Fay$" (Just "lt")])
-  ,(Symbol ">=",[ScopeImported "Fay$" (Just "gte")])
-  ,(Symbol "<=",[ScopeImported "Fay$" (Just "lte")])
-  ,(Symbol "&&",[ScopeImported "Fay$" (Just "and")])
-  ,(Symbol "||",[ScopeImported "Fay$" (Just "or")])]
 
 -- | Compile monad.
 newtype Compile a = Compile { unCompile :: StateT CompileState (ErrorT CompileError IO) a }

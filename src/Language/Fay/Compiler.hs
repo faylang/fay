@@ -27,6 +27,7 @@ module Language.Fay.Compiler
 import           Language.Fay.Compiler.FFI
 import           Language.Fay.Compiler.Misc
 import           Language.Fay.Compiler.Optimizer
+import           Language.Fay.ModuleScope        (findTopLevelNames, addExports)
 import           Language.Fay.Print              (printJSString)
 import qualified Language.Fay.Stdlib             as Stdlib
 import           Language.Fay.Types
@@ -38,8 +39,7 @@ import           Control.Monad.State
 import           Data.Default                    (def)
 import           Data.List
 import           Data.List.Extra
-import           Data.Map                        (Map)
-import qualified Data.Map                        as M
+import qualified Data.Set                        as S
 import           Data.Maybe
 import qualified GHC.Paths                       as GHCPaths
 import           Language.Haskell.Exts
@@ -287,17 +287,19 @@ typecheck packageConf includeDirs ghcFlags wall fp = do
 
 -- | Compile Haskell module.
 compileModule :: Module -> Compile [JsStmt]
-compileModule (Module _ modulename _pragmas Nothing exports imports decls) = do
-  modify $ \s -> s { stateModuleName = modulename
-                   , stateExportAll = isNothing exports
-                   , stateExports = []
-                   }
-  imported <- fmap concat (mapM compileImport imports)
-  current <- compileDecls True decls
-  -- If an export list is given we populate it beforehand,
-  -- if not then bindToplevel will export each declaration when it's visited.
-  mapM_ emitExport (fromMaybe [] exports)
-  return (imported ++ current)
+compileModule (Module _ modulename _pragmas Nothing exports imports decls) =
+  withModuleScope $ do
+    modify $ \s -> s { stateModuleName = modulename
+                     , stateExportAll = isNothing exports
+                     , stateExports = []
+                     , stateModuleScope = findTopLevelNames modulename decls
+                     }
+    imported <- fmap concat (mapM compileImport imports)
+    current <- compileDecls True decls
+    -- If an export list is given we populate it beforehand,
+    -- if not then bindToplevel will export each declaration when it's visited.
+    mapM_ emitExport (fromMaybe [] exports)
+    return (imported ++ current)
 compileModule mod = throwError (UnsupportedModuleSyntax mod)
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule
@@ -366,30 +368,14 @@ compileImportWithFilter name filter =
         case result of
           Right (stmts,state) -> do
             exports <- filterM filter $ stateExports state
-            modify $ \s -> s { stateFayToJs  = stateFayToJs state
-                             , stateJsToFay  = stateJsToFay state
-                             , stateImported = stateImported state
-                             , stateScope    = mergeScopes (addExportsToScope exports (stateScope s))
-                                                           (stateScope state)
+            modify $ \s -> s { stateFayToJs     = stateFayToJs state
+                             , stateJsToFay     = stateJsToFay state
+                             , stateImported    = stateImported state
+                             , stateLocalScope  = S.empty
+                             , stateModuleScope = addExports exports (stateModuleScope s)
                              }
             return stmts
           Left err -> throwError err
-
-
--- | Add the new scopes to the old one, stripping out local bindings.
-mergeScopes :: Map Name [NameScope] -> Map Name [NameScope] -> Map Name [NameScope]
-mergeScopes old new =
-  M.map (filter (/=ScopeBinding))
-        (foldr (\(key,val) -> M.insertWith (++) key val) old (M.assocs new))
-
--- | Add
-addExportsToScope :: [QName] -> Map Name [NameScope] -> Map Name [NameScope]
-addExportsToScope exports mapping = foldr copy mapping exports where
-  copy e =
-    case e of
-      Qual modname name -> M.insertWith (++) name [ScopeImported modname Nothing]
-      UnQual name       -> error $ "Exports should not be unqualified: " ++ prettyPrint name
-      Special{}         -> error $ "Don't be silly."
 
 -- | Don't re-import the same modules.
 unlessImported :: ModuleName -> (FilePath -> String -> Compile [JsStmt]) -> Compile [JsStmt]
@@ -691,7 +677,7 @@ compileInfixApp exp1 ap exp2 = do
         e2 <- compileExp exp2
         fn <- compileExp (Var op)
         return $ JsApp (JsApp (force fn) [force e1]) [force e2]
-    _ -> compileExp (App (App (Var qname) exp1) exp2)
+    _ -> compileExp (App (App (Var op) exp1) exp2)
 
   where op = getOp ap
         getOp (QVarOp op) = op

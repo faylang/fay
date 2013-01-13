@@ -6,6 +6,7 @@
 
 module Language.Fay.Compiler.Misc where
 
+import qualified Language.Fay.ModuleScope     as ModuleScope
 import           Language.Fay.Types
 
 import           System.Process                  (readProcess)
@@ -15,12 +16,12 @@ import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.State
 import           Data.List
-import qualified Data.Map                     as M
+import qualified Data.Set                     as S
 import           Data.Maybe
 import           Data.String
 import           Language.Haskell.Exts        (ParseResult(..))
 import           Language.Haskell.Exts.Syntax
-import           Prelude                      hiding (exp)
+import           Prelude                      hiding (exp, mod)
 import           System.IO
 
 -- | Extra the string from an ident.
@@ -57,52 +58,15 @@ uniqueNames = map JsParam [1::Integer ..]
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
 resolveName :: QName -> Compile QName
 resolveName special@Special{} = return special
-resolveName (UnQual name) = do
---  let echo = io . putStrLn
---  echo $ "Resolving name " ++ prettyPrint name
-  names <- gets stateScope
---  echo $ "Names are: " ++ show names
-  case M.lookup name names of
-    -- Unqualified and not imported? Current module.
-    Nothing -> qualify name
-    Just scopes -> case find localBinding scopes of
-      Just ScopeBinding -> return (UnQual name)
-      _ ->
-        case find simpleImport scopes of
-          Just (ScopeImported modulename replacement) -> return (Qual modulename (fromMaybe name replacement))
-          _ -> case find asImport scopes of
-            Just (ScopeImportedAs _ modulename _) -> return (Qual modulename name)
-            _ -> throwError $ UnableResolveUnqualified name
-
-  where
-    asImport ScopeImportedAs{} = True
-    asImport _ = False
-
-    localBinding ScopeBinding = True
-    localBinding _ = False
-
-resolveName (Qual modulename name) = do
-  names <- gets stateScope
-  case M.lookup name names of
-    -- Qualified and not imported? It's correct, leave it as-is.
-    Nothing -> return (Qual modulename name)
-    Just scopes -> case find simpleImport scopes of
-      Just (ScopeImported _ replacement) -> return (Qual modulename (fromMaybe name replacement))
-      _ -> case find asMatch scopes of
-        Just (ScopeImported realname replacement) -> return (Qual realname (fromMaybe name replacement))
-        _ -> throwError $ UnableResolveQualified (Qual modulename name)
-
-  where
-    asMatch i = case i of
-      ScopeImported{} -> True
-      ScopeImportedAs _ _ qmodulename -> qmodulename == moduleToName modulename
-        where moduleToName (ModuleName n) = Ident n
-      ScopeBinding -> False
-
--- | Do have have a simple "import X" import on our hands?
-simpleImport :: NameScope -> Bool
-simpleImport ScopeImported{} = True
-simpleImport _ = False
+resolveName q@Qual{} = do
+  env <- gets stateModuleScope
+  maybe (throwError $ UnableResolveQualified q) return (ModuleScope.resolveName q env)
+resolveName u@(UnQual name) = do
+  names <- gets stateLocalScope
+  env <- gets stateModuleScope
+  if S.member name names
+    then return (UnQual name)
+    else maybe (qualify name) return (ModuleScope.resolveName u env)
 
 -- | Qualify a name for the current module.
 qualify :: Name -> Compile QName
@@ -119,12 +83,20 @@ bindToplevel srcloc toplevel name expr = do
   when (toplevel && exportAll) $ emitExport (EVar qname)
   return (JsMappedVar srcloc (JsNameVar qname) expr)
 
+-- | Create a temporary environment and discard it after the given computation.
+withModuleScope :: Compile a -> Compile a
+withModuleScope m = do
+  scope <- gets stateModuleScope
+  value <- m
+  modify $ \s -> s { stateModuleScope = scope }
+  return value
+
 -- | Create a temporary scope and discard it after the given computation.
 withScope :: Compile a -> Compile a
 withScope m = do
-  scope <- gets stateScope
+  scope <- gets stateLocalScope
   value <- m
-  modify $ \s -> s { stateScope = scope }
+  modify $ \s -> s { stateLocalScope = scope }
   return value
 
 -- | Run a compiler and just get the scope information.
@@ -132,13 +104,13 @@ generateScope :: Compile a -> Compile ()
 generateScope m = do
   st <- get
   _ <- m
-  scope <- gets stateScope
-  put st { stateScope = scope }
+  scope <- gets stateLocalScope
+  put st { stateLocalScope = scope }
 
 -- | Bind a variable in the current scope.
 bindVar :: Name -> Compile ()
 bindVar name = do
-  modify $ \s -> s { stateScope = M.insertWith (++) name [ScopeBinding] (stateScope s) }
+  modify $ \s -> s { stateLocalScope = S.insert name (stateLocalScope s) }
 
 -- | Emit exported names.
 emitExport :: ExportSpec -> Compile ()

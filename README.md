@@ -79,6 +79,24 @@ There are two utility types for interfacing with JS APIs:
 * `Defined a`: Will be serialized to `undefined`, and will be ommitted
    from serialized objects e.g. `Foo Undefined` → `{"instance":"Foo"}`.
 
+Usually you want to access some JavaScript global when working with
+the FFI so it's a good idea to always use global access so that a
+local fay binding won't interfere:
+
+    alert :: String -> Fay ()
+    alert :: ffi "window.alert(%1)"
+
+If you want to access `window` (browser) or `global` (nodejs) you can do:
+
+    log :: String -> Fay ()
+    log = ffi "(function () { this.console.log(%1); }).call()"
+
+For Google Closure's advanced optimizations you need to use string access to properties:
+
+    jQuery :: String -> Fay JQuery
+    jQuery = ffi "window['jQuery']"
+
+
 ## Contributing
 
 If you intend on submitting a pull request, whichever branch you

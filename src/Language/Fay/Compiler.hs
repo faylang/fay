@@ -39,6 +39,7 @@ import           Control.Monad.State
 import           Data.Default                    (def)
 import           Data.List
 import           Data.List.Extra
+import qualified Data.Map                        as M
 import qualified Data.Set                        as S
 import           Data.Maybe
 import qualified GHC.Paths                       as GHCPaths
@@ -186,7 +187,7 @@ initialPass_import (ImportDecl _ _ _ _ Just{} _ _) = do
   return ()
 --  warn $ "import with package syntax ignored: " ++ prettyPrint i
 initialPass_import (ImportDecl _ name False _ Nothing Nothing _) = do
-  void $ unlessImported name $ \filepath contents -> do
+  void $ initialPass_unlessImported name $ \filepath contents -> do
     state <- gets id
     result <- liftIO $ initialPass_records filepath state initialPass contents
     case result of
@@ -199,8 +200,22 @@ initialPass_import (ImportDecl _ name False _ Nothing Nothing _) = do
                          , stateImported = stateImported st
                          }
       Left err -> throwError err
-    return []
+    return ()
 initialPass_import i = throwError $ UnsupportedImport i
+
+-- | Don't re-import the same modules.
+initialPass_unlessImported :: ModuleName
+                           -> (FilePath -> String -> Compile ())
+                           -> Compile ()
+initialPass_unlessImported name importIt = do
+  imported <- gets stateImported
+  case lookup name imported of
+    Just _ -> return ()
+    Nothing -> do
+      dirs <- configDirectoryIncludes <$> gets stateConfig
+      (filepath,contents) <- findImport dirs name
+      modify $ \s -> s { stateImported = (name,filepath) : imported }
+      importIt filepath contents
 
 initialPass_records :: (Show from,Parseable from)
                     => FilePath
@@ -364,32 +379,48 @@ imported is qn = anyM (matching qn) is
 
 compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile [JsStmt]
 compileImportWithFilter name importFilter =
-      unlessImported name $ \filepath contents -> do
-        state <- gets id
-        result <- liftIO $ compileToAst filepath state compileModule contents
-        case result of
-          Right (stmts,state) -> do
-            imports <- filterM importFilter $ stateExports state
-            modify $ \s -> s { stateFayToJs     = stateFayToJs state
-                             , stateJsToFay     = stateJsToFay state
-                             , stateImported    = stateImported state
-                             , stateLocalScope  = S.empty
-                             , stateModuleScope = bindAsLocals imports (stateModuleScope s)
-                             }
-            return stmts
-          Left err -> throwError err
+  unlessImported name importFilter $ \filepath contents -> do
+    state <- gets id
+    result <- liftIO $ compileToAst filepath state compileModule contents
+    case result of
+      Right (stmts,state) -> do
+        imports <- filterM importFilter $ stateExports state
+        modify $ \s -> s { stateFayToJs     = stateFayToJs state
+                         , stateJsToFay     = stateJsToFay state
+                         , stateImported    = stateImported state
+                         , stateLocalScope  = S.empty
+                         , stateModuleScope = bindAsLocals imports (stateModuleScope s)
+                         }
+        return stmts
+      Left err -> throwError err
 
--- | Don't re-import the same modules.
-unlessImported :: ModuleName -> (FilePath -> String -> Compile [JsStmt]) -> Compile [JsStmt]
-unlessImported name importIt = do
+unlessImported :: ModuleName
+               -> (QName -> Compile Bool)
+               -> (FilePath -> String -> Compile [JsStmt])
+               -> Compile [JsStmt]
+unlessImported "Language.Fay.Types" _ _ = return []
+unlessImported name importFilter importIt = do
   imported <- gets stateImported
   case lookup name imported of
-    Just _ -> return []
+    Just _ -> do
+      sec <- gets stateExportsCache
+      case M.lookup name sec of
+        Nothing -> throwError $ UnableResolveCachedImport name
+        Just exports -> do
+          imports <- filterM importFilter exports
+          modify $ \s -> s { stateModuleScope = bindAsLocals imports (stateModuleScope s) }
+          return []
     Nothing -> do
       dirs <- configDirectoryIncludes <$> gets stateConfig
       (filepath,contents) <- findImport dirs name
-      modify $ \s -> s { stateImported = (name,filepath) : imported }
-      importIt filepath contents
+      res <- importIt filepath contents
+      exportsCache <- gets stateExports
+                         -- TODO stateImported is already added in initialPass so it is not needed here
+                         -- but one Api test fails if it's removed.
+      modify $ \s -> s { stateImported     = (name,filepath) : imported
+                       , stateExportsCache = M.insert name exportsCache (stateExportsCache s)
+                       }
+      return res
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [Decl] -> Compile [JsStmt]

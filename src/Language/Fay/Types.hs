@@ -53,8 +53,10 @@ import           Control.Monad.Error    (Error, ErrorT, MonadError)
 import           Control.Monad.Identity (Identity)
 import           Control.Monad.State
 import           Data.Default
-import           Data.Set (Set)
-import qualified Data.Set as S
+import           Data.Map              (Map)
+import qualified Data.Map              as M
+import           Data.Set              (Set)
+import qualified Data.Set              as S
 import           Data.String
 import           Language.Haskell.Exts
 import           System.FilePath
@@ -112,18 +114,19 @@ addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 
 -- | State of the compiler.
 data CompileState = CompileState
-  { stateConfig      :: CompileConfig
-  , stateExports     :: [QName]
-  , stateModuleName  :: ModuleName
-  , stateFilePath    :: FilePath
-  , stateRecordTypes :: [(QName,[QName])] -- Map types to constructors
-  , stateRecords     :: [(QName,[QName])] -- Map constructors to fields
-  , stateFayToJs     :: [JsStmt]
-  , stateJsToFay     :: [JsStmt]
-  , stateImported    :: [(ModuleName,FilePath)]
-  , stateNameDepth   :: Integer
-  , stateLocalScope  :: Set Name
-  , stateModuleScope :: ModuleScope
+  { stateConfig       :: CompileConfig
+  , stateExports      :: [QName]
+  , stateExportsCache :: Map ModuleName [QName] -- Collects exports from modules
+  , stateModuleName   :: ModuleName
+  , stateFilePath     :: FilePath
+  , stateRecordTypes  :: [(QName,[QName])] -- Map types to constructors
+  , stateRecords      :: [(QName,[QName])] -- Map constructors to fields
+  , stateFayToJs      :: [JsStmt]
+  , stateJsToFay      :: [JsStmt]
+  , stateImported     :: [(ModuleName,FilePath)]
+  , stateNameDepth    :: Integer
+  , stateLocalScope   :: Set Name
+  , stateModuleScope  :: ModuleScope
 } deriving (Show)
 
 faySourceDir :: IO FilePath
@@ -137,6 +140,7 @@ defaultCompileState config = do
   return $ CompileState {
     stateConfig = addConfigDirectoryInclude srcdir config
   , stateExports = []
+  , stateExportsCache = M.empty
   , stateModuleName = ModuleName "Main"
   , stateRecordTypes = []
   , stateRecords = []
@@ -220,6 +224,7 @@ data CompileError
   | FfiFormatInvalidJavaScript SrcLoc String String
   | UnableResolveUnqualified Name
   | UnableResolveQualified QName
+  | UnableResolveCachedImport ModuleName
   deriving (Show)
 instance Error CompileError
 

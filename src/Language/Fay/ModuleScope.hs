@@ -8,6 +8,7 @@ module Language.Fay.ModuleScope
   ,bindAsLocals
   ,findTopLevelNames
   ,resolveName
+  ,mergeModuleScopes
   ,moduleLocals)
   where
 
@@ -33,6 +34,9 @@ newtype ModuleScope = ModuleScope (Map QName QName)
 instance Default ModuleScope where
   def = ModuleScope M.empty
 
+
+mergeModuleScopes :: ModuleScope -> ModuleScope -> ModuleScope
+mergeModuleScopes (ModuleScope a) (ModuleScope b) = ModuleScope $ a `M.union` b
 
 -- | Find the path of a locally bound name
 -- Returns special values in the "Fay$" module for primOps

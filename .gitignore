@@ -2,6 +2,7 @@ cabal-dev
 dist/
 examples/*.js
 tests/*.js
+tests/*/*.js
 TAGS
 docs/index.html
 docs/home.html

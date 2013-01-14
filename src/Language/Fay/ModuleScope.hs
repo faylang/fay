@@ -1,5 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Handles variable bindings on the module level and also keeps track of
+-- primitive operations that we want to treat specially.
+
 module Language.Fay.ModuleScope
   (ModuleScope
   ,addExports
@@ -14,17 +17,60 @@ import           Data.Default
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Language.Haskell.Exts hiding (name, binds)
-import           Prelude hiding (mod, lookup)
+import           Prelude hiding (mod)
 
 
+-- | Maps names bound in the module to their real names
+-- The keys are unqualified for locals and imports,
+-- the values are always fully qualified
+-- Example contents:
+--   [ (UnQUal     "main"      , Qual "Main"     "main")
+--   , (UnQual     "take"      , Qual "Prelude"  "take")
+--   , (  Qual "M" "insertWith", Qual "Data.Map" "insertWith") ]
 newtype ModuleScope = ModuleScope (Map QName QName)
   deriving Show
 
 instance Default ModuleScope where
   def = ModuleScope M.empty
 
-lookup :: QName -> ModuleScope -> Maybe QName
-lookup q (ModuleScope binds) = M.lookup q binds
+
+-- | Find the path of a locally bound name
+-- Returns special values in the "Fay$" module for primOps
+resolveName :: QName -> ModuleScope -> Maybe QName
+resolveName q (ModuleScope binds) = case M.lookup q binds of -- lookup in the module environment.
+
+  -- something pointing to prelude, is it a primop?
+  Just q'@(Qual (ModuleName "Prelude") n) -> case M.lookup n envPrimOpsMap of
+    Just x  -> Just x  -- A primop which looks like it's imported from prelude.
+    Nothing -> Just q' -- Regular prelude import, leave it as is.
+
+  -- No matches in the current environment, so it may be a primop if it's unqualified.
+  -- If Nothing is returned from either of the branches it means that there is
+  -- no primop and nothing in env scope so GHC would have given an error.
+  Nothing -> case q of
+    UnQual n -> M.lookup n envPrimOpsMap
+    _        -> Nothing
+  j -> j -- Non-prelude import that was found in the env
+
+-- | Bind a list of names into the local scope
+-- Right now all bindings are made unqualified
+addExports :: [QName] -> ModuleScope -> ModuleScope
+addExports qs (ModuleScope binds) =
+  -- This needs to be changed to not use unqual to support qualified imports.
+  ModuleScope $ M.fromList (map (unqual &&& id) qs) `M.union` binds
+    where unqual (Qual _ n) = (UnQual n)
+          unqual u@UnQual{} = u
+          unqual Special{}  = error "fay: ModuleScope.addExports: Special"
+
+-- | Find all names that are bound locally in this module, which excludes imports.
+moduleLocals :: ModuleName -> ModuleScope -> [QName]
+moduleLocals mod (ModuleScope binds) = filter isLocal . M.elems $ binds
+  where
+    isLocal (Qual m _) = mod == m
+    isLocal _ = False
+
+--------------------------------------------------------------------------------
+-- Primitive Operations
 
 -- | The built-in operations that aren't actually compiled from
 -- anywhere, they come from runtime.js.
@@ -58,11 +104,14 @@ envPrimOpsMap = M.fromList
   , (Symbol "||",    (Qual (ModuleName "Fay$") (Ident "or")))
   ]
 
+--------------------------------------------------------------------------------
+-- AST
+
 type ModuleScopeSt = State (ModuleName, ModuleScope) ()
 
+-- | Get module level names from a haskell module AST.
 findTopLevelNames :: ModuleName -> [Decl] -> ModuleScope
 findTopLevelNames mod decls = snd $ execState (mapM_ d_decl decls) (mod,def)
-
 
 bindName :: Name -> ModuleScopeSt
 bindName k = modify $ \st -> case st of
@@ -87,35 +136,3 @@ d_qualCon (QualConDecl _ _ _ cd) = case cd of
   ConDecl n _        -> bindName n
   InfixConDecl _ n _ -> bindName n
   RecDecl n ns       -> bindName n >> mapM_ bindName (concatMap fst ns)
-
-
-resolveName :: QName -> ModuleScope -> Maybe QName
-resolveName q env = case lookup q env of -- lookup in the module environment.
-
-  -- something pointing to prelude, is it a primop?
-  Just q'@(Qual (ModuleName "Prelude") n) -> case M.lookup n envPrimOpsMap of
-    Just x  -> Just x  -- A primop which looks like it's imported from prelude.
-    Nothing -> Just q' -- Regular prelude import, leave it as is.
-
-  -- No matches in the current environment, so it may be a primop if it's unqualified.
-  -- If Nothing is returned from either of the branches it means that there is
-  -- no primop and nothing in env scope so GHC would have given an error.
-  Nothing -> case q of
-    UnQual n -> M.lookup n envPrimOpsMap
-    _        -> Nothing
-  j -> j -- Non-prelude import that was found in the env
-
-
-addExports :: [QName] -> ModuleScope -> ModuleScope
-addExports qs (ModuleScope binds) =
-  -- this needs to be changed to not use unqual to support qualified imports
-  ModuleScope $ M.fromList (map (unqual &&& id) qs) `M.union` binds
-    where unqual (Qual _ n) = (UnQual n)
-          unqual u@UnQual{} = u
-          unqual Special{} = error "LOL"
-
-moduleLocals :: ModuleName -> ModuleScope -> [QName]
-moduleLocals mod (ModuleScope binds) = filter isLocal . M.elems $ binds
-  where
-    isLocal (Qual m _) = mod == m
-    isLocal _ = False

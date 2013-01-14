@@ -5,7 +5,7 @@
 
 module Language.Fay.ModuleScope
   (ModuleScope
-  ,addExports
+  ,bindAsLocals
   ,findTopLevelNames
   ,resolveName
   ,moduleLocals)
@@ -54,13 +54,13 @@ resolveName q (ModuleScope binds) = case M.lookup q binds of -- lookup in the mo
 
 -- | Bind a list of names into the local scope
 -- Right now all bindings are made unqualified
-addExports :: [QName] -> ModuleScope -> ModuleScope
-addExports qs (ModuleScope binds) =
+bindAsLocals :: [QName] -> ModuleScope -> ModuleScope
+bindAsLocals qs (ModuleScope binds) =
   -- This needs to be changed to not use unqual to support qualified imports.
   ModuleScope $ M.fromList (map (unqual &&& id) qs) `M.union` binds
     where unqual (Qual _ n) = (UnQual n)
           unqual u@UnQual{} = u
-          unqual Special{}  = error "fay: ModuleScope.addExports: Special"
+          unqual Special{}  = error "fay: ModuleScope.bindAsLocals: Special"
 
 -- | Find all names that are bound locally in this module, which excludes imports.
 moduleLocals :: ModuleName -> ModuleScope -> [QName]

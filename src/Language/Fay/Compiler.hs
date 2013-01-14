@@ -27,7 +27,7 @@ module Language.Fay.Compiler
 import           Language.Fay.Compiler.FFI
 import           Language.Fay.Compiler.Misc
 import           Language.Fay.Compiler.Optimizer
-import           Language.Fay.ModuleScope        (addExports, findTopLevelNames, moduleLocals)
+import           Language.Fay.ModuleScope        (bindAsLocals, findTopLevelNames, moduleLocals)
 import           Language.Fay.Print              (printJSString)
 import qualified Language.Fay.Stdlib             as Stdlib
 import           Language.Fay.Types
@@ -363,18 +363,18 @@ imported is qn = anyM (matching qn) is
 
 
 compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile [JsStmt]
-compileImportWithFilter name filter =
+compileImportWithFilter name importFilter =
       unlessImported name $ \filepath contents -> do
         state <- gets id
         result <- liftIO $ compileToAst filepath state compileModule contents
         case result of
           Right (stmts,state) -> do
-            exports <- filterM filter $ stateExports state
+            imports <- filterM importFilter $ stateExports state
             modify $ \s -> s { stateFayToJs     = stateFayToJs state
                              , stateJsToFay     = stateJsToFay state
                              , stateImported    = stateImported state
                              , stateLocalScope  = S.empty
-                             , stateModuleScope = addExports exports (stateModuleScope s)
+                             , stateModuleScope = bindAsLocals imports (stateModuleScope s)
                              }
             return stmts
           Left err -> throwError err

@@ -114,7 +114,6 @@ addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 data CompileState = CompileState
   { stateConfig      :: CompileConfig
   , stateExports     :: [QName]
-  , stateExportAll   :: Bool
   , stateModuleName  :: ModuleName
   , stateFilePath    :: FilePath
   , stateRecordTypes :: [(QName,[QName])] -- Map types to constructors
@@ -138,7 +137,6 @@ defaultCompileState config = do
   return $ CompileState {
     stateConfig = addConfigDirectoryInclude srcdir config
   , stateExports = []
-  , stateExportAll = True
   , stateModuleName = ModuleName "Main"
   , stateRecordTypes = []
   , stateRecords = []

@@ -78,7 +78,6 @@ qualify name = do
 bindToplevel :: SrcLoc -> Bool -> Name -> JsExp -> Compile JsStmt
 bindToplevel srcloc toplevel name expr = do
   qname <- (if toplevel then qualify else return . UnQual) name
-  -- If exportAll is set this declaration has not been added to stateExports yet.
   return (JsMappedVar srcloc (JsNameVar qname) expr)
 
 -- | Create a temporary environment and discard it after the given computation.

@@ -289,7 +289,6 @@ compileModule :: Module -> Compile [JsStmt]
 compileModule (Module _ modulename _pragmas Nothing exports imports decls) =
   withModuleScope $ do
     modify $ \s -> s { stateModuleName = modulename
-                     , stateExportAll = isNothing exports
                      , stateExports = []
                      , stateModuleScope = findTopLevelNames modulename decls
                      }

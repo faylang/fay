@@ -52,6 +52,7 @@ import           Control.Applicative
 import           Control.Monad.Error    (Error, ErrorT, MonadError)
 import           Control.Monad.Identity (Identity)
 import           Control.Monad.State
+import           Control.Monad.RWS
 import           Data.Default
 import           Data.Map              (Map)
 import qualified Data.Map              as M
@@ -154,7 +155,7 @@ defaultCompileState config = do
   }
 
 -- | Compile monad.
-newtype Compile a = Compile { unCompile :: StateT CompileState (ErrorT CompileError IO) a }
+newtype Compile a = Compile { unCompile :: RWST () () CompileState (ErrorT CompileError IO) a }
   deriving (MonadState CompileState
            ,MonadError CompileError
            ,MonadIO

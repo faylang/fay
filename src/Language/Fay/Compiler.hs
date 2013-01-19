@@ -36,6 +36,7 @@ import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.IO
 import           Control.Monad.State
+import           Control.Monad.RWS
 import           Data.Default                    (def)
 import           Data.List
 import           Data.List.Extra
@@ -53,7 +54,10 @@ import           System.Process.Extra
 
 -- | Run the compiler.
 runCompile :: CompileState -> Compile a -> IO (Either CompileError (a,CompileState))
-runCompile state m = runErrorT (runStateT (unCompile m) state) where
+runCompile state m = fmap (fmap dropWriter)
+                          (runErrorT (runRWST (unCompile m) () state))
+
+  where dropWriter (a,s,_w) = (a,s)
 
 -- | Compile a Haskell source string to a JavaScript source string.
 compileViaStr :: (Show from,Show to,CompilesTo from to)

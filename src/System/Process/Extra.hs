@@ -10,5 +10,6 @@ readAllFromProcess :: FilePath -> [String] -> String -> IO (Either String (Strin
 readAllFromProcess program flags input = do
   (code,out,err) <- readProcessWithExitCode program flags input
   return $ case code of
-    ExitFailure _ -> Left err
-    ExitSuccess   -> Right (err, out)
+    ExitFailure 127 -> Left ("cannot find executable " ++ program)
+    ExitFailure _   -> Left err
+    ExitSuccess     -> Right (err, out)

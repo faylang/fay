@@ -112,24 +112,25 @@ bindVar name = do
 -- | Emit exported names.
 emitExport :: ExportSpec -> Compile ()
 emitExport spec = case spec of
-  EVar (UnQual name) -> emitVar (UnQual name)
-  EVar name@Qual{} -> modify $ \s -> s { stateExports = name : stateExports s }
+  EVar (UnQual n) -> emitVar n
+  EVar q@Qual{} -> modify $ \s -> s { stateExports = q : stateExports s }
   EThingAll (UnQual name) -> do
-    emitVar (UnQual name)
+    emitVar name
     r <- lookup (UnQual name) <$> gets stateRecords
-    maybe (return ()) (mapM_ emitVar) r
+    maybe (return ()) (mapM_ (emitVar . unQName)) r
   EThingWith (UnQual name) ns -> do
-    emitVar (UnQual name)
+    emitVar name
     mapM_ emitCName ns
   EAbs _ -> return () -- Type only, skip
-  _ -> do
-    name <- gets stateModuleName
-    unless (name == "Language.Fay.Stdlib") $
-      throwError (UnsupportedExportSpec spec)
+  EModuleContents mod ->
+    mapM_ (emitExport . EVar) =<< ModuleScope.moduleLocals mod <$> gets stateModuleScope
+  e -> throwError $ UnsupportedExportSpec e
  where
-   emitVar n = resolveName n >>= emitExport . EVar
-   emitCName (VarName n) = emitVar (UnQual n)
-   emitCName (ConName n) = emitVar (UnQual n)
+   emitVar = return . UnQual >=> resolveName >=> emitExport . EVar
+   emitCName (VarName n) = emitVar n
+   emitCName (ConName n) = emitVar n
+   unQName (UnQual u) = u
+   unQName _ = error "unQName Qual or Special -- should never happen"
 
 -- | Force an expression in a thunk.
 force :: JsExp -> JsExp

@@ -14,6 +14,7 @@ import           Text.ParserCombinators.ReadP    (readP_to_S)
 import           Data.Version                    (parseVersion)
 import           Control.Applicative
 import           Control.Monad.Error
+import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.List
 import qualified Data.Set                     as S
@@ -157,7 +158,7 @@ parseResult die ok result = case result of
 
 -- | Get a config option.
 config :: (CompileConfig -> a) -> Compile a
-config f = gets (f . stateConfig)
+config f = asks (f . readerConfig)
 
 -- | Optimize pattern matching conditions by merging conditions in common.
 optimizePatConditions :: [[JsStmt]] -> [[JsStmt]]
@@ -212,7 +213,7 @@ withScopedTmpName withName = do
 warn :: String -> Compile ()
 warn "" = return ()
 warn w = do
-  shouldWarn <- configWarn <$> gets stateConfig
+  shouldWarn <- config configWarn
   when shouldWarn . liftIO . hPutStrLn stderr $ "Warning: " ++ w
 
 -- | Pretty print a source location.

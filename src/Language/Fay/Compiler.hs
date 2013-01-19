@@ -53,9 +53,12 @@ import           System.Process.Extra
 -- Top level entry points
 
 -- | Run the compiler.
-runCompile :: CompileState -> Compile a -> IO (Either CompileError (a,CompileState))
-runCompile state m = fmap (fmap dropWriter)
-                          (runErrorT (runRWST (unCompile m) () state))
+runCompile :: CompileReader -> CompileState
+           -> Compile a
+           -> IO (Either CompileError (a,CompileState))
+runCompile reader state m =
+  fmap (fmap dropWriter)
+       (runErrorT (runRWST (unCompile m) reader state))
 
   where dropWriter (a,s,_w) = (a,s)
 
@@ -67,8 +70,10 @@ compileViaStr :: (Show from,Show to,CompilesTo from to)
               -> String
               -> IO (Either CompileError (PrintState,CompileState))
 compileViaStr filepath config with from = do
-  cs <- defaultCompileState config
-  runCompile (cs { stateFilePath = filepath })
+  cs <- defaultCompileState
+  rs <- defaultCompileReader config
+  runCompile rs
+             (cs { stateFilePath = filepath })
              (parseResult (throwError . uncurry ParseError)
                           (fmap (\x -> execState (runPrinter (printJS x)) printConfig) . with)
                           (parseFay filepath from))
@@ -78,12 +83,14 @@ compileViaStr filepath config with from = do
 -- | Compile a Haskell source string to a JavaScript source string.
 compileToAst :: (Show from,Show to,CompilesTo from to)
               => FilePath
+              -> CompileReader
               -> CompileState
               -> (from -> Compile to)
               -> String
               -> IO (Either CompileError (to,CompileState))
-compileToAst filepath state with from =
-  runCompile state
+compileToAst filepath reader state with from =
+  runCompile reader
+             state
              (parseResult (throwError . uncurry ParseError)
                           with
                           (parseFay filepath from))
@@ -156,18 +163,17 @@ compileForDocs mod = do
 -- | Compile the top-level Fay module.
 compileToplevelModule :: Module -> Compile [JsStmt]
 compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
-  cfg <- gets stateConfig
-
+  cfg <- config id
   -- Remove the fay source dir from the includes, -package fay is already supplied.
   -- This will prevent errors on FFI instance declarations.
-  faydir <- liftIO $ faySourceDir
+  faydir <- io faySourceDir
   let includeDirs = filter (/= faydir) (configDirectoryIncludes cfg)
 
   when (configTypecheck cfg) $
     typecheck (configPackageConf cfg) includeDirs [] (configWall cfg) $
       fromMaybe modulename $ configFilePath cfg
   initialPass mod
-  cs <- liftIO $ defaultCompileState def
+  cs <- io defaultCompileState
   modify $ \s -> s { stateImported = stateImported cs }
   stmts <- compileModule mod
   fay2js <- do syms <- gets stateFayToJs
@@ -192,8 +198,9 @@ initialPass_import (ImportDecl _ _ _ _ Just{} _ _) = do
 --  warn $ "import with package syntax ignored: " ++ prettyPrint i
 initialPass_import (ImportDecl _ name False _ Nothing Nothing _) = do
   void $ initialPass_unlessImported name $ \filepath contents -> do
-    state <- gets id
-    result <- liftIO $ initialPass_records filepath state initialPass contents
+    state <- get
+    reader <- ask
+    result <- liftIO $ initialPass_records filepath reader state initialPass contents
     case result of
       Right ((),st) -> do
         -- Merges the state gotten from passing through an imported
@@ -216,19 +223,21 @@ initialPass_unlessImported name importIt = do
   case lookup name imported of
     Just _ -> return ()
     Nothing -> do
-      dirs <- configDirectoryIncludes <$> gets stateConfig
+      dirs <- configDirectoryIncludes <$> config id
       (filepath,contents) <- findImport dirs name
       modify $ \s -> s { stateImported = (name,filepath) : imported }
       importIt filepath contents
 
 initialPass_records :: (Show from,Parseable from)
                     => FilePath
+                    -> CompileReader
                     -> CompileState
                     -> (from -> Compile ())
                     -> String
                     -> IO (Either CompileError ((),CompileState))
-initialPass_records filepath compileState with from =
-  runCompile compileState
+initialPass_records filepath compileReader compileState with from =
+  runCompile compileReader
+             compileState
              (parseResult (throwError . uncurry ParseError)
                           with
                           (parseFay filepath from))
@@ -384,8 +393,9 @@ imported is qn = anyM (matching qn) is
 compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile [JsStmt]
 compileImportWithFilter name importFilter =
   unlessImported name importFilter $ \filepath contents -> do
-    state <- gets id
-    result <- liftIO $ compileToAst filepath state compileModule contents
+    state <- get
+    reader <- ask
+    result <- liftIO $ compileToAst filepath reader state compileModule contents
     case result of
       Right (stmts,state) -> do
         imports <- filterM importFilter $ stateExports state
@@ -415,7 +425,7 @@ unlessImported name importFilter importIt = do
           modify $ \s -> s { stateModuleScope = bindAsLocals imports (stateModuleScope s) }
           return []
     Nothing -> do
-      dirs <- configDirectoryIncludes <$> gets stateConfig
+      dirs <- configDirectoryIncludes <$> config id
       (filepath,contents) <- findImport dirs name
       res <- importIt filepath contents
       exportsCache <- gets stateExports
@@ -1093,7 +1103,7 @@ compileEnumFromTo i i' = do
   f <- compileExp i
   t <- compileExp i'
   name <- resolveName "enumFromTo"
-  cfg <- gets stateConfig
+  cfg <- config id
   return $ case optEnumFromTo cfg f t of
     Just s -> s
     _ -> JsApp (JsApp (JsName (JsNameVar name)) [f]) [t]
@@ -1129,7 +1139,7 @@ compileEnumFromThenTo a b z = do
   th <- compileExp b
   to <- compileExp z
   name <- resolveName "enumFromThenTo"
-  cfg <- gets stateConfig
+  cfg <- config id
   return $ case optEnumFromThenTo cfg fr th to of
     Just s -> s
     _ -> JsApp (JsApp (JsApp (JsName (JsNameVar name)) [fr]) [th]) [to]

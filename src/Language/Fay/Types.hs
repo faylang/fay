@@ -17,6 +17,7 @@ module Language.Fay.Types
   ,CompilesTo(..)
   ,Printable(..)
   ,Fay
+  ,CompileReader(..)
   ,CompileConfig(
      configFlattenApps
     ,configOptimize
@@ -40,6 +41,7 @@ module Language.Fay.Types
   ,addConfigPackages
   ,CompileState(..)
   ,defaultCompileState
+  ,defaultCompileReader
   ,faySourceDir
   ,FundamentalType(..)
   ,PrintState(..)
@@ -115,8 +117,7 @@ addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 
 -- | State of the compiler.
 data CompileState = CompileState
-  { stateConfig       :: CompileConfig
-  , stateExports      :: [QName]
+  { stateExports      :: [QName]
   , stateExportsCache :: Map ModuleName [QName] -- Collects exports from modules
   , stateModuleName   :: ModuleName
   , stateFilePath     :: FilePath
@@ -130,17 +131,27 @@ data CompileState = CompileState
   , stateModuleScope  :: ModuleScope
 } deriving (Show)
 
+data CompileReader = CompileReader
+  { readerConfig :: CompileConfig
+  } deriving (Show)
+
 faySourceDir :: IO FilePath
 faySourceDir = fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
 
--- | The default compiler state.
-defaultCompileState :: CompileConfig -> IO CompileState
-defaultCompileState config = do
+-- | The default compiler reader value.
+defaultCompileReader :: CompileConfig -> IO CompileReader
+defaultCompileReader config = do
   srcdir <- faySourceDir
+  return CompileReader
+    { readerConfig = addConfigDirectoryInclude srcdir config
+    }
+
+-- | The default compiler state.
+defaultCompileState :: IO CompileState
+defaultCompileState = do
   types <- getDataFileName "src/Language/Fay/Types.hs"
   return $ CompileState {
-    stateConfig = addConfigDirectoryInclude srcdir config
-  , stateExports = []
+    stateExports = []
   , stateExportsCache = M.empty
   , stateModuleName = ModuleName "Main"
   , stateRecordTypes = []
@@ -155,9 +166,15 @@ defaultCompileState config = do
   }
 
 -- | Compile monad.
-newtype Compile a = Compile { unCompile :: RWST () () CompileState (ErrorT CompileError IO) a }
+newtype Compile a = Compile
+  { unCompile :: RWST CompileReader
+                      ()
+                      CompileState (ErrorT CompileError IO)
+                                   a
+  }
   deriving (MonadState CompileState
            ,MonadError CompileError
+           ,MonadReader CompileReader
            ,MonadIO
            ,Monad
            ,Functor

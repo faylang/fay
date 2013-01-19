@@ -42,7 +42,7 @@ compileFFI srcloc name formatstr sig = do
   case JS.parse JS.parseExpression (prettyPrint name) (printJSString (wrapReturn inner)) of
     Left err -> throwError (FfiFormatInvalidJavaScript srcloc inner (show err))
     Right exp  -> do
-      config' <- gets stateConfig
+      config' <- config id
       when (configGClosure config') $ warnDotUses srcloc inner exp
       fmap return (bindToplevel srcloc True name (body inner))
 

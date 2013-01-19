@@ -12,7 +12,8 @@ module Language.Fay
   ,compileFromTo
   ,compileFromToAndGenerateHtml
   ,toJsName
-  ,showCompileError)
+  ,showCompileError
+  ,getRuntime)
    where
 
 import           Language.Fay.Compiler        (compileToplevelModule,
@@ -74,7 +75,7 @@ compileFile config filein = do
 
 compileFileWithState :: CompileConfig -> FilePath -> IO (Either CompileError (String,CompileState))
 compileFileWithState config filein = do
-  runtime <- getDataFileName "js/runtime.js"
+  runtime <- getRuntime
   hscode <- readFile filein
   raw <- readFile runtime
   config' <- resolvePackages config
@@ -94,18 +95,23 @@ compileToModule filepath config raw with hscode = do
                                  (stateExports state)
                                  (stateModuleName state), state)
 
-  where generate jscode exports (ModuleName (clean -> modulename)) = unlines
+  where generate | configNaked config = generateNaked
+                 | otherwise          = generateWrapped
+        generateNaked jscode _exports _module = unlines $
+          [if configExportRuntime config then raw else ""
+          ,jscode]
+        generateWrapped jscode exports (ModuleName (clean -> modulename)) = unlines $ filter (not . null) $
           ["/** @constructor"
           ,"*/"
           ,"var " ++ modulename ++ " = function(){"
-          ,raw
+          ,if configExportRuntime config then raw else ""
           ,jscode
           ,"// Exports"
           ,unlines (map printExport exports)
           ,"// Built-ins"
-          ,"this._ = _;"
+          ,"this._ = Fay$$_;"
           ,if configExportBuiltins config
-              then unlines ["this.$           = $;"
+              then unlines ["this.$           = Fay$$$;"
                            ,"this.$fayToJs    = Fay$$fayToJs;"
                            ,"this.$jsToFay    = Fay$$jsToFay;"
                            ]
@@ -173,3 +179,7 @@ showCompileError e = case e of
   UnableResolveUnqualified name -> "unable to resolve unqualified name " ++ prettyPrint name
   UnableResolveQualified qname -> "unable to resolve qualified names " ++ prettyPrint qname
   UnableResolveCachedImport name -> "unable to resolve cached import " ++ prettyPrint name
+
+-- | Get the JS runtime source.
+getRuntime :: IO String
+getRuntime = getDataFileName "js/runtime.js"

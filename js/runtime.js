@@ -1,35 +1,32 @@
-var True = true;
-var False = false;
-
 /*******************************************************************************
  * Thunks.
  */
 
 // Force a thunk (if it is a thunk) until WHNF.
-function _(thunkish,nocache){
-  while (thunkish instanceof $) {
+function Fay$$_(thunkish,nocache){
+  while (thunkish instanceof Fay$$$) {
     thunkish = thunkish.force(nocache);
   }
   return thunkish;
 }
 
 // Apply a function to arguments (see method2 in Fay.hs).
-function __(){
+function Fay$$__(){
   var f = arguments[0];
   for (var i = 1, len = arguments.length; i < len; i++) {
-    f = (f instanceof $? _(f) : f)(arguments[i]);
+    f = (f instanceof Fay$$$? Fay$$_(f) : f)(arguments[i]);
   }
   return f;
 }
 
 // Thunk object.
-function $(value){
+function Fay$$$(value){
   this.forced = false;
   this.value = value;
 }
 
 // Force the thunk.
-$.prototype.force = function(nocache) {
+Fay$$$.prototype.force = function(nocache) {
   return nocache ?
     this.value() :
     (this.forced ?
@@ -40,13 +37,13 @@ $.prototype.force = function(nocache) {
 
 function Fay$$seq(x) {
   return function(y) {
-    _(x,false);
+    Fay$$_(x,false);
     return y;
   }
 }
 
 function Fay$$seq$36$uncurried(x,y) {
-  _(x,false);
+  Fay$$_(x,false);
   return y;
 }
 
@@ -78,9 +75,9 @@ function Fay$$then$36$uncurried(a,b){
 // This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
 function Fay$$bind(m){
   return function(f){
-    return new $(function(){
-      var monad = _(m,true);
-      return _(f)(monad.value);
+    return new Fay$$$(function(){
+      var monad = Fay$$_(m,true);
+      return Fay$$_(f)(monad.value);
     });
   };
 }
@@ -88,9 +85,9 @@ function Fay$$bind(m){
 // >>=
 // This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
 function Fay$$bind$36$uncurried(m,f){
-    return new $(function(){
-      var monad = _(m,true);
-      return _(f)(monad.value);
+    return new Fay$$$(function(){
+      var monad = Fay$$_(m,true);
+      return Fay$$_(f)(monad.value);
     });
 }
 
@@ -102,8 +99,8 @@ function Fay$$$_return(a){
 // Allow the programmer to access thunk forcing directly.
 function Fay$$force(thunk){
   return function(type){
-    return new $(function(){
-      _(thunk,type);
+    return new Fay$$$(function(){
+      Fay$$_(thunk,type);
       return new Fay$$Monad(Fay$$unit);
     })
   }
@@ -136,7 +133,7 @@ function Fay$$fayToJs(type,fayObj){
       // A nullary monadic action. Should become a nullary JS function.
       // Fay () -> function(){ return ... }
       jsObj = function(){
-        return Fay$$fayToJs(args[0],_(fayObj,true).value);
+        return Fay$$fayToJs(args[0],Fay$$_(fayObj,true).value);
       };
       break;
     }
@@ -149,12 +146,12 @@ function Fay$$fayToJs(type,fayObj){
         // If some arguments.
         if (len > 1) {
           // Apply to all the arguments.
-          fayFunc = _(fayFunc,true);
+          fayFunc = Fay$$_(fayFunc,true);
           // TODO: Perhaps we should throw an error when JS
           // passes more arguments than Haskell accepts.
           for (var i = 0, len = len; i < len - 1 && fayFunc instanceof Function; i++) {
             // Unserialize the JS values to Fay for the Fay callback.
-            fayFunc = _(fayFunc(Fay$$jsToFay(args[i],arguments[i])),true);
+            fayFunc = Fay$$_(fayFunc(Fay$$jsToFay(args[i],arguments[i])),true);
           }
           // Finally, serialize the Fay return value back to JS.
           var return_base = return_type[0];
@@ -176,10 +173,10 @@ function Fay$$fayToJs(type,fayObj){
     case "string": {
       // Serialize Fay string to JavaScript string.
       var str = "";
-      fayObj = _(fayObj);
+      fayObj = Fay$$_(fayObj);
       while(fayObj instanceof Fay$$Cons) {
         str += fayObj.car;
-        fayObj = _(fayObj.cdr);
+        fayObj = Fay$$_(fayObj.cdr);
       }
       jsObj = str;
       break;
@@ -187,10 +184,10 @@ function Fay$$fayToJs(type,fayObj){
     case "list": {
       // Serialize Fay list to JavaScript array.
       var arr = [];
-      fayObj = _(fayObj);
+      fayObj = Fay$$_(fayObj);
       while(fayObj instanceof Fay$$Cons) {
         arr.push(Fay$$fayToJs(args[0],fayObj.car));
-        fayObj = _(fayObj.cdr);
+        fayObj = Fay$$_(fayObj.cdr);
       }
       jsObj = arr;
       break;
@@ -198,17 +195,17 @@ function Fay$$fayToJs(type,fayObj){
     case "tuple": {
       // Serialize Fay tuple to JavaScript array.
       var arr = [];
-      fayObj = _(fayObj);
+      fayObj = Fay$$_(fayObj);
       var i = 0;
       while(fayObj instanceof Fay$$Cons) {
         arr.push(Fay$$fayToJs(args[i++],fayObj.car));
-        fayObj = _(fayObj.cdr);
+        fayObj = Fay$$_(fayObj.cdr);
       }
       jsObj = arr;
       break;
     }
     case "defined": {
-      fayObj = _(fayObj);
+      fayObj = Fay$$_(fayObj);
       if (fayObj instanceof $_Language$Fay$FFI$Undefined) {
         jsObj = undefined;
       } else {
@@ -217,7 +214,7 @@ function Fay$$fayToJs(type,fayObj){
       break;
     }
     case "nullable": {
-      fayObj = _(fayObj);
+      fayObj = Fay$$_(fayObj);
       if (fayObj instanceof $_Language$Fay$FFI$Null) {
         jsObj = null;
       } else {
@@ -227,25 +224,25 @@ function Fay$$fayToJs(type,fayObj){
     }
     case "double": {
       // Serialize double, just force the argument. Doubles are unboxed.
-      jsObj = _(fayObj);
+      jsObj = Fay$$_(fayObj);
       break;
     }
     case "int": {
       // Serialize int, just force the argument. Ints are unboxed.
-      jsObj = _(fayObj);
+      jsObj = Fay$$_(fayObj);
       break;
     }
     case "bool": {
       // Bools are unboxed.
-      jsObj = _(fayObj);
+      jsObj = Fay$$_(fayObj);
       break;
     }
     case "unknown":
       return fayObj;
     case "automatic":
     case "user": {
-      if(fayObj instanceof $)
-        fayObj = _(fayObj);
+      if(fayObj instanceof Fay$$$)
+        fayObj = Fay$$_(fayObj);
       jsObj = Fay$$fayToJsUserDefined(type,fayObj);
       break;
     }
@@ -376,7 +373,7 @@ function Fay$$cons(x){
 // `list' cannot be null and `index' cannot be out of bounds.
 function Fay$$index(index,list){
   for(var i = 0; i < index; i++) {
-    list = _(list.cdr);
+    list = Fay$$_(list.cdr);
   }
   return list.car;
 }
@@ -385,7 +382,7 @@ function Fay$$index(index,list){
 // `list' is already forced by the time it's passed to this function.
 function Fay$$listLen(list,max){
   for(var i = 0; list !== null && i < max + 1; i++) {
-    list = _(list.cdr);
+    list = Fay$$_(list.cdr);
   }
   return i == max;
 }
@@ -397,16 +394,16 @@ function Fay$$listLen(list,max){
 // Built-in *.
 function Fay$$mult(x){
   return function(y){
-    return new $(function(){
-      return _(x) * _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) * Fay$$_(y);
     });
   };
 }
 
 function Fay$$mult$36$uncurried(x,y){
 
-    return new $(function(){
-      return _(x) * _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) * Fay$$_(y);
     });
 
 }
@@ -414,8 +411,8 @@ function Fay$$mult$36$uncurried(x,y){
 // Built-in +.
 function Fay$$add(x){
   return function(y){
-    return new $(function(){
-      return _(x) + _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) + Fay$$_(y);
     });
   };
 }
@@ -423,8 +420,8 @@ function Fay$$add(x){
 // Built-in +.
 function Fay$$add$36$uncurried(x,y){
 
-    return new $(function(){
-      return _(x) + _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) + Fay$$_(y);
     });
 
 }
@@ -432,16 +429,16 @@ function Fay$$add$36$uncurried(x,y){
 // Built-in -.
 function Fay$$sub(x){
   return function(y){
-    return new $(function(){
-      return _(x) - _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) - Fay$$_(y);
     });
   };
 }
 // Built-in -.
 function Fay$$sub$36$uncurried(x,y){
 
-    return new $(function(){
-      return _(x) - _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) - Fay$$_(y);
     });
 
 }
@@ -449,8 +446,8 @@ function Fay$$sub$36$uncurried(x,y){
 // Built-in /.
 function Fay$$div(x){
   return function(y){
-    return new $(function(){
-      return _(x) / _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) / Fay$$_(y);
     });
   };
 }
@@ -458,8 +455,8 @@ function Fay$$div(x){
 // Built-in /.
 function Fay$$div$36$uncurried(x,y){
 
-    return new $(function(){
-      return _(x) / _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) / Fay$$_(y);
     });
 
 }
@@ -471,8 +468,8 @@ function Fay$$div$36$uncurried(x,y){
 // Are two values equal?
 function Fay$$equal(lit1, lit2) {
   // Simple case
-  lit1 = _(lit1);
-  lit2 = _(lit2);
+  lit1 = Fay$$_(lit1);
+  lit2 = Fay$$_(lit2);
   if (lit1 === lit2) {
     return true;
   }
@@ -487,7 +484,7 @@ function Fay$$equal(lit1, lit2) {
     do {
       if (!Fay$$equal(lit1.car,lit2.car))
         return false;
-      lit1 = _(lit1.cdr), lit2 = _(lit2.cdr);
+      lit1 = Fay$$_(lit1.cdr), lit2 = Fay$$_(lit2.cdr);
       if (lit1 === null || lit2 === null)
         return lit1 === lit2;
     } while (true);
@@ -507,7 +504,7 @@ function Fay$$equal(lit1, lit2) {
 // Built-in ==.
 function Fay$$eq(x){
   return function(y){
-    return new $(function(){
+    return new Fay$$$(function(){
       return Fay$$equal(x,y);
     });
   };
@@ -515,7 +512,7 @@ function Fay$$eq(x){
 
 function Fay$$eq$36$uncurried(x,y){
 
-    return new $(function(){
+    return new Fay$$$(function(){
       return Fay$$equal(x,y);
     });
 
@@ -524,7 +521,7 @@ function Fay$$eq$36$uncurried(x,y){
 // Built-in /=.
 function Fay$$neq(x){
   return function(y){
-    return new $(function(){
+    return new Fay$$$(function(){
       return !(Fay$$equal(x,y));
     });
   };
@@ -533,7 +530,7 @@ function Fay$$neq(x){
 // Built-in /=.
 function Fay$$neq$36$uncurried(x,y){
 
-    return new $(function(){
+    return new Fay$$$(function(){
       return !(Fay$$equal(x,y));
     });
 
@@ -542,8 +539,8 @@ function Fay$$neq$36$uncurried(x,y){
 // Built-in >.
 function Fay$$gt(x){
   return function(y){
-    return new $(function(){
-      return _(x) > _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) > Fay$$_(y);
     });
   };
 }
@@ -551,8 +548,8 @@ function Fay$$gt(x){
 // Built-in >.
 function Fay$$gt$36$uncurried(x,y){
 
-    return new $(function(){
-      return _(x) > _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) > Fay$$_(y);
     });
 
 }
@@ -560,8 +557,8 @@ function Fay$$gt$36$uncurried(x,y){
 // Built-in <.
 function Fay$$lt(x){
   return function(y){
-    return new $(function(){
-      return _(x) < _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) < Fay$$_(y);
     });
   };
 }
@@ -570,8 +567,8 @@ function Fay$$lt(x){
 // Built-in <.
 function Fay$$lt$36$uncurried(x,y){
 
-    return new $(function(){
-      return _(x) < _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) < Fay$$_(y);
     });
 
 }
@@ -580,8 +577,8 @@ function Fay$$lt$36$uncurried(x,y){
 // Built-in >=.
 function Fay$$gte(x){
   return function(y){
-    return new $(function(){
-      return _(x) >= _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) >= Fay$$_(y);
     });
   };
 }
@@ -589,8 +586,8 @@ function Fay$$gte(x){
 // Built-in >=.
 function Fay$$gte$36$uncurried(x,y){
 
-    return new $(function(){
-      return _(x) >= _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) >= Fay$$_(y);
     });
 
 }
@@ -598,8 +595,8 @@ function Fay$$gte$36$uncurried(x,y){
 // Built-in <=.
 function Fay$$lte(x){
   return function(y){
-    return new $(function(){
-      return _(x) <= _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) <= Fay$$_(y);
     });
   };
 }
@@ -607,8 +604,8 @@ function Fay$$lte(x){
 // Built-in <=.
 function Fay$$lte$36$uncurried(x,y){
 
-    return new $(function(){
-      return _(x) <= _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) <= Fay$$_(y);
     });
 
 }
@@ -616,8 +613,8 @@ function Fay$$lte$36$uncurried(x,y){
 // Built-in &&.
 function Fay$$and(x){
   return function(y){
-    return new $(function(){
-      return _(x) && _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) && Fay$$_(y);
     });
   };
 }
@@ -625,8 +622,8 @@ function Fay$$and(x){
 // Built-in &&.
 function Fay$$and$36$uncurried(x,y){
 
-    return new $(function(){
-      return _(x) && _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) && Fay$$_(y);
     });
  ;
 }
@@ -634,8 +631,8 @@ function Fay$$and$36$uncurried(x,y){
 // Built-in ||.
 function Fay$$or(x){
   return function(y){
-    return new $(function(){
-      return _(x) || _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) || Fay$$_(y);
     });
   };
 }
@@ -643,8 +640,8 @@ function Fay$$or(x){
 // Built-in ||.
 function Fay$$or$36$uncurried(x,y){
 
-    return new $(function(){
-      return _(x) || _(y);
+    return new Fay$$$(function(){
+      return Fay$$_(x) || Fay$$_(y);
     });
 
 }

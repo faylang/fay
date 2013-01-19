@@ -22,6 +22,8 @@ module Language.Fay.Types
     ,configOptimize
     ,configGClosure
     ,configExportBuiltins
+    ,configExportRuntime
+    ,configNaked
     ,configPrettyPrint
     ,configHtmlWrapper
     ,configHtmlJSLibs
@@ -31,6 +33,10 @@ module Language.Fay.Types
     ,configTypecheck
     ,configWall
     ,configPackageConf
+    ,configExportStdlib
+    ,configDispatchers
+    ,configDispatcherOnly
+    ,configExportStdlibOnly
   )
   ,configDirectoryIncludes
   ,addConfigDirectoryInclude
@@ -72,6 +78,12 @@ data CompileConfig = CompileConfig
   { configOptimize          :: Bool
   , configFlattenApps       :: Bool
   , configExportBuiltins    :: Bool
+  , configExportRuntime     :: Bool
+  , configExportStdlib      :: Bool
+  , configExportStdlibOnly  :: Bool
+  , configDispatchers       :: Bool
+  , configDispatcherOnly    :: Bool
+  , configNaked             :: Bool
   , _configDirectoryIncludes :: [FilePath]
   , configPrettyPrint       :: Bool
   , configHtmlWrapper       :: Bool
@@ -90,7 +102,7 @@ data CompileConfig = CompileConfig
 instance Default CompileConfig where
   def =
     addConfigPackage "fay-base" $
-      CompileConfig False False True [] False False [] False True Nothing True False False Nothing []
+      CompileConfig False False True True True False True False False [] False False [] False True Nothing True False False Nothing []
 
 -- Restrict these setters so elements aren't accidentally removed.
 
@@ -127,6 +139,7 @@ data CompileState = CompileState
   , stateNameDepth    :: Integer
   , stateLocalScope   :: Set Name
   , stateModuleScope  :: ModuleScope
+  , stateCons        :: [JsStmt]
 } deriving (Show)
 
 faySourceDir :: IO FilePath
@@ -151,6 +164,7 @@ defaultCompileState config = do
   , stateFilePath = "<unknown>"
   , stateLocalScope = S.empty
   , stateModuleScope = def
+  , stateCons = []
   }
 
 -- | Compile monad.

@@ -8,18 +8,17 @@ module Language.Fay.ModuleScope
   ,bindAsLocals
   ,findTopLevelNames
   ,resolveName
-  ,mergeModuleScopes
   ,moduleLocals)
   where
 
 import           Control.Arrow
-import           Control.Monad.State
+import           Control.Monad.Reader
+import           Control.Monad.Writer
 import           Data.Default
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Language.Haskell.Exts hiding (name, binds)
 import           Prelude hiding (mod)
-
 
 -- | Maps names bound in the module to their real names
 -- The keys are unqualified for locals and imports,
@@ -31,12 +30,12 @@ import           Prelude hiding (mod)
 newtype ModuleScope = ModuleScope (Map QName QName)
   deriving Show
 
+instance Monoid ModuleScope where
+  mempty                                  = ModuleScope M.empty
+  mappend (ModuleScope a) (ModuleScope b) = ModuleScope $ a `M.union` b
+
 instance Default ModuleScope where
-  def = ModuleScope M.empty
-
-
-mergeModuleScopes :: ModuleScope -> ModuleScope -> ModuleScope
-mergeModuleScopes (ModuleScope a) (ModuleScope b) = ModuleScope $ a `M.union` b
+  def = mempty
 
 -- | Find the path of a locally bound name
 -- Returns special values in the "Fay$" module for primOps
@@ -111,15 +110,14 @@ envPrimOpsMap = M.fromList
 --------------------------------------------------------------------------------
 -- AST
 
-type ModuleScopeSt = State (ModuleName, ModuleScope) ()
+type ModuleScopeSt = ReaderT ModuleName (Writer ModuleScope) ()
 
 -- | Get module level names from a haskell module AST.
 findTopLevelNames :: ModuleName -> [Decl] -> ModuleScope
-findTopLevelNames mod decls = snd $ execState (mapM_ d_decl decls) (mod,def)
+findTopLevelNames mod decls = snd . runWriter $ runReaderT (mapM_ d_decl decls) mod
 
 bindName :: Name -> ModuleScopeSt
-bindName k = modify $ \st -> case st of
-  (mod, ModuleScope binds) -> (mod, ModuleScope $ M.insert (UnQual k) (Qual mod k) binds)
+bindName k = ask >>= \mod -> tell (ModuleScope $ M.singleton (UnQual k) (Qual mod k))
 
 d_decl :: Decl -> ModuleScopeSt
 d_decl d = case d of

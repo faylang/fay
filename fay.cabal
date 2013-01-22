@@ -22,33 +22,31 @@ description:         Fay is a proper subset of Haskell which can be compiled (ty
                      .
                      /Release Notes/
                      .
-                     . * Restrict optparse-applicative to < 0.5.
+                     . * Updates to name resolution.
                      .
-                     . * Error on case-wheres instead of ignoring them.
+                     . * Added initial fay-base support.
                      .
-                     . * Fix serialization of parametrized types when the type information is available.
+                     . * Basic CPP support (#136)
                      .
-                     . * Fix recursive definition name resolving (closes #187).
+                     . * Serialization of Text values (#136)
                      .
-                     . * Fix as patterns always matching (closes #186)
+                     . * Add Automatic serialization, export Automatic/Ptr, bump version.
                      .
-                     . * Fix bind error (closes #178).
+                     . * Do not automatically serialize polymorphic values.
                      .
-                     . * Check GHC version from command line instead of CPP (#174)
+                     . * Support Ptr type to force the serializer to ignore things.
                      .
-                     . * Move Defined and Nullable to Language.Fay.FFI
+                     . * Add very dubious --package flag.
                      .
-                     . * Add Nullable.
+                     . * Support type imports (IAbs)
                      .
-                     . * Use GHC.Path for running ghc and handle flag change in GHC 7.6 (refs #174).
+                     . * Support import X (a, b) and import X hiding (a, b).
                      .
-                     . * Add HASKELL_PACKAGE_SANDBOX environment variable support (closes #174).
+                     . * Implement guards in case branches
                      .
-                     . * Fix Maybe serialization.
+                     . * Fix instance declarations missing when typechecking (closes #177)
                      .
-                     . * Fix serializing for doubles (i.e. also parsing ints).
-                     .
-                     . * Option to warn for Closure-unfriendly FFI bindings.
+                     . * Bump optparse-applicative to >= 0.5 (closes #195)
                      .
                      See full history at: <https://github.com/faylang/fay/commits>
 homepage:            http://fay-lang.org/
@@ -56,7 +54,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Chris Done, Adam Bergmark
 maintainer:          chrisdone@gmail.com, adam@edea.se
-copyright:           2012 Chris Done
+copyright:           2012 Chris Done, Adam Bergmark
 category:            Development
 build-type:          Custom
 cabal-version:       >=1.8

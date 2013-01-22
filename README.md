@@ -22,18 +22,24 @@ programming language which has the following properties:
 
 To install:
 
+    $ cabal install fay fay-base
+
+Or download and unpack:
+
+    $ cabal unpack fay
+    $ cd fay
     $ cabal install
 
 To run tests from within this directory (you need nodejs installed):
 
-    $ cabal install
     $ fay-tests
 
 To generate documentation (from within this directory):
 
     $ fay-docs
 
-Try it out:
+Try it out (make sure you have fay-base package installed, or you'll
+get an error about missing fay-base):
 
     $ fay examples/console.hs
     $ node examples/console.js
@@ -42,6 +48,14 @@ Try it out:
 Cabal-dev also works:
 
     $ cabal-dev install
+
+Given that cabal-dev is installed in a specific dir, you'll wanna
+install fay-base in the same dir:
+
+    $ cabal-dev install fay-base
+
+Then run the normal stuff:
+
     $ cabal-dev/bin/fay-tests
     $ cabal-dev/bin/fay-docs
 

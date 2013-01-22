@@ -20,6 +20,7 @@ import           Language.Fay.Types          (CompileConfig (..),
 import           Prelude                     hiding (div, head)
 import           System.FilePath
 import           Text.Blaze.Extra
+import           System.Environment
 import           Text.Blaze.Html5            as H hiding (contents, map, style)
 import           Text.Blaze.Html5.Attributes as A hiding (title)
 import           Text.Blaze.Renderer.Utf8    (renderMarkup)
@@ -45,10 +46,13 @@ generate = do
   where compile file = do
           contents <- readFile file
           putStrLn $ "Generating " ++ file ++ " ..."
+          packageConf <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
           result <- compileViaStr file
                                   def { configFlattenApps = True
                                       , configOptimize = True
-                                      , configTypecheck = False }
+                                      , configTypecheck = False
+                                      , configPackageConf = packageConf
+                                      }
                                   compileForDocs contents
           case result of
             Right (PrintState{..},_) -> return (concat (reverse psOutput))
@@ -62,7 +66,11 @@ generate = do
 
 generateJs = do
   putStrLn $ "Compiling " ++ inp ++ " to " ++ out ++ " ..."
-  compileFromTo def { configFlattenApps = True, configTypecheck = False } inp (Just out)
+  packageConf <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
+  compileFromTo def { configFlattenApps = True
+                    , configTypecheck = False
+                    , configPackageConf = packageConf
+                    } inp (Just out)
 
   where docs = ("docs" </>)
         inp = docs "home.hs"
@@ -227,12 +235,13 @@ thesetup = do
          " installed (or at least Cabal)."
   h3 "Cabal install from Hackage"
   p "To install, run:"
-  pre $ code "$ cabal install fay"
+  pre $ code "$ cabal install fay fay-base"
   h3 "From Github"
   p "If you want to hack on the compiler, you can download the Git repo: "
   pre $ code "$ git clone git://github.com/faylang/fay.git"
   p "And then install from the directory: "
   pre $ code "$ cabal install"
+  pre $ code "$ cabal install fay-base"
   h3 "Running"
   p "If developing, you can run the tests (you will need nodejs installed):"
   pre $ code "$ cabal install"
@@ -241,7 +250,7 @@ thesetup = do
   pre $ code "$ fay foo.hs"
   p $ do "The "; code "--library"; " flag will prevent the "; code "main"; " function from being called."
   p "You can also install this via cabal-dev, but be sure to run the commands from the cabal-dev bin dir: "
-  pre $ code "$ cabal-dev install\n$ cabal-dev/bin/fay --no-ghc foo.hs"
+  pre $ code "$ cabal-dev install\n$ cabal-dev install fay-base\n$ cabal-dev/bin/fay --no-ghc foo.hs"
   p $ do
     "If you only installed with cabal-dev then you will probably get a 'no"
     " package fay' error from GHC, so you can tell it where to get the"

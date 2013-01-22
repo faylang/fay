@@ -121,6 +121,7 @@ instance Printable JsStmt where
 
 -- | Print an expression.
 instance Printable JsExp where
+  printJS (JsSeq es) = "(" +> intercalateM "," (map printJS es) +> ")"
   printJS (JsRawExp e) = write e
   printJS (JsName name) = printJS name
   printJS (JsThrowExp exp) =

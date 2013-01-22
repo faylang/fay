@@ -1,8 +1,11 @@
 {-# OPTIONS -fno-warn-orphans #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Language.Fay.Compiler.Optimizer where
+
+import Language.Fay.Compiler.Misc
 
 import Control.Applicative
 import Control.Arrow (first)
@@ -11,10 +14,9 @@ import Control.Monad.Writer
 import Control.Monad.State
 import Data.List
 import Data.Maybe
-import Language.Fay.Print
 import Language.Fay.Types
 import Language.Haskell.Exts (QName(..),ModuleName(..),Name(..))
-import Language.Haskell.Exts (SrcLoc(..))
+
 import Prelude hiding (exp)
 
 -- | The arity of a function. Arity here is defined to be the number
@@ -36,8 +38,72 @@ data OptState = OptState
 runOptimizer :: ([JsStmt] -> Optimize [JsStmt]) -> [JsStmt] -> [JsStmt]
 runOptimizer optimizer stmts =
   let (newstmts,OptState _ uncurried) = flip runState st $ optimizer stmts
-  in (newstmts ++ (tco (catMaybes (map (uncurryBinding newstmts) (nub uncurried)))))
+  in (inlineMonad newstmts ++ (tco (catMaybes (map (uncurryBinding newstmts) (nub uncurried)))))
   where st = OptState stmts []
+
+inlineMonad :: [JsStmt] -> [JsStmt]
+inlineMonad = map go where
+  go stmt =
+    case stmt of
+      JsVar name exp          -> JsVar name (inline exp)
+      JsMappedVar a name exp  -> JsMappedVar a name (inline exp)
+      JsIf exp stmts stmts'   -> JsIf (inline exp) (map go stmts) (map go stmts')
+      JsEarlyReturn exp       -> JsEarlyReturn (inline exp)
+      JsThrow exp             -> JsThrow (inline exp)
+      JsWhile exp stmts       -> JsWhile (inline exp) (map go stmts)
+      JsUpdate name exp       -> JsUpdate name (inline exp)
+      JsSetProp a b exp       -> JsSetProp a b (inline exp)
+      JsSetPropExtern a b exp -> JsSetPropExtern a b (inline exp)
+      JsContinue              -> JsContinue
+      JsBlock stmts           -> JsBlock (map go stmts)
+
+  inline expr =
+    case expr of
+      -- Optimizations
+      JsApp op args -> case flatten expr of
+        Nothing -> JsApp (inline op) (map inline args)
+        Just x  -> x
+
+      -- Plumbing
+      JsFun names stmts mexp           -> JsFun names (map go stmts) (fmap inline mexp)
+
+      JsNegApp exp                     -> JsNegApp (inline exp)
+      JsTernaryIf exp1 exp2 exp3       -> JsTernaryIf (inline exp1) (inline exp2) (inline exp3)
+      JsParen exp                      -> JsParen (inline exp)
+      JsGetProp exp name               -> JsGetProp (inline exp) name
+      JsLookup exp exp2                -> JsLookup (inline exp) (inline exp2)
+      JsUpdateProp exp name exp2       -> JsUpdateProp (inline exp) name (inline exp2)
+      JsGetPropExtern exp string       -> JsGetPropExtern (inline exp) string
+      JsUpdatePropExtern exp name exp2 -> JsUpdatePropExtern (inline exp) name (inline exp2)
+      JsList exps                      -> JsList (map inline exps)
+      JsNew name exps                  -> JsNew name (map inline exps)
+      JsThrowExp exp                   -> JsThrowExp (inline exp)
+      JsInstanceOf exp name            -> JsInstanceOf (inline exp) name
+      JsIndex i exp                    -> JsIndex i (inline exp)
+      JsEq exp exp2                    -> JsEq (inline exp) (inline exp2)
+      JsNeq exp exp2                   -> JsNeq (inline exp) (inline exp2)
+      JsInfix string exp exp2          -> JsInfix string (inline exp) (inline exp2)
+      JsObj keyvals                    -> JsObj keyvals
+      rest                             -> rest
+
+flatten :: JsExp -> Maybe JsExp
+flatten exp = case collect exp of
+  Just (stmts@(_:_:_)) -> let s = reverse stmts
+                          in Just $ thunk (JsSeq (map force (init s) ++ [last s]))
+  _ -> Nothing
+
+collect :: JsExp -> Maybe [JsExp]
+collect exp =
+  case exp of
+    JsApp op args | isThen op -> do
+      case args of
+        [rest,x] -> do xs <- collect rest
+                       return (x : xs)
+        [x]  -> return [x]
+        _ -> Nothing
+    _ -> return [exp]
+
+  where isThen = (== JsName (JsNameVar (Qual (ModuleName "Fay$") (Ident "then$uncurried"))))
 
 -- | Perform any top-level cross-module optimizations and GO DEEP to
 -- optimize further.
@@ -167,16 +233,6 @@ collectFuncs = (++ prim) . concat . map collectFunc where
 expArity :: JsExp -> Int
 expArity (JsFun _ _ mexp) = 1 + maybe 0 expArity mexp
 expArity _ = 0
-
-test :: IO ()
-test = do
-  let (newstmts,OptState _ uncurried) = flip runState st $ optimizeToplevel stmts
-  putStrLn $ printJSPretty newstmts
-  putStrLn $ printJSPretty (catMaybes (map (uncurryBinding newstmts) uncurried))
-
-    where
-      st = OptState stmts []
-      stmts = [JsMappedVar (SrcLoc {srcFilename = "", srcLine = 1, srcColumn = 1}) (JsNameVar (Qual (ModuleName "Main") (Ident "sum$uncurried"))) (JsFun [JsParam 1,JsParam 2] [] (Just (JsNew JsThunk [JsFun [] [JsVar (JsNameVar (UnQual (Ident "acc"))) (JsName (JsParam 2)),JsIf (JsEq (JsApp (JsName JsForce) [JsName (JsParam 1)]) (JsLit (JsInt 0))) [JsEarlyReturn (JsName (JsNameVar (UnQual (Ident "acc"))))] [],JsVar (JsNameVar (UnQual (Ident "acc"))) (JsName (JsParam 2)),JsVar (JsNameVar (UnQual (Ident "n"))) (JsName (JsParam 1)),JsEarlyReturn (JsApp (JsName (JsNameVar (Qual (ModuleName "Main") (Ident "sum$uncurried")))) [JsApp (JsName (JsNameVar (Qual (ModuleName "Fay$") (Ident "sub$uncurried")))) [JsApp (JsName JsForce) [JsName (JsNameVar (UnQual (Ident "n")))],JsLit (JsInt 1)],JsApp (JsName (JsNameVar (Qual (ModuleName "Fay$") (Ident "add$uncurried")))) [JsApp (JsName JsForce) [JsName (JsNameVar (UnQual (Ident "acc")))],JsApp (JsName JsForce) [JsName (JsNameVar (UnQual (Ident "n")))]]])] Nothing])))]
 
 uncurryBinding :: [JsStmt] -> QName -> Maybe JsStmt
 uncurryBinding stmts qname = listToMaybe (mapMaybe funBinding stmts)

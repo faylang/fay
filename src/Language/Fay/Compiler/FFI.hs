@@ -215,9 +215,9 @@ translate method context typ exp = case typ of
           JsApp (JsName (JsBuiltIn (fromString method)))
                 [typeRep context typ
                 ,exp]
-        js typ =
+        js ty' =
           JsNew (JsBuiltIn "Monad")
-                [translate method context typ exp]
+                [translate method context ty' exp]
 
 -- | Get a JS-representation of a fundamental type for encoding/decoding.
 typeRep :: SerializeContext -> FundamentalType -> JsExp

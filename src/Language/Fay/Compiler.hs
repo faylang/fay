@@ -21,7 +21,9 @@ module Language.Fay.Compiler
   ,compileDecl
   ,printCompile
   ,printTestCompile
-  ,compileToplevelModule)
+  ,compileToplevelModule
+  ,compileTestAst
+  ,debug)
   where
 
 import           Language.Fay.Compiler.FFI
@@ -93,6 +95,36 @@ compileToAst filepath reader state with from =
              (parseResult (throwError . uncurry ParseError)
                           with
                           (parseFay filepath from))
+
+-- | Compile a Haskell source string to a JavaScript source string.
+compileTestAst :: (Show from,Show to,CompilesTo from to)
+             => CompileConfig
+             -> (from -> Compile to)
+             -> String
+             -> IO ()
+compileTestAst cfg with from = do
+  state <- defaultCompileState
+  reader <- defaultCompileReader cfg
+  out <- runCompile reader
+             state
+             (parseResult (throwError . uncurry ParseError)
+                          with
+                          (parseFay "<interactive>" from))
+  case out of
+    Left err -> error $ show err
+    Right (ok,_) -> print ok
+
+debug :: (Show from,Show to,CompilesTo from to) => (from -> Compile to) -> String -> IO ()
+debug compile string = do
+  putStrLn "AST:\n"
+  compileTestAst c compile string
+  putStrLn ""
+  putStrLn "JS (unoptimized):\n"
+  printCompile def { configTypecheck = False } compile string
+  putStrLn "JS (optimized):\n"
+  printCompile c compile string
+
+  where c = def { configOptimize = True, configTypecheck = False }
 
 -- | Parse some Fay code.
 parseFay :: Parseable ast => FilePath -> String -> ParseResult ast
@@ -740,9 +772,7 @@ compileNegApp e = JsNegApp . force <$> compileExp e
 
 -- | Compile an infix application, optimizing the JS cases.
 compileInfixApp :: Exp -> QOp -> Exp -> Compile JsExp
-compileInfixApp exp1 ap exp2 = do
-  qname <- resolveName op
-  compileExp (App (App (Var op) exp1) exp2)
+compileInfixApp exp1 ap exp2 = compileExp (App (App (Var op) exp1) exp2)
 
   where op = getOp ap
         getOp (QVarOp op) = op

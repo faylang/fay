@@ -13,6 +13,7 @@ description:         Fay is a proper subset of Haskell which can be compiled (ty
                      > $ cabal unpack fay
                      > $ cd fay-*
                      > $ cabal install
+                     > $ cabal install fay-base
                      > $ dist/build/fay-docs/fay-docs
                      .
                      .

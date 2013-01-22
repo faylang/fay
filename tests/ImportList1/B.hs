@@ -17,3 +17,5 @@ r = S 3 4
 
 data X = Y Int
 instance Foreign X
+
+(<<>>) = (+)

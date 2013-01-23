@@ -12,3 +12,4 @@ docs/home.js
 *.hcr
 hackage-test/
 src/*.js
+fay-base

@@ -61,7 +61,6 @@ build-type:          Custom
 cabal-version:       >=1.8
 data-files:          js/runtime.js
                      hs/stdlib.hs
-                     src/Language/Fay/Stdlib.hs
                      src/Language/Fay/FFI.hs
 extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examples/dom.hs
                      examples/tailrecursive.hs examples/data.hs examples/canvaswater.hs
@@ -132,8 +131,8 @@ Flag devel
 
 library
   hs-source-dirs:    src
-  exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Prelude, Language.Fay.Convert, Language.Fay.Compiler, Language.Fay.Compiler.Misc, Language.Fay.Compiler.FFI, Language.Fay.Compiler.Optimizer, Language.Fay.Compiler.Packages, Language.Fay.ModuleScope
-  other-modules:     Language.Fay.Print, Control.Monad.IO, Language.Fay.Stdlib, System.Process.Extra, Data.List.Extra, Paths_fay
+  exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Convert, Language.Fay.Compiler, Language.Fay.Compiler.Misc, Language.Fay.Compiler.FFI, Language.Fay.Compiler.Optimizer, Language.Fay.Compiler.Packages, Language.Fay.ModuleScope
+  other-modules:     Language.Fay.Print, Control.Monad.IO, System.Process.Extra, Data.List.Extra, Paths_fay
   ghc-options:       -O2 -Wall
   build-depends:     base >= 4 && < 5,
                      aeson,

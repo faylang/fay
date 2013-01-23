@@ -29,7 +29,6 @@ import           Language.Fay.Compiler.Misc
 import           Language.Fay.Compiler.Optimizer
 import           Language.Fay.ModuleScope        (bindAsLocals, findTopLevelNames, moduleLocals)
 import           Language.Fay.Print              (printJSString)
-import qualified Language.Fay.Stdlib             as Stdlib
 import           Language.Fay.Types
 
 import           Control.Applicative
@@ -1120,7 +1119,7 @@ optEnumFromTo cfg (JsLit f) (JsLit t) =
     where strict :: (Enum a, Ord a, Num a) => (a -> JsLit) -> a -> a -> Maybe JsExp
           strict litfn f t =
             if fromEnum t - fromEnum f < maxStrictASLen
-            then Just . makeList . map (JsLit . litfn) $ Stdlib.enumFromTo f t
+            then Just . makeList . map (JsLit . litfn) $ enumFromTo f t
             else Nothing
 optEnumFromTo _ _ _ = Nothing
 
@@ -1157,6 +1156,6 @@ optEnumFromThenTo cfg (JsLit fr) (JsLit th) (JsLit to) =
           strict litfn fr th to =
             if (fromEnum to - fromEnum fr) `div`
                (fromEnum th - fromEnum fr) + 1 < maxStrictASLen
-            then Just . makeList . map (JsLit . litfn) $ Stdlib.enumFromThenTo fr th to
+            then Just . makeList . map (JsLit . litfn) $ enumFromThenTo fr th to
             else Nothing
 optEnumFromThenTo _ _ _ _ = Nothing

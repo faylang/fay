@@ -84,6 +84,8 @@ the type you specify at the ffi declaration, e.g.:
     foo :: Int -> String
     foo = ffi "JSON.stringify(%1)"
 
+You can only use point free style in FFI functions, `foo x = ffi "..." x` is *not allowed*.
+
 The rules are simple:
 
 1. Concrete type, e.g. `String`, `Maybe Int`: yes, will be de/serialized.

@@ -17,6 +17,7 @@ programming language which has the following properties:
 * Has fundamental data types (Double, String, etc.) based upon what JS can support
 * Outputs minifier-aware code for small compressed size
 * Has a trivial foreign function interface to JavaScript
+* Supports cabal installation of Fay packages.
 
 ## Install and run
 
@@ -28,7 +29,8 @@ Or download and unpack:
 
     $ cabal unpack fay
     $ cd fay
-    $ cabal install
+    $ cabal unpack fay-base
+    $ cabal install . fay-base/
 
 To run tests from within this directory (you need nodejs installed):
 
@@ -68,6 +70,11 @@ package fay' error from GHC, so you can tell it where to get the
 package from with an environment variable:
 
     HASKELL_PACKAGE_SANDBOX=cabal-dev/packages-7.4.1.conf cabal-dev/bin/fay examples/alert.hs
+
+## fay-base
+
+[fay-base](http://www.github.com/faylang/fay-base) contains Fay's standard library and is needed in order to
+use the compiler.
 
 ## The FFI
 
@@ -113,13 +120,18 @@ For Google Closure's advanced optimizations you need to use string access to pro
 
 ## Contributing
 
+When recompiling fay you need to recompile fay-base as well. It might best to do
+
+    fay$ git clone git://github.com/faylang/fay-base.git
+    fay$ cabal install . fay-base/
+
 If you intend on submitting a pull request, whichever branch you
 choose to submit a pull request on, please ensure that it is properly
 rebased against master. This will ensure that the merge is clean and
 that you have checked that your contribution still works against the
 recent master. A typical workflow might be:
 
-Have a remote setup that we can pull proper changes from:
+Set up a remote that you can use to track the main repository:
 
     $ git remote add fay git://github.com/faylang/fay.git
 

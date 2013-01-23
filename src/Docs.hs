@@ -244,7 +244,7 @@ thesetup = do
   pre $ code "$ cabal install fay-base"
   h3 "Running"
   p "If developing, you can run the tests (you will need nodejs installed):"
-  pre $ code "$ cabal install"
+  pre $ code "$ cabal install . fay-base/"
   pre $ code "$ fay-tests"
   p "To compile a Fay program, run:"
   pre $ code "$ fay foo.hs"

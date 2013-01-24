@@ -12,7 +12,7 @@ import System.Environment
 import Test.Framework
 import Test.Framework.Providers.HUnit
 import Test.Framework.TH
-import Test.HUnit                     (Assertion, assertBool, assertEqual)
+import Test.HUnit                     (Assertion, assertBool, assertEqual, assertFailure)
 import Test.Util
 
 tests :: Test
@@ -60,6 +60,12 @@ case_importStateRecordTypes = do
         , (UnQual (Ident "R"),[UnQual (Ident "R"), UnQual (Ident "S")])
         ]
         (stateRecordTypes r)
+
+case_typecheckCPP :: Assertion
+case_typecheckCPP = do
+  whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
+  res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Api/CPPTypecheck.hs" } "tests/Api/CPPTypecheck.hs"
+  either (assertFailure . show) (const $ return ()) res
 
 fp :: FilePath
 fp = "tests/RecordImport_Import.hs"

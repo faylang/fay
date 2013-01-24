@@ -295,14 +295,16 @@ typecheck packageConf includeDirs ghcFlags wall fp = do
       Just pk -> do
         flag <- liftIO getGhcPackageDbFlag
         return [flag ++ '=' : pk]
-  res <- liftIO $ readAllFromProcess GHCPaths.ghc (
-    ["-fno-code"
-    ,"-package fay"
-    ,"-main-is"
-    ,"Language.Fay.DummyMain"
-    ,fp]
-    ++ ghcPackageDbArgs
-    ++ map ("-i" ++) includeDirs ++ ghcFlags ++ wallF) ""
+  let flags =
+          [ "-fno-code"
+          , "-hide-package base"
+          , "-package fay-base"
+          , "-cpp", "-DFAY=1"
+          , "-main-is"
+          , "Language.Fay.DummyMain"
+          , "-i" ++ concat (intersperse "," includeDirs)
+          , fp ] ++ ghcPackageDbArgs ++ ghcFlags ++ wallF
+  res <- liftIO $ readAllFromProcess GHCPaths.ghc flags ""
   either error (warn . fst) res
    where
     wallF | wall = ["-Wall"]

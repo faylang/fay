@@ -78,33 +78,26 @@ use the compiler.
 
 ## The FFI
 
-Here are the rules for serialization. All serialization is based on
-the type you specify at the ffi declaration, e.g.:
+Here's an example of a FFI declaration:
 
-    foo :: Int -> String
-    foo = ffi "JSON.stringify(%1)"
+    max :: Double -> Double -> Double
+    max = ffi "Math.round(%1,%2)"
 
-You can only use point free style in FFI functions, `foo x = ffi "..." x` is *not allowed*.
+`%1,%2,..` corresponds to the arguments you specify in the type.
 
-The rules are simple:
+Be careful when declaring FFI types because Fay can not verify that
+they are correct.
 
-1. Concrete type, e.g. `String`, `Maybe Int`: yes, will be de/serialized.
-2. Polymorphic, e.g. `a`, `Maybe a`: will not be touched.
+A FFI function often has side effects, use the `Fay` monad to represent this:
 
-There are two helpers for turning on/off serialization for the above:
+    unixTime :: Fay Int
+    unixTime = ffi "new Date().getTime()"
 
-1. `Ptr Foo`: will not be touched.
-2. `Automatic a`: will attempt to automatically serialize the `a` at runtime.
+You can only use point free style in FFI functions, `foo x = ffi "..." x` is **not allowed**.
 
-There are two utility types for interfacing with JS APIs:
 
-* `Nullable a`: Will be serialized to `null`.
-* `Defined a`: Will be serialized to `undefined`, and will be ommitted
-   from serialized objects e.g. `Foo Undefined` → `{"instance":"Foo"}`.
-
-Usually you want to access some JavaScript global when working with
-the FFI so it's a good idea to always use global access so that a
-local fay binding won't interfere:
+Usually you want to access some JavaScript global it's a good idea to
+always use global access so that a local fay binding won't interfere:
 
     alert :: String -> Fay ()
     alert :: ffi "window.alert(%1)"
@@ -118,6 +111,49 @@ For Google Closure's advanced optimizations you need to use string access to pro
 
     jQuery :: String -> Fay JQuery
     jQuery = ffi "window['jQuery']"
+
+
+### Records
+
+You can serialize to and from records automatically like this:
+
+    data Con = Con Double String
+
+    printCon :: Fay ()
+    printCon = print (Con 1 "str") -- Will output { instance : 'Con', slot1 : 1, slot2 : 'str' }
+
+    data Rec = Rec { a :: Double, b :: String }
+
+    printRec :: Fay ()
+    printRec = print (Rec { a = 1, b = "str" }) -- Will output { instance : 'Rec', a : 1, b : 'str' }
+
+    getRec :: Fay Rec
+    getRec = ffi "{ instance : 'Rec', a : 1, b : 'str' }" -- Gives you Rec { a = 1, b = "str" }
+
+### Serialization
+
+Here are the rules for serialization. All serialization is based on
+the type you specify at the ffi declaration, e.g.:
+
+    foo :: Int -> String
+    foo = ffi "JSON.stringify(%1)"
+
+
+The rules are simple:
+
+1. Concrete type, e.g. `String`, `Maybe Int`: yes, will be de/serialized.
+2. Polymorphic, e.g. `a`, `Maybe a`: will not be touched.
+
+There are two helpers for turning on/off serialization for the above:
+
+1. `Ptr Foo`: will not be touched.
+2. `Automatic a`: will attempt to automatically serialize the `a` at runtime.
+
+There are two utility types for interfacing with JS APIs:
+
+* `Nullable a`: `Null` will be serialized to `null`.
+* `Defined a`: `Undefined` will be serialized to `undefined`, and will be ommitted
+   from serialized objects e.g. `Foo Undefined` → `{"instance":"Foo"}`.
 
 
 ## Contributing

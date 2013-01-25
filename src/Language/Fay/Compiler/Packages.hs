@@ -6,7 +6,6 @@ import Language.Fay.Types
 
 import Control.Monad
 import Data.List
-import Data.List.Split (splitOn)
 import GHC.Paths
 import System.Directory
 import System.FilePath
@@ -106,14 +105,13 @@ shareDirs desc =
         ('/':_) -> mungeUnix dir
         _ -> mungeWin dir
     mungeUnix = joinPath . reverse . swap . dropGhc . reverse . map dropTrailingPathSeparator . splitPath where
-          dropGhc = drop 1
           swap (name_version:"lib":rest) = name_version : "share" : rest
           swap paths = error $ "unable to complete munging of the lib dir\
                                \, see Language.Fay.Compiler.Packages.hs \
                                \for an explanation: " ++
                                "\npath was: " ++ joinPath paths
     mungeWin = joinPath . reverse . dropGhc . reverse . splitDirectories where
-      dropGhc = drop 1
+    dropGhc = drop 1
 
 -- | Might as well check the dir that we munged to death actually
 --   exists. -___ -

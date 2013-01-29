@@ -122,8 +122,8 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
     declField :: Int -> (Name,BangType) -> (String,JsExp)
     declField i (fname,typ) =
       (prettyPrint fname
-      ,fayToJs (case argType (bangType typ) of
-                 known -> typeRep (SerializeUserArg i) known)
+      ,fayToJs (SerializeUserArg i)
+               (argType (bangType typ))
                (force (JsGetProp (JsName transcodingObjForced)
                                  (JsNameVar (UnQual fname)))))
 
@@ -186,14 +186,16 @@ userDefined _ = UnknownType
 
 -- | Translate: JS → Fay.
 jsToFay :: SerializeContext -> FundamentalType -> JsExp -> JsExp
-jsToFay context typ exp =
-  JsApp (JsName (JsBuiltIn "jsToFay"))
-        [typeRep context typ,exp]
-
+jsToFay = translate "jsToFay"
 -- | Translate: Fay → JS.
-fayToJs :: JsExp -> JsExp -> JsExp
-fayToJs typ exp = JsApp (JsName (JsBuiltIn "fayToJs"))
-                        [typ,exp]
+fayToJs :: SerializeContext -> FundamentalType -> JsExp -> JsExp
+fayToJs = translate "fayToJs"
+
+-- | Make a translator.
+translate :: Name -> SerializeContext -> FundamentalType -> JsExp -> JsExp
+translate method context typ exp =
+  JsApp (JsName (JsBuiltIn method))
+        [typeRep context typ,exp]
 
 -- | Get a JS-representation of a fundamental type for encoding/decoding.
 typeRep :: SerializeContext -> FundamentalType -> JsExp
@@ -270,7 +272,7 @@ formatFFI formatstr args = go formatstr where
     case listToMaybe (drop (n-1) args) of
       Nothing -> throwError (FfiFormatNoSuchArg n)
       Just (arg,typ) -> do
-        return (printJSString (fayToJs (typeRep SerializeAnywhere typ) (JsName arg)))
+        return (printJSString (fayToJs SerializeAnywhere typ (JsName arg)))
 
 explodeFields :: [([a], t)] -> [(a, t)]
 explodeFields = concatMap $ \(names,typ) -> map (,typ) names

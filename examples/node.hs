@@ -5,8 +5,8 @@
 
 module Test where
 
-import           Language.Fay.FFI
-import           Language.Fay.Prelude
+import           FFI
+import           Prelude
 
 data Sys
 instance Foreign Sys

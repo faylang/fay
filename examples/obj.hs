@@ -2,8 +2,8 @@
 
 module Print where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import FFI
+import Prelude
 
 data Foo = Foo { foo :: Double, bar :: String }
 instance Foreign Foo

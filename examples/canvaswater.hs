@@ -8,8 +8,8 @@
 
 module CanvasWater (main) where
 
-import           Language.Fay.FFI
-import           Language.Fay.Prelude
+import           FFI
+import           Prelude
 
 -- | Main entry point.
 main :: Fay ()

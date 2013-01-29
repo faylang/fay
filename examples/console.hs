@@ -1,6 +1,7 @@
 module Console (main) where
 
 import Prelude
+import FFI
 
 main = putStrLn (showInt (fib 10))
 

@@ -3,8 +3,8 @@
 
 module JQuery where
 
-import           Language.Fay.FFI
-import           Language.Fay.Prelude
+import           FFI
+import           Prelude
 
 main :: Fay ()
 main = do

@@ -2,5 +2,5 @@
 
 for i in `ls examples/*.hs`; do
   echo $i;
-  ghc -package fay -XNoImplicitPrelude -fno-code -Iexamples -main-is Language.Fay.DummyMain $i
+  ghc -hide-package base -package fay-base -fno-code -iexamples -main-is Language.Fay.DummyMain $i
 done

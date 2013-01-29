@@ -3,8 +3,8 @@
 
 module RingOscillator (main) where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import FFI
+import Prelude
 
 
 -- System parameters.

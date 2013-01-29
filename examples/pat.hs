@@ -1,6 +1,6 @@
-import Language.Fay.Prelude
+import Prelude
 
-import Language.Fay.FFI
+import FFI
 
 main :: Fay ()
 main =

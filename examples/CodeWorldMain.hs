@@ -4,7 +4,8 @@
 
 module MyDrawing where
 
-import Language.Fay.Prelude
+import Prelude
+import FFI
 import CodeWorld
 
 main = playInCanvas initial step event draw

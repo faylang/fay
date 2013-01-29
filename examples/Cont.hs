@@ -5,8 +5,8 @@
 
 module Cont where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import FFI
+import Prelude
 
 --------------------------------------------------------------------------------
 -- Entry point.

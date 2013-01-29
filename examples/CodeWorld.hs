@@ -19,8 +19,8 @@
 
 module CodeWorld where
 
-import Language.Fay.Prelude
-import Language.Fay.FFI
+import Prelude
+import FFI
 
 
 data Element

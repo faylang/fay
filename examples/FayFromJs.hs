@@ -1,6 +1,7 @@
 module Main where
 
-import Language.Fay.Prelude
+import Prelude
+import FFI
 
 fibs :: [Int]
 fibs = 0 : 1 : zipWith (+) fibs (tail fibs)

@@ -2,8 +2,8 @@
 
 module Console where
 
-import           Language.Fay.FFI
-import           Language.Fay.Prelude
+import           FFI
+import           Prelude
 
 data MyData = MyData  { xVar :: Int, yVar :: Int }
 instance Foreign MyData

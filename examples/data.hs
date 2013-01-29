@@ -8,8 +8,8 @@
 
 module Data where
 
-import           Language.Fay.FFI
-import           Language.Fay.Prelude
+import           FFI
+import           Prelude
 
 data Foo = Foo { x :: Double, y :: String, z :: Foo } | Bar
   deriving (Show)

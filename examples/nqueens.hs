@@ -4,8 +4,8 @@
 
 module NQueens where
 
-import Language.Fay.Prelude
-import Language.Fay.FFI
+import Prelude
+import FFI
 
 main :: Fay ()
 main = benchmark $ print (nsoln 11)

@@ -46,6 +46,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optNoDispatcher :: Bool
   , optDispatcher   :: Bool
   , optStdlibOnly   :: Bool
+  , optNoBuiltins   :: Bool
   }
 
 -- | Main entry point.
@@ -63,7 +64,7 @@ main = do
                  addConfigPackages (optPackages opts) $ def
                    { configOptimize         = optOptimize opts
                    , configFlattenApps      = optFlattenApps opts
-                   , configExportBuiltins   = True -- optExportBuiltins opts
+                   , configExportBuiltins   = not (optNoBuiltins opts)
                    , configPrettyPrint      = optPretty opts
                    , configLibrary          = optLibrary opts
                    , configHtmlWrapper      = optHTMLWrapper opts
@@ -123,6 +124,7 @@ options = FayCompilerOptions
   <*> switch (long "no-dispatcher" <> help "Don't output a type serialization dispatcher")
   <*> switch (long "dispatcher" <> help "Only output the type serialization dispatchers")
   <*> switch (long "stdlib" <> help "Only output the stdlib")
+  <*> switch (long "no-builtins" <> help "Don't export no-builtins")
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

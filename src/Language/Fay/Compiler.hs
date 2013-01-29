@@ -742,15 +742,7 @@ compileNegApp e = JsNegApp . force <$> compileExp e
 compileInfixApp :: Exp -> QOp -> Exp -> Compile JsExp
 compileInfixApp exp1 ap exp2 = do
   qname <- resolveName op
-  case qname of
-    -- We can optimize prim ops. :-)
-    Qual "Fay$" _
-      | prettyPrint ap `elem` words "* + - / < > || &&" -> do
-        e1 <- compileExp exp1
-        e2 <- compileExp exp2
-        fn <- compileExp (Var op)
-        return $ JsApp (JsApp (force fn) [force e1]) [force e2]
-    _ -> compileExp (App (App (Var op) exp1) exp2)
+  compileExp (App (App (Var op) exp1) exp2)
 
   where op = getOp ap
         getOp (QVarOp op) = op

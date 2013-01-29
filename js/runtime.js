@@ -85,10 +85,10 @@ function Fay$$bind(m){
 // >>=
 // This is used directly from Fay, but can be rebound or shadowed. See primOps in Types.hs.
 function Fay$$bind$36$uncurried(m,f){
-    return new Fay$$$(function(){
-      var monad = Fay$$_(m,true);
-      return Fay$$_(f)(monad.value);
-    });
+  return new Fay$$$(function(){
+    var monad = Fay$$_(m,true);
+    return Fay$$_(f)(monad.value);
+  });
 }
 
 // This is used directly from Fay, but can be rebound or shadowed.
@@ -124,131 +124,115 @@ function Fay$$fayToJs(type,fayObj){
   var base = type[0];
   var args = type[1];
   var jsObj;
-  switch(base){
-    case "ptr": {
-      jsObj = fayObj;
-      break;
-    }
-    case "action": {
-      // A nullary monadic action. Should become a nullary JS function.
-      // Fay () -> function(){ return ... }
-      jsObj = function(){
-        return Fay$$fayToJs(args[0],Fay$$_(fayObj,true).value);
-      };
-      break;
-    }
-    case "function": {
-      // A proper function.
-      jsObj = function(){
-        var fayFunc = fayObj;
-        var return_type = args[args.length-1];
-        var len = args.length;
-        // If some arguments.
-        if (len > 1) {
-          // Apply to all the arguments.
-          fayFunc = Fay$$_(fayFunc,true);
-          // TODO: Perhaps we should throw an error when JS
-          // passes more arguments than Haskell accepts.
-          for (var i = 0, len = len; i < len - 1 && fayFunc instanceof Function; i++) {
-            // Unserialize the JS values to Fay for the Fay callback.
-            fayFunc = Fay$$_(fayFunc(Fay$$jsToFay(args[i],arguments[i])),true);
-          }
-          // Finally, serialize the Fay return value back to JS.
-          var return_base = return_type[0];
-          var return_args = return_type[1];
-          // If it's a monadic return value, get the value instead.
-          if(return_base == "action") {
-            return Fay$$fayToJs(return_args[0],fayFunc.value);
-          }
-          // Otherwise just serialize the value direct.
-          else {
-            return Fay$$fayToJs(return_type,fayFunc);
-          }
-        } else {
-          throw new Error("Nullary function?");
+  if(base == "action") {
+    // A nullary monadic action. Should become a nullary JS function.
+    // Fay () -> function(){ return ... }
+    jsObj = function(){
+      return Fay$$fayToJs(args[0],Fay$$_(fayObj,true).value);
+    };
+
+  }
+  else if(base == "function") {
+    // A proper function.
+    jsObj = function(){
+      var fayFunc = fayObj;
+      var return_type = args[args.length-1];
+      var len = args.length;
+      // If some arguments.
+      if (len > 1) {
+        // Apply to all the arguments.
+        fayFunc = Fay$$_(fayFunc,true);
+        // TODO: Perhaps we should throw an error when JS
+        // passes more arguments than Haskell accepts.
+        for (var i = 0, len = len; i < len - 1 && fayFunc instanceof Function; i++) {
+          // Unserialize the JS values to Fay for the Fay callback.
+          fayFunc = Fay$$_(fayFunc(Fay$$jsToFay(args[i],arguments[i])),true);
         }
-      };
-      break;
-    }
-    case "string": {
-      // Serialize Fay string to JavaScript string.
-      var str = "";
-      fayObj = Fay$$_(fayObj);
-      while(fayObj instanceof Fay$$Cons) {
-        str += fayObj.car;
-        fayObj = Fay$$_(fayObj.cdr);
-      }
-      jsObj = str;
-      break;
-    }
-    case "list": {
-      // Serialize Fay list to JavaScript array.
-      var arr = [];
-      fayObj = Fay$$_(fayObj);
-      while(fayObj instanceof Fay$$Cons) {
-        arr.push(Fay$$fayToJs(args[0],fayObj.car));
-        fayObj = Fay$$_(fayObj.cdr);
-      }
-      jsObj = arr;
-      break;
-    }
-    case "tuple": {
-      // Serialize Fay tuple to JavaScript array.
-      var arr = [];
-      fayObj = Fay$$_(fayObj);
-      var i = 0;
-      while(fayObj instanceof Fay$$Cons) {
-        arr.push(Fay$$fayToJs(args[i++],fayObj.car));
-        fayObj = Fay$$_(fayObj.cdr);
-      }
-      jsObj = arr;
-      break;
-    }
-    case "defined": {
-      fayObj = Fay$$_(fayObj);
-      if (fayObj instanceof $_Language$Fay$FFI$Undefined) {
-        jsObj = undefined;
+        // Finally, serialize the Fay return value back to JS.
+        var return_base = return_type[0];
+        var return_args = return_type[1];
+        // If it's a monadic return value, get the value instead.
+        if(return_base == "action") {
+          return Fay$$fayToJs(return_args[0],fayFunc.value);
+        }
+        // Otherwise just serialize the value direct.
+        else {
+          return Fay$$fayToJs(return_type,fayFunc);
+        }
       } else {
-        jsObj = Fay$$fayToJsUserDefined(args[0],fayObj["slot1"]);
+        throw new Error("Nullary function?");
       }
-      break;
+    };
+
+  }
+  else if(base == "string") {
+    // Serialize Fay string to JavaScript string.
+    var str = "";
+    fayObj = Fay$$_(fayObj);
+    while(fayObj instanceof Fay$$Cons) {
+      str += fayObj.car;
+      fayObj = Fay$$_(fayObj.cdr);
     }
-    case "nullable": {
+    jsObj = str;
+
+  }
+  else if(base == "list") {
+    // Serialize Fay list to JavaScript array.
+    var arr = [];
+    fayObj = Fay$$_(fayObj);
+    while(fayObj instanceof Fay$$Cons) {
+      arr.push(Fay$$fayToJs(args[0],fayObj.car));
+      fayObj = Fay$$_(fayObj.cdr);
+    }
+    jsObj = arr;
+
+  }
+  else if(base == "tuple") {
+    // Serialize Fay tuple to JavaScript array.
+    var arr = [];
+    fayObj = Fay$$_(fayObj);
+    var i = 0;
+    while(fayObj instanceof Fay$$Cons) {
+      arr.push(Fay$$fayToJs(args[i++],fayObj.car));
+      fayObj = Fay$$_(fayObj.cdr);
+    }
+    jsObj = arr;
+
+  }
+  else if(base == "defined") {
+    fayObj = Fay$$_(fayObj);
+    if (fayObj instanceof $_Language$Fay$FFI$Undefined) {
+      jsObj = undefined;
+    } else {
+      jsObj = Fay$$fayToJsUserDefined(args[0],fayObj["slot1"]);
+    }
+
+  }
+  else if(base == "nullable") {
+    fayObj = Fay$$_(fayObj);
+    if (fayObj instanceof $_Language$Fay$FFI$Null) {
+      jsObj = null;
+    } else {
+      jsObj = Fay$$fayToJsUserDefined(args[0],fayObj["slot1"]);
+    }
+
+  }
+  else if(base == "double" || base == "int" || base == "bool") {
+    // Bools are unboxed.
+    jsObj = Fay$$_(fayObj);
+
+  }
+  else if(base == "ptr" || base == "unknown")
+    return fayObj;
+  else if(base == "automatic" || base == "user") {
+    if(fayObj instanceof Fay$$$)
       fayObj = Fay$$_(fayObj);
-      if (fayObj instanceof $_Language$Fay$FFI$Null) {
-        jsObj = null;
-      } else {
-        jsObj = Fay$$fayToJsUserDefined(args[0],fayObj["slot1"]);
-      }
-      break;
-    }
-    case "double": {
-      // Serialize double, just force the argument. Doubles are unboxed.
-      jsObj = Fay$$_(fayObj);
-      break;
-    }
-    case "int": {
-      // Serialize int, just force the argument. Ints are unboxed.
-      jsObj = Fay$$_(fayObj);
-      break;
-    }
-    case "bool": {
-      // Bools are unboxed.
-      jsObj = Fay$$_(fayObj);
-      break;
-    }
-    case "unknown":
-      return fayObj;
-    case "automatic":
-    case "user": {
-      if(fayObj instanceof Fay$$$)
-        fayObj = Fay$$_(fayObj);
-      jsObj = Fay$$fayToJsUserDefined(type,fayObj);
-      break;
-    }
-    default: throw new Error("Unhandled Fay->JS translation type: " + base);
-    }
-    return jsObj;
+    jsObj = Fay$$fayToJsUserDefined(type,fayObj);
+
+  }
+  else
+    throw new Error("Unhandled Fay->JS translation type: " + base);
+  return jsObj;
 }
 
 // Unserialize an object from JS to Fay.
@@ -256,90 +240,77 @@ function Fay$$jsToFay(type,jsObj){
   var base = type[0];
   var args = type[1];
   var fayObj;
-  switch(base){
-    case "ptr": {
-      fayObj = jsObj;
-      break;
-    }
-    case "action": {
-      // Unserialize a "monadic" JavaScript return value into a monadic value.
-      fayObj = new Fay$$Monad(Fay$$jsToFay(args[0],jsObj));
-      break;
-    }
-    case "string": {
-      // Unserialize a JS string into Fay list (String).
-      fayObj = Fay$$list(jsObj);
-      break;
-    }
-    case "list": {
-      // Unserialize a JS array into a Fay list ([a]).
-      var serializedList = [];
-      for (var i = 0, len = jsObj.length; i < len; i++) {
-        // Unserialize each JS value into a Fay value, too.
-        serializedList.push(Fay$$jsToFay(args[0],jsObj[i]));
-      }
-      // Pop it all in a Fay list.
-      fayObj = Fay$$list(serializedList);
-      break;
-    }
-    case "tuple": {
-      // Unserialize a JS array into a Fay tuple ((a,b,c,...)).
-      var serializedTuple = [];
-      for (var i = 0, len = jsObj.length; i < len; i++) {
-        // Unserialize each JS value into a Fay value, too.
-        serializedTuple.push(Fay$$jsToFay(args[i],jsObj[i]));
-      }
-      // Pop it all in a Fay list.
-      fayObj = Fay$$list(serializedTuple);
-      break;
-    }
-    case "defined": {
-      if (jsObj === undefined) {
-        fayObj = new $_Language$Fay$FFI$Undefined();
-      } else {
-        fayObj = new $_Language$Fay$FFI$Defined(Fay$$jsToFay(args[0],jsObj));
-      }
-      break;
-    }
-    case "nullable": {
-      if (jsObj === null) {
-        fayObj = new $_Language$Fay$FFI$Null();
-      } else {
-        fayObj = new $_Language$Fay$FFI$Nullable(Fay$$jsToFay(args[0],jsObj));
-      }
-      break;
-    }
-    case "double": {
-      // Doubles are unboxed, so there's nothing to do.
-      fayObj = jsObj;
-      break;
-    }
-    case "int": {
-      // Int are unboxed, so there's no forcing to do.
-      // But we can do validation that the int has no decimal places.
-      // E.g. Math.round(x)!=x? throw "NOT AN INTEGER, GET OUT!"
-      fayObj = Math.round(jsObj);
-      if(fayObj!==jsObj) throw "Argument " + jsObj + " is not an integer!";
-      break;
-    }
-    case "bool": {
-      // Bools are unboxed.
-      fayObj = jsObj;
-      break;
-    }
-    case "unknown":
-      return jsObj;
-    case "automatic":
-    case "user": {
-      if (jsObj && jsObj['instance']) {
-        fayObj = Fay$$jsToFayUserDefined(type,jsObj);
-      }
-      else
-        fayObj = jsObj;
-      break;
-    }
-  default: throw new Error("Unhandled JS->Fay translation type: " + base);
+  if(base == "action") {
+    // Unserialize a "monadic" JavaScript return value into a monadic value.
+    fayObj = new Fay$$Monad(Fay$$jsToFay(args[0],jsObj));
+
   }
+  else if(base == "string") {
+    // Unserialize a JS string into Fay list (String).
+    fayObj = Fay$$list(jsObj);
+
+  }
+  else if(base == "list") {
+    // Unserialize a JS array into a Fay list ([a]).
+    var serializedList = [];
+    for (var i = 0, len = jsObj.length; i < len; i++) {
+      // Unserialize each JS value into a Fay value, too.
+      serializedList.push(Fay$$jsToFay(args[0],jsObj[i]));
+    }
+    // Pop it all in a Fay list.
+    fayObj = Fay$$list(serializedList);
+
+  }
+  else if(base == "tuple") {
+    // Unserialize a JS array into a Fay tuple ((a,b,c,...)).
+    var serializedTuple = [];
+    for (var i = 0, len = jsObj.length; i < len; i++) {
+      // Unserialize each JS value into a Fay value, too.
+      serializedTuple.push(Fay$$jsToFay(args[i],jsObj[i]));
+    }
+    // Pop it all in a Fay list.
+    fayObj = Fay$$list(serializedTuple);
+
+  }
+  else if(base == "defined") {
+    if (jsObj === undefined) {
+      fayObj = new $_Language$Fay$FFI$Undefined();
+    } else {
+      fayObj = new $_Language$Fay$FFI$Defined(Fay$$jsToFay(args[0],jsObj));
+    }
+
+  }
+  else if(base == "nullable") {
+    if (jsObj === null) {
+      fayObj = new $_Language$Fay$FFI$Null();
+    } else {
+      fayObj = new $_Language$Fay$FFI$Nullable(Fay$$jsToFay(args[0],jsObj));
+    }
+
+  }
+  else if(base == "int") {
+    // Int are unboxed, so there's no forcing to do.
+    // But we can do validation that the int has no decimal places.
+    // E.g. Math.round(x)!=x? throw "NOT AN INTEGER, GET OUT!"
+    fayObj = Math.round(jsObj);
+    if(fayObj!==jsObj) throw "Argument " + jsObj + " is not an integer!";
+
+  }
+  else if (base == "double" ||
+           base == "bool" ||
+           base ==  "ptr" ||
+           base ==  "unknown") {
+    return jsObj;
+  }
+  else if(base == "automatic" || base == "user") {
+    if (jsObj && jsObj['instance']) {
+      fayObj = Fay$$jsToFayUserDefined(type,jsObj);
+    }
+    else
+      fayObj = jsObj;
+
+  }
+  else { throw new Error("Unhandled JS->Fay translation type: " + base); }
   return fayObj;
 }
 
@@ -402,9 +373,9 @@ function Fay$$mult(x){
 
 function Fay$$mult$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return Fay$$_(x) * Fay$$_(y);
-    });
+  return new Fay$$$(function(){
+    return Fay$$_(x) * Fay$$_(y);
+  });
 
 }
 
@@ -420,9 +391,9 @@ function Fay$$add(x){
 // Built-in +.
 function Fay$$add$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return Fay$$_(x) + Fay$$_(y);
-    });
+  return new Fay$$$(function(){
+    return Fay$$_(x) + Fay$$_(y);
+  });
 
 }
 
@@ -437,9 +408,9 @@ function Fay$$sub(x){
 // Built-in -.
 function Fay$$sub$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return Fay$$_(x) - Fay$$_(y);
-    });
+  return new Fay$$$(function(){
+    return Fay$$_(x) - Fay$$_(y);
+  });
 
 }
 
@@ -455,9 +426,9 @@ function Fay$$div(x){
 // Built-in /.
 function Fay$$div$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return Fay$$_(x) / Fay$$_(y);
-    });
+  return new Fay$$$(function(){
+    return Fay$$_(x) / Fay$$_(y);
+  });
 
 }
 
@@ -512,9 +483,9 @@ function Fay$$eq(x){
 
 function Fay$$eq$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return Fay$$equal(x,y);
-    });
+  return new Fay$$$(function(){
+    return Fay$$equal(x,y);
+  });
 
 }
 
@@ -530,9 +501,9 @@ function Fay$$neq(x){
 // Built-in /=.
 function Fay$$neq$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return !(Fay$$equal(x,y));
-    });
+  return new Fay$$$(function(){
+    return !(Fay$$equal(x,y));
+  });
 
 }
 
@@ -548,9 +519,9 @@ function Fay$$gt(x){
 // Built-in >.
 function Fay$$gt$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return Fay$$_(x) > Fay$$_(y);
-    });
+  return new Fay$$$(function(){
+    return Fay$$_(x) > Fay$$_(y);
+  });
 
 }
 
@@ -567,9 +538,9 @@ function Fay$$lt(x){
 // Built-in <.
 function Fay$$lt$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return Fay$$_(x) < Fay$$_(y);
-    });
+  return new Fay$$$(function(){
+    return Fay$$_(x) < Fay$$_(y);
+  });
 
 }
 
@@ -586,9 +557,9 @@ function Fay$$gte(x){
 // Built-in >=.
 function Fay$$gte$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return Fay$$_(x) >= Fay$$_(y);
-    });
+  return new Fay$$$(function(){
+    return Fay$$_(x) >= Fay$$_(y);
+  });
 
 }
 
@@ -604,9 +575,9 @@ function Fay$$lte(x){
 // Built-in <=.
 function Fay$$lte$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return Fay$$_(x) <= Fay$$_(y);
-    });
+  return new Fay$$$(function(){
+    return Fay$$_(x) <= Fay$$_(y);
+  });
 
 }
 
@@ -622,10 +593,10 @@ function Fay$$and(x){
 // Built-in &&.
 function Fay$$and$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return Fay$$_(x) && Fay$$_(y);
-    });
- ;
+  return new Fay$$$(function(){
+    return Fay$$_(x) && Fay$$_(y);
+  });
+  ;
 }
 
 // Built-in ||.
@@ -640,9 +611,9 @@ function Fay$$or(x){
 // Built-in ||.
 function Fay$$or$36$uncurried(x,y){
 
-    return new Fay$$$(function(){
-      return Fay$$_(x) || Fay$$_(y);
-    });
+  return new Fay$$$(function(){
+    return Fay$$_(x) || Fay$$_(y);
+  });
 
 }
 

@@ -166,15 +166,7 @@ function Fay$$fayToJs(type,fayObj){
 
   }
   else if(base == "string") {
-    // Serialize Fay string to JavaScript string.
-    var str = "";
-    fayObj = Fay$$_(fayObj);
-    while(fayObj instanceof Fay$$Cons) {
-      str += fayObj.car;
-      fayObj = Fay$$_(fayObj.cdr);
-    }
-    jsObj = str;
-
+    jsObj = Fay$$fayToJs_string(fayObj);
   }
   else if(base == "list") {
     // Serialize Fay list to JavaScript array.
@@ -235,6 +227,30 @@ function Fay$$fayToJs(type,fayObj){
   return jsObj;
 }
 
+// Specialized serializer for string.
+function Fay$$fayToJs_string(fayObj){
+  // Serialize Fay string to JavaScript string.
+  var str = "";
+  fayObj = Fay$$_(fayObj);
+  while(fayObj instanceof Fay$$Cons) {
+    str += fayObj.car;
+    fayObj = Fay$$_(fayObj.cdr);
+  }
+  return str;
+};
+function Fay$$jsToFay_string(x){
+  return Fay$$list(x)
+};
+
+// Special num/bool serializers.
+function Fay$$jsToFay_int(x){return x;}
+function Fay$$jsToFay_double(x){return x;}
+function Fay$$jsToFay_bool(x){return x;}
+
+function Fay$$fayToJs_int(x){return Fay$$_(x);}
+function Fay$$fayToJs_double(x){return Fay$$_(x);}
+function Fay$$fayToJs_bool(x){return Fay$$_(x);}
+
 // Unserialize an object from JS to Fay.
 function Fay$$jsToFay(type,jsObj){
   var base = type[0];
@@ -248,7 +264,6 @@ function Fay$$jsToFay(type,jsObj){
   else if(base == "string") {
     // Unserialize a JS string into Fay list (String).
     fayObj = Fay$$list(jsObj);
-
   }
   else if(base == "list") {
     // Unserialize a JS array into a Fay list ([a]).

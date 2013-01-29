@@ -21,6 +21,7 @@ import           Language.Fay.Types
 import           Control.Monad.Error
 import           Control.Monad.State
 import           Data.Char
+import           Data.String
 import           Data.List
 import           Data.Maybe
 import           Language.ECMAScript3.Parser  as JS
@@ -192,10 +193,31 @@ fayToJs :: SerializeContext -> FundamentalType -> JsExp -> JsExp
 fayToJs = translate "fayToJs"
 
 -- | Make a translator.
-translate :: Name -> SerializeContext -> FundamentalType -> JsExp -> JsExp
-translate method context typ exp =
-  JsApp (JsName (JsBuiltIn method))
-        [typeRep context typ,exp]
+translate :: String -> SerializeContext -> FundamentalType -> JsExp -> JsExp
+translate method context typ exp = case typ of
+  -- Unserialized types
+  UnknownType -> exp
+  PtrType     -> exp
+  -- Flat types
+  StringType -> flat "string"
+  DoubleType -> flat "double"
+  IntType    -> flat "int"
+  BoolType   -> flat "bool"
+  -- Collapse monad
+  JsType x | method == "jsToFay" -> js x
+  -- Otherwise recursive stuff needs the big guns
+  _ -> recursive
+
+  where flat specialize =
+          JsApp (JsName (JsBuiltIn (fromString (method ++ "_" ++ specialize))))
+                [exp]
+        recursive =
+          JsApp (JsName (JsBuiltIn (fromString method)))
+                [typeRep context typ
+                ,exp]
+        js typ =
+          JsNew (JsBuiltIn "Monad")
+                [translate method context typ exp]
 
 -- | Get a JS-representation of a fundamental type for encoding/decoding.
 typeRep :: SerializeContext -> FundamentalType -> JsExp

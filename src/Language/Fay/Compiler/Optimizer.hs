@@ -38,7 +38,7 @@ data OptState = OptState
 runOptimizer :: ([JsStmt] -> Optimize [JsStmt]) -> [JsStmt] -> [JsStmt]
 runOptimizer optimizer stmts =
   let (newstmts,OptState _ uncurried) = flip runState st $ optimizer stmts
-  in (inlineMonad newstmts ++ (tco (catMaybes (map (uncurryBinding newstmts) (nub uncurried)))))
+  in inlineMonad (newstmts ++ (tco (catMaybes (map (uncurryBinding newstmts) (nub uncurried)))))
   where st = OptState stmts []
 
 inlineMonad :: [JsStmt] -> [JsStmt]

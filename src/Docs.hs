@@ -281,7 +281,7 @@ thelinks = do
     li $ do
       "Happstack Blog: "
       a ! href
-        "http://www.happstack.com/c/view-page-slug/15/happstack-fay-acid-state-shared-datatypes-are-awesome" $
+        "http://www.happstack.com/clck/view-page-slug/15/happstack-fay-acid-state-shared-datatypes-are-awesome" $
           "Happstack, Fay, & Acid-State: Shared Datatypes are Awesome"
     li $ do
       a ! href

@@ -2,7 +2,7 @@
 
 module Maybe where
 
-import Language.Fay.FFI
+import FFI
 import Prelude
 
 data Munge a b = Fudge a b

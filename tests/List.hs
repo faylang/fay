@@ -1,4 +1,4 @@
-import           Language.Fay.FFI
+import           FFI
 import           Prelude
 
 main = putStrLn (showList (take 5 (let ns = 1 : map' (\x -> x + 1) ns in ns)))

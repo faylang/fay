@@ -1,6 +1,6 @@
 module Listlen (main) where
 
-import Language.Fay.FFI
+import FFI
 import Prelude
 
 -- Test provided by ticket

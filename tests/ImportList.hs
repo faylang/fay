@@ -1,7 +1,7 @@
 module ImportList where
 
 import           Prelude
-import           Language.Fay.FFI
+import           FFI
 
 import           ImportList1.A        (x)
 import           ImportList1.B        (y, R (s1), r, s2, X (Y), (<<>>))

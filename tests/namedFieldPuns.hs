@@ -1,6 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-import           Language.Fay.FFI
+import           FFI
 import           Prelude
 
 data SomeRec = SomeRec { a :: Integer, b :: Integer } | Y | X

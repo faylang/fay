@@ -1,4 +1,4 @@
-import Language.Fay.FFI
+import FFI
 import Prelude
 
 f :: (Int,Double) -> Double

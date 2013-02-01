@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns  #-}
 {-# LANGUAGE RecordWildCards #-}
 
-import           Language.Fay.FFI
+import           FFI
 import           Prelude
 
 data C = C { a :: Int, b :: Int, c :: Int, d :: Int }

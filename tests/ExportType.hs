@@ -7,7 +7,7 @@ module ExportType (
   , V (V, v1) -- Export fields partially (EThingWith)
   ) where
 
-import           Language.Fay.FFI
+import           FFI
 import           Prelude
 
 data X = X

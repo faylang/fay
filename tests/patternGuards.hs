@@ -3,7 +3,7 @@
 -- | As pattern matches
 
 import           Prelude
-import           Language.Fay.FFI
+import           FFI
 
 isPositive :: Double -> Bool
 isPositive x | x > 0 = True

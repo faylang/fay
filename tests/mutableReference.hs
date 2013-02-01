@@ -2,7 +2,7 @@
 
 {-# LANGUAGE EmptyDataDecls    #-}
 
-import           Language.Fay.FFI
+import           FFI
 import           Prelude
 
 main :: Fay ()

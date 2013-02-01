@@ -223,8 +223,9 @@ defaultCompileState = do
 newtype Compile a = Compile
   { unCompile :: RWST CompileReader
                       ()
-                      CompileState (ErrorT CompileError IO)
-                                   a
+                      CompileState
+                      (ErrorT CompileError IO)
+                      a
   }
   deriving (MonadState CompileState
            ,MonadError CompileError

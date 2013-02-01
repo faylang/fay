@@ -45,7 +45,22 @@ module Language.Fay.Types
   ,configPackages
   ,addConfigPackage
   ,addConfigPackages
-  ,CompileState(..)
+  ,CompileState(
+     stateExports
+    ,stateModuleName
+    ,stateFilePath
+    ,stateRecordTypes
+    ,stateRecords
+    ,stateFayToJs
+    ,stateJsToFay
+    ,stateNameDepth
+    ,stateLocalScope
+    ,stateModuleScope
+    ,stateCons
+  )
+  ,stateImported
+  ,addStateImported
+  ,addStateImporteds
   ,defaultCompileState
   ,defaultCompileReader
   ,faySourceDir
@@ -62,8 +77,6 @@ import           Control.Monad.Identity (Identity)
 import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default
-import           Data.Map              (Map)
-import qualified Data.Map              as M
 import           Data.Set              (Set)
 import qualified Data.Set              as S
 import           Data.String
@@ -150,19 +163,27 @@ addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 -- | State of the compiler.
 data CompileState = CompileState
   { stateExports      :: [QName]
-  , stateExportsCache :: Map ModuleName [QName] -- Collects exports from modules
   , stateModuleName   :: ModuleName
   , stateFilePath     :: FilePath
   , stateRecordTypes  :: [(QName,[QName])] -- Map types to constructors
   , stateRecords      :: [(QName,[QName])] -- Map constructors to fields
   , stateFayToJs      :: [JsStmt]
   , stateJsToFay      :: [JsStmt]
-  , stateImported     :: [(ModuleName,FilePath)]
+  , _stateImported    :: [(ModuleName,FilePath)]
   , stateNameDepth    :: Integer
   , stateLocalScope   :: Set Name
   , stateModuleScope  :: ModuleScope
-  , stateCons        :: [JsStmt]
+  , stateCons         :: [JsStmt]
 } deriving (Show)
+
+stateImported :: CompileState -> [(ModuleName,FilePath)]
+stateImported = _stateImported
+
+addStateImported :: (ModuleName, FilePath) -> CompileState -> CompileState
+addStateImported si cs = cs { _stateImported = si : _stateImported cs }
+
+addStateImporteds :: [(ModuleName,FilePath)] -> CompileState -> CompileState
+addStateImporteds sis cs = foldl (flip addStateImported) cs sis
 
 data CompileReader = CompileReader
   { readerConfig :: CompileConfig
@@ -185,13 +206,12 @@ defaultCompileState = do
   types <- getDataFileName "src/Language/Fay/Types.hs"
   return $ CompileState {
     stateExports = []
-  , stateExportsCache = M.empty
   , stateModuleName = ModuleName "Main"
   , stateRecordTypes = []
   , stateRecords = []
   , stateFayToJs = []
   , stateJsToFay = []
-  , stateImported = [("Language.Fay.Types",types)]
+  , _stateImported = [("Language.Fay.Types",types)]
   , stateNameDepth = 1
   , stateFilePath = "<unknown>"
   , stateLocalScope = S.empty
@@ -276,7 +296,6 @@ data CompileError
   | FfiFormatInvalidJavaScript SrcLoc String String
   | UnableResolveUnqualified Name
   | UnableResolveQualified QName
-  | UnableResolveCachedImport ModuleName
   deriving (Show)
 instance Error CompileError
 

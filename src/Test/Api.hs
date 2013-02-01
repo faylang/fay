@@ -30,7 +30,7 @@ case_importedList = do
   res <- compileFileWithState defConf { configPackageConf = whatAGreatFramework } fp
   case res of
     Left err -> error (show err)
-    Right (_,r) -> assertBool "RecordImport_Export was not added to stateImported" .
+    Right (_,r) -> assertBool ("RecordImport_Export was not added to stateImported" ++ show (stateImported r)) .
                      isJust . lookup (ModuleName "RecordImport_Export") $ stateImported r
 
 case_stateRecordTypes :: Assertion

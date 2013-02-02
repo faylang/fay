@@ -95,27 +95,27 @@ import           Paths_fay
 
 -- | Configuration of the compiler.
 data CompileConfig = CompileConfig
-  { configOptimize          :: Bool
-  , configFlattenApps       :: Bool
-  , configExportBuiltins    :: Bool
-  , configExportRuntime     :: Bool
-  , configExportStdlib      :: Bool
-  , configExportStdlibOnly  :: Bool
-  , configDispatchers       :: Bool
-  , configDispatcherOnly    :: Bool
-  , configNaked             :: Bool
-  , _configDirectoryIncludes :: [(Maybe String, FilePath)] -- ^ Possibly a fay package name, and a include directory
-  , configPrettyPrint       :: Bool
-  , configHtmlWrapper       :: Bool
-  , configHtmlJSLibs        :: [FilePath]
-  , configLibrary           :: Bool
-  , configWarn              :: Bool
-  , configFilePath          :: Maybe FilePath
-  , configTypecheck         :: Bool
-  , configWall              :: Bool
-  , configGClosure          :: Bool
-  , configPackageConf       :: Maybe FilePath
-  , _configPackages         :: [String]
+  { configOptimize           :: Bool                       -- ^ Run optimizations
+  , configFlattenApps        :: Bool
+  , configExportBuiltins     :: Bool
+  , configExportRuntime      :: Bool
+  , configExportStdlib       :: Bool
+  , configExportStdlibOnly   :: Bool
+  , configDispatchers        :: Bool
+  , configDispatcherOnly     :: Bool
+  , configNaked              :: Bool
+  , _configDirectoryIncludes :: [(Maybe String, FilePath)] -- ^ Possibly a fay package name, and a include directory.
+  , configPrettyPrint        :: Bool
+  , configHtmlWrapper        :: Bool                       -- ^ Output a HTML file including the produced JS.
+  , configHtmlJSLibs         :: [FilePath]
+  , configLibrary            :: Bool                       -- ^ Don't invoke main in the produced JS.
+  , configWarn               :: Bool                       -- ^ Warn on dubious stuff, not related to typechecking.
+  , configFilePath           :: Maybe FilePath             -- TODO This flag is not used thoroughly, decide if it's needed.
+  , configTypecheck          :: Bool                       -- ^ Typecheck with GHC
+  , configWall               :: Bool                       -- ^ Typecheck with -Wall
+  , configGClosure           :: Bool                       -- ^ Run Google Closure on the produced JS.
+  , configPackageConf        :: Maybe FilePath
+  , _configPackages          :: [String]                   -- ^ Included Fay packages
   } deriving (Show)
 
 -- | Default configuration.
@@ -146,46 +146,57 @@ instance Default CompileConfig where
       , _configPackages          = []
       }
 
+-- | Mapping of packages to source directories, a fst Nothing means the include
+-- was added without a package reference.
 configDirectoryIncludes :: CompileConfig -> [(Maybe String, FilePath)]
 configDirectoryIncludes = _configDirectoryIncludes
 
+-- | Get all include directories without the package mapping.
 configDirectoryIncludePaths :: CompileConfig -> [FilePath]
 configDirectoryIncludePaths = map snd . configDirectoryIncludes
 
+-- | Get all include directories not included through packages.
 nonPackageConfigDirectoryIncludePaths :: CompileConfig -> [FilePath]
 nonPackageConfigDirectoryIncludePaths = map snd . filter (isJust . fst) . configDirectoryIncludes
 
+-- | Add a mapping from (maybe) a package to a source directory
 addConfigDirectoryInclude :: Maybe String -> FilePath -> CompileConfig -> CompileConfig
 addConfigDirectoryInclude pkg fp cfg = cfg { _configDirectoryIncludes = (pkg, fp) : _configDirectoryIncludes cfg }
 
+-- | Add several include directories.
 addConfigDirectoryIncludes :: [(Maybe String,FilePath)] -> CompileConfig -> CompileConfig
 addConfigDirectoryIncludes pkgFps cfg = foldl (\c (pkg,fp) -> addConfigDirectoryInclude pkg fp c) cfg pkgFps
 
+-- | Add several include directories without package references.
 addConfigDirectoryIncludePaths :: [FilePath] -> CompileConfig -> CompileConfig
 addConfigDirectoryIncludePaths fps cfg = foldl (flip (addConfigDirectoryInclude Nothing)) cfg fps
 
+-- | All included packages
 configPackages :: CompileConfig -> [String]
 configPackages = _configPackages
 
+-- | Add a package to compilation
 addConfigPackage :: String -> CompileConfig -> CompileConfig
 addConfigPackage pkg cfg = cfg { _configPackages = pkg : _configPackages cfg }
 
+-- | Add several packages to compilation
 addConfigPackages :: [String] -> CompileConfig -> CompileConfig
 addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 
 -- | State of the compiler.
 data CompileState = CompileState
-  { stateExports      :: [QName]
-  , stateModuleName   :: ModuleName
-  , stateFilePath     :: FilePath
-  , stateRecordTypes  :: [(QName,[QName])] -- Map types to constructors
-  , stateRecords      :: [(QName,[QName])] -- Map constructors to fields
+  { stateExports      :: [QName]                 -- ^ Names exported by this module (May be re-exports)
+  , stateModuleName   :: ModuleName              -- ^ Name of the module currently being compiled.
+  , stateFilePath     :: FilePath                -- ^ Source path to the module curently being compiled.
+                                                 -- TODO merge these?
+  , stateRecordTypes  :: [(QName,[QName])]       -- ^ Map types to constructors.
+  , stateRecords      :: [(QName,[QName])]       -- ^ Map constructors to fields.
   , stateFayToJs      :: [JsStmt]
   , stateJsToFay      :: [JsStmt]
-  , _stateImported    :: [(ModuleName,FilePath)]
-  , stateNameDepth    :: Integer
-  , stateLocalScope   :: Set Name
-  , stateModuleScope  :: ModuleScope
+  , _stateImported    :: [(ModuleName,FilePath)] -- ^ Map of all imported modules and their source locations.
+  , stateNameDepth    :: Integer                 -- ^ Depth of the current lexical scope.
+  , stateLocalScope   :: Set Name                -- ^ Names in the current lexical scope.
+  , stateModuleScope  :: ModuleScope             -- ^ Names in the module scope.
   , stateCons         :: [JsStmt]
 } deriving (Show)
 

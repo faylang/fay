@@ -49,7 +49,7 @@ testFile packageConf opt file = do
   let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
       out = toJsName file
       config =
-        addConfigDirectoryInclude "tests/" $
+        addConfigDirectoryIncludePaths ["tests/"] $
           def { configOptimize = opt
               , configTypecheck = False
               , configPackageConf = packageConf

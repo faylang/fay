@@ -194,13 +194,9 @@ compileForDocs mod = do
 compileToplevelModule :: Module -> Compile [JsStmt]
 compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   cfg <- config id
-  -- Remove the fay source dir from the includes, -package fay is already supplied.
-  -- This will prevent errors on FFI instance declarations.
-  faydir <- io faySourceDir
-  let includeDirs = filter (/= faydir) (configDirectoryIncludes cfg)
 
   when (configTypecheck cfg) $
-    typecheck (configPackageConf cfg) includeDirs [] (configWall cfg) $
+    typecheck (configPackageConf cfg) (configWall cfg) $
       fromMaybe modulename $ configFilePath cfg
   initialPass mod
   cs <- io defaultCompileState
@@ -257,7 +253,7 @@ initialPass_unlessImported name importIt = do
   case lookup name imported of
     Just _ -> return ()
     Nothing -> do
-      dirs <- configDirectoryIncludes <$> config id
+      dirs <- configDirectoryIncludePaths <$> config id
       (filepath,contents) <- findImport dirs name
       modify $ \s -> addStateImported (name,filepath) s
       importIt filepath contents
@@ -322,8 +318,16 @@ initialPass_dataDecl constructors = do
 --------------------------------------------------------------------------------
 -- Typechecking
 
-typecheck :: Maybe FilePath -> [FilePath] -> [String] -> Bool -> String -> Compile ()
-typecheck packageConf includeDirs ghcFlags wall fp = do
+typecheck :: Maybe FilePath -> Bool -> String -> Compile ()
+typecheck packageConf wall fp = do
+  cfg <- config id
+  faydir <- io faySourceDir
+  let includes = configDirectoryIncludes cfg
+
+  -- Remove the fay source dir from includeDirs to prevent errors on FFI instance declarations.
+  let includeDirs = map snd . filter ((/= faydir) . snd) . filter (isNothing . fst) $ includes
+  let packages = nub . map (fromJust . fst) . filter (isJust . fst) $ includes
+
   ghcPackageDbArgs <-
     case packageConf of
       Nothing -> return []
@@ -333,12 +337,11 @@ typecheck packageConf includeDirs ghcFlags wall fp = do
   let flags =
           [ "-fno-code"
           , "-hide-package base"
-          , "-package fay-base"
           , "-cpp", "-DFAY=1"
           , "-main-is"
           , "Language.Fay.DummyMain"
-          , "-i" ++ concat (intersperse "," includeDirs)
-          , fp ] ++ ghcPackageDbArgs ++ ghcFlags ++ wallF
+          , "-i" ++ concat (intersperse ":" includeDirs)
+          , fp ] ++ ghcPackageDbArgs ++ wallF ++ map ("-package " ++) packages
   res <- liftIO $ readAllFromProcess GHCPaths.ghc flags ""
   either error (warn . fst) res
    where
@@ -444,7 +447,7 @@ imported is qn = anyM (matching qn) is
 compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile [JsStmt]
 compileImportWithFilter "Language.Fay.Types" _ = return []
 compileImportWithFilter name importFilter = do
-  dirs <- configDirectoryIncludes <$> config id
+  dirs <- configDirectoryIncludePaths <$> config id
   (filepath,contents) <- findImport dirs name
 
   state <- get

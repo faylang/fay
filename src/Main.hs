@@ -60,7 +60,7 @@ main = do
       if optPrintRuntime opts
          then getRuntime >>= readFile >>= putStr
          else do
-           let config = addConfigDirectoryIncludes ("." : optInclude opts) $
+           let config = addConfigDirectoryIncludePaths ("." : optInclude opts) $
                  addConfigPackages (optPackages opts) $ def
                    { configOptimize         = optOptimize opts
                    , configFlattenApps      = optFlattenApps opts

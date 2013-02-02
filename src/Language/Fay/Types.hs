@@ -42,6 +42,9 @@ module Language.Fay.Types
   ,configDirectoryIncludes
   ,addConfigDirectoryInclude
   ,addConfigDirectoryIncludes
+  ,addConfigDirectoryIncludePaths
+  ,configDirectoryIncludePaths
+  ,nonPackageConfigDirectoryIncludePaths
   ,configPackages
   ,addConfigPackage
   ,addConfigPackages
@@ -77,6 +80,7 @@ import           Control.Monad.Identity (Identity)
 import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default
+import           Data.Maybe
 import           Data.Set              (Set)
 import qualified Data.Set              as S
 import           Data.String
@@ -100,7 +104,7 @@ data CompileConfig = CompileConfig
   , configDispatchers       :: Bool
   , configDispatcherOnly    :: Bool
   , configNaked             :: Bool
-  , _configDirectoryIncludes :: [FilePath]
+  , _configDirectoryIncludes :: [(Maybe String, FilePath)] -- ^ Possibly a fay package name, and a include directory
   , configPrettyPrint       :: Bool
   , configHtmlWrapper       :: Bool
   , configHtmlJSLibs        :: [FilePath]
@@ -142,14 +146,23 @@ instance Default CompileConfig where
       , _configPackages          = []
       }
 
-configDirectoryIncludes :: CompileConfig -> [FilePath]
+configDirectoryIncludes :: CompileConfig -> [(Maybe String, FilePath)]
 configDirectoryIncludes = _configDirectoryIncludes
 
-addConfigDirectoryInclude :: FilePath -> CompileConfig -> CompileConfig
-addConfigDirectoryInclude fp cfg = cfg { _configDirectoryIncludes = fp : _configDirectoryIncludes cfg }
+configDirectoryIncludePaths :: CompileConfig -> [FilePath]
+configDirectoryIncludePaths = map snd . configDirectoryIncludes
 
-addConfigDirectoryIncludes :: [FilePath] -> CompileConfig -> CompileConfig
-addConfigDirectoryIncludes fps cfg = foldl (flip addConfigDirectoryInclude) cfg fps
+nonPackageConfigDirectoryIncludePaths :: CompileConfig -> [FilePath]
+nonPackageConfigDirectoryIncludePaths = map snd . filter (isJust . fst) . configDirectoryIncludes
+
+addConfigDirectoryInclude :: Maybe String -> FilePath -> CompileConfig -> CompileConfig
+addConfigDirectoryInclude pkg fp cfg = cfg { _configDirectoryIncludes = (pkg, fp) : _configDirectoryIncludes cfg }
+
+addConfigDirectoryIncludes :: [(Maybe String,FilePath)] -> CompileConfig -> CompileConfig
+addConfigDirectoryIncludes pkgFps cfg = foldl (\c (pkg,fp) -> addConfigDirectoryInclude pkg fp c) cfg pkgFps
+
+addConfigDirectoryIncludePaths :: [FilePath] -> CompileConfig -> CompileConfig
+addConfigDirectoryIncludePaths fps cfg = foldl (flip (addConfigDirectoryInclude Nothing)) cfg fps
 
 configPackages :: CompileConfig -> [String]
 configPackages = _configPackages
@@ -197,7 +210,7 @@ defaultCompileReader :: CompileConfig -> IO CompileReader
 defaultCompileReader config = do
   srcdir <- faySourceDir
   return CompileReader
-    { readerConfig = addConfigDirectoryInclude srcdir config
+    { readerConfig = addConfigDirectoryInclude Nothing srcdir config
     }
 
 -- | The default compiler state.

@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections              #-}
+
 -- | Dealing with Cabal packages in Fay's own special way.
 
 module Language.Fay.Compiler.Packages where
@@ -25,7 +27,7 @@ resolvePackage config name = do
     Nothing -> error $ "unable to find share dir of package: " ++ name
     Just dirs -> do
       mapM_ checkDirExists dirs
-      return (addConfigDirectoryIncludes dirs config)
+      return (addConfigDirectoryIncludes (map (Just name,) dirs) config)
 
 -- | Describe package with ghc-pkg.
 --

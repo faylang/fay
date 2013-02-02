@@ -71,5 +71,5 @@ fp :: FilePath
 fp = "tests/RecordImport_Import.hs"
 
 defConf :: CompileConfig
-defConf = addConfigDirectoryInclude "tests/"
+defConf = addConfigDirectoryIncludePaths ["tests/"]
         $ def { configTypecheck = False }

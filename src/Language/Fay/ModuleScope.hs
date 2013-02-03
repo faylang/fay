@@ -96,7 +96,7 @@ envPrimOpsMap = M.fromList
   , (Symbol "*",     (Qual (ModuleName "Fay$") (Ident "mult")))
   , (Symbol "+",     (Qual (ModuleName "Fay$") (Ident "add")))
   , (Symbol "-",     (Qual (ModuleName "Fay$") (Ident "sub")))
-  , (Symbol "/",     (Qual (ModuleName "Fay$") (Ident "div")))
+  , (Symbol "/",     (Qual (ModuleName "Fay$") (Ident "divi")))
   , (Symbol "==",    (Qual (ModuleName "Fay$") (Ident "eq")))
   , (Symbol "/=",    (Qual (ModuleName "Fay$") (Ident "neq")))
   , (Symbol ">",     (Qual (ModuleName "Fay$") (Ident "gt")))

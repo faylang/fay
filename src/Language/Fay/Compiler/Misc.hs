@@ -125,7 +125,14 @@ emitExport spec = case spec of
   EAbs _ -> return () -- Type only, skip
   EModuleContents mod ->
     mapM_ (emitExport . EVar) =<< ModuleScope.moduleLocals mod <$> gets stateModuleScope
-  e -> throwError $ UnsupportedExportSpec e
+
+  -- Skip qualified exports for type exports in fay-base since
+  -- qualified imports are not supported yet an error will be thrown
+  -- on the import so hopefully this won't be confusing.
+  EThingAll (Qual _ _) -> return ()
+  e -> do
+    liftIO (print e)
+    throwError $ UnsupportedExportSpec e
  where
    emitVar = return . UnQual >=> resolveName >=> emitExport . EVar
    emitCName (VarName n) = emitVar n

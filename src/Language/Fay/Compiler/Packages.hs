@@ -87,6 +87,9 @@ describePackage db name = do
 --   do this better, because I've got better things to be doing, like
 --   climbing trees, baking cookies and reading books about zombies.
 --
+--   On a windows system the import-dirs flag looks something like this:
+--   C:\Users\Jann\AppData\Roaming\cabal\fay-jquery-0.1.0.0\ghc-7.4.2
+--   We just need to remove the "ghc" bit from it
 shareDirs :: String -> Maybe [FilePath]
 shareDirs desc =
   case find (isPrefixOf "import-dirs: ") (lines desc) of
@@ -98,14 +101,19 @@ shareDirs desc =
         (_import_dirs:idir:_) -> Just $ [munge idir
                                         ,munge idir </> "src"] -- Yep.
         _ -> Nothing
-
-  where munge = joinPath . reverse . swap . dropGhc . reverse . map dropTrailingPathSeparator . splitPath where
-          dropGhc = drop 1
+  where 
+    munge dir =
+      case dir of
+        ('/':_) -> mungeUnix dir
+        _ -> mungeWin dir
+    mungeUnix = joinPath . reverse . swap . dropGhc . reverse . map dropTrailingPathSeparator . splitPath where
           swap (name_version:"lib":rest) = name_version : "share" : rest
           swap paths = error $ "unable to complete munging of the lib dir\
                                \, see Language.Fay.Compiler.Packages.hs \
                                \for an explanation: " ++
                                "\npath was: " ++ joinPath paths
+    mungeWin = joinPath . reverse . dropGhc . reverse . splitDirectories where
+    dropGhc = drop 1
 
 -- | Might as well check the dir that we munged to death actually
 --   exists. -___ -

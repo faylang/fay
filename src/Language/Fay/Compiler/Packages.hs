@@ -99,10 +99,15 @@ shareDirs desc =
                                         ,munge idir </> "src"] -- Yep.
         _ -> Nothing
 
-  where munge = joinPath . reverse . swap . dropGhc . reverse . map dropTrailingPathSeparator . splitPath where
-          dropGhc = drop 1
-          swap (name_version:"lib":rest) = name_version : "share" : rest
-          swap paths = error $ "unable to complete munging of the lib dir\
+  where munge = joinPath . reverse . dropGhcAndSwap . reverse . map dropTrailingPathSeparator . splitPath where
+          dropGhcAndSwap (ghc:rest) | "ghc-7.4" `isPrefixOf` ghc = swap 74 rest
+          dropGhcAndSwap x = swap 76 x
+          isLibDir "lib" = True
+          isLibDir "lib64" = True
+          isLibDir _ = False
+          swap 74 (name_version:d:rest) | isLibDir d = name_version : "share" : rest
+          swap 76 (ghc_version:name_version:d:rest) | isLibDir d = ghc_version : name_version : "share" : rest
+          swap _ paths = error $ "unable to complete munging of the lib dir\
                                \, see Language.Fay.Compiler.Packages.hs \
                                \for an explanation: " ++
                                "\npath was: " ++ joinPath paths

@@ -8,7 +8,9 @@ import Language.Fay.Types
 
 import Control.Monad
 import Data.List
+import Data.Version
 import GHC.Paths
+import Paths_fay
 import System.Directory
 import System.FilePath
 import System.Process.Extra
@@ -23,30 +25,29 @@ resolvePackages config = do
 resolvePackage :: CompileConfig -> String -> IO CompileConfig
 resolvePackage config name = do
   desc <- describePackage (configPackageConf config) name
-  case shareDirs desc of
-    Nothing -> error $ "unable to find share dir of package: " ++ name
-    Just dirs -> do
-      mapM_ checkDirExists dirs
-      return (addConfigDirectoryIncludes (map (Just name,) dirs) config)
+  case packageVersion desc of
+    Nothing -> error $ "unable to find package version: " ++ name
+    Just ver -> do
+      let nameVer = name ++ "-" ++ ver
+      shareDir <- fmap ($ nameVer) getShareGen
+      let includes = [shareDir,shareDir </> "src"]
+      exists <- mapM doesSourceDirExist includes
+      if any id exists
+         then return (addConfigDirectoryIncludes (map (Just nameVer,) includes) config)
+         else error $ "unable to find (existing) package's share dir: " ++ name ++ "\n" ++
+                      "tried: " ++ unlines includes ++ "\n" ++
+                      "but none of them seem to have Haskell files in them."
 
--- | Describe package with ghc-pkg.
---
---   Weinsworth : Why are you not using the GHC API which would
---                provide you this information like in modules like
---                Packages which has functions like
---
---                collectIncludeDirs :: [PackageConfig] -> [FilePath]
---
---                and awesome stuff like that. What are you, stupid?
---
---   Batemen : Pretty much. I think this might be a little faster than
---             initializing GHC, and using the GHC API adds a lot of
---             link time when you use it.
---
---   Weinsworth : Uh huh.
---
---   Batemen: Yeah. Stop looking at me like that.
---
+-- | Does a directory exist and does it contain any Haskell sources?
+doesSourceDirExist :: FilePath -> IO Bool
+doesSourceDirExist path = do
+  exists <- doesDirectoryExist path
+  if not exists
+     then return False
+     else do files <- getDirectoryContents path
+             return $ any ((==".hs") . takeExtension) files
+
+-- | Describe the given package.
 describePackage :: Maybe FilePath -> String -> IO String
 describePackage db name = do
   result <- readAllFromProcess ghc_pkg args ""
@@ -57,61 +58,18 @@ describePackage db name = do
   where args = concat [["describe",name]
                       ,["-f" ++ db' | Just db' <- [db]]]
 
--- | Get the share dirs of the package.
---
---   Alright.
---   Stop.
---   Collaborate and listen.
---
---   You're gonna have to stop scrolling and read this.
---
---   I can't figure out how to get the data-dirs from the package
---   description.
---
---   * It doesn't seem to be in the Cabal API's PackageDescription type.
---   * It doesn't seem to be in the ghc-pkg description.
---   * I can't find out how to read the Cabal configuration. Yeah, I
---     could probably find it eventually. Shut up.
---
---   So what I'm doing is parsing the “import-dirs” flag, which
---   appears in ghc-pkg's output like this:
---
---   /home/chris/Projects/me/fay-jquery/cabal-dev//lib/fay-jquery-0.1.0.0/ghc-7.4.1
---
---   And I'm going to replace “lib” with “share” and drop the “ghc-*”
---   and that, under a *normal* configuration, gives the share
---   directory.
---
---   Under an atypical situation, we're going to throw an error and
---   you guys will just have to submit a pull request or some code to
---   do this better, because I've got better things to be doing, like
---   climbing trees, baking cookies and reading books about zombies.
---
-shareDirs :: String -> Maybe [FilePath]
-shareDirs desc =
-  case find (isPrefixOf "import-dirs: ") (lines desc) of
-    Nothing -> Nothing
-    Just idirs ->
-      case words idirs of
-        -- I'm going to take the first one. If you've got more, just,
-        -- I hate you.
-        (_import_dirs:idir:_) -> Just $ [munge idir
-                                        ,munge idir </> "src"] -- Yep.
-        _ -> Nothing
+-- | Get the package version from the package description.
+packageVersion :: String -> Maybe String
+packageVersion = fmap (dropWhile (==' ')) . lookup "version:" . map (span (/=' ')) . lines
 
-  where munge = joinPath . reverse . swap . dropGhc . reverse . map dropTrailingPathSeparator . splitPath where
-          dropGhc = drop 1
-          swap (name_version:"lib":rest) = name_version : "share" : rest
-          swap paths = error $ "unable to complete munging of the lib dir\
-                               \, see Language.Fay.Compiler.Packages.hs \
-                               \for an explanation: " ++
-                               "\npath was: " ++ joinPath paths
+-- | Make a share directory generator.
+getShareGen :: IO (String -> FilePath)
+getShareGen = do
+  dataDir <- getDataDir
+  return $ \pkg ->
+    joinPath (map (replace pkg . dropTrailingPathSeparator) (splitPath dataDir))
 
--- | Might as well check the dir that we munged to death actually
---   exists. -___ -
-checkDirExists :: FilePath -> IO ()
-checkDirExists p = do
-  don'tFlipOut <- doesDirectoryExist p
-  unless don'tFlipOut $
-    error $ "so the directory we munged doesn't exist:\n  " ++ p ++
-            "\nreport a bug, we screwed up."
+  where replace pkg component
+          | component == nameVer = pkg
+          | otherwise = component
+        nameVer = "fay-" ++ intercalate "." (map show (versionBranch version))

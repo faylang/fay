@@ -318,7 +318,6 @@ data CompileError
   | FfiFormatInvalidJavaScript SrcLoc String String
   | UnableResolveUnqualified Name
   | UnableResolveQualified QName
-  | UnableResolveCachedImport ModuleName
   deriving (Show)
 instance Error CompileError
 

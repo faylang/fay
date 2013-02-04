@@ -49,6 +49,9 @@ module Language.Fay.Types
   ,addConfigPackage
   ,addConfigPackages
   ,CompileState(..)
+  ,addCurrentExport
+  ,getCurrentExports
+  ,getExportsFor
   ,defaultCompileState
   ,defaultCompileReader
   ,faySourceDir
@@ -172,8 +175,7 @@ addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 
 -- | State of the compiler.
 data CompileState = CompileState
-  { stateExports      :: [QName]
-  , stateExportsCache :: Map ModuleName [QName] -- Collects exports from modules
+  { _stateExports     :: Map ModuleName (Set QName) -- Collects exports from modules
   , stateModuleName   :: ModuleName
   , stateFilePath     :: FilePath
   , stateRecordTypes  :: [(QName,[QName])] -- Map types to constructors
@@ -207,8 +209,7 @@ defaultCompileState :: IO CompileState
 defaultCompileState = do
   types <- getDataFileName "src/Language/Fay/Types.hs"
   return $ CompileState {
-    stateExports = []
-  , stateExportsCache = M.empty
+    _stateExports = M.empty
   , stateModuleName = ModuleName "Main"
   , stateRecordTypes = []
   , stateRecords = []
@@ -221,6 +222,23 @@ defaultCompileState = do
   , stateModuleScope = def
   , stateCons = []
   }
+
+-- | Adds a new export to '_stateExports' for the module specified by
+-- 'stateModuleName'.
+addCurrentExport :: QName -> CompileState -> CompileState
+addCurrentExport q cs =
+    cs { _stateExports = M.insert (stateModuleName cs) qnames $ _stateExports cs}
+  where
+    qnames = maybe (S.singleton q) (S.insert q)
+           $ M.lookup (stateModuleName cs) (_stateExports cs)
+
+-- | Get all of the exported identifiers for the current module.
+getCurrentExports :: CompileState -> Set QName
+getCurrentExports cs = getExportsFor (stateModuleName cs) cs
+
+-- | Get all of the exported identifiers for the given module.
+getExportsFor :: ModuleName -> CompileState -> Set QName
+getExportsFor mn cs = fromMaybe S.empty $ M.lookup mn (_stateExports cs)
 
 -- | Compile monad.
 newtype Compile a = Compile

@@ -41,7 +41,6 @@ import           Control.Monad.RWS
 import           Data.Default                    (def)
 import           Data.List
 import           Data.List.Extra
-import qualified Data.Map                        as M
 import qualified Data.Set                        as S
 import           Data.Maybe
 import qualified GHC.Paths                       as GHCPaths
@@ -357,7 +356,6 @@ compileModule :: Bool -> Module -> Compile [JsStmt]
 compileModule toplevel (Module _ modulename _pragmas Nothing exports imports decls) =
   withModuleScope $ do
     modify $ \s -> s { stateModuleName = modulename
-                     , stateExports = []
                      , stateModuleScope = findTopLevelNames modulename decls
                      }
     imported <- fmap concat (mapM compileImport imports)
@@ -367,7 +365,7 @@ compileModule toplevel (Module _ modulename _pragmas Nothing exports imports dec
       Just exps -> mapM_ emitExport exps
       Nothing -> do
         exps <- moduleLocals modulename <$> gets stateModuleScope
-        modify $ \s -> s { stateExports = exps ++ stateExports s }
+        modify $ flip (foldr addCurrentExport) exps
 
     exportStdlib     <- config configExportStdlib
     exportStdlibOnly <- config configExportStdlibOnly
@@ -453,13 +451,14 @@ compileImportWithFilter name importFilter =
     result <- liftIO $ compileToAst filepath reader state (compileModule False) contents
     case result of
       Right (stmts,state) -> do
-        imports <- filterM importFilter $ stateExports state
+        imports <- filterM importFilter $ S.toList $ getCurrentExports state
         modify $ \s -> s { stateFayToJs     = stateFayToJs state
                          , stateJsToFay     = stateJsToFay state
                          , stateImported    = stateImported state
                          , stateLocalScope  = S.empty
                          , stateModuleScope = bindAsLocals imports (stateModuleScope s)
                          , stateCons        = stateCons state
+                         , _stateExports    = _stateExports state
                          }
         return stmts
       Left err -> throwError err
@@ -473,22 +472,17 @@ unlessImported name importFilter importIt = do
   imported <- gets stateImported
   case lookup name imported of
     Just _ -> do
-      sec <- gets stateExportsCache
-      case M.lookup name sec of
-        Nothing -> throwError $ UnableResolveCachedImport name
-        Just exports -> do
-          imports <- filterM importFilter exports
-          modify $ \s -> s { stateModuleScope = bindAsLocals imports (stateModuleScope s) }
-          return []
+      exports <- gets $ getExportsFor name
+      imports <- filterM importFilter $ S.toList exports
+      modify $ \s -> s { stateModuleScope = bindAsLocals imports (stateModuleScope s) }
+      return []
     Nothing -> do
       dirs <- configDirectoryIncludePaths <$> config id
       (filepath,contents) <- findImport dirs name
       res <- importIt filepath contents
-      exportsCache <- gets stateExports
                          -- TODO stateImported is already added in initialPass so it is not needed here
                          -- but one Api test fails if it's removed.
       modify $ \s -> s { stateImported     = (name,filepath) : imported
-                       , stateExportsCache = M.insert name exportsCache (stateExportsCache s)
                        }
       return res
 

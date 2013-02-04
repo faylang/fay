@@ -48,22 +48,10 @@ module Language.Fay.Types
   ,configPackages
   ,addConfigPackage
   ,addConfigPackages
-  ,CompileState(
-     stateExports
-    ,stateModuleName
-    ,stateFilePath
-    ,stateRecordTypes
-    ,stateRecords
-    ,stateFayToJs
-    ,stateJsToFay
-    ,stateNameDepth
-    ,stateLocalScope
-    ,stateModuleScope
-    ,stateCons
-  )
-  ,stateImported
-  ,addStateImported
-  ,addStateImporteds
+  ,CompileState(..)
+  ,addCurrentExport
+  ,getCurrentExports
+  ,getExportsFor
   ,defaultCompileState
   ,defaultCompileReader
   ,faySourceDir
@@ -81,6 +69,8 @@ import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default
 import           Data.Maybe
+import           Data.Map              (Map)
+import qualified Data.Map              as M
 import           Data.Set              (Set)
 import qualified Data.Set              as S
 import           Data.String
@@ -185,29 +175,19 @@ addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 
 -- | State of the compiler.
 data CompileState = CompileState
-  { stateExports      :: [QName]                 -- ^ Names exported by this module (May be re-exports)
-  , stateModuleName   :: ModuleName              -- ^ Name of the module currently being compiled.
-  , stateFilePath     :: FilePath                -- ^ Source path to the module curently being compiled.
-                                                 -- TODO merge these?
-  , stateRecordTypes  :: [(QName,[QName])]       -- ^ Map types to constructors.
-  , stateRecords      :: [(QName,[QName])]       -- ^ Map constructors to fields.
+  { _stateExports     :: Map ModuleName (Set QName) -- ^ Collects exports from modules
+  , stateModuleName   :: ModuleName                 -- ^ Name of the module currently being compiled.
+  , stateFilePath     :: FilePath
+  , stateRecordTypes  :: [(QName,[QName])]          -- ^ Map types to constructors
+  , stateRecords      :: [(QName,[QName])]          -- ^ Map constructors to fields
   , stateFayToJs      :: [JsStmt]
   , stateJsToFay      :: [JsStmt]
-  , _stateImported    :: [(ModuleName,FilePath)] -- ^ Map of all imported modules and their source locations.
-  , stateNameDepth    :: Integer                 -- ^ Depth of the current lexical scope.
-  , stateLocalScope   :: Set Name                -- ^ Names in the current lexical scope.
-  , stateModuleScope  :: ModuleScope             -- ^ Names in the module scope.
-  , stateCons         :: [JsStmt]
+  , stateImported     :: [(ModuleName,FilePath)]    -- ^ Map of all imported modules and their source locations.
+  , stateNameDepth    :: Integer                    -- ^ Depth of the current lexical scope.
+  , stateLocalScope   :: Set Name                   -- ^ Names in the current lexical scope.
+  , stateModuleScope  :: ModuleScope                -- ^ Names in the module scope.
+  , stateCons        :: [JsStmt]
 } deriving (Show)
-
-stateImported :: CompileState -> [(ModuleName,FilePath)]
-stateImported = _stateImported
-
-addStateImported :: (ModuleName, FilePath) -> CompileState -> CompileState
-addStateImported si cs = cs { _stateImported = si : _stateImported cs }
-
-addStateImporteds :: [(ModuleName,FilePath)] -> CompileState -> CompileState
-addStateImporteds sis cs = foldl (flip addStateImported) cs sis
 
 data CompileReader = CompileReader
   { readerConfig :: CompileConfig
@@ -229,19 +209,36 @@ defaultCompileState :: IO CompileState
 defaultCompileState = do
   types <- getDataFileName "src/Language/Fay/Types.hs"
   return $ CompileState {
-    stateExports = []
+    _stateExports = M.empty
   , stateModuleName = ModuleName "Main"
   , stateRecordTypes = []
   , stateRecords = []
   , stateFayToJs = []
   , stateJsToFay = []
-  , _stateImported = [("Language.Fay.Types",types)]
+  , stateImported = [("Language.Fay.Types",types)]
   , stateNameDepth = 1
   , stateFilePath = "<unknown>"
   , stateLocalScope = S.empty
   , stateModuleScope = def
   , stateCons = []
   }
+
+-- | Adds a new export to '_stateExports' for the module specified by
+-- 'stateModuleName'.
+addCurrentExport :: QName -> CompileState -> CompileState
+addCurrentExport q cs =
+    cs { _stateExports = M.insert (stateModuleName cs) qnames $ _stateExports cs}
+  where
+    qnames = maybe (S.singleton q) (S.insert q)
+           $ M.lookup (stateModuleName cs) (_stateExports cs)
+
+-- | Get all of the exported identifiers for the current module.
+getCurrentExports :: CompileState -> Set QName
+getCurrentExports cs = getExportsFor (stateModuleName cs) cs
+
+-- | Get all of the exported identifiers for the given module.
+getExportsFor :: ModuleName -> CompileState -> Set QName
+getExportsFor mn cs = fromMaybe S.empty $ M.lookup mn (_stateExports cs)
 
 -- | Compile monad.
 newtype Compile a = Compile

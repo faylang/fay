@@ -1,4 +1,4 @@
-module Import_215B where
+module Issue215.B where
 
 import Prelude
 

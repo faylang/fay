@@ -114,7 +114,7 @@ bindVar name = do
 emitExport :: ExportSpec -> Compile ()
 emitExport spec = case spec of
   EVar (UnQual n) -> emitVar n
-  EVar q@Qual{} -> modify $ \s -> s { stateExports = q : stateExports s }
+  EVar q@Qual{} -> modify $ addCurrentExport q
   EThingAll (UnQual name) -> do
     emitVar name
     r <- lookup (UnQual name) <$> gets stateRecords

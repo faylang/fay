@@ -200,7 +200,7 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
       fromMaybe modulename $ configFilePath cfg
   initialPass mod
   cs <- io defaultCompileState
-  modify $ \s -> addStateImporteds (stateImported cs) s
+  modify $ \s -> s { stateImported = stateImported cs }
   stmts <- compileModule True mod
   fay2js <- do syms <- gets stateFayToJs
                return $ if null syms then [] else [fayToJsDispatcher syms]
@@ -236,10 +236,10 @@ initialPass_import (ImportDecl _ name False _ Nothing Nothing _) = do
         -- Merges the state gotten from passing through an imported
         -- module with the current state. We can assume no duplicate
         -- records exist since GHC would pick that up.
-        modify $ \s -> addStateImporteds (stateImported st) $
-                         s { stateRecords = stateRecords st
-                           , stateRecordTypes = stateRecordTypes st
-                           }
+        modify $ \s -> s { stateRecords = stateRecords st
+                         , stateRecordTypes = stateRecordTypes st
+                         , stateImported = stateImported st
+                         }
       Left err -> throwError err
     return ()
 initialPass_import i = throwError $ UnsupportedImport i
@@ -255,7 +255,7 @@ initialPass_unlessImported name importIt = do
     Nothing -> do
       dirs <- configDirectoryIncludePaths <$> config id
       (filepath,contents) <- findImport dirs name
-      modify $ \s -> addStateImported (name,filepath) s
+      modify $ \s -> s { stateImported = (name,filepath) : imported }
       importIt filepath contents
 
 initialPass_records :: (Show from,Parseable from)
@@ -356,7 +356,6 @@ compileModule :: Bool -> Module -> Compile [JsStmt]
 compileModule toplevel (Module _ modulename _pragmas Nothing exports imports decls) =
   withModuleScope $ do
     modify $ \s -> s { stateModuleName = modulename
-                     , stateExports = []
                      , stateModuleScope = findTopLevelNames modulename decls
                      }
     imported <- fmap concat (mapM compileImport imports)
@@ -366,7 +365,7 @@ compileModule toplevel (Module _ modulename _pragmas Nothing exports imports dec
       Just exps -> mapM_ emitExport exps
       Nothing -> do
         exps <- moduleLocals modulename <$> gets stateModuleScope
-        modify $ \s -> s { stateExports = exps ++ stateExports s }
+        modify $ flip (foldr addCurrentExport) exps
 
     exportStdlib     <- config configExportStdlib
     exportStdlibOnly <- config configExportStdlibOnly
@@ -445,28 +444,47 @@ imported is qn = anyM (matching qn) is
 
 
 compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile [JsStmt]
-compileImportWithFilter "Language.Fay.Types" _ = return []
-compileImportWithFilter name importFilter = do
-  dirs <- configDirectoryIncludePaths <$> config id
-  (filepath,contents) <- findImport dirs name
-
-  state <- get
-  reader <- ask
-  result <- liftIO $ compileToAst filepath reader state (compileModule False) contents
-  case result of
-    Right (stmts,state) -> do
-      imports <- filterM importFilter $ stateExports state
-      modify $ \s -> addStateImporteds (stateImported state) $
-                       s { stateFayToJs     = stateFayToJs state
+compileImportWithFilter name importFilter =
+  unlessImported name importFilter $ \filepath contents -> do
+    state <- get
+    reader <- ask
+    result <- liftIO $ compileToAst filepath reader state (compileModule False) contents
+    case result of
+      Right (stmts,state) -> do
+        imports <- filterM importFilter $ S.toList $ getCurrentExports state
+        modify $ \s -> s { stateFayToJs     = stateFayToJs state
                          , stateJsToFay     = stateJsToFay state
+                         , stateImported    = stateImported state
                          , stateLocalScope  = S.empty
                          , stateModuleScope = bindAsLocals imports (stateModuleScope s)
                          , stateCons        = stateCons state
+                         , _stateExports    = _stateExports state
                          }
-      return stmts
-    Left err -> throwError err
+        return stmts
+      Left err -> throwError err
 
-
+unlessImported :: ModuleName
+               -> (QName -> Compile Bool)
+               -> (FilePath -> String -> Compile [JsStmt])
+               -> Compile [JsStmt]
+unlessImported "Language.Fay.Types" _ _ = return []
+unlessImported name importFilter importIt = do
+  imported <- gets stateImported
+  case lookup name imported of
+    Just _ -> do
+      exports <- gets $ getExportsFor name
+      imports <- filterM importFilter $ S.toList exports
+      modify $ \s -> s { stateModuleScope = bindAsLocals imports (stateModuleScope s) }
+      return []
+    Nothing -> do
+      dirs <- configDirectoryIncludePaths <$> config id
+      (filepath,contents) <- findImport dirs name
+      res <- importIt filepath contents
+                         -- TODO stateImported is already added in initialPass so it is not needed here
+                         -- but one Api test fails if it's removed.
+      modify $ \s -> s { stateImported     = (name,filepath) : imported
+                       }
+      return res
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [Decl] -> Compile [JsStmt]

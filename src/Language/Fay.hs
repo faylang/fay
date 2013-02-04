@@ -26,6 +26,7 @@ import           Language.Fay.Types
 import           Control.Applicative
 import           Control.Monad
 import           Data.List
+import qualified Data.Set                     as S
 import           Language.Haskell.Exts        (prettyPrint)
 import           Language.Haskell.Exts.Syntax
 import           Paths_fay
@@ -92,7 +93,7 @@ compileToModule filepath config raw with hscode = do
     Left err -> return (Left err)
     Right (PrintState{..},state) ->
       return $ Right $ (generate (concat (reverse psOutput))
-                                        (stateExports state)
+                                        (S.toList $ getCurrentExports state)
                                         (stateModuleName state), state)
 
   where generate | configNaked config = generateNaked

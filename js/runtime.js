@@ -439,7 +439,7 @@ function Fay$$divi(x){
 }
 
 // Built-in /.
-function Fay$$div$36$uncurried(x,y){
+function Fay$$divi$36$uncurried(x,y){
 
   return new Fay$$$(function(){
     return Fay$$_(x) / Fay$$_(y);

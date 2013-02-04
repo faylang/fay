@@ -175,17 +175,17 @@ addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 
 -- | State of the compiler.
 data CompileState = CompileState
-  { _stateExports     :: Map ModuleName (Set QName) -- Collects exports from modules
-  , stateModuleName   :: ModuleName
+  { _stateExports     :: Map ModuleName (Set QName) -- ^ Collects exports from modules
+  , stateModuleName   :: ModuleName                 -- ^ Name of the module currently being compiled.
   , stateFilePath     :: FilePath
-  , stateRecordTypes  :: [(QName,[QName])] -- Map types to constructors
-  , stateRecords      :: [(QName,[QName])] -- Map constructors to fields
+  , stateRecordTypes  :: [(QName,[QName])]          -- ^ Map types to constructors
+  , stateRecords      :: [(QName,[QName])]          -- ^ Map constructors to fields
   , stateFayToJs      :: [JsStmt]
   , stateJsToFay      :: [JsStmt]
-  , stateImported     :: [(ModuleName,FilePath)]
-  , stateNameDepth    :: Integer
-  , stateLocalScope   :: Set Name
-  , stateModuleScope  :: ModuleScope
+  , stateImported     :: [(ModuleName,FilePath)]    -- ^ Map of all imported modules and their source locations.
+  , stateNameDepth    :: Integer                    -- ^ Depth of the current lexical scope.
+  , stateLocalScope   :: Set Name                   -- ^ Names in the current lexical scope.
+  , stateModuleScope  :: ModuleScope                -- ^ Names in the module scope.
   , stateCons        :: [JsStmt]
 } deriving (Show)
 

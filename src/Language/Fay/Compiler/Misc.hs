@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS -Wall -fno-warn-orphans  #-}
@@ -9,21 +10,40 @@ module Language.Fay.Compiler.Misc where
 import qualified Language.Fay.ModuleScope     as ModuleScope
 import           Language.Fay.Types
 
-import           System.Process                  (readProcess)
-import           Text.ParserCombinators.ReadP    (readP_to_S)
-import           Data.Version                    (parseVersion)
 import           Control.Applicative
 import           Control.Monad.Error
-import           Control.Monad.Reader
+import           Control.Monad.IO
 import           Control.Monad.State
+import           Control.Monad.RWS
+
 import           Data.List
-import qualified Data.Set                     as S
+import           Language.Haskell.Exts.Parser
+
+import qualified Data.Set                        as S
 import           Data.Maybe
+
+import           Language.Haskell.Exts
+
+
+
+
+
+
+
+
+
+
 import           Data.String
-import           Language.Haskell.Exts        (ParseResult(..))
-import           Language.Haskell.Exts.Syntax
+import           Data.Version                    (parseVersion)
+
+
+
 import           Prelude                      hiding (exp, mod)
+import           System.Directory
+import           System.FilePath
 import           System.IO
+import           System.Process                  (readProcess)
+import           Text.ParserCombinators.ReadP    (readP_to_S)
 
 -- | Extra the string from an ident.
 unname :: Name -> String
@@ -251,3 +271,83 @@ getGhcPackageDbFlag = do
           _ -> "-package-conf"
   where
     readVersion = listToMaybe . filter (null . snd) . readP_to_S parseVersion
+
+findImport :: [FilePath] -> ModuleName -> Compile (FilePath,String)
+findImport alldirs mname = go alldirs mname where
+  go (dir:dirs) name = do
+    exists <- io (doesFileExist path)
+    if exists
+      then fmap (path,) (fmap stdlibHack (io (readFile path)))
+      else go dirs name
+    where
+      path = dir </> replace '.' '/' (prettyPrint name) ++ ".hs"
+      replace c r = map (\x -> if x == c then r else x)
+  go [] name =
+    throwError $ Couldn'tFindImport name alldirs
+
+  stdlibHack
+    | mname == ModuleName "Language.Fay.Stdlib" = \s -> s ++ "\n\ndata Maybe a = Just a | Nothing"
+    | mname == ModuleName "Language.Fay.FFI"    = const "module Language.Fay.FFI where\n\ndata Nullable a = Nullable a | Null\n\ndata Defined a = Defined a | Undefined"
+    | otherwise = id
+
+convertGADT :: GadtDecl -> QualConDecl
+convertGADT d =
+  case d of
+    GadtDecl srcloc name typ -> QualConDecl srcloc tyvars context
+                                            (ConDecl name (convertFunc typ))
+  where tyvars = []
+        context = []
+        convertFunc (TyCon _) = []
+        convertFunc (TyFun x xs) = UnBangedTy x : convertFunc xs
+        convertFunc (TyParen x) = convertFunc x
+        convertFunc _ = []
+
+-- | Run the compiler.
+runCompile :: CompileReader -> CompileState
+           -> Compile a
+           -> IO (Either CompileError (a,CompileState))
+runCompile reader state m =
+  fmap (fmap dropWriter)
+       (runErrorT (runRWST (unCompile m) reader state))
+
+  where dropWriter (a,s,_w) = (a,s)
+
+-- | Parse some Fay code.
+parseFay :: Parseable ast => FilePath -> String -> ParseResult ast
+parseFay filepath = parseWithMode parseMode { parseFilename = filepath } . applyCPP
+
+-- | Apply incredibly simplistic CPP handling. It only recognizes the following:
+--
+-- > #if FAY
+-- > #ifdef FAY
+-- > #ifndef FAY
+-- > #else
+-- > #endif
+--
+-- Note that this implementation replaces all removed lines with blanks, so
+-- that line numbers remain accurate.
+applyCPP :: String -> String
+applyCPP =
+    unlines . loop NoCPP . lines
+  where
+    loop _ [] = []
+    loop state ("#if FAY":rest) = "" : loop (CPPIf True state) rest
+    loop state ("#ifdef FAY":rest) = "" : loop (CPPIf True state) rest
+    loop state ("#ifndef FAY":rest) = "" : loop (CPPIf False state) rest
+    loop (CPPIf b oldState) ("#else":rest) = "" : loop (CPPElse (not b) oldState) rest
+    loop (CPPIf _ oldState) ("#endif":rest) = "" : loop oldState rest
+    loop (CPPElse _ oldState) ("#endif":rest) = "" : loop oldState rest
+    loop state (x:rest) = (if toInclude state then x else "") : loop state rest
+
+    toInclude NoCPP = True
+    toInclude (CPPIf x state) = x && toInclude state
+    toInclude (CPPElse x state) = x && toInclude state
+
+data CPPState = NoCPP
+              | CPPIf Bool CPPState
+              | CPPElse Bool CPPState
+
+-- | The parse mode for Fay.
+parseMode :: ParseMode
+parseMode = defaultParseMode { extensions =
+  [GADTs,StandaloneDeriving,PackageImports,EmptyDataDecls,TypeOperators,RecordWildCards,NamedFieldPuns] }

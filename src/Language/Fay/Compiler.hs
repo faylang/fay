@@ -25,6 +25,7 @@ module Language.Fay.Compiler
 
 import           Language.Fay.Compiler.FFI
 import           Language.Fay.Compiler.Misc
+import           Language.Fay.Compiler.CollectRecords (collectRecords)
 import           Language.Fay.Compiler.Optimizer
 import           Language.Fay.ModuleScope        (bindAsLocals, findTopLevelNames, moduleLocals)
 import           Language.Fay.Print              (printJSString)
@@ -42,22 +43,12 @@ import qualified Data.Set                        as S
 import           Data.Maybe
 import qualified GHC.Paths                       as GHCPaths
 import           Language.Haskell.Exts
-import           System.Directory                (doesFileExist)
-import           System.FilePath                 ((</>))
+
+
 import           System.Process.Extra
 
 --------------------------------------------------------------------------------
 -- Top level entry points
-
--- | Run the compiler.
-runCompile :: CompileReader -> CompileState
-           -> Compile a
-           -> IO (Either CompileError (a,CompileState))
-runCompile reader state m =
-  fmap (fmap dropWriter)
-       (runErrorT (runRWST (unCompile m) reader state))
-
-  where dropWriter (a,s,_w) = (a,s)
 
 -- | Compile a Haskell source string to a JavaScript source string.
 compileViaStr :: (Show from,Show to,CompilesTo from to)
@@ -92,52 +83,12 @@ compileToAst filepath reader state with from =
                           with
                           (parseFay filepath from))
 
--- | Parse some Fay code.
-parseFay :: Parseable ast => FilePath -> String -> ParseResult ast
-parseFay filepath = parseWithMode parseMode { parseFilename = filepath } . applyCPP
-
--- | Apply incredibly simplistic CPP handling. It only recognizes the following:
---
--- > #if FAY
--- > #ifdef FAY
--- > #ifndef FAY
--- > #else
--- > #endif
---
--- Note that this implementation replaces all removed lines with blanks, so
--- that line numbers remain accurate.
-applyCPP :: String -> String
-applyCPP =
-    unlines . loop NoCPP . lines
-  where
-    loop _ [] = []
-    loop state ("#if FAY":rest) = "" : loop (CPPIf True state) rest
-    loop state ("#ifdef FAY":rest) = "" : loop (CPPIf True state) rest
-    loop state ("#ifndef FAY":rest) = "" : loop (CPPIf False state) rest
-    loop (CPPIf b oldState) ("#else":rest) = "" : loop (CPPElse (not b) oldState) rest
-    loop (CPPIf _ oldState) ("#endif":rest) = "" : loop oldState rest
-    loop (CPPElse _ oldState) ("#endif":rest) = "" : loop oldState rest
-    loop state (x:rest) = (if toInclude state then x else "") : loop state rest
-
-    toInclude NoCPP = True
-    toInclude (CPPIf x state) = x && toInclude state
-    toInclude (CPPElse x state) = x && toInclude state
-
-data CPPState = NoCPP
-              | CPPIf Bool CPPState
-              | CPPElse Bool CPPState
-
--- | The parse mode for Fay.
-parseMode :: ParseMode
-parseMode = defaultParseMode { extensions =
-  [GADTs,StandaloneDeriving,PackageImports,EmptyDataDecls,TypeOperators,RecordWildCards,NamedFieldPuns] }
-
 -- | Compile the given Fay code for the documentation. This is
 -- specialised because the documentation isn't really “real”
 -- compilation.
 compileForDocs :: Module -> Compile [JsStmt]
 compileForDocs mod = do
-  initialPass mod
+  collectRecords mod
   compileModule False mod
 
 -- | Compile the top-level Fay module.
@@ -148,7 +99,7 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   when (configTypecheck cfg) $
     typecheck (configPackageConf cfg) (configWall cfg) $
       fromMaybe modulename $ configFilePath cfg
-  initialPass mod
+  collectRecords mod
   cs <- io defaultCompileState
   modify $ \s -> s { stateImported = stateImported cs }
   stmts <- compileModule True mod
@@ -162,108 +113,6 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
      then return (maybeOptimize (conses ++ fay2js ++ js2fay))
      else return (maybeOptimize (stmts ++
                     if configDispatchers cfg then conses ++ fay2js ++ js2fay else []))
-
---------------------------------------------------------------------------------
--- Initial pass-through collecting record definitions
-
-initialPass :: Module -> Compile ()
-initialPass (Module _ _ _ Nothing _ imports decls) = do
-  mapM_ initialPass_import imports
-  mapM_ initialPass_decl decls
-initialPass mod = throwError (UnsupportedModuleSyntax mod)
-
-initialPass_import :: ImportDecl -> Compile ()
-initialPass_import (ImportDecl _ _ _ _ Just{} _ _) = do
-  return ()
---  warn $ "import with package syntax ignored: " ++ prettyPrint i
-initialPass_import (ImportDecl _ name False _ Nothing Nothing _) = do
-  void $ initialPass_unlessImported name $ \filepath contents -> do
-    state <- get
-    reader <- ask
-    result <- liftIO $ initialPass_records filepath reader state initialPass contents
-    case result of
-      Right ((),st) -> do
-        -- Merges the state gotten from passing through an imported
-        -- module with the current state. We can assume no duplicate
-        -- records exist since GHC would pick that up.
-        modify $ \s -> s { stateRecords = stateRecords st
-                         , stateRecordTypes = stateRecordTypes st
-                         , stateImported = stateImported st
-                         }
-      Left err -> throwError err
-    return ()
-initialPass_import i = throwError $ UnsupportedImport i
-
--- | Don't re-import the same modules.
-initialPass_unlessImported :: ModuleName
-                           -> (FilePath -> String -> Compile ())
-                           -> Compile ()
-initialPass_unlessImported name importIt = do
-  imported <- gets stateImported
-  case lookup name imported of
-    Just _ -> return ()
-    Nothing -> do
-      dirs <- configDirectoryIncludePaths <$> config id
-      (filepath,contents) <- findImport dirs name
-      modify $ \s -> s { stateImported = (name,filepath) : imported }
-      importIt filepath contents
-
-initialPass_records :: (Show from,Parseable from)
-                    => FilePath
-                    -> CompileReader
-                    -> CompileState
-                    -> (from -> Compile ())
-                    -> String
-                    -> IO (Either CompileError ((),CompileState))
-initialPass_records filepath compileReader compileState with from =
-  runCompile compileReader
-             compileState
-             (parseResult (throwError . uncurry ParseError)
-                          with
-                          (parseFay filepath from))
-
-initialPass_decl :: Decl -> Compile ()
-initialPass_decl decl = do
-  case decl of
-    DataDecl _loc DataType _ctx name _tyvarb qualcondecls _deriv -> do
-      let ns = flip map qualcondecls (\(QualConDecl _loc' _tyvarbinds _ctx' condecl) -> conDeclName condecl)
-      addRecordTypeState name ns
-    _ -> return ()
-
-
-  case decl of
-    DataDecl _ DataType _ _ _ constructors _ -> initialPass_dataDecl constructors
-    GDataDecl _ DataType _l _i _v _n decls _ -> initialPass_dataDecl (map convertGADT decls)
-    _ -> return ()
-
-  where
-    addRecordTypeState name cons = modify $ \s -> s
-      { stateRecordTypes = (UnQual name, map UnQual cons) : stateRecordTypes s }
-
-    conDeclName (ConDecl n _) = n
-    conDeclName (InfixConDecl _ n _) = n
-    conDeclName (RecDecl n _) = n
-
-
--- | Collect record definitions and store record name and field names.
--- A ConDecl will have fields named slot1..slotN
-initialPass_dataDecl :: [QualConDecl] -> Compile ()
-initialPass_dataDecl constructors = do
-  forM_ constructors $ \(QualConDecl _ _ _ condecl) ->
-    case condecl of
-      ConDecl name types -> do
-        let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
-        addRecordState name fields
-      InfixConDecl _t1 name _t2 ->
-        addRecordState name ["slot1", "slot2"]
-      RecDecl name fields' -> do
-        let fields = concatMap fst fields'
-        addRecordState name fields
-
-  where
-    addRecordState :: Name -> [Name] -> Compile ()
-    addRecordState name fields = modify $ \s -> s
-      { stateRecords = (UnQual name,map UnQual fields) : stateRecords s }
 
 --------------------------------------------------------------------------------
 -- Typechecking
@@ -336,24 +185,6 @@ instance CompilesTo Module [JsStmt] where compileTo = compileModule False
 -- output code for if we're compiling separate files.
 anStdlibModule :: ModuleName -> Bool
 anStdlibModule (ModuleName name) = elem name ["Prelude","FFI","Language.Fay.FFI","Data.Data"]
-
-findImport :: [FilePath] -> ModuleName -> Compile (FilePath,String)
-findImport alldirs mname = go alldirs mname where
-  go (dir:dirs) name = do
-    exists <- io (doesFileExist path)
-    if exists
-      then fmap (path,) (fmap stdlibHack (io (readFile path)))
-      else go dirs name
-    where
-      path = dir </> replace '.' '/' (prettyPrint name) ++ ".hs"
-      replace c r = map (\x -> if x == c then r else x)
-  go [] name =
-    throwError $ Couldn'tFindImport name alldirs
-
-  stdlibHack
-    | mname == ModuleName "Language.Fay.Stdlib" = \s -> s ++ "\n\ndata Maybe a = Just a | Nothing"
-    | mname == ModuleName "Language.Fay.FFI"    = const "module Language.Fay.FFI where\n\ndata Nullable a = Nullable a | Null\n\ndata Defined a = Defined a | Undefined"
-    | otherwise = id
 
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]
@@ -495,18 +326,6 @@ compileUnguardedRhs srcloc toplevel ident rhs = do
     body <- compileExp rhs
     bind <- bindToplevel srcloc toplevel ident (thunk body)
     return [bind]
-
-convertGADT :: GadtDecl -> QualConDecl
-convertGADT d =
-  case d of
-    GadtDecl srcloc name typ -> QualConDecl srcloc tyvars context
-                                            (ConDecl name (convertFunc typ))
-  where tyvars = []
-        context = []
-        convertFunc (TyCon _) = []
-        convertFunc (TyFun x xs) = UnBangedTy x : convertFunc xs
-        convertFunc (TyParen x) = convertFunc x
-        convertFunc _ = []
 
 -- | Compile a data declaration.
 compileDataDecl :: Bool -> Decl -> [QualConDecl] -> Compile [JsStmt]

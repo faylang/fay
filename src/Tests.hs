@@ -7,11 +7,13 @@
 
 module Main where
 
+import           Language.Fay
+import           Language.Fay.Compiler.Config
+
 import           Control.Applicative
 import           Data.Default
 import           Data.List
 import           Data.Maybe
-import           Language.Fay
 import           System.Directory
 import           System.Environment
 import           System.FilePath

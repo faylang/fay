@@ -2,6 +2,7 @@
 
 module Language.Fay.Compiler.Debug where
 
+import Language.Fay.Compiler.Defaults
 import Language.Fay.Compiler
 import Language.Fay.Compiler.Misc
 import Language.Fay.Types

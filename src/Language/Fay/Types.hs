@@ -19,42 +19,11 @@ module Language.Fay.Types
   ,Fay
   ,CompileReader(..)
   ,CompileWriter(..)
-  ,CompileConfig(
-     configFlattenApps
-    ,configOptimize
-    ,configGClosure
-    ,configExportBuiltins
-    ,configExportRuntime
-    ,configNaked
-    ,configPrettyPrint
-    ,configHtmlWrapper
-    ,configHtmlJSLibs
-    ,configLibrary
-    ,configWarn
-    ,configFilePath
-    ,configTypecheck
-    ,configWall
-    ,configPackageConf
-    ,configExportStdlib
-    ,configDispatchers
-    ,configDispatcherOnly
-    ,configExportStdlibOnly
-  )
-  ,configDirectoryIncludes
-  ,addConfigDirectoryInclude
-  ,addConfigDirectoryIncludes
-  ,addConfigDirectoryIncludePaths
-  ,configDirectoryIncludePaths
-  ,nonPackageConfigDirectoryIncludePaths
-  ,configPackages
-  ,addConfigPackage
-  ,addConfigPackages
+  ,CompileConfig(..)
   ,CompileState(..)
   ,addCurrentExport
   ,getCurrentExports
   ,getExportsFor
-  ,defaultCompileState
-  ,defaultCompileReader
   ,faySourceDir
   ,FundamentalType(..)
   ,PrintState(..)
@@ -95,7 +64,7 @@ data CompileConfig = CompileConfig
   , configDispatchers        :: Bool
   , configDispatcherOnly     :: Bool
   , configNaked              :: Bool
-  , _configDirectoryIncludes :: [(Maybe String, FilePath)] -- ^ Possibly a fay package name, and a include directory.
+  , configDirectoryIncludes :: [(Maybe String, FilePath)] -- ^ Possibly a fay package name, and a include directory.
   , configPrettyPrint        :: Bool
   , configHtmlWrapper        :: Bool                       -- ^ Output a HTML file including the produced JS.
   , configHtmlJSLibs         :: [FilePath]
@@ -106,73 +75,8 @@ data CompileConfig = CompileConfig
   , configWall               :: Bool                       -- ^ Typecheck with -Wall
   , configGClosure           :: Bool                       -- ^ Run Google Closure on the produced JS.
   , configPackageConf        :: Maybe FilePath
-  , _configPackages          :: [String]                   -- ^ Included Fay packages
+  , configPackages          :: [String]                   -- ^ Included Fay packages
   } deriving (Show)
-
--- | Default configuration.
-instance Default CompileConfig where
-  def =
-    addConfigPackage "fay-base" $
-      CompileConfig
-      { configOptimize           = False
-      , configFlattenApps        = False
-      , configExportBuiltins     = True
-      , configExportRuntime      = True
-      , configExportStdlib       = True
-      , configExportStdlibOnly   = False
-      , configDispatchers        = True
-      , configDispatcherOnly     = False
-      , configNaked              = False
-      , _configDirectoryIncludes = []
-      , configPrettyPrint        = False
-      , configHtmlWrapper        = False
-      , configHtmlJSLibs         = []
-      , configLibrary            = False
-      , configWarn               = True
-      , configFilePath           = Nothing
-      , configTypecheck          = True
-      , configWall               = False
-      , configGClosure           = False
-      , configPackageConf        = Nothing
-      , _configPackages          = []
-      }
-
--- | Mapping of packages to source directories, a fst Nothing means the include
--- was added without a package reference.
-configDirectoryIncludes :: CompileConfig -> [(Maybe String, FilePath)]
-configDirectoryIncludes = _configDirectoryIncludes
-
--- | Get all include directories without the package mapping.
-configDirectoryIncludePaths :: CompileConfig -> [FilePath]
-configDirectoryIncludePaths = map snd . configDirectoryIncludes
-
--- | Get all include directories not included through packages.
-nonPackageConfigDirectoryIncludePaths :: CompileConfig -> [FilePath]
-nonPackageConfigDirectoryIncludePaths = map snd . filter (isJust . fst) . configDirectoryIncludes
-
--- | Add a mapping from (maybe) a package to a source directory
-addConfigDirectoryInclude :: Maybe String -> FilePath -> CompileConfig -> CompileConfig
-addConfigDirectoryInclude pkg fp cfg = cfg { _configDirectoryIncludes = (pkg, fp) : _configDirectoryIncludes cfg }
-
--- | Add several include directories.
-addConfigDirectoryIncludes :: [(Maybe String,FilePath)] -> CompileConfig -> CompileConfig
-addConfigDirectoryIncludes pkgFps cfg = foldl (\c (pkg,fp) -> addConfigDirectoryInclude pkg fp c) cfg pkgFps
-
--- | Add several include directories without package references.
-addConfigDirectoryIncludePaths :: [FilePath] -> CompileConfig -> CompileConfig
-addConfigDirectoryIncludePaths fps cfg = foldl (flip (addConfigDirectoryInclude Nothing)) cfg fps
-
--- | All included packages
-configPackages :: CompileConfig -> [String]
-configPackages = _configPackages
-
--- | Add a package to compilation
-addConfigPackage :: String -> CompileConfig -> CompileConfig
-addConfigPackage pkg cfg = cfg { _configPackages = pkg : _configPackages cfg }
-
--- | Add several packages to compilation
-addConfigPackages :: [String] -> CompileConfig -> CompileConfig
-addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 
 -- | State of the compiler.
 data CompileState = CompileState
@@ -205,30 +109,6 @@ data CompileReader = CompileReader
 
 faySourceDir :: IO FilePath
 faySourceDir = fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
-
--- | The default compiler reader value.
-defaultCompileReader :: CompileConfig -> IO CompileReader
-defaultCompileReader config = do
-  srcdir <- faySourceDir
-  return CompileReader
-    { readerConfig = addConfigDirectoryInclude Nothing srcdir config
-    }
-
--- | The default compiler state.
-defaultCompileState :: IO CompileState
-defaultCompileState = do
-  types <- getDataFileName "src/Language/Fay/Types.hs"
-  return $ CompileState {
-    _stateExports = M.empty
-  , stateModuleName = ModuleName "Main"
-  , stateRecordTypes = []
-  , stateRecords = []
-  , stateImported = [("Language.Fay.Types",types)]
-  , stateNameDepth = 1
-  , stateFilePath = "<unknown>"
-  , stateLocalScope = S.empty
-  , stateModuleScope = def
-  }
 
 -- | Adds a new export to '_stateExports' for the module specified by
 -- 'stateModuleName'.

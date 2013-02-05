@@ -23,9 +23,11 @@ module Language.Fay.Compiler
   ,parseFay)
   where
 
+import           Language.Fay.Compiler.CollectRecords (collectRecords)
+import           Language.Fay.Compiler.Config
+import           Language.Fay.Compiler.Defaults
 import           Language.Fay.Compiler.FFI
 import           Language.Fay.Compiler.Misc
-import           Language.Fay.Compiler.CollectRecords (collectRecords)
 import           Language.Fay.Compiler.Optimizer
 import           Language.Fay.ModuleScope        (bindAsLocals, findTopLevelNames, moduleLocals)
 import           Language.Fay.Print              (printJSString)

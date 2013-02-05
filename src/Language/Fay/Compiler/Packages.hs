@@ -5,6 +5,7 @@
 module Language.Fay.Compiler.Packages where
 
 import Language.Fay.Types
+import Language.Fay.Compiler.Config
 
 import Control.Monad
 import Data.List

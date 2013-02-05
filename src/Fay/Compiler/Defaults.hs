@@ -34,6 +34,7 @@ defaultCompileState = do
   , stateModuleName = ModuleName "Main"
   , stateRecordTypes = []
   , stateRecords = []
+  , stateNewtypes = []
   , stateImported = [("Fay.Types",types)]
   , stateNameDepth = 1
   , stateLocalScope = S.empty

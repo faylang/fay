@@ -20,6 +20,7 @@ import Fay.Types
 
 import Control.Monad.Error
 import Control.Monad.Writer
+import Control.Applicative ((<$>), (<*>))
 import Data.Char
 import Data.Generics.Schemes
 import Data.List
@@ -38,7 +39,28 @@ compileFFI :: SrcLoc -- ^ Location of the original FFI decl.
            -> String -- ^ The format string.
            -> Type   -- ^ Type signature.
            -> Compile [JsStmt]
-compileFFI srcloc name formatstr sig = do
+  -- substitute newtypes with their child types before calling
+  -- real compileFFI
+  compileFFI' srcloc name formatstr =<< rmNewtys sig
+
+  where rmNewtys :: Type -> Compile Type
+        rmNewtys (TyForall b c t) = TyForall b c <$> rmNewtys t
+        rmNewtys (TyFun t1 t2)    = TyFun <$> rmNewtys t1 <*> rmNewtys t2
+        rmNewtys (TyTuple b tl)   = TyTuple b <$> mapM rmNewtys tl
+        rmNewtys (TyList t)       = TyList <$> rmNewtys t
+        rmNewtys (TyApp t1 t2)    = TyApp <$> rmNewtys t1 <*> rmNewtys t2
+        rmNewtys t@TyVar{}        = return t
+        rmNewtys (TyCon qname)    = do
+          newty <- lookupNewtypeConst =<< qualifyQName qname
+          return $ case newty of
+                     Nothing     -> TyCon qname
+                     Just (_,ty) -> ty
+        rmNewtys (TyParen t)      = TyParen <$> rmNewtys t
+        rmNewtys (TyInfix t1 q t2)= flip TyInfix q <$> rmNewtys t1 <*> rmNewtys t2
+        rmNewtys (TyKind t k)     = flip TyKind k <$> rmNewtys t
+
+compileFFI' :: SrcLoc -> Name -> String -> Type -> Compile [JsStmt]
+compileFFI' srcloc name formatstr sig = do
   inner <- formatFFI srcloc formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.parseExpression (prettyPrint name) (printJSString (wrapReturn inner)) of
     Left err -> throwError (FfiFormatInvalidJavaScript srcloc inner (show err))

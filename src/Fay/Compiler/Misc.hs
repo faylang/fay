@@ -75,11 +75,30 @@ resolveName u@(UnQual name) = do
     then return (UnQual name)
     else maybe (qualify name) return (ModuleScope.resolveName u env)
 
+lookupNewtypeConst :: QName -> Compile (Maybe (Maybe QName,Type))
+lookupNewtypeConst name = do
+  newtypes <- gets stateNewtypes
+  case find (\(cname,_,_) -> cname == name) newtypes of
+    Nothing -> return Nothing
+    Just (_,dname,ty) -> return $ Just (dname,ty)
+
+lookupNewtypeDest :: QName -> Compile (Maybe (QName,Type))
+lookupNewtypeDest name = do
+  newtypes <- gets stateNewtypes
+  case find (\(_,dname,_) -> dname == Just name) newtypes of
+    Nothing -> return Nothing
+    Just (cname,_,ty) -> return $ Just (cname,ty)
+
 -- | Qualify a name for the current module.
 qualify :: Name -> Compile QName
 qualify name = do
   modulename <- gets stateModuleName
   return (Qual modulename name)
+
+-- | Qualify a QName for the current module if unqualified.
+qualifyQName :: QName -> Compile QName
+qualifyQName (UnQual name) = qualify name
+qualifyQName n             = return n
 
 -- | Make a top-level binding.
 bindToplevel :: SrcLoc -> Bool -> Name -> JsExp -> Compile JsStmt

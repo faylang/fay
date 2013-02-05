@@ -43,6 +43,7 @@ compileDecl toplevel decl =
     FunBind matches -> compileFunCase toplevel matches
     DataDecl _ DataType _ _ _ constructors _ -> compileDataDecl toplevel decl constructors
     GDataDecl _ DataType _l _i _v _n decls _ -> compileDataDecl toplevel decl (map convertGADT decls)
+    DataDecl _ NewType  _ _ _ constructors _ -> compileNewtypeDecl constructors
     -- Just ignore type aliases and signatures.
     TypeDecl{} -> return []
     TypeSig{} -> return []
@@ -149,6 +150,30 @@ compileDataDecl toplevel _decl constructors =
                                []
                                (Just (thunk (JsGetProp (force (JsName (JsNameVar "x")))
                                                        (JsNameVar (UnQual name))))))
+
+-- | Compile a newtype declaration.
+compileNewtypeDecl :: [QualConDecl] -> Compile [JsStmt]
+compileNewtypeDecl [QualConDecl _ _ _ condecl] =
+  case condecl of
+    ConDecl name  [ty] -> liftM (:[]) (makeFunc name (getBangTy ty))
+    RecDecl cname [([dname], ty)] -> do
+      ctor <- makeFunc cname (getBangTy ty)
+      qdname <- qualify dname
+      let dtor = JsVar (JsNameVar qdname) $ JsFun [JsTmp 0] [] (Just (JsName (JsTmp 0)))
+      return [ctor, dtor]
+
+  where
+    getBangTy :: BangType -> Type
+    getBangTy (BangedTy t)   = t
+    getBangTy (UnBangedTy t) = t
+    getBangTy (UnpackedTy t) = t
+
+    makeFunc :: Name -> Type -> Compile JsStmt
+    makeFunc name ty = do
+      qname <- qualify name
+      modify (\cs -> cs{stateNewtypes=(qname,ty):(stateNewtypes cs)})
+      return $ JsVar (JsNameVar qname) $
+        JsFun [JsTmp 10] [] (Just (JsName (JsTmp 10)))
 
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]

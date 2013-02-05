@@ -20,6 +20,12 @@ compilePat :: JsExp -> Pat -> [JsStmt] -> Compile [JsStmt]
 compilePat exp pat body =
   case pat of
     PVar name       -> compilePVar name exp body
+    PApp cons@(UnQual ucons) pats -> do
+      newtype_cons <- liftM (map fst . stateNewtypes) get
+      qcons <- qualify ucons
+      if qcons `elem` newtype_cons
+        then compileNewtypePat pats exp body
+        else compilePApp cons pats exp body
     PApp cons pats  -> compilePApp cons pats exp body
     PLit literal    -> compilePLit exp literal body
     PParen pat      -> compilePat exp pat body
@@ -99,6 +105,9 @@ compilePAsPat exp name pat body = do
   bindVar name
   x <- compilePat exp pat body
   return ([JsVar (JsNameVar (UnQual name)) exp] ++ x)
+
+compileNewtypePat :: [Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
+compileNewtypePat [pat] exp body = compilePat exp pat body
 
 -- | Compile a pattern application.
 compilePApp :: QName -> [Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]

@@ -29,7 +29,7 @@ compileTestAst cfg with from = do
                           (parseFay "<interactive>" from))
   case out of
     Left err -> error $ show err
-    Right (ok,_) -> print ok
+    Right (ok,_,_) -> print ok
 
 debug :: (Show from,Show to,CompilesTo from to) => (from -> Compile to) -> String -> IO ()
 debug compile string = do
@@ -53,5 +53,5 @@ printCompile config with from = do
   result <- compileViaStr "<interactive>" config { configPrettyPrint = True } with from
   case result of
     Left err -> print err
-    Right (PrintState{..},_) -> do
+    Right (PrintState{..},_,_) -> do
       putStrLn (concat (reverse (psOutput)))

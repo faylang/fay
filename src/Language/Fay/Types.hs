@@ -18,6 +18,7 @@ module Language.Fay.Types
   ,Printable(..)
   ,Fay
   ,CompileReader(..)
+  ,CompileWriter(..)
   ,CompileConfig(
      configFlattenApps
     ,configOptimize
@@ -176,21 +177,30 @@ addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 -- | State of the compiler.
 data CompileState = CompileState
   { _stateExports     :: Map ModuleName (Set QName) -- ^ Collects exports from modules
-  , stateModuleName   :: ModuleName                 -- ^ Name of the module currently being compiled.
   , stateFilePath     :: FilePath
   , stateRecordTypes  :: [(QName,[QName])]          -- ^ Map types to constructors
   , stateRecords      :: [(QName,[QName])]          -- ^ Map constructors to fields
-  , stateFayToJs      :: [JsStmt]
-  , stateJsToFay      :: [JsStmt]
   , stateImported     :: [(ModuleName,FilePath)]    -- ^ Map of all imported modules and their source locations.
   , stateNameDepth    :: Integer                    -- ^ Depth of the current lexical scope.
   , stateLocalScope   :: Set Name                   -- ^ Names in the current lexical scope.
   , stateModuleScope  :: ModuleScope                -- ^ Names in the module scope.
-  , stateCons        :: [JsStmt]
-} deriving (Show)
+  , stateModuleName   :: ModuleName    -- ^ Name of the module currently being compiled.
+  } deriving (Show)
+
+data CompileWriter = CompileWriter
+  { writerCons     :: [JsStmt] -- ^ Constructors.
+  , writerFayToJs  :: [JsStmt] -- ^ Fay to JS dispatchers.
+  , writerJsToFay  :: [JsStmt] -- ^ JS to Fay dispatchers.
+  }
+  deriving (Show)
+
+instance Monoid CompileWriter where
+  mempty = CompileWriter [] [] []
+  mappend (CompileWriter a b c) (CompileWriter x y z) =
+    CompileWriter (a++x) (b++y) (c++z)
 
 data CompileReader = CompileReader
-  { readerConfig :: CompileConfig
+  { readerConfig     :: CompileConfig -- ^ The compilation configuration.
   } deriving (Show)
 
 faySourceDir :: IO FilePath
@@ -213,14 +223,11 @@ defaultCompileState = do
   , stateModuleName = ModuleName "Main"
   , stateRecordTypes = []
   , stateRecords = []
-  , stateFayToJs = []
-  , stateJsToFay = []
   , stateImported = [("Language.Fay.Types",types)]
   , stateNameDepth = 1
   , stateFilePath = "<unknown>"
   , stateLocalScope = S.empty
   , stateModuleScope = def
-  , stateCons = []
   }
 
 -- | Adds a new export to '_stateExports' for the module specified by
@@ -243,7 +250,7 @@ getExportsFor mn cs = fromMaybe S.empty $ M.lookup mn (_stateExports cs)
 -- | Compile monad.
 newtype Compile a = Compile
   { unCompile :: RWST CompileReader
-                      ()
+                      CompileWriter
                       CompileState
                       (ErrorT CompileError IO)
                       a
@@ -251,6 +258,7 @@ newtype Compile a = Compile
   deriving (MonadState CompileState
            ,MonadError CompileError
            ,MonadReader CompileReader
+           ,MonadWriter CompileWriter
            ,MonadIO
            ,Monad
            ,Functor

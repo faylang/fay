@@ -56,7 +56,7 @@ compileViaStr :: (Show from,Show to,CompilesTo from to)
               -> CompileConfig
               -> (from -> Compile to)
               -> String
-              -> IO (Either CompileError (PrintState,CompileState))
+              -> IO (Either CompileError (PrintState,CompileState,CompileWriter))
 compileViaStr filepath config with from = do
   cs <- defaultCompileState
   rs <- defaultCompileReader config
@@ -75,7 +75,7 @@ compileToAst :: (Show from,Show to,CompilesTo from to)
               -> CompileState
               -> (from -> Compile to)
               -> String
-              -> IO (Either CompileError (to,CompileState))
+              -> IO (Either CompileError (to,CompileState,CompileWriter))
 compileToAst filepath reader state with from =
   runCompile reader
              state
@@ -102,17 +102,14 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   collectRecords mod
   cs <- io defaultCompileState
   modify $ \s -> s { stateImported = stateImported cs }
-  stmts <- compileModule True mod
-  fay2js <- do syms <- gets stateFayToJs
-               return $ if null syms then [] else [fayToJsDispatcher syms]
-  js2fay <- do syms <- gets stateJsToFay
-               return $ if null syms then [] else [jsToFayDispatcher syms]
-  let maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
-  conses <- gets stateCons
+  (stmts,CompileWriter{..}) <- listen $ compileModule True mod
+  let fay2js = if null writerFayToJs then [] else [fayToJsDispatcher writerFayToJs]
+      js2fay = if null writerJsToFay then [] else [jsToFayDispatcher writerJsToFay]
+      maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
   if configDispatcherOnly cfg
-     then return (maybeOptimize (conses ++ fay2js ++ js2fay))
+     then return (maybeOptimize (writerCons ++ fay2js ++ js2fay))
      else return (maybeOptimize (stmts ++
-                    if configDispatchers cfg then conses ++ fay2js ++ js2fay else []))
+                    if configDispatchers cfg then writerCons ++ fay2js ++ js2fay else []))
 
 --------------------------------------------------------------------------------
 -- Typechecking
@@ -231,14 +228,12 @@ compileImportWithFilter name importFilter =
     reader <- ask
     result <- liftIO $ compileToAst filepath reader state (compileModule False) contents
     case result of
-      Right (stmts,state) -> do
+      Right (stmts,state,writer) -> do
         imports <- filterM importFilter $ S.toList $ getCurrentExports state
-        modify $ \s -> s { stateFayToJs     = stateFayToJs state
-                         , stateJsToFay     = stateJsToFay state
-                         , stateImported    = stateImported state
+        tell writer
+        modify $ \s -> s { stateImported    = stateImported state
                          , stateLocalScope  = S.empty
                          , stateModuleScope = bindAsLocals imports (stateModuleScope s)
-                         , stateCons        = stateCons state
                          , _stateExports    = _stateExports state
                          }
         return stmts
@@ -362,7 +357,7 @@ compileDataDecl toplevel _decl constructors =
           return (func : funs)
 
   where
-    emitCons cons = modify $ \s -> s { stateCons = cons : stateCons s }
+    emitCons cons = tell (mempty { writerCons = [cons] })
 
     -- Creates a constructor R_RecConstr for a Record
     makeConstructor :: Name -> [Name] -> Compile JsStmt

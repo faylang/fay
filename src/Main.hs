@@ -174,9 +174,9 @@ runInteractive = runInputT defaultSettings loop where
             outputStrLn ("can't parse input as expression: " ++ show err)
             result' <- liftIO $ compileViaStr "<interactive>" config (compileDecl True) input
             case result' of
-              Right (PrintState{..},_) -> outputStr (concat (reverse psOutput))
+              Right (PrintState{..},_,_) -> outputStr (concat (reverse psOutput))
               Left err' ->
                 outputStrLn ("can't parse input as declaration: " ++ show err')
-          Right (PrintState{..},_) -> outputStr (concat (reverse psOutput))
+          Right (PrintState{..},_,_) -> outputStr (concat (reverse psOutput))
         loop
   config = def { configPrettyPrint = True }

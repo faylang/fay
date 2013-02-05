@@ -91,7 +91,7 @@ compileToModule filepath config raw with hscode = do
   result <- compileViaStr filepath config with hscode
   case result of
     Left err -> return (Left err)
-    Right (PrintState{..},state) ->
+    Right (PrintState{..},state,_) ->
       return $ Right $ (generate (concat (reverse psOutput))
                                         (S.toList $ getCurrentExports state)
                                         (stateModuleName state), state)

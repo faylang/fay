@@ -305,12 +305,8 @@ convertGADT d =
 -- | Run the compiler.
 runCompile :: CompileReader -> CompileState
            -> Compile a
-           -> IO (Either CompileError (a,CompileState))
-runCompile reader state m =
-  fmap (fmap dropWriter)
-       (runErrorT (runRWST (unCompile m) reader state))
-
-  where dropWriter (a,s,_w) = (a,s)
+           -> IO (Either CompileError (a,CompileState,CompileWriter))
+runCompile reader state m = runErrorT (runRWST (unCompile m) reader state)
 
 -- | Parse some Fay code.
 parseFay :: Parseable ast => FilePath -> String -> ParseResult ast

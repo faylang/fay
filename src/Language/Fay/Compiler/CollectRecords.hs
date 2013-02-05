@@ -29,7 +29,7 @@ passImport (ImportDecl _ name False _ Nothing Nothing _) = do
     reader <- ask
     result <- liftIO $ records filepath reader state collectRecords contents
     case result of
-      Right ((),st) -> do
+      Right ((),st,_) -> do
         -- Merges the state gotten from passing through an imported
         -- module with the current state. We can assume no duplicate
         -- records exist since GHC would pick that up.
@@ -61,7 +61,7 @@ records :: (Show from,Parseable from)
                     -> CompileState
                     -> (from -> Compile ())
                     -> String
-                    -> IO (Either CompileError ((),CompileState))
+                    -> IO (Either CompileError ((),CompileState,CompileWriter))
 records filepath compileReader compileState with from =
   runCompile compileReader
              compileState

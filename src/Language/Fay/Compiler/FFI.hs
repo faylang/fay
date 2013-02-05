@@ -14,23 +14,23 @@ module Language.Fay.Compiler.FFI
   ,fayToJsDispatcher)
   where
 
-import           Language.Fay.Compiler.Misc
-import           Language.Fay.Print           (printJSString)
-import           Language.Fay.Types
+import Language.Fay.Compiler.Misc
+import Language.Fay.Print           (printJSString)
+import Language.Fay.Types
 
-import           Control.Monad.Error
-import           Control.Monad.State
-import           Data.Char
-import           Data.String
-import           Data.List
-import           Data.Maybe
-import           Language.ECMAScript3.Parser  as JS
-import           Language.ECMAScript3.Syntax
-import           Language.Haskell.Exts        (prettyPrint)
-import           Language.Haskell.Exts.Syntax
-import           Prelude                      hiding (exp)
+import Control.Monad.Error
+import Control.Monad.Writer
+import Data.Char
 import Data.Generics.Schemes
-import           Safe
+import Data.List
+import Data.Maybe
+import Data.String
+import Language.ECMAScript3.Parser  as JS
+import Language.ECMAScript3.Syntax
+import Language.Haskell.Exts        (prettyPrint)
+import Language.Haskell.Exts.Syntax
+import Prelude                      hiding (exp)
+import Safe
 
 -- | Compile an FFI call.
 compileFFI :: SrcLoc -- ^ Location of the original FFI decl.
@@ -89,7 +89,7 @@ warnDotUses srcloc string expr =
 emitFayToJs :: Name -> [([Name],BangType)] -> Compile ()
 emitFayToJs name (explodeFields -> fieldTypes) = do
   qname <- qualify name
-  modify $ \s -> s { stateFayToJs = translator qname : stateFayToJs s }
+  tell (mempty { writerFayToJs = [translator qname] })
 
   where
     translator qname =
@@ -328,7 +328,7 @@ jsToFayDispatcher cases =
 emitJsToFay ::  Name -> [([Name], BangType)] -> Compile ()
 emitJsToFay name (explodeFields -> fieldTypes) = do
   qname <- qualify name
-  modify $ \s -> s { stateJsToFay = translator qname : stateJsToFay s }
+  tell (mempty { writerJsToFay = [translator qname] })
 
   where
     translator qname =

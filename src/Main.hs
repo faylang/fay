@@ -7,6 +7,7 @@ module Main where
 
 import           Language.Fay
 import           Language.Fay.Compiler
+import           Language.Fay.Compiler.Debug
 
 import qualified Control.Exception        as E
 import           Control.Monad

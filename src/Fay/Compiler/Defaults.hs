@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Language.Fay.Compiler.Defaults where
+module Fay.Compiler.Defaults where
 
 import Data.Default
 import Data.Map as M
 import Data.Set as S
-import Language.Fay.Compiler.Config
-import Language.Fay.Types
+import Fay.Compiler.Config
+import Fay.Types
 import Language.Haskell.Exts.Syntax
 import Paths_fay
 
@@ -27,7 +27,7 @@ defaultCompileState = do
   , stateModuleName = ModuleName "Main"
   , stateRecordTypes = []
   , stateRecords = []
-  , stateImported = [("Language.Fay.Types",types)]
+  , stateImported = [("Fay.Types",types)]
   , stateNameDepth = 1
   , stateFilePath = "<unknown>"
   , stateLocalScope = S.empty

@@ -116,8 +116,8 @@ Flag devel
 
 library
   hs-source-dirs:    src
-  exposed-modules:   Language.Fay, Language.Fay.Types, Language.Fay.FFI, Language.Fay.Convert, Language.Fay.Compiler, Language.Fay.Compiler.Misc, Language.Fay.Compiler.FFI, Language.Fay.Compiler.Optimizer, Language.Fay.Compiler.Packages, Language.Fay.ModuleScope, Language.Fay.Compiler.Debug
-  other-modules:     Language.Fay.Print, Control.Monad.IO, System.Process.Extra, Data.List.Extra, Paths_fay
+  exposed-modules:   Fay, Fay.Types, Language.Fay.FFI, Fay.Convert, Fay.Compiler, Fay.Compiler.Debug
+  other-modules:     Fay.Print, Control.Monad.IO, System.Process.Extra, Data.List.Extra, Paths_fay, Fay.Compiler.Misc, Fay.Compiler.FFI, Fay.Compiler.Optimizer, Fay.Compiler.Packages, Fay.Compiler.ModuleScope
   ghc-options:       -O2 -Wall
   build-depends:     base >= 4 && < 5,
                      aeson,
@@ -187,7 +187,7 @@ executable fay-tests
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   ghc-prof-options:  -fprof-auto
   main-is:           Tests.hs
-  other-modules:     Language.Fay.Compiler Test.Convert Test.Api Test.CommandLine Test.Util
+  other-modules:     Fay.Compiler Test.Convert Test.Api Test.CommandLine Test.Util
   build-depends:     base >= 4 && < 5,
                      aeson,
                      attoparsec,

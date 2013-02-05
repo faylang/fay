@@ -3,7 +3,7 @@
 -- | Handles variable bindings on the module level and also keeps track of
 -- primitive operations that we want to treat specially.
 
-module Language.Fay.ModuleScope
+module Fay.Compiler.ModuleScope
   (ModuleScope
   ,bindAsLocals
   ,findTopLevelNames

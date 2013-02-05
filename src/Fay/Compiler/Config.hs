@@ -1,9 +1,9 @@
 {-# OPTIONS -fno-warn-orphans #-}
-module Language.Fay.Compiler.Config where
+module Fay.Compiler.Config where
 
 import Data.Default
 import Data.Maybe
-import Language.Fay.Types
+import Fay.Types
 
 -- | Get all include directories without the package mapping.
 configDirectoryIncludePaths :: CompileConfig -> [FilePath]

@@ -11,7 +11,7 @@
 
 -- | The Haskell→Javascript compiler.
 
-module Language.Fay.Compiler
+module Fay.Compiler
   (runCompile
   ,compileViaStr
   ,compileForDocs
@@ -23,15 +23,15 @@ module Language.Fay.Compiler
   ,parseFay)
   where
 
-import           Language.Fay.Compiler.CollectRecords (collectRecords)
-import           Language.Fay.Compiler.Config
-import           Language.Fay.Compiler.Defaults
-import           Language.Fay.Compiler.FFI
-import           Language.Fay.Compiler.Misc
-import           Language.Fay.Compiler.Optimizer
-import           Language.Fay.ModuleScope        (bindAsLocals, findTopLevelNames, moduleLocals)
-import           Language.Fay.Print              (printJSString)
-import           Language.Fay.Types
+import           Fay.Compiler.CollectRecords (collectRecords)
+import           Fay.Compiler.Config
+import           Fay.Compiler.Defaults
+import           Fay.Compiler.FFI
+import           Fay.Compiler.Misc
+import           Fay.Compiler.Optimizer
+import           Fay.Compiler.ModuleScope (bindAsLocals, findTopLevelNames, moduleLocals)
+import           Fay.Print (printJSString)
+import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad.Error
@@ -245,7 +245,7 @@ unlessImported :: ModuleName
                -> (QName -> Compile Bool)
                -> (FilePath -> String -> Compile [JsStmt])
                -> Compile [JsStmt]
-unlessImported "Language.Fay.Types" _ _ = return []
+unlessImported "Fay.Types" _ _ = return []
 unlessImported name importFilter importIt = do
   imported <- gets stateImported
   case lookup name imported of

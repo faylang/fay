@@ -3,8 +3,8 @@
 
 module Test.Api (tests) where
 
-import Language.Fay
-import Language.Fay.Compiler.Config
+import Fay
+import Fay.Compiler.Config
 
 import Data.Default
 import Data.Maybe

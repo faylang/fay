@@ -1,11 +1,11 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Language.Fay.Compiler.Debug where
+module Fay.Compiler.Debug where
 
-import Language.Fay.Compiler.Defaults
-import Language.Fay.Compiler
-import Language.Fay.Compiler.Misc
-import Language.Fay.Types
+import Fay.Compiler.Defaults
+import Fay.Compiler
+import Fay.Compiler.Misc
+import Fay.Types
 
 import Control.Monad.Error
 import Data.Default

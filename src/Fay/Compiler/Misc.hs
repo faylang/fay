@@ -5,10 +5,10 @@
 
 -- | Miscellaneous functions used throughout the compiler.
 
-module Language.Fay.Compiler.Misc where
+module Fay.Compiler.Misc where
 
-import qualified Language.Fay.ModuleScope     as ModuleScope
-import           Language.Fay.Types
+import qualified Fay.Compiler.ModuleScope     as ModuleScope
+import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad.Error

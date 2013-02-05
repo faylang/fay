@@ -13,9 +13,9 @@
 -- Special constructors and symbols in Haskell are encoded to
 -- JavaScript appropriately.
 
-module Language.Fay.Print where
+module Fay.Print where
 
-import           Language.Fay.Types
+import           Fay.Types
 
 import           Control.Monad
 import           Control.Monad.State

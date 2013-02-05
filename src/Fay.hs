@@ -5,8 +5,8 @@
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE ViewPatterns          #-}
 
-module Language.Fay
-  (module Language.Fay.Types
+module Fay
+  (module Fay.Types
   ,compileFile
   ,compileFileWithState
   ,compileFromTo
@@ -16,12 +16,11 @@ module Language.Fay
   ,getRuntime)
    where
 
-import           Language.Fay.Compiler        (compileToplevelModule,
-                                               compileViaStr)
-import           Language.Fay.Compiler.Misc   (printSrcLoc)
-import           Language.Fay.Compiler.Packages
-import           Language.Fay.Print
-import           Language.Fay.Types
+import           Fay.Compiler
+import           Fay.Compiler.Misc   (printSrcLoc)
+import           Fay.Compiler.Packages
+import           Fay.Print
+import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad

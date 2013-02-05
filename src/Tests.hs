@@ -7,8 +7,8 @@
 
 module Main where
 
-import           Language.Fay
-import           Language.Fay.Compiler.Config
+import           Fay
+import           Fay.Compiler.Config
 
 import           Control.Applicative
 import           Data.Default

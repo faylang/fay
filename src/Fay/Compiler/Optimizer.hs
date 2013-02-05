@@ -3,9 +3,9 @@
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Language.Fay.Compiler.Optimizer where
+module Fay.Compiler.Optimizer where
 
-import Language.Fay.Compiler.Misc
+import Fay.Compiler.Misc
 
 import Control.Applicative
 import Control.Arrow (first)
@@ -14,7 +14,7 @@ import Control.Monad.Writer
 import Control.Monad.State
 import Data.List
 import Data.Maybe
-import Language.Fay.Types
+import Fay.Types
 import Language.Haskell.Exts (QName(..),ModuleName(..),Name(..))
 
 import Prelude hiding (exp)

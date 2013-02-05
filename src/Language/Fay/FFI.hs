@@ -12,7 +12,7 @@ module Language.Fay.FFI
   ,ffi)
   where
 
-import           Language.Fay.Types
+import           Fay.Types
 import           Prelude            (Bool, Char, Double, Int, Maybe, String,
                                      error)
 

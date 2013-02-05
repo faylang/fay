@@ -6,7 +6,7 @@
 
 -- | Compiling the FFI support.
 
-module Language.Fay.Compiler.FFI
+module Fay.Compiler.FFI
   (emitFayToJs
   ,emitJsToFay
   ,compileFFI
@@ -14,9 +14,9 @@ module Language.Fay.Compiler.FFI
   ,fayToJsDispatcher)
   where
 
-import Language.Fay.Compiler.Misc
-import Language.Fay.Print           (printJSString)
-import Language.Fay.Types
+import Fay.Compiler.Misc
+import Fay.Print           (printJSString)
+import Fay.Types
 
 import Control.Monad.Error
 import Control.Monad.Writer

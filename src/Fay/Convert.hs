@@ -5,7 +5,7 @@
 
 -- | Convert a Haskell value to a (JSON representation of a) Fay value.
 
-module Language.Fay.Convert
+module Fay.Convert
   (showToFay
   ,readFromFay)
   where

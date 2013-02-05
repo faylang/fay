@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Language.Fay.Compiler.CollectRecords where
+module Fay.Compiler.CollectRecords where
 
-import Language.Fay.Compiler.Misc
-import Language.Fay.Types
-import Language.Fay.Compiler.Config
+import Fay.Compiler.Misc
+import Fay.Types
+import Fay.Compiler.Config
 
 import Control.Applicative
 import Control.Monad.Error

@@ -10,7 +10,7 @@ import qualified Data.ByteString.UTF8           as UTF8
 import           Data.Data
 import           Data.Ratio
 import           Data.Text                      (Text, pack)
-import           Language.Fay.Convert
+import           Fay.Convert
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Test.HUnit                     (assertEqual)

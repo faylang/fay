@@ -2,10 +2,10 @@
 
 -- | Dealing with Cabal packages in Fay's own special way.
 
-module Language.Fay.Compiler.Packages where
+module Fay.Compiler.Packages where
 
-import Language.Fay.Types
-import Language.Fay.Compiler.Config
+import Fay.Types
+import Fay.Compiler.Config
 
 import Control.Monad
 import Data.List

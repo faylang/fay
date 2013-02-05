@@ -5,10 +5,10 @@
 
 module Main where
 
-import           Language.Fay
-import           Language.Fay.Compiler
-import           Language.Fay.Compiler.Config
-import           Language.Fay.Compiler.Debug
+import           Fay
+import           Fay.Compiler
+import           Fay.Compiler.Config
+import           Fay.Compiler.Debug
 
 import qualified Control.Exception        as E
 import           Control.Monad

@@ -7,7 +7,7 @@
 
 -- | All Fay types and instances.
 
-module Language.Fay.Types
+module Fay.Types
   (JsStmt(..)
   ,JsExp(..)
   ,JsLit(..)
@@ -47,7 +47,7 @@ import           Data.String
 import           Language.Haskell.Exts
 import           System.FilePath
 
-import           Language.Fay.ModuleScope (ModuleScope)
+import           Fay.Compiler.ModuleScope (ModuleScope)
 import           Paths_fay
 
 --------------------------------------------------------------------------------

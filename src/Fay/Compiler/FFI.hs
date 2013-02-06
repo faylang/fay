@@ -15,7 +15,7 @@ module Fay.Compiler.FFI
   where
 
 import Fay.Compiler.Misc
-import Fay.Print           (printJSString)
+import Fay.Compiler.Print           (printJSString)
 import Fay.Types
 
 import Control.Monad.Error

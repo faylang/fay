@@ -19,7 +19,7 @@ module Fay
 import           Fay.Compiler
 import           Fay.Compiler.Misc   (printSrcLoc)
 import           Fay.Compiler.Packages
-import           Fay.Print
+import           Fay.Compiler.Print
 import           Fay.Types
 
 import           Control.Applicative

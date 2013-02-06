@@ -13,7 +13,7 @@
 -- Special constructors and symbols in Haskell are encoded to
 -- JavaScript appropriately.
 
-module Fay.Print where
+module Fay.Compiler.Print where
 
 import           Fay.Types
 
@@ -25,7 +25,6 @@ import           Data.Default
 import           Data.List
 import           Data.String
 import           Language.Haskell.Exts.Syntax
-
 import           Prelude                      hiding (exp)
 
 --------------------------------------------------------------------------------

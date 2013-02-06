@@ -6,8 +6,7 @@ module Fay.Compiler.Exp where
 
 import Fay.Compiler.Misc
 import Fay.Compiler.Pattern
-
-import Fay.Print
+import Fay.Compiler.Print
 import Fay.Types
 
 import Control.Applicative

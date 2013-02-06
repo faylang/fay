@@ -30,9 +30,11 @@ import           Prelude                      hiding (exp)
 --------------------------------------------------------------------------------
 -- Printing
 
+-- | Print the JS to a flat string.
 printJSString :: Printable a => a -> String
 printJSString x = concat $ reverse $ psOutput $ execState (runPrinter (printJS x)) def
 
+-- | Print the JS to a pretty string.
 printJSPretty :: Printable a => a -> String
 printJSPretty x = concat $ reverse $ psOutput $ execState (runPrinter (printJS x)) def { psPretty = True }
 
@@ -194,16 +196,18 @@ instance Printable JsName where
       JsBuiltIn qname     -> "Fay$$" +> printJS qname
       JsParametrizedType  -> write "type"
 
+-- | Just write out strings.
 instance Printable String where
   printJS = write
 
+-- | A printer is a printable.
 instance Printable (Printer ()) where
   printJS = id
 
 --------------------------------------------------------------------------------
 -- Name encoding
 
--- Words reserved in haskell as well are not needed here:
+-- | Words reserved in haskell as well are not needed here:
 -- case, class, do, else, if, import, in, let
 reservedWords :: [String]
 reservedWords = [

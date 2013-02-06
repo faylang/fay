@@ -56,41 +56,43 @@ import           Paths_fay
 -- | Configuration of the compiler.
 data CompileConfig = CompileConfig
   { configOptimize           :: Bool                       -- ^ Run optimizations
-  , configFlattenApps        :: Bool
-  , configExportBuiltins     :: Bool
-  , configExportRuntime      :: Bool
-  , configExportStdlib       :: Bool
-  , configExportStdlibOnly   :: Bool
-  , configDispatchers        :: Bool
-  , configDispatcherOnly     :: Bool
-  , configNaked              :: Bool
-  , configDirectoryIncludes :: [(Maybe String, FilePath)] -- ^ Possibly a fay package name, and a include directory.
-  , configPrettyPrint        :: Bool
+  , configFlattenApps        :: Bool                       -- ^ Flatten function application?
+  , configExportBuiltins     :: Bool                       -- ^ Export built-in functions?
+  , configExportRuntime      :: Bool                       -- ^ Export the runtime?
+  , configExportStdlib       :: Bool                       -- ^ Export the stdlib?
+  , configExportStdlibOnly   :: Bool                       -- ^ Export /only/ the stdlib?
+  , configDispatchers        :: Bool                       -- ^ Export dispatchers?
+  , configDispatcherOnly     :: Bool                       -- ^ Export /only/ the dispatcher?
+  , configNaked              :: Bool                       -- ^ Export without a module wrapper?
+  , configDirectoryIncludes :: [(Maybe String, FilePath)]  -- ^ Possibly a fay package name, and a include directory.
+  , configPrettyPrint        :: Bool                       -- ^ Pretty print the JS output?
   , configHtmlWrapper        :: Bool                       -- ^ Output a HTML file including the produced JS.
-  , configHtmlJSLibs         :: [FilePath]
+  , configHtmlJSLibs         :: [FilePath]                 -- ^ Any JS files to link to in the HTML.
   , configLibrary            :: Bool                       -- ^ Don't invoke main in the produced JS.
   , configWarn               :: Bool                       -- ^ Warn on dubious stuff, not related to typechecking.
-  , configFilePath           :: Maybe FilePath             -- TODO This flag is not used thoroughly, decide if it's needed.
-  , configTypecheck          :: Bool                       -- ^ Typecheck with GHC
-  , configWall               :: Bool                       -- ^ Typecheck with -Wall
+  , configFilePath           :: Maybe FilePath             -- ^ File path to output to.
+                                                           --   TODO: This flag is not used thoroughly, decide if it's needed.
+  , configTypecheck          :: Bool                       -- ^ Typecheck with GHC.
+  , configWall               :: Bool                       -- ^ Typecheck with -Wall.
   , configGClosure           :: Bool                       -- ^ Run Google Closure on the produced JS.
-  , configPackageConf        :: Maybe FilePath
-  , configPackages          :: [String]                   -- ^ Included Fay packages
+  , configPackageConf        :: Maybe FilePath             -- ^ The package config e.g. packages-6.12.3.
+  , configPackages          :: [String]                    -- ^ Included Fay packages.
   } deriving (Show)
 
 -- | State of the compiler.
 data CompileState = CompileState
   { _stateExports     :: Map ModuleName (Set QName) -- ^ Collects exports from modules
-  , stateFilePath     :: FilePath
+  , stateFilePath     :: FilePath                   -- ^ Current file path. TODO: Used?
   , stateRecordTypes  :: [(QName,[QName])]          -- ^ Map types to constructors
   , stateRecords      :: [(QName,[QName])]          -- ^ Map constructors to fields
   , stateImported     :: [(ModuleName,FilePath)]    -- ^ Map of all imported modules and their source locations.
   , stateNameDepth    :: Integer                    -- ^ Depth of the current lexical scope.
   , stateLocalScope   :: Set Name                   -- ^ Names in the current lexical scope.
   , stateModuleScope  :: ModuleScope                -- ^ Names in the module scope.
-  , stateModuleName   :: ModuleName    -- ^ Name of the module currently being compiled.
+  , stateModuleName   :: ModuleName                 -- ^ Name of the module currently being compiled.
   } deriving (Show)
 
+-- | Things written out by the compiler.
 data CompileWriter = CompileWriter
   { writerCons     :: [JsStmt] -- ^ Constructors.
   , writerFayToJs  :: [JsStmt] -- ^ Fay to JS dispatchers.
@@ -98,17 +100,20 @@ data CompileWriter = CompileWriter
   }
   deriving (Show)
 
+-- | Simple concatenating instance.
 instance Monoid CompileWriter where
   mempty = CompileWriter [] [] []
   mappend (CompileWriter a b c) (CompileWriter x y z) =
     CompileWriter (a++x) (b++y) (c++z)
 
+-- | Configuration and globals for the compiler.
 data CompileReader = CompileReader
   { readerConfig       :: CompileConfig -- ^ The compilation configuration.
   , readerCompileLit   :: Literal -> Compile JsExp
   , readerCompileDecls :: Bool -> [Decl] -> Compile [JsStmt]
   }
 
+-- | The data-files source directory.
 faySourceDir :: IO FilePath
 faySourceDir = fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
 
@@ -131,11 +136,7 @@ getExportsFor mn cs = fromMaybe S.empty $ M.lookup mn (_stateExports cs)
 
 -- | Compile monad.
 newtype Compile a = Compile
-  { unCompile :: RWST CompileReader
-                      CompileWriter
-                      CompileState
-                      (ErrorT CompileError IO)
-                      a
+  { unCompile :: RWST CompileReader CompileWriter CompileState (ErrorT CompileError IO) a -- ^ Run the compiler.
   }
   deriving (MonadState CompileState
            ,MonadError CompileError
@@ -151,25 +152,29 @@ newtype Compile a = Compile
 class (Parseable from,Printable to) => CompilesTo from to | from -> to where
   compileTo :: from -> Compile to
 
+-- | A source mapping.
 data Mapping = Mapping
-  { mappingName :: String
-  , mappingFrom :: SrcLoc
-  , mappingTo   :: SrcLoc
+  { mappingName :: String -- ^ The name of the mapping.
+  , mappingFrom :: SrcLoc -- ^ The original source location.
+  , mappingTo   :: SrcLoc -- ^ The new source location.
   } deriving (Show)
 
+-- | The state of the pretty printer.
 data PrintState = PrintState
-  { psPretty       :: Bool
-  , psLine         :: Int
-  , psColumn       :: Int
-  , psMapping      :: [Mapping]
-  , psIndentLevel  :: Int
-  , psOutput       :: [String]
-  , psNewline      :: Bool
+  { psPretty       :: Bool      -- ^ Are we to pretty print?
+  , psLine         :: Int       -- ^ The current line.
+  , psColumn       :: Int       -- ^ Current column.
+  , psMapping      :: [Mapping] -- ^ Source mappings.
+  , psIndentLevel  :: Int       -- ^ Current indentation level.
+  , psOutput       :: [String]  -- ^ The current output. TODO: Make more efficient.
+  , psNewline      :: Bool      -- ^ Just outputted a newline?
   }
 
+-- | Default state.
 instance Default PrintState where
   def = PrintState False 0 0 [] 0 [] False
 
+-- | The printer monad.
 newtype Printer a = Printer { runPrinter :: State PrintState a }
   deriving (Monad,Functor,MonadState PrintState)
 
@@ -324,5 +329,8 @@ instance IsString QName where
 instance IsString ModuleName where
   fromString = ModuleName
 
+-- | The serialization context indicates whether we're currently
+-- serializing some value or a particular field in a user-defined data
+-- type.
 data SerializeContext = SerializeAnywhere | SerializeUserArg Int
   deriving (Read,Show,Eq)

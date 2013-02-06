@@ -85,7 +85,7 @@ warnDotUses srcloc string expr =
 
         globalNames = ["Math","console","JSON"]
 
--- Make a Fay→JS encoder.
+-- | Make a Fay→JS encoder.
 emitFayToJs :: Name -> [([Name],BangType)] -> Compile ()
 emitFayToJs name (explodeFields -> fieldTypes) = do
   qname <- qualify name
@@ -128,9 +128,11 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
                (force (JsGetProp (JsName transcodingObjForced)
                                  (JsNameVar (UnQual fname)))))
 
+-- | A name used for transcoding.
 transcodingObj :: JsName
 transcodingObj = JsNameVar "obj"
 
+-- | The name used for the forced version of a transcoding variable.
 transcodingObjForced :: JsName
 transcodingObjForced = JsNameVar "_obj"
 
@@ -296,9 +298,11 @@ formatFFI formatstr args = go formatstr where
       Just (arg,typ) -> do
         return (printJSString (fayToJs SerializeAnywhere typ (JsName arg)))
 
+-- | Generate n name-typ pairs from the given list.
 explodeFields :: [([a], t)] -> [(a, t)]
 explodeFields = concatMap $ \(names,typ) -> map (,typ) names
 
+-- | The dispatcher for Fay->JS conversion.
 fayToJsDispatcher :: [JsStmt] -> JsStmt
 fayToJsDispatcher cases =
   JsVar (JsBuiltIn "fayToJsUserDefined")
@@ -314,6 +318,7 @@ fayToJsDispatcher cases =
         baseCase =
           JsEarlyReturn (JsName transcodingObj)
 
+-- | The dispatcher for JS->Fay conversion.
 jsToFayDispatcher :: [JsStmt] -> JsStmt
 jsToFayDispatcher cases =
   JsVar (JsBuiltIn "jsToFayUserDefined")
@@ -324,7 +329,7 @@ jsToFayDispatcher cases =
   where baseCase =
           JsEarlyReturn (JsName transcodingObj)
 
--- Make a JS→Fay decoder
+-- | Make a JS→Fay decoder.
 emitJsToFay ::  Name -> [([Name], BangType)] -> Compile ()
 emitJsToFay name (explodeFields -> fieldTypes) = do
   qname <- qualify name

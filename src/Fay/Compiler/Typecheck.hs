@@ -1,3 +1,5 @@
+-- | Type-check using GHC.
+
 module Fay.Compiler.Typecheck where
 
 import           Control.Monad.IO
@@ -8,6 +10,7 @@ import           Fay.Types
 import qualified GHC.Paths                       as GHCPaths
 import           System.Process.Extra
 
+-- | Call out to GHC to type-check the file.
 typecheck :: Maybe FilePath -> Bool -> String -> Compile ()
 typecheck packageConf wall fp = do
   cfg <- config id

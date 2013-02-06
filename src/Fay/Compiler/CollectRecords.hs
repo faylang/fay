@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Initial pass-through collecting record definitions
+
 module Fay.Compiler.CollectRecords where
 
 import Fay.Compiler.Misc
@@ -11,15 +13,14 @@ import Control.Monad.Error
 import Control.Monad.RWS
 import Language.Haskell.Exts
 
---------------------------------------------------------------------------------
--- Initial pass-through collecting record definitions
-
+-- | Collect all the records and their fields before compiling.
 collectRecords :: Module -> Compile ()
 collectRecords (Module _ _ _ Nothing _ imports decls) = do
   mapM_ passImport imports
   mapM_ decl decls
 collectRecords mod = throwError (UnsupportedModuleSyntax mod)
 
+-- | Handle an import.
 passImport :: ImportDecl -> Compile ()
 passImport (ImportDecl _ _ _ _ Just{} _ _) = do
   return ()
@@ -56,13 +57,14 @@ unlessImported name importIt = do
       modify $ \s -> s { stateImported = (name,filepath) : imported }
       importIt filepath contents
 
+-- | Compile only for record generation.
 records :: (Show from,Parseable from)
-                    => FilePath
-                    -> CompileReader
-                    -> CompileState
-                    -> (from -> Compile ())
-                    -> String
-                    -> IO (Either CompileError ((),CompileState,CompileWriter))
+        => FilePath
+        -> CompileReader
+        -> CompileState
+        -> (from -> Compile ())
+        -> String
+        -> IO (Either CompileError ((),CompileState,CompileWriter))
 records filepath compileReader compileState with from =
   runCompile compileReader
              compileState
@@ -70,6 +72,7 @@ records filepath compileReader compileState with from =
                           with
                           (parseFay filepath from))
 
+-- | Handle a declaration.
 decl :: Decl -> Compile ()
 decl decl = do
   case decl of

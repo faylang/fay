@@ -2,6 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
+-- | Compile expressions
+
 module Fay.Compiler.Exp where
 
 import Fay.Compiler.Misc
@@ -49,8 +51,10 @@ compileExp exp =
 
     exp -> throwError (UnsupportedExpression exp)
 
+-- | Compiling instance.
 instance CompilesTo Exp JsExp where compileTo = compileExp
 
+-- | Compile variable.
 compileVar :: QName -> Compile JsExp
 compileVar qname = do
   qname <- resolveName qname
@@ -287,6 +291,7 @@ compileRecConstr name fieldUpdates = do
         -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
         updateStmt _ u = error ("updateStmt: " ++ show u)
 
+-- | Update a record (using clever Object.create(), dunno if this is cross-browser).
 updateRec :: Exp -> [FieldUpdate] -> Compile JsExp
 updateRec rec fieldUpdates = do
     record <- force <$> compileExp rec
@@ -327,6 +332,7 @@ desugarListComp e (QualStmt (LetStmt bs)         : stmts) = do
 desugarListComp _ (s                             : _    ) =
     throwError (UnsupportedQualStmt s)
 
+-- | Make a Fay list.
 makeList :: [JsExp] -> JsExp
 makeList exps = (JsApp (JsName (JsBuiltIn "list")) [JsList exps])
 

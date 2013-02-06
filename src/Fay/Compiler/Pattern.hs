@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Compile pattern matches.
+
 module Fay.Compiler.Pattern where
 
 import Fay.Compiler.Misc

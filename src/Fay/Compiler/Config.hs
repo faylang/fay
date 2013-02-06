@@ -1,4 +1,7 @@
 {-# OPTIONS -fno-warn-orphans #-}
+
+-- | Configuration functions.
+
 module Fay.Compiler.Config where
 
 import Data.Default

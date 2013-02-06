@@ -6,6 +6,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
+-- | Compile declarations.
+
 module Fay.Compiler.Decl where
 
 import Fay.Compiler.Exp
@@ -52,6 +54,7 @@ compileDecl toplevel decl =
     DerivDecl{} -> return []
     _ -> throwError (UnsupportedDeclaration decl)
 
+-- | Convenient instance.
 instance CompilesTo Decl [JsStmt] where compileTo = compileDecl True
 
 -- | Compile a top-level pattern bind.

@@ -14,14 +14,12 @@ import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.IO
 import           Control.Monad.RWS
-import           Control.Monad.State
 import           Data.List
 import           Data.Maybe
 import qualified Data.Set                        as S
 import           Data.String
 import           Data.Version                    (parseVersion)
 import           Language.Haskell.Exts
-import           Language.Haskell.Exts.Parser
 import           Prelude                      hiding (exp, mod)
 import           System.Directory
 import           System.FilePath
@@ -155,12 +153,6 @@ isConstant :: JsExp -> Bool
 isConstant JsLit{} = True
 isConstant _       = False
 
--- | Extract the string from a qname.
--- qname :: QName -> String
--- qname (UnQual (Ident str)) = str
--- qname (UnQual (Symbol sym)) = jsEncodeName sym
--- qname i = error $ "qname: Expected unqualified ident, found: " ++ show i -- FIXME:
-
 -- | Deconstruct a parse result (a la maybe, foldr, either).
 parseResult :: ((SrcLoc,String) -> b) -> (a -> b) -> ParseResult a -> b
 parseResult die ok result = case result of
@@ -231,12 +223,11 @@ warn w = do
 printSrcLoc :: SrcLoc -> String
 printSrcLoc SrcLoc{..} = srcFilename ++ ":" ++ show srcLine ++ ":" ++ show srcColumn
 
-anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
-anyM p l = return . not . null =<< filterM p l
-
+-- | Lookup the record for a given type name.
 typeToRecs :: QName -> Compile [QName]
 typeToRecs typ = fromMaybe [] . lookup typ <$> gets stateRecordTypes
 
+-- | Get the fields for a given type.
 typeToFields :: QName -> Compile [QName]
 typeToFields typ = do
   allrecs <- gets stateRecords
@@ -256,6 +247,7 @@ getGhcPackageDbFlag = do
   where
     readVersion = listToMaybe . filter (null . snd) . readP_to_S parseVersion
 
+-- | Find an import's filepath and contents from its module name.
 findImport :: [FilePath] -> ModuleName -> Compile (FilePath,String)
 findImport alldirs mname = go alldirs mname where
   go (dir:dirs) name = do
@@ -274,6 +266,7 @@ findImport alldirs mname = go alldirs mname where
     | mname == ModuleName "Language.Fay.FFI"    = const "module Language.Fay.FFI where\n\ndata Nullable a = Nullable a | Null\n\ndata Defined a = Defined a | Undefined"
     | otherwise = id
 
+-- | Convert a GADT to a normal data type.
 convertGADT :: GadtDecl -> QualConDecl
 convertGADT d =
   case d of
@@ -323,11 +316,19 @@ applyCPP =
     toInclude (CPPIf x state) = x && toInclude state
     toInclude (CPPElse x state) = x && toInclude state
 
+-- | The CPP's parsing state.
 data CPPState = NoCPP
               | CPPIf Bool CPPState
               | CPPElse Bool CPPState
 
 -- | The parse mode for Fay.
 parseMode :: ParseMode
-parseMode = defaultParseMode { extensions =
-  [GADTs,StandaloneDeriving,PackageImports,EmptyDataDecls,TypeOperators,RecordWildCards,NamedFieldPuns] }
+parseMode = defaultParseMode
+  { extensions = [GADTs
+                 ,StandaloneDeriving
+                 ,PackageImports
+                 ,EmptyDataDecls
+                 ,TypeOperators
+                 ,RecordWildCards
+                 ,NamedFieldPuns]
+  }

@@ -3,6 +3,8 @@
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Optimizing the outputted JavaScript(-ish) AST.
+
 module Fay.Compiler.Optimizer where
 
 import Fay.Compiler.Misc
@@ -41,6 +43,7 @@ runOptimizer optimizer stmts =
   in inlineMonad (newstmts ++ (tco (catMaybes (map (uncurryBinding newstmts) (nub uncurried)))))
   where st = OptState stmts []
 
+-- | Inline x >> y to x;y in the JS output.
 inlineMonad :: [JsStmt] -> [JsStmt]
 inlineMonad = map go where
   go stmt =
@@ -86,12 +89,14 @@ inlineMonad = map go where
       JsObj keyvals                    -> JsObj keyvals
       rest                             -> rest
 
+-- | Flatten a a>>(b>>c) to [a,b,c].
 flatten :: JsExp -> Maybe JsExp
 flatten exp = case collect exp of
   Just (stmts@(_:_:_)) -> let s = reverse stmts
                           in Just $ thunk (JsSeq (map force (init s) ++ [last s]))
   _ -> Nothing
 
+-- | Try to collect nested a>>(b>>c).
 collect :: JsExp -> Maybe [JsExp]
 collect exp =
   case exp of
@@ -234,6 +239,7 @@ expArity :: JsExp -> Int
 expArity (JsFun _ _ mexp) = 1 + maybe 0 expArity mexp
 expArity _ = 0
 
+-- | Change foo(x)(y) to foo$uncurried(x,y).
 uncurryBinding :: [JsStmt] -> QName -> Maybe JsStmt
 uncurryBinding stmts qname = listToMaybe (mapMaybe funBinding stmts)
   where

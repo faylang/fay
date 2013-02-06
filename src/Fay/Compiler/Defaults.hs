@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Default values.
+
 module Fay.Compiler.Defaults where
 
 import Fay.Compiler.Config

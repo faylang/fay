@@ -291,7 +291,6 @@ compileRecConstr name fieldUpdates = do
         -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
         updateStmt _ u = error ("updateStmt: " ++ show u)
 
--- | Update a record (using clever Object.create(), dunno if this is cross-browser).
 updateRec :: Exp -> [FieldUpdate] -> Compile JsExp
 updateRec rec fieldUpdates = do
     record <- force <$> compileExp rec

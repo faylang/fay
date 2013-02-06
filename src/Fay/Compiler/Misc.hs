@@ -13,31 +13,15 @@ import           Fay.Types
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.IO
-import           Control.Monad.State
 import           Control.Monad.RWS
-
+import           Control.Monad.State
 import           Data.List
-import           Language.Haskell.Exts.Parser
-
-import qualified Data.Set                        as S
 import           Data.Maybe
-
-import           Language.Haskell.Exts
-
-
-
-
-
-
-
-
-
-
+import qualified Data.Set                        as S
 import           Data.String
 import           Data.Version                    (parseVersion)
-
-
-
+import           Language.Haskell.Exts
+import           Language.Haskell.Exts.Parser
 import           Prelude                      hiding (exp, mod)
 import           System.Directory
 import           System.FilePath

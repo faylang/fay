@@ -104,8 +104,10 @@ instance Monoid CompileWriter where
     CompileWriter (a++x) (b++y) (c++z)
 
 data CompileReader = CompileReader
-  { readerConfig     :: CompileConfig -- ^ The compilation configuration.
-  } deriving (Show)
+  { readerConfig       :: CompileConfig -- ^ The compilation configuration.
+  , readerCompileLit   :: Literal -> Compile JsExp
+  , readerCompileDecls :: Bool -> [Decl] -> Compile [JsStmt]
+  }
 
 faySourceDir :: IO FilePath
 faySourceDir = fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")

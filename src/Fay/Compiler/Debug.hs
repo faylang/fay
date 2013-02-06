@@ -4,7 +4,7 @@ module Fay.Compiler.Debug where
 
 import Fay.Compiler.Defaults
 import Fay.Compiler
-import Fay.Compiler.Misc
+import Fay.Compiler.Misc (parseResult)
 import Fay.Types
 
 import Control.Monad.Error

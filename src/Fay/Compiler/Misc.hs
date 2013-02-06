@@ -19,7 +19,10 @@ import           Data.Maybe
 import qualified Data.Set                        as S
 import           Data.String
 import           Data.Version                    (parseVersion)
-import           Language.Haskell.Exts
+import           Language.Haskell.Exts.Syntax
+import           Language.Haskell.Exts.Parser
+import           Language.Haskell.Exts.Pretty
+import           Language.Haskell.Exts.Extension
 import           Prelude                      hiding (exp, mod)
 import           System.Directory
 import           System.FilePath
@@ -283,7 +286,7 @@ convertGADT d =
 runCompile :: CompileReader -> CompileState
            -> Compile a
            -> IO (Either CompileError (a,CompileState,CompileWriter))
-runCompile reader state m = runErrorT (runRWST (unCompile m) reader state)
+runCompile reader' state' m = runErrorT (runRWST (unCompile m) reader' state')
 
 -- | Parse some Fay code.
 parseFay :: Parseable ast => FilePath -> String -> ParseResult ast
@@ -304,17 +307,17 @@ applyCPP =
     unlines . loop NoCPP . lines
   where
     loop _ [] = []
-    loop state ("#if FAY":rest) = "" : loop (CPPIf True state) rest
-    loop state ("#ifdef FAY":rest) = "" : loop (CPPIf True state) rest
-    loop state ("#ifndef FAY":rest) = "" : loop (CPPIf False state) rest
-    loop (CPPIf b oldState) ("#else":rest) = "" : loop (CPPElse (not b) oldState) rest
-    loop (CPPIf _ oldState) ("#endif":rest) = "" : loop oldState rest
-    loop (CPPElse _ oldState) ("#endif":rest) = "" : loop oldState rest
-    loop state (x:rest) = (if toInclude state then x else "") : loop state rest
+    loop state' ("#if FAY":rest) = "" : loop (CPPIf True state') rest
+    loop state' ("#ifdef FAY":rest) = "" : loop (CPPIf True state') rest
+    loop state' ("#ifndef FAY":rest) = "" : loop (CPPIf False state') rest
+    loop (CPPIf b oldState') ("#else":rest) = "" : loop (CPPElse (not b) oldState') rest
+    loop (CPPIf _ oldState') ("#endif":rest) = "" : loop oldState' rest
+    loop (CPPElse _ oldState') ("#endif":rest) = "" : loop oldState' rest
+    loop state' (x:rest) = (if toInclude state' then x else "") : loop state' rest
 
     toInclude NoCPP = True
-    toInclude (CPPIf x state) = x && toInclude state
-    toInclude (CPPElse x state) = x && toInclude state
+    toInclude (CPPIf x state') = x && toInclude state'
+    toInclude (CPPElse x state') = x && toInclude state'
 
 -- | The CPP's parsing state.
 data CPPState = NoCPP

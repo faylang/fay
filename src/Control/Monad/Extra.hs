@@ -2,6 +2,7 @@
 
 module Control.Monad.Extra where
 
+import Control.Monad
 import Data.Maybe
 
 -- | Word version of flip (>>=).
@@ -24,3 +25,7 @@ forMaybe = flip mapMaybe
 -- | Monadic version of maybe.
 maybeM :: (Monad m) => a -> (a1 -> m a) -> Maybe a1 -> m a
 maybeM nil cons a = maybe (return nil) cons a
+
+-- | Do any of the (monadic) predicates match?
+anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
+anyM p l = return . not . null =<< filterM p l

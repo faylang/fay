@@ -33,6 +33,7 @@ import           Fay.Types
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.IO
+import           Control.Monad.Extra
 import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default                    (def)

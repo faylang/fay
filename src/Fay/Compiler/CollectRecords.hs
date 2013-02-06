@@ -11,14 +11,15 @@ import Fay.Compiler.Config
 import Control.Applicative
 import Control.Monad.Error
 import Control.Monad.RWS
-import Language.Haskell.Exts
+import Language.Haskell.Exts.Syntax
+import Language.Haskell.Exts.Parser
 
 -- | Collect all the records and their fields before compiling.
 collectRecords :: Module -> Compile ()
 collectRecords (Module _ _ _ Nothing _ imports decls) = do
   mapM_ passImport imports
-  mapM_ decl decls
-collectRecords mod = throwError (UnsupportedModuleSyntax mod)
+  mapM_ scanDecl decls
+collectRecords m = throwError (UnsupportedModuleSyntax m)
 
 -- | Handle an import.
 passImport :: ImportDecl -> Compile ()
@@ -27,9 +28,9 @@ passImport (ImportDecl _ _ _ _ Just{} _ _) = do
 --  warn $ "import with package syntax ignored: " ++ prettyPrint i
 passImport (ImportDecl _ name False _ Nothing Nothing _) = do
   void $ unlessImported name $ \filepath contents -> do
-    state <- get
-    reader <- ask
-    result <- liftIO $ records filepath reader state collectRecords contents
+    state' <- get
+    reader' <- ask
+    result <- liftIO $ records filepath reader' state' collectRecords contents
     case result of
       Right ((),st,_) -> do
         -- Merges the state gotten from passing through an imported
@@ -73,8 +74,8 @@ records filepath compileReader compileState with from =
                           (parseFay filepath from))
 
 -- | Handle a declaration.
-decl :: Decl -> Compile ()
-decl decl = do
+scanDecl :: Decl -> Compile ()
+scanDecl decl = do
   case decl of
     DataDecl _loc DataType _ctx name _tyvarb qualcondecls _deriv -> do
       let ns = flip map qualcondecls (\(QualConDecl _loc' _tyvarbinds _ctx' condecl) -> conDeclName condecl)

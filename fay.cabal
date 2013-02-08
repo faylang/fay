@@ -116,8 +116,8 @@ Flag devel
 
 library
   hs-source-dirs:    src
-  exposed-modules:   Fay, Fay.Types, Language.Fay.FFI, Fay.Convert, Fay.Compiler, Fay.Compiler.Debug
-  other-modules:     Fay.Compiler.Print, Control.Monad.IO, System.Process.Extra, Data.List.Extra, Paths_fay, Fay.Compiler.Misc, Fay.Compiler.FFI, Fay.Compiler.Optimizer, Fay.Compiler.Packages, Fay.Compiler.ModuleScope
+  exposed-modules:   Fay, Fay.Types, Language.Fay.FFI, Fay.Convert, Fay.Compiler, Fay.Compiler.Debug, Fay.Compiler.Config
+  other-modules:     Fay.Compiler.Print, Control.Monad.IO, System.Process.Extra, Data.List.Extra, Paths_fay, Fay.Compiler.Misc, Fay.Compiler.FFI, Fay.Compiler.Optimizer, Fay.Compiler.Packages, Fay.Compiler.ModuleScope, Control.Monad.Extra, Fay.Compiler.CollectRecords, Fay.Compiler.Decl, Fay.Compiler.Defaults, Fay.Compiler.Exp, Fay.Compiler.Pattern, Fay.Compiler.Typecheck
   ghc-options:       -O2 -Wall -fno-warn-name-shadowing
   build-depends:     base >= 4 && < 5,
                      aeson,

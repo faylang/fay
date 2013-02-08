@@ -7,7 +7,9 @@ module Fay.Compiler.Packages where
 import Fay.Types
 import Fay.Compiler.Config
 
+import Control.Applicative
 import Control.Monad
+import Control.Monad.Extra
 import Data.List
 import Data.Version
 import GHC.Paths
@@ -45,8 +47,9 @@ doesSourceDirExist path = do
   exists <- doesDirectoryExist path
   if not exists
      then return False
-     else do files <- getDirectoryContents path
-             return $ any ((==".hs") . takeExtension) files
+     else do files <- filter (\v -> v /= "." && v /= "..") <$> getDirectoryContents path
+             sub   <- anyM doesSourceDirExist $ map (path </>) files
+             return $ any ((==".hs") . takeExtension) files || sub
 
 -- | Describe the given package.
 describePackage :: Maybe FilePath -> String -> IO String

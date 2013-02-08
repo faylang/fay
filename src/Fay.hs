@@ -5,6 +5,8 @@
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE ViewPatterns          #-}
 
+-- | Main library entry point.
+
 module Fay
   (module Fay.Types
   ,compileFile
@@ -73,6 +75,7 @@ compileFile :: CompileConfig -> FilePath -> IO (Either CompileError String)
 compileFile config filein = do
   either Left (Right . fst) <$> compileFileWithState config filein
 
+-- | Compile a file returning the state.
 compileFileWithState :: CompileConfig -> FilePath -> IO (Either CompileError (String,CompileState))
 compileFileWithState config filein = do
   runtime <- getRuntime

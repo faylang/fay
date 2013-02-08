@@ -1,5 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
+-- | Some useful debug functions.
+
 module Fay.Compiler.Debug where
 
 import Fay.Compiler.Defaults
@@ -32,6 +34,7 @@ compileTestAst cfg with from = do
     Left err -> error $ show err
     Right (ok,_,_) -> print ok
 
+-- | Print a useful debug output of a compilation.
 debug :: (Show from,Show to,CompilesTo from to) => (from -> Compile to) -> String -> IO ()
 debug compile string = do
   putStrLn "AST:\n"

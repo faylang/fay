@@ -1,3 +1,4 @@
+{-# OPTIONS -fno-warn-name-shadowing #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | Compile pattern matches.

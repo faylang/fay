@@ -198,7 +198,6 @@ fayToJs = translate "fayToJs"
 translate :: String -> SerializeContext -> FundamentalType -> JsExp -> JsExp
 translate method context typ exp = case typ of
   -- Unserialized types
-  UnknownType -> exp
   PtrType     -> exp
   -- Flat types
   StringType -> flat "string"

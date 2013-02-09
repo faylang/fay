@@ -1,0 +1,2 @@
+{ instance: 'Parametric',
+  slot1: { instance: 'ConcreteRecord', concreteField: 123 } }

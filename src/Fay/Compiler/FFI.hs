@@ -125,8 +125,8 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
       (prettyPrint fname
       ,fayToJs (SerializeUserArg i)
                (argType (bangType typ))
-               (force (JsGetProp (JsName transcodingObjForced)
-                                 (JsNameVar (UnQual fname)))))
+               (JsGetProp (JsName transcodingObjForced)
+                          (JsNameVar (UnQual fname))))
 
 -- | A name used for transcoding.
 transcodingObj :: JsName

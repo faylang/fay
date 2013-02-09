@@ -250,14 +250,14 @@ typeRep context typ = case typ of
         case context of
           SerializeAnywhere -> ret "unknown"
           SerializeUserArg i ->
-            let args = JsIndex 2 (JsName JsParametrizedType)
+            let args = JsName argTypes
+                automatic = JsIndex 0 (JsName JsParametrizedType)
                 thisArg = JsIndex i args
-                unknown = ret "unknown"
-            in JsTernaryIf args
-                           (JsTernaryIf thisArg
-                                        thisArg
-                                        unknown)
-                           unknown
+            in JsTernaryIf (JsInfix "&&" args thisArg)
+                           thisArg
+                           (JsTernaryIf (JsEq automatic (JsLit "automatic"))
+                                        (ret "automatic")
+                                        (ret "unknown"))
 
 -- | Get the arity of a type.
 typeArity :: Type -> Int
@@ -311,8 +311,8 @@ fayToJsDispatcher cases =
 
   where decl = [JsVar transcodingObjForced
                       (force (JsName transcodingObj))
-               ,JsVar (JsNameVar "argTypes")
-                      (JsLookup (JsName (JsNameVar "type"))
+               ,JsVar argTypes
+                      (JsLookup (JsName JsParametrizedType)
                                 (JsLit (JsInt 2)))]
         baseCase =
           JsEarlyReturn (JsName transcodingObj)
@@ -322,11 +322,14 @@ jsToFayDispatcher :: [JsStmt] -> JsStmt
 jsToFayDispatcher cases =
   JsVar (JsBuiltIn "jsToFayUserDefined")
         (JsFun [JsNameVar "type",transcodingObj]
-               (cases ++ [baseCase])
+               (decl ++ cases ++ [baseCase])
                Nothing)
 
   where baseCase =
           JsEarlyReturn (JsName transcodingObj)
+        decl = [JsVar argTypes
+                      (JsLookup (JsName JsParametrizedType)
+                                (JsLit (JsInt 2)))]
 
 -- | Make a JS→Fay decoder.
 emitJsToFay ::  Name -> [([Name], BangType)] -> Compile ()
@@ -348,3 +351,7 @@ emitJsToFay name (explodeFields -> fieldTypes) = do
               (argType (bangType typ))
               (JsGetPropExtern (JsName transcodingObj)
                                (prettyPrint fname))
+
+-- | The argument types used in serialization of parametrized user-defined types.
+argTypes :: JsName
+argTypes = JsNameVar "argTypes"

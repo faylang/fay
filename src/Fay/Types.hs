@@ -290,6 +290,9 @@ data JsLit
   | JsBool Bool
   deriving (Show,Eq)
 
+-- | Just handy to have.
+instance IsString JsLit where fromString = JsStr
+
 -- | These are the data types that are serializable directly to native
 -- JS data types. Strings, floating points and arrays. The others are:
 -- actions in the JS monad, which are thunks that shouldn't be forced

@@ -10,6 +10,7 @@ main = do
   printMaybeConcrete (Just (ConcreteRecord 42))
   printMaybeAutomatic (Just (ConcreteRecord 42))
   printMaybe (Just (ConcreteRecord 42))
+  printUnknown (error "do not want")
 
 printParametricButConcreteType :: Parametric ConcreteRecord -> Fay ()
 printParametricButConcreteType = ffi "console.log(%1)"
@@ -28,3 +29,6 @@ printMaybeAutomatic = ffi "console.log(%1)"
 
 printMaybe :: Maybe a -> Fay ()
 printMaybe = ffi "console.log(%1)"
+
+printUnknown :: a -> Fay ()
+printUnknown = ffi "console.log(%1)"

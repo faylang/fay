@@ -8,3 +8,4 @@
 { instance: 'Just',
   slot1: { instance: 'ConcreteRecord', concreteField: 42 } }
 { instance: 'Just', slot1: { concreteField: 42 } }
+{ forced: false, value: [Function] }

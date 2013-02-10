@@ -1,5 +1,5 @@
 name:                fay
-version:             0.13.0.0
+version:             0.14.0.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which is type-checked
                      with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
@@ -21,31 +21,37 @@ description:         Fay is a proper subset of Haskell which is type-checked
                      .
                      /Release Notes/
                      .
-                     . * Updates to name resolution.
+                     * Update test-cases for serialization.
                      .
-                     . * Added initial fay-base support.
+                     * ce7a34a Fix fully specified parametrized type serialization.
                      .
-                     . * Basic CPP support (#136)
+                     * Full documentation.
                      .
-                     . * Serialization of Text values (#136)
+                     * Change Language.Fay.* to Fay.*.
                      .
-                     . * Add Automatic serialization, export Automatic/Ptr, bump version.
+                     * Resolve packages using dataDir.
                      .
-                     . * Do not automatically serialize polymorphic values.
+                     * Optimize FFI for embedded scripts.
                      .
-                     . * Support Ptr type to force the serializer to ignore things.
+                     * Option to not export built-ins.
                      .
-                     . * Add very dubious --package flag.
+                     * Flag to export only stdout.
                      .
-                     . * Support type imports (IAbs)
+                     * Output source of runtime rather than filename.
                      .
-                     . * Support import X (a, b) and import X hiding (a, b).
+                     * Flag to output only the serialization dispatcher.
                      .
-                     . * Implement guards in case branches
+                     * Flag to exclude the serialization dispatcher.
                      .
-                     . * Fix instance declarations missing when typechecking (closes #177)
+                     * Flag to exclude stdlib from output.
                      .
-                     . * Bump optparse-applicative to >= 0.5 (closes #195)
+                     * Flag to output naked decls (unwrapped).
+                     .
+                     * Flag to print out the runtime JS source.
+                     .
+                     * Flag to not export runtime.
+                     .
+                     * Remove Language.Fay.Stdlib/Prelude, superseded by fay-base
                      .
                      See full history at: <https://github.com/faylang/fay/commits>
 homepage:            http://fay-lang.org/
@@ -105,6 +111,7 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      tests/Hierarchical/RecordDefined.hs
                      tests/Api/Records.hs tests/Api/ImportRecords.hs
                      tests/Api/CPPTypecheck.hs
+                     tests/serialization.hs tests/serialization
 
 source-repository head
   type: git

@@ -153,14 +153,12 @@ compileDataDecl toplevel _decl constructors =
 
 -- | Compile a newtype declaration.
 compileNewtypeDecl :: [QualConDecl] -> Compile [JsStmt]
-compileNewtypeDecl [QualConDecl _ _ _ condecl] =
+compileNewtypeDecl [QualConDecl _ _ _ condecl] = do
   case condecl of
-    ConDecl name  [ty] -> liftM (:[]) (makeFunc name (getBangTy ty))
-    RecDecl cname [([dname], ty)] -> do
-      ctor <- makeFunc cname (getBangTy ty)
-      qdname <- qualify dname
-      let dtor = JsVar (JsNameVar qdname) $ JsFun [JsTmp 0] [] (Just (JsName (JsTmp 0)))
-      return [ctor, dtor]
+      -- newtype declaration without destructor
+    ConDecl name  [ty]            -> addNewtype name Nothing ty
+    RecDecl cname [([dname], ty)] -> addNewtype cname (Just dname) ty
+  return []
 
   where
     getBangTy :: BangType -> Type
@@ -168,12 +166,13 @@ compileNewtypeDecl [QualConDecl _ _ _ condecl] =
     getBangTy (UnBangedTy t) = t
     getBangTy (UnpackedTy t) = t
 
-    makeFunc :: Name -> Type -> Compile JsStmt
-    makeFunc name ty = do
-      qname <- qualify name
-      modify (\cs -> cs{stateNewtypes=(qname,ty):(stateNewtypes cs)})
-      return $ JsVar (JsNameVar qname) $
-        JsFun [JsTmp 10] [] (Just (JsName (JsTmp 10)))
+    addNewtype cname dname ty = do
+      qcname <- qualify cname
+      qdname <- case dname of
+                  Nothing -> return Nothing
+                  Just n  -> qualify n >>= return . Just
+      modify (\cs@CompileState{stateNewtypes=nts} ->
+               cs{stateNewtypes=(qcname,qdname,getBangTy ty):nts})
 
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]

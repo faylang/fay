@@ -20,7 +20,6 @@ import Fay.Types
 
 import Control.Monad.Error
 import Control.Monad.Writer
-import Control.Monad.State (gets)
 import Control.Applicative ((<$>), (<*>))
 import Data.Char
 import Data.Generics.Schemes
@@ -53,10 +52,10 @@ compileFFI srcloc name formatstr sig =
         rmNewtys (TyApp t1 t2)    = TyApp <$> rmNewtys t1 <*> rmNewtys t2
         rmNewtys t@TyVar{}        = return t
         rmNewtys (TyCon qname)    = do
-          qcons <- gets stateNewtypes
-          return $ case lookup qname qcons of
-                     Nothing -> TyCon qname
-                     Just ty -> ty
+          newty <- lookupNewtypeConst qname
+          return $ case newty of
+                     Nothing     -> TyCon qname
+                     Just (_,ty) -> ty
         rmNewtys (TyParen t)      = TyParen <$> rmNewtys t
         rmNewtys (TyInfix t1 q t2)= flip TyInfix q <$> rmNewtys t1 <*> rmNewtys t2
         rmNewtys (TyKind t k)     = flip TyKind k <$> rmNewtys t

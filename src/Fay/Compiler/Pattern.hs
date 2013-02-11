@@ -20,13 +20,15 @@ compilePat :: JsExp -> Pat -> [JsStmt] -> Compile [JsStmt]
 compilePat exp pat body =
   case pat of
     PVar name       -> compilePVar name exp body
-    PApp cons@(UnQual ucons) pats -> do
-      newtype_cons <- liftM (map fst . stateNewtypes) get
-      qcons <- qualify ucons
-      if qcons `elem` newtype_cons
-        then compileNewtypePat pats exp body
-        else compilePApp cons pats exp body
-    PApp cons pats  -> compilePApp cons pats exp body
+    PApp cons pats  -> do
+      qcons <- case cons of
+                 UnQual name -> qualify name
+                 _ -> return cons
+      state <- gets stateNewtypes
+      newty <- lookupNewtypeConst qcons
+      case newty of
+        Nothing -> compilePApp cons pats exp body
+        Just _  -> compileNewtypePat pats exp body
     PLit literal    -> compilePLit exp literal body
     PParen pat      -> compilePat exp pat body
     PWildCard       -> return body

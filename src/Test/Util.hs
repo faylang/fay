@@ -1,23 +1,32 @@
-module Test.Util where
+module Test.Util
+  ( fayPath
+  , isRight
+  , fromLeft
+  ) where
 
 import           Control.Applicative
 import           System.Directory
-import           System.Process.Extra
+import           System.Process.Extra (readAllFromProcess)
 
 -- Path to the fay executable, looks in cabal-dev, dist, PATH in that order.
 fayPath :: IO (Maybe FilePath)
-fayPath = do
-  cabalDev <- doesFileExist cabalDevPath
-  if cabalDev
-    then return (Just cabalDevPath)
-    else do
-      dist <- doesFileExist distPath
-      if dist
-        then return (Just distPath)
-        else either (const Nothing) (Just . concat . lines . snd) <$> readAllFromProcess "which" ["fay"] ""
+fayPath =
+  (<|>) <$> firstWhereM doesFileExist [cabalDevPath, distPath] <*> usingWhich
   where
     cabalDevPath = "./cabal-dev/bin/fay"
     distPath = "./dist/build/fay/fay"
+    usingWhich = fmap (concat . lines . snd) . hush <$> readAllFromProcess "which" ["fay"] ""
+
+firstWhereM :: (Monad m) => (a -> m Bool) -> [a] -> m (Maybe a)
+firstWhereM pred ins = case ins of
+  [] -> return Nothing
+  a:as -> pred a >>= \b ->
+          if b then return (Just a)
+               else firstWhereM pred as
+
+-- from the package `errors`
+hush :: Either a b -> Maybe b
+hush = either (const Nothing) Just
 
 isRight :: Either a b -> Bool
 isRight (Right _) = True

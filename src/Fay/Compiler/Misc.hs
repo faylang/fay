@@ -94,6 +94,7 @@ qualify name = do
   modulename <- gets stateModuleName
   return (Qual modulename name)
 
+-- | Qualify a QName for the current module if unqualified.
 qualifyQName :: QName -> Compile QName
 qualifyQName (UnQual name) = qualify name
 qualifyQName n             = return n

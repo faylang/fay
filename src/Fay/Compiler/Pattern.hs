@@ -21,9 +21,7 @@ compilePat exp pat body =
   case pat of
     PVar name       -> compilePVar name exp body
     PApp cons pats  -> do
-      qcons <- case cons of
-                 UnQual name -> qualify name
-                 _ -> return cons
+      qcons <- qualifyQName cons
       state <- gets stateNewtypes
       newty <- lookupNewtypeConst qcons
       case newty of

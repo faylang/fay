@@ -18,7 +18,8 @@ module Fay.Compiler
   ,parseFay)
   where
 
-import           Fay.Compiler.CollectRecords (collectRecords)
+-- import           Fay.Compiler.CollectRecords (collectRecords)
+import           Fay.Compiler.InitialPass (initialPass)
 import           Fay.Compiler.Config
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Exp
@@ -82,7 +83,8 @@ compileToAst filepath reader state with from =
 -- compilation.
 compileForDocs :: Module -> Compile [JsStmt]
 compileForDocs mod = do
-  collectRecords mod
+  initialPass mod
+  -- collectRecords mod
   compileModule False mod
 
 -- | Compile the top-level Fay module.
@@ -93,7 +95,8 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   when (configTypecheck cfg) $
     typecheck (configPackageConf cfg) (configWall cfg) $
       fromMaybe modulename $ configFilePath cfg
-  collectRecords mod
+  initialPass mod
+  -- collectRecords mod
   cs <- io defaultCompileState
   modify $ \s -> s { stateImported = stateImported cs }
   (stmts,CompileWriter{..}) <- listen $ compileModule True mod

@@ -85,6 +85,7 @@ data CompileState = CompileState
   , stateFilePath     :: FilePath                   -- ^ Current file path. TODO: Used?
   , stateRecordTypes  :: [(QName,[QName])]          -- ^ Map types to constructors
   , stateRecords      :: [(QName,[QName])]          -- ^ Map constructors to fields
+  , stateNewtypes     :: [(QName, Maybe QName, Type)] -- ^ Newtype constructor, destructor, wrapped type tuple
   , stateImported     :: [(ModuleName,FilePath)]    -- ^ Map of all imported modules and their source locations.
   , stateNameDepth    :: Integer                    -- ^ Depth of the current lexical scope.
   , stateLocalScope   :: Set Name                   -- ^ Names in the current lexical scope.
@@ -132,7 +133,14 @@ getCurrentExports cs = getExportsFor (stateModuleName cs) cs
 
 -- | Get all of the exported identifiers for the given module.
 getExportsFor :: ModuleName -> CompileState -> Set QName
-getExportsFor mn cs = fromMaybe S.empty $ M.lookup mn (_stateExports cs)
+getExportsFor mn cs = excludeNewtypes cs $ fromMaybe S.empty $ M.lookup mn (_stateExports cs)
+  where
+    excludeNewtypes :: CompileState -> Set QName -> Set QName
+    excludeNewtypes cs names =
+      let newtypes = stateNewtypes cs
+          constrs = map (\(c, _, _) -> c) newtypes
+          destrs  = map (\(_, d, _) -> fromJust d) . filter (\(_, d, _) -> isJust d) $ newtypes
+       in names `S.difference` (S.fromList constrs `S.union` S.fromList destrs)
 
 -- | Compile monad.
 newtype Compile a = Compile

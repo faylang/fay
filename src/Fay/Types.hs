@@ -207,9 +207,9 @@ data CompileError
   | RecursiveDoUnsupported
   | Couldn'tFindImport ModuleName [FilePath]
   | FfiNeedsTypeSig Decl
-  | FfiFormatBadChars String
-  | FfiFormatNoSuchArg Int
-  | FfiFormatIncompleteArg
+  | FfiFormatBadChars SrcLoc String
+  | FfiFormatNoSuchArg SrcLoc Int
+  | FfiFormatIncompleteArg SrcLoc
   | FfiFormatInvalidJavaScript SrcLoc String String
   | UnableResolveUnqualified Name
   | UnableResolveQualified QName

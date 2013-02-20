@@ -39,7 +39,7 @@ compileFFI :: SrcLoc -- ^ Location of the original FFI decl.
            -> Type   -- ^ Type signature.
            -> Compile [JsStmt]
 compileFFI srcloc name formatstr sig = do
-  inner <- formatFFI formatstr (zip params funcFundamentalTypes)
+  inner <- formatFFI srcloc formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.parseExpression (prettyPrint name) (printJSString (wrapReturn inner)) of
     Left err -> throwError (FfiFormatInvalidJavaScript srcloc inner (show err))
     Right exp  -> do
@@ -268,10 +268,11 @@ typeArity t = case t of
   _              -> 0
 
 -- | Format the FFI format string with the given arguments.
-formatFFI :: String                      -- ^ The format string.
+formatFFI :: SrcLoc                     -- ^ Location of the original FFI decl.
+          -> String                     -- ^ The format string.
           -> [(JsName,FundamentalType)] -- ^ Arguments.
-          -> Compile String              -- ^ The JS code.
-formatFFI formatstr args = go formatstr where
+          -> Compile String             -- ^ The JS code.
+formatFFI srcloc formatstr args = go formatstr where
   go ('%':'*':xs) = do
     these <- mapM inject (zipWith const [1..] args)
     rest <- go xs
@@ -279,10 +280,10 @@ formatFFI formatstr args = go formatstr where
   go ('%':'%':xs) = do
     rest <- go xs
     return ('%' : rest)
-  go ['%'] = throwError FfiFormatIncompleteArg
+  go ['%'] = throwError (FfiFormatIncompleteArg srcloc)
   go ('%':(span isDigit -> (op,xs))) =
     case readMay op of
-     Nothing -> throwError (FfiFormatBadChars op)
+     Nothing -> throwError (FfiFormatBadChars srcloc op)
      Just n -> do
        this <- inject n
        rest <- go xs
@@ -293,7 +294,7 @@ formatFFI formatstr args = go formatstr where
 
   inject n =
     case listToMaybe (drop (n-1) args) of
-      Nothing -> throwError (FfiFormatNoSuchArg n)
+      Nothing -> throwError (FfiFormatNoSuchArg srcloc n)
       Just (arg,typ) -> do
         return (printJSString (fayToJs SerializeAnywhere typ (JsName arg)))
 

@@ -167,9 +167,9 @@ showCompileError e = case e of
   InvalidDoBlock -> "invalid `do' block"
   RecursiveDoUnsupported -> "recursive `do' isn't supported"
   FfiNeedsTypeSig d -> "your FFI declaration needs a type signature: " ++ prettyPrint d
-  FfiFormatBadChars cs -> "invalid characters for FFI format string: " ++ show cs
-  FfiFormatNoSuchArg i -> "no such argument in FFI format string: " ++ show i
-  FfiFormatIncompleteArg -> "incomplete `%' syntax in FFI format string"
+  FfiFormatBadChars      srcloc cs -> printSrcLoc srcloc ++ ": invalid characters for FFI format string: " ++ show cs
+  FfiFormatNoSuchArg     srcloc i  -> printSrcLoc srcloc ++ ": no such argument in FFI format string: " ++ show i
+  FfiFormatIncompleteArg srcloc    -> printSrcLoc srcloc ++ ": incomplete `%' syntax in FFI format string"
   FfiFormatInvalidJavaScript srcloc code err ->
     printSrcLoc srcloc ++ ":" ++
     "\ninvalid JavaScript code in FFI format string:\n"

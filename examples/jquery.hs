@@ -25,13 +25,11 @@ main = do
     return ()
 
 data JQuery
-instance Foreign JQuery
 instance Show JQuery
 
 data Element
-instance Foreign Element
 
-printArg :: Foreign a => a -> Fay ()
+printArg :: a -> Fay ()
 printArg = ffi "console.log(\"%%o\",%1)"
 
 showDouble :: Double -> String

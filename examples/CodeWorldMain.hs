@@ -61,7 +61,7 @@ effective w x | energy w > 0 = x w
               | otherwise    = 0
 
 lost w = any (collision (ship w)) (asts w)
-    where collision ((x1,y1),_) ((x2,y2),_) = (x2-x1)^2 + (y2-y1)^2 < 1764
+    where collision ((x1,y1),_) ((x2,y2),_) = (((x2-x1)^2::Double) + ((y2-y1)^2::Double)) < 1764
 
 step dt w = if lost w
     then initialWith (maxScore w) (if score w < 1 then lastScore w else score w) (savedGen w)

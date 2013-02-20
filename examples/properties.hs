@@ -41,4 +41,3 @@ thewindow :: Element
 thewindow = ffi "window"
 
 data Element
-instance Foreign Element

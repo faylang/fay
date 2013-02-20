@@ -32,7 +32,7 @@ main = do
                                       return ()
                               else do setVal (show n) display
                                       writeRef appendMore True)
-      getInput = getVal display >>= return . parseDouble 10
+      getInput = getVal display >>= (return . parseDouble 10)
       operator op = do
         calculate
         num <- getInput
@@ -71,11 +71,9 @@ main = do
 -- These are provided in the fay-jquery package.
 
 data JQuery
-instance Foreign JQuery
 instance Show JQuery
 
 data Element
-instance Foreign Element
 
 -- | Nicer/easier binding for >>=.
 (&) :: Fay a -> (a -> Fay b) -> Fay b
@@ -115,13 +113,12 @@ parseDouble = ffi "parseFloat(%2,%1) || 0"
 
 data Ref a
 instance Show (Ref a)
-instance Foreign a => Foreign (Ref a)
 
-newRef :: Foreign a => a -> Fay (Ref a)
+newRef :: a -> Fay (Ref a)
 newRef = ffi "new Fay$$Ref(%1)"
 
-writeRef :: Foreign a => Ref a -> a -> Fay ()
+writeRef :: Ref a -> a -> Fay ()
 writeRef = ffi "Fay$$writeRef(%1,%2)"
 
-readRef :: Foreign a => Ref a -> Fay a
+readRef :: Ref a -> Fay a
 readRef = ffi "Fay$$readRef(%1)"

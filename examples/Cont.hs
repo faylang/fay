@@ -33,7 +33,7 @@ type Deferred a = ContT () Fay a
 setTimeout :: Int -> (() -> Fay ()) -> Fay ()
 setTimeout = ffi "global.setTimeout(%2,%1)"
 
-readFile :: Foreign b => String -> (String -> Fay b) -> Fay b
+readFile :: String -> (String -> Fay b) -> Fay b
 readFile = ffi "require('fs').readFile(%1,'utf-8',function(_,s){ %2(s); })"
 
 sync :: (t -> (a -> Fay r) -> Fay r) -> t -> ContT r Fay a
@@ -44,7 +44,7 @@ sync m a = ContT $ \c -> m a c
 
 -- | The continuation monad.
 data ContT r m a = ContT { runContT :: (a -> m r) -> m r }
-instance (Monad m) => Monad (ContT r m)
+instance (GHC.Base.Monad m) => GHC.Base.Monad (ContT r m)
 
 data CC = CC
   { cc_return :: forall a r. a -> ContT r Fay a

@@ -6,7 +6,6 @@ import           FFI
 import           Prelude
 
 data MyData = MyData  { xVar :: Int, yVar :: Int }
-instance Foreign MyData
 
 myData :: MyData
 myData = MyData { yVar = 3, xVar = 9 }

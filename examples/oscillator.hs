@@ -35,7 +35,6 @@ noscUpd p val = p { nosc = val }
 
 -- Need this to be able to make a 'Ref Params'.
 --
-instance Foreign Params
 
 -- Default values for the system parameters (taken from Bridges &
 -- Reich 2001).
@@ -85,12 +84,12 @@ rhs p state = [dy] ++ dxs ++ [dy'] ++ dxs'
         dy = y' ; dxs = xs'
 
         -- Forcing system right hand side.
-        dy' = 0 - alpha p * (y^2 - 1) * y' - (omega p)^2 * y
+        dy' = 0 - alpha p * (y^2 - 1) * y' - ((omega p)^2::Double) * y
 
         -- Right hand side for ring oscillators:
 
         -- Displacement differences.
-        xdiffs = (head xs - xs !! (n - 1)) : zipWith (-) (tail xs) xs
+        xdiffs = (head xs - (xs !! (n - 1))) : zipWith (-) (tail xs) xs
 
         -- Nonlinear inter-oscillator potential calculation:
         -- V(x) = 1/2 x^2 + 1/4 x^4  =>  V'(x) = x + x^3
@@ -442,7 +441,6 @@ parseInt = ffi "parseInt(%1)"
 -- DOM
 
 data Element
-instance Foreign Element
 instance Show Element
 
 type Size = (Int,Int)
@@ -451,7 +449,6 @@ getElementById :: String -> Fay Element
 getElementById = ffi "document['getElementById'](%1)"
 
 data Event
-instance Foreign Event
 
 addWindowEventListener :: String -> (Event -> Fay Bool) -> Fay ()
 addWindowEventListener = ffi "window['addEventListener'](%1,%2,false)"
@@ -465,7 +462,7 @@ setInterval = ffi "window['setInterval'](%1,%2)"
 clearInterval :: Int -> Fay ()
 clearInterval = ffi "window['clearInterval'](%1)"
 
-print :: Foreign a => a -> Fay ()
+print :: a -> Fay ()
 print = ffi "console.log(%1)"
 
 eventTarget :: Event -> Fay Element
@@ -482,25 +479,23 @@ setSelectIndex = ffi "%1['selectedIndex']=%2"
 
 -- | A mutable reference like IORef.
 data Ref a
-instance Foreign a => Foreign (Ref a)
 
 -- | Make a new mutable reference.
-newRef :: Foreign a => a -> Fay (Ref a)
+newRef :: a -> Fay (Ref a)
 newRef = ffi "new Fay$$Ref(%1)"
 
 -- | Replace the value in the mutable reference.
-writeRef :: Foreign a => Ref a -> a -> Fay ()
+writeRef :: Ref a -> a -> Fay ()
 writeRef = ffi "Fay$$writeRef(%1,%2)"
 
 -- | Get the referred value from the mutable value.
-readRef :: Foreign a => Ref a -> Fay a
+readRef :: Ref a -> Fay a
 readRef = ffi "Fay$$readRef(%1)"
 
 --------------------------------------------------------------------------------
 -- Canvas API
 
 data Context
-instance Foreign Context
 instance Show Context
 
 type Point = (Double,Double)
@@ -593,13 +588,11 @@ measureText = ffi "%1['measureText'](%2)['width']"
 -- Circular buffers
 
 data Array
-instance Foreign Array
 
 data Buffer = Buffer { bufSize :: Int
                      , bufCurSize :: Int
                      , bufNext :: Int
                      , bufArr :: Array }
-instance Foreign Buffer
 
 newBuf :: Int -> Fay Buffer
 newBuf size = do

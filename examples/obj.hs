@@ -6,7 +6,6 @@ import FFI
 import Prelude
 
 data Foo = Foo { foo :: Double, bar :: String }
-instance Foreign Foo
 
 main :: Fay ()
 main = do

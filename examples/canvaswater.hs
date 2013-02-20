@@ -50,11 +50,10 @@ class Eventable a
 
 -- | A DOM element.
 data Element
-instance Foreign Element
 instance Eventable Element
 
 -- | Add an event listener to an element.
-addEventListener :: (Foreign a,Eventable a) => a -> String -> Fay () -> Bool -> Fay ()
+addEventListener :: (Eventable a) => a -> String -> Fay () -> Bool -> Fay ()
 addEventListener = ffi "%1['addEventListener'](%2,%3,%4)"
 
 -- | Get an element by its ID.
@@ -65,7 +64,6 @@ getElementById = ffi "document['getElementById'](%1)"
 -- Images
 
 data Image
-instance Foreign Image
 instance Eventable Image
 
 -- | Make a new image.
@@ -81,7 +79,6 @@ setSrc = ffi "%1['src'] = %2"
 
 -- | A canvas context.
 data Context
-instance Foreign Context
 
 -- | Get an element by its ID.
 getContext :: Element -> String -> Fay Context
@@ -116,25 +113,24 @@ setFillRect = ffi "%1['fillRect'](%2,%3,%4,%5)"
 
 -- | A mutable reference like IORef.
 data Ref a
-instance Foreign a => Foreign (Ref a)
 
 -- | Make a new mutable reference.
-newRef :: Foreign a => a -> Fay (Ref a)
+newRef :: a -> Fay (Ref a)
 newRef = ffi "new Fay$$Ref(%1)"
 
 -- | Replace the value in the mutable reference.
-writeRef :: Foreign a => Ref a -> a -> Fay ()
+writeRef :: Ref a -> a -> Fay ()
 writeRef = ffi "Fay$$writeRef(%1,%2)"
 
 -- | Get the referred value from the mutable value.
-readRef :: Foreign a => Ref a -> Fay a
+readRef :: Ref a -> Fay a
 readRef = ffi "Fay$$readRef(%1)"
 
 --------------------------------------------------------------------------------
 -- Misc
 
 -- | Alert using window.alert.
-alert :: Foreign a => a -> Fay ()
+alert :: a -> Fay ()
 alert = ffi "window['alert'](%1)"
 
 -- | Alert using window.alert.

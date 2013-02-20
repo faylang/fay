@@ -9,11 +9,9 @@ import           FFI
 import           Prelude
 
 data Sys
-instance Foreign Sys
 
 data Details
 instance Show Details
-instance Foreign Details
 
 main = do
   sys <- require' "sys"
@@ -24,5 +22,5 @@ main = do
 require' :: String -> Fay Sys
 require' = ffi "require(%1)"
 
-inspect :: Foreign a => Sys -> a -> Fay Details
+inspect :: Sys -> Automatic a -> Fay Details
 inspect = ffi "%1.inspect(%2)"

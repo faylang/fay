@@ -24,7 +24,6 @@ import FFI
 
 
 data Element
-instance Foreign Element
 
 getElementById :: String -> Fay Element
 getElementById = ffi "document['getElementById'](%1)"
@@ -33,7 +32,6 @@ focusElement :: Element -> Fay ()
 focusElement = ffi "%1.focus()"
 
 data Event
-instance Foreign Event
 
 addEventListener :: String -> Bool -> (Event -> Fay Bool) -> Fay ()
 addEventListener = ffi "window['addEventListener'](%1,%3,%2)"
@@ -45,28 +43,25 @@ getEventMouseButton :: Event -> Fay Int
 getEventMouseButton = ffi "%1['button']"
 
 data Timer
-instance Foreign Timer
 
 setInterval :: Double -> Fay () -> Fay Timer
 setInterval = ffi "window['setInterval'](%2,%1)"
 
 data Ref a
-instance Foreign a => Foreign (Ref a)
 
-newRef :: Foreign a => a -> Fay (Ref a)
+newRef :: a -> Fay (Ref a)
 newRef = ffi "new Fay$$Ref(%1)"
 
-writeRef :: Foreign a => Ref a -> a -> Fay ()
+writeRef :: Ref a -> a -> Fay ()
 writeRef = ffi "Fay$$writeRef(%1,%2)"
 
-readRef :: Foreign a => Ref a -> Fay a
+readRef :: Ref a -> Fay a
 readRef = ffi "Fay$$readRef(%1)"
 
 currentTimeMillis :: Fay Double
 currentTimeMillis = ffi "(Date.now?Date.now():new Date().getTime())"
 
 data Context
-instance Foreign Context
 
 getContext :: Element -> String -> Fay Context
 getContext = ffi "%1['getContext'](%2)"
@@ -362,7 +357,6 @@ animateInCanvas anim = withCanvas $ \ canvas ctx -> do
     return ()
 
 data SimState a = SimState a
-instance Foreign (SimState a)
 
 withSimState :: (a -> a) -> Ref (SimState a) -> Fay a
 withSimState f ref = do

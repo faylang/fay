@@ -55,7 +55,7 @@ compileViaStr filepath config with from = do
   cs <- defaultCompileState
   rs <- defaultCompileReader config
   runCompile rs
-             (cs { stateFilePath = filepath })
+             cs
              (parseResult (throwError . uncurry ParseError)
                           (fmap (\x -> execState (runPrinter (printJS x)) printConfig) . with)
                           (parseFay filepath from))

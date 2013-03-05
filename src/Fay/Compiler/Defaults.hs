@@ -36,7 +36,6 @@ defaultCompileState = do
   , stateRecords = []
   , stateImported = [("Fay.Types",types)]
   , stateNameDepth = 1
-  , stateFilePath = "<unknown>"
   , stateLocalScope = S.empty
   , stateModuleScope = def
   }

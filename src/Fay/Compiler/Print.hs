@@ -90,6 +90,8 @@ instance Printable [JsStmt] where
 
 -- | Print a single statement.
 instance Printable JsStmt where
+  printJS (JsExpStmt e) =
+    printJS e +> ";" +> newline
   printJS (JsBlock stmts) =
     "{ " +> stmts +> "}"
   printJS (JsVar name expr) =

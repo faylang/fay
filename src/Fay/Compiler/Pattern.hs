@@ -107,6 +107,7 @@ compilePApp cons pats exp body = do
   let boolIf b = return [JsIf (JsEq forcedExp (JsLit (JsBool b))) body []]
   case cons of
     -- Special-casing on the booleans.
+    Special UnitCon -> return (JsExpStmt forcedExp : body)
     "True" -> boolIf True
     "False" -> boolIf False
     -- Everything else, generic:

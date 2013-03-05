@@ -235,6 +235,7 @@ data JsStmt
   | JsSetPropExtern JsName JsName JsExp
   | JsContinue
   | JsBlock [JsStmt]
+  | JsExpStmt JsExp
   deriving (Show,Eq)
 
 -- | Expression type.

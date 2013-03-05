@@ -1,5 +1,5 @@
 name:                fay
-version:             0.14.1.0
+version:             0.14.2.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which is type-checked
                      with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
@@ -21,39 +21,13 @@ description:         Fay is a proper subset of Haskell which is type-checked
                      .
                      /Release Notes/
                      .
-                     * Fix package resolving for nested dirs.
+                     * Recursively check package directories for .hs files.
                      .
-                     * Update test-cases for serialization.
+                     * Fix examples.
                      .
-                     * Fix fully specified parametrized type serialization.
+                     * Show line numbers in FFI errors.
                      .
-                     * Full documentation.
-                     .
-                     * Change Language.Fay.* to Fay.*.
-                     .
-                     * Resolve packages using dataDir.
-                     .
-                     * Optimize FFI for embedded scripts.
-                     .
-                     * Option to not export built-ins.
-                     .
-                     * Flag to export only stdout.
-                     .
-                     * Output source of runtime rather than filename.
-                     .
-                     * Flag to output only the serialization dispatcher.
-                     .
-                     * Flag to exclude the serialization dispatcher.
-                     .
-                     * Flag to exclude stdlib from output.
-                     .
-                     * Flag to output naked decls (unwrapped).
-                     .
-                     * Flag to print out the runtime JS source.
-                     .
-                     * Flag to not export runtime.
-                     .
-                     * Remove Language.Fay.Stdlib/Prelude, superseded by fay-base
+                     * Support () in pattern matches.
                      .
                      See full history at: <https://github.com/faylang/fay/commits>
 homepage:            http://fay-lang.org/

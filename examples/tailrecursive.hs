@@ -34,7 +34,7 @@ length' = go 0 where
 
 -- tail recursive
 sum' 0 acc = acc
-sum' n acc = sum' (n - 1) (acc + n)
+sum' n acc = let x = acc + n in x `seq` sum' (n - 1) x
 
 getSeconds :: Fay Double
 getSeconds = ffi "new Date()"

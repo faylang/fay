@@ -16,8 +16,8 @@
 
 module Benchmarks where
 
-import Language.Fay.FFI
-import Language.Fay.Prelude
+import FFI
+import Prelude
 
 --------------------------------------------------------------------------------
 -- Main entry point
@@ -33,19 +33,19 @@ main = do
 
 -- | Benchmark a simple tail-recursive function.
 sumBenchmark :: Fay ()
-sumBenchmark = runAndSummarize "sum 1000000 0" $ benchmark 5 (sum 1000000 0)
+sumBenchmark = runAndSummarize "sum 1000000 0" $ benchmark 5 (sum' 10000000 0)
 
 -- A simple tail-recursive O(n) summing function.
-sum :: Double -> Double -> Double
-sum 0 acc = acc
-sum n acc = sum (n - 1) (acc + n)
+sum' :: Double -> Double -> Double
+sum' 0 acc = acc
+sum' n acc = let i = (acc + n) in seq i (sum' (n - 1) i)
 
 -- | Benchmark a simple tail-recursive function walking a list.
 lengthBenchmark :: Fay ()
 lengthBenchmark = do
   let a = [1..1000000]
   echo "Forcing the list ..."
-  force (length a) False
+  (length a) `seq` return False
   runAndSummarize "length [1..1000000]" $ benchmark 5 (length a)
 
 -- | Benchmark the n-queens problem.
@@ -91,7 +91,7 @@ benchmark benchmarks a = do
   where
     go a count results = do
       start <- getSeconds
-      force a True
+      a `seq` return True
       end <- getSeconds
       if count == benchmarks
          then return results
@@ -100,8 +100,8 @@ benchmark benchmarks a = do
 --------------------------------------------------------------------------------
 -- Utility functions
 
-unwords :: [String] -> String
-unwords = intercalate " "
+-- unwords :: [String] -> String
+-- unwords = intercalate " "
 
 mean :: [Double] -> Double
 mean xs = foldl (\x y -> x + y) 0 xs / fromIntegral (length xs)
@@ -110,16 +110,16 @@ stddev :: [Double] -> Double
 stddev xs = let tmean = mean xs
             in sqrt (mean (map (\x -> square (x - tmean)) xs))
 
-sqrt :: Double -> Double
-sqrt = ffi "Math.sqrt(%1)"
+-- sqrt :: Double -> Double
+-- sqrt = ffi "Math.sqrt(%1)"
 
-maximum :: [Double] -> Double
-maximum (x:xs) = foldl max x xs
-maximum _ = 0
+-- maximum :: [Double] -> Double
+-- maximum (x:xs) = foldl max x xs
+-- maximum _ = 0
 
-minimum :: [Double] -> Double
-minimum (x:xs) = foldl min x xs
-minimum _ = 0
+-- minimum :: [Double] -> Double
+-- minimum (x:xs) = foldl min x xs
+-- minimum _ = 0
 
 square :: Double -> Double
 square x = x * x

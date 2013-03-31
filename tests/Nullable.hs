@@ -7,6 +7,8 @@ instance Foreign R
 main :: Fay ()
 main = do
   printD $ Nullable (1 :: Double)
+  printS $ Nullable "Hello, World!"
+  printSS $ Nullable ["Hello,","World!"]
   printD $ (Null :: Nullable Double)
   print' $ R (Nullable 1)
   print' $ R Null
@@ -18,6 +20,12 @@ main = do
 
 printD :: Foreign f => Nullable Double -> Fay ()
 printD = ffi "console.log(%1)"
+
+printS :: Defined String -> Fay ()
+printS = ffi "console.log(%1)"
+
+printSS :: Defined [String] -> Fay ()
+printSS = ffi "console.log(%1)"
 
 print' :: Foreign f => Automatic f -> Fay ()
 print' = ffi "console.log(%1)"

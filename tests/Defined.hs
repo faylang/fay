@@ -7,6 +7,8 @@ instance Foreign R
 main :: Fay ()
 main = do
   printD $ Defined (1 :: Double)
+  printS $ Defined "Hello, World!"
+  printSS $ Defined ["Hello,","World!"]
   printD $ (Undefined :: Defined Double)
   print $ R (Defined 1)
   print $ R Undefined
@@ -16,6 +18,12 @@ main = do
 
 printD :: Defined Double -> Fay ()
 printD = ffi "console.log(%1)"
+
+printS :: Defined String -> Fay ()
+printS = ffi "console.log(%1)"
+
+printSS :: Defined [String] -> Fay ()
+printSS = ffi "console.log(%1)"
 
 r1 :: R
 r1 = ffi "{ instance: 'R', slot1 : 1 }"

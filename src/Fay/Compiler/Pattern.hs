@@ -108,8 +108,8 @@ compilePApp cons pats exp body = do
   case cons of
     -- Special-casing on the booleans.
     Special UnitCon -> return (JsExpStmt forcedExp : body)
-    "True" -> boolIf True
-    "False" -> boolIf False
+    UnQual "True"   -> boolIf True
+    UnQual "False"  -> boolIf False
     -- Everything else, generic:
     _ -> do
       rf <- fmap (lookup cons) (gets stateRecords)

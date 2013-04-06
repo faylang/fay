@@ -6,7 +6,8 @@ module Test.Util
 
 import           Control.Applicative
 import           System.Directory
-import           System.Process.Extra (readAllFromProcess)
+import           System.Process.Extra        (readAllFromProcess)
+import           Prelude              hiding (pred)
 
 -- Path to the fay executable, looks in cabal-dev, dist, PATH in that order.
 fayPath :: IO (Maybe FilePath)

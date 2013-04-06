@@ -59,6 +59,7 @@ inlineMonad = map go where
       JsSetPropExtern a b exp -> JsSetPropExtern a b (inline exp)
       JsContinue              -> JsContinue
       JsBlock stmts           -> JsBlock (map go stmts)
+      JsExpStmt exp           -> JsExpStmt (inline exp)
 
   inline expr =
     case expr of

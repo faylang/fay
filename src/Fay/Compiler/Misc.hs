@@ -7,7 +7,7 @@
 
 module Fay.Compiler.Misc where
 
-import qualified Fay.Compiler.ModuleScope     as ModuleScope
+import qualified Fay.Compiler.ModuleScope        as ModuleScope
 import           Fay.Types
 
 import           Control.Applicative
@@ -19,11 +19,12 @@ import           Data.Maybe
 import qualified Data.Set                        as S
 import           Data.String
 import           Data.Version                    (parseVersion)
-import           Language.Haskell.Exts.Syntax
+import           Language.Haskell.Exts.Extension
+import           Language.Haskell.Exts.Fixity
 import           Language.Haskell.Exts.Parser
 import           Language.Haskell.Exts.Pretty
-import           Language.Haskell.Exts.Extension
-import           Prelude                      hiding (exp, mod)
+import           Language.Haskell.Exts.Syntax
+import           Prelude                         hiding (exp, mod)
 import           System.Directory
 import           System.FilePath
 import           System.IO
@@ -334,4 +335,5 @@ parseMode = defaultParseMode
                  ,TypeOperators
                  ,RecordWildCards
                  ,NamedFieldPuns]
+  , fixities = Just (preludeFixities ++ baseFixities)
   }

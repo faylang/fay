@@ -158,8 +158,8 @@ compileNewtypeDecl [QualConDecl _ _ _ condecl] = do
       -- newtype declaration without destructor
     ConDecl name  [ty]            -> addNewtype name Nothing ty
     RecDecl cname [([dname], ty)] -> addNewtype cname (Just dname) ty
+    x -> error $ "compileNewtypeDecl case: Should be impossible (this is a bug). Got: " ++ show x
   return []
-
   where
     getBangTy :: BangType -> Type
     getBangTy (BangedTy t)   = t
@@ -173,6 +173,7 @@ compileNewtypeDecl [QualConDecl _ _ _ condecl] = do
                   Just n  -> qualify n >>= return . Just
       modify (\cs@CompileState{stateNewtypes=nts} ->
                cs{stateNewtypes=(qcname,qdname,getBangTy ty):nts})
+compileNewtypeDecl q = error $ "compileNewtypeDecl: Should be impossible (this is a bug). Got: " ++ show q
 
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]

@@ -22,7 +22,6 @@ compilePat exp pat body =
     PVar name       -> compilePVar name exp body
     PApp cons pats  -> do
       qcons <- qualifyQName cons
-      state <- gets stateNewtypes
       newty <- lookupNewtypeConst qcons
       case newty of
         Nothing -> compilePApp cons pats exp body
@@ -108,6 +107,7 @@ compilePAsPat exp name pat body = do
 
 compileNewtypePat :: [Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
 compileNewtypePat [pat] exp body = compilePat exp pat body
+compileNewtypePat ps _ _ = error $ "compileNewtypePat: Should be impossible (this is a bug). Got: " ++ show ps
 
 -- | Compile a pattern application.
 compilePApp :: QName -> [Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]

@@ -39,6 +39,7 @@ compileFFI :: SrcLoc -- ^ Location of the original FFI decl.
            -> String -- ^ The format string.
            -> Type   -- ^ Type signature.
            -> Compile [JsStmt]
+compileFFI srcloc name formatstr sig =
   -- substitute newtypes with their child types before calling
   -- real compileFFI
   compileFFI' srcloc name formatstr =<< rmNewtys sig

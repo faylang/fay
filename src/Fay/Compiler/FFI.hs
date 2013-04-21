@@ -307,7 +307,7 @@ fayToJsDispatcher :: [JsStmt] -> JsStmt
 fayToJsDispatcher cases =
   JsVar (JsBuiltIn "fayToJsUserDefined")
         (JsFun [JsNameVar "type",transcodingObj]
-               (decl ++ cases ++ [baseCase])
+               (decl ++ nubBy ifEq cases ++ [baseCase])
                Nothing)
 
   where decl = [JsVar transcodingObjForced
@@ -323,7 +323,7 @@ jsToFayDispatcher :: [JsStmt] -> JsStmt
 jsToFayDispatcher cases =
   JsVar (JsBuiltIn "jsToFayUserDefined")
         (JsFun [JsNameVar "type",transcodingObj]
-               (decl ++ cases ++ [baseCase])
+               (decl ++ nubBy ifEq cases ++ [baseCase])
                Nothing)
 
   where baseCase =
@@ -331,6 +331,11 @@ jsToFayDispatcher cases =
         decl = [JsVar argTypes
                       (JsLookup (JsName JsParametrizedType)
                                 (JsLit (JsInt 2)))]
+
+-- | Are two if statements equal condition-wise?
+ifEq :: JsStmt -> JsStmt -> Bool
+ifEq (JsIf a _ _) (JsIf b _ _) = a == b
+ifEq _ _ = False
 
 -- | Make a JS→Fay decoder.
 emitJsToFay ::  Name -> [([Name], BangType)] -> Compile ()

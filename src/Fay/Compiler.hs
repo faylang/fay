@@ -38,6 +38,7 @@ import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default                    (def)
 import qualified Data.Set                        as S
+import           Data.List                       (nubBy)
 import           Data.Maybe
 import           Language.Haskell.Exts
 
@@ -100,10 +101,22 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   let fay2js = if null writerFayToJs then [] else [fayToJsDispatcher writerFayToJs]
       js2fay = if null writerJsToFay then [] else [jsToFayDispatcher writerJsToFay]
       maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
-  if configDispatcherOnly cfg
-     then return (maybeOptimize (writerCons ++ fay2js ++ js2fay))
-     else return (maybeOptimize (stmts ++
-                    if configDispatchers cfg then writerCons ++ fay2js ++ js2fay else []))
+  return $ if configDispatcherOnly cfg
+     then maybeOptimize
+            (nubBy varEq
+              (writerCons ++ fay2js ++ js2fay))
+     else maybeOptimize
+            (nubBy varEq
+              (stmts ++ if configDispatchers cfg then writerCons ++ fay2js ++ js2fay else []))
+
+-- | Are two statements equal? This pretty much means equality is
+-- defined upon the bound name.
+varEq :: JsStmt -> JsStmt -> Bool
+varEq (JsVar a _) (JsVar b _)                 = a == b
+varEq (JsMappedVar _ a _) (JsMappedVar _ b _) = a == b
+varEq (JsVar a _) (JsMappedVar _ b _)         = a == b
+varEq (JsMappedVar _ a _) (JsVar b _)         = a == b
+varEq _ _                                     = False
 
 --------------------------------------------------------------------------------
 -- Compilers

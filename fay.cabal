@@ -1,5 +1,5 @@
 name:                fay
-version:             0.14.3.0
+version:             0.14.4.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which is type-checked
                      with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
@@ -20,11 +20,14 @@ description:         Fay is a proper subset of Haskell which is type-checked
                      See <http://fay-lang.org/#examples>.
                      .
                      /Release Notes/
+                     0.14.4.0:
                      .
-                     * Fix serialization of Defined/Nullable.
+                     * Fix record updates on IE <= 8.
                      .
-                     * Fix Closure compression for Defined/Nullable.
-                     *
+                     * Import tweaks, will make compilation a lot faster (4x reported) when there are a lot of imports.
+                     .
+                     * Parse hs sources with base fixities.
+                     .
                      See full history at: <https://github.com/faylang/fay/commits>
 homepage:            http://fay-lang.org/
 bug-reports:         https://github.com/faylang/fay/issues

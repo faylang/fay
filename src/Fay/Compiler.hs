@@ -216,9 +216,9 @@ unlessImported name importFilter importIt = do
     Nothing -> do
       dirs <- configDirectoryIncludePaths <$> config id
       (filepath,contents) <- findImport dirs name
-      res <- importIt filepath contents
                          -- TODO stateImported is already added in initialPass so it is not needed here
                          -- but one Api test fails if it's removed.
       modify $ \s -> s { stateImported     = (name,filepath) : imported
                        }
+      res <- importIt filepath contents
       return res

@@ -76,7 +76,8 @@ data CompileConfig = CompileConfig
   , configWall               :: Bool                       -- ^ Typecheck with -Wall.
   , configGClosure           :: Bool                       -- ^ Run Google Closure on the produced JS.
   , configPackageConf        :: Maybe FilePath             -- ^ The package config e.g. packages-6.12.3.
-  , configPackages          :: [String]                    -- ^ Included Fay packages.
+  , configPackages           :: [String]                   -- ^ Included Fay packages.
+  , configBasePath           :: Maybe FilePath             -- ^ Custom source location for fay-base
   } deriving (Show)
 
 -- | State of the compiler.

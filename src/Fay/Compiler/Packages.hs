@@ -10,6 +10,7 @@ import Fay.Compiler.Config
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Extra
+import Data.Maybe
 import Data.List
 import Data.Version
 import GHC.Paths
@@ -32,7 +33,9 @@ resolvePackage config name = do
     Nothing -> error $ "unable to find package version: " ++ name
     Just ver -> do
       let nameVer = name ++ "-" ++ ver
-      shareDir <- fmap ($ nameVer) getShareGen
+      shareDir <- if isJust (configBasePath config) && name == "fay-base"
+                    then return . fromJust $ configBasePath config
+                    else fmap ($ nameVer) getShareGen
       let includes = [shareDir,shareDir </> "src"]
       exists <- mapM doesSourceDirExist includes
       if any id exists

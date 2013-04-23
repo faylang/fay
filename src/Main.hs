@@ -49,6 +49,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optDispatcher   :: Bool
   , optStdlibOnly   :: Bool
   , optNoBuiltins   :: Bool
+  , optBasePath     :: Maybe FilePath
   }
 
 -- | Main entry point.
@@ -81,6 +82,7 @@ main = do
                    , configDispatchers      = not (optNoDispatcher opts)
                    , configDispatcherOnly   = optDispatcher opts
                    , configExportStdlibOnly = optStdlibOnly opts
+                   , configBasePath         = optBasePath opts
                    }
            void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
            case optFiles opts of
@@ -127,6 +129,7 @@ options = FayCompilerOptions
   <*> switch (long "dispatcher" <> help "Only output the type serialization dispatchers")
   <*> switch (long "stdlib" <> help "Only output the stdlib")
   <*> switch (long "no-builtins" <> help "Don't export no-builtins")
+  <*> optional (strOption (long "base-path" <> help "If fay can't find the sources of fay-base you can use this to provide the path. Use --base-path ~/example instead of --base-path=~/example to make sure ~ is expanded properly"))
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

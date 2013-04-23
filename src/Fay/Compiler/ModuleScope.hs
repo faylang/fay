@@ -60,7 +60,7 @@ resolveName q (ModuleScope binds) = case M.lookup q binds of -- lookup in the mo
 bindAsLocals :: [QName] -> ModuleScope -> ModuleScope
 bindAsLocals qs (ModuleScope binds) =
   -- This needs to be changed to not use unqual to support qualified imports.
-  ModuleScope $ M.fromList (map (unqual &&& id) qs) `M.union` binds
+  ModuleScope $ binds `M.union` M.fromList (map (unqual &&& id) qs)
     where unqual (Qual _ n) = (UnQual n)
           unqual u@UnQual{} = u
           unqual Special{}  = error "fay: ModuleScope.bindAsLocals: Special"

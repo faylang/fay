@@ -18,7 +18,6 @@ module Fay.Compiler
   ,parseFay)
   where
 
--- import           Fay.Compiler.CollectRecords (collectRecords)
 import           Fay.Compiler.InitialPass (initialPass)
 import           Fay.Compiler.Config
 import           Fay.Compiler.Defaults

@@ -1,5 +1,5 @@
 name:                fay
-version:             0.14.4.0
+version:             0.14.5.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which is type-checked
                      with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
@@ -20,21 +20,19 @@ description:         Fay is a proper subset of Haskell which is type-checked
                      See <http://fay-lang.org/#examples>.
                      .
                      /Release Notes/
-                     0.14.4.0:
+                     * Support for newtypes (with no runtime cost!)
                      .
-                     * Fix record updates on IE <= 8.
+                     * --base-path flag to specify custom location for fay-base
                      .
-                     * Import tweaks, will make compilation a lot faster (4x reported) when there are a lot of imports.
+                     * Fix a bug where imports shadowing local bindings would prevent the local binding from being exported
                      .
-                     * Parse hs sources with base fixities.
-                     .
-                     See full history at: <https://github.com/faylang/fay/commits>
+                     See full history at: <https://github.com/faylang/fay/wiki/Changelog>
 homepage:            http://fay-lang.org/
 bug-reports:         https://github.com/faylang/fay/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Chris Done, Adam Bergmark
-maintainer:          chrisdone@gmail.com, adam@edea.se
+maintainer:          adam@edea.se
 copyright:           2012 Chris Done, Adam Bergmark
 category:            Development
 build-type:          Custom

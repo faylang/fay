@@ -18,10 +18,10 @@ main = runContT demo (const (return ()))
 demo :: Deferred ()
 demo = case contT of
   CC return (>>=) (>>) callCC lift -> do
-    lift (print "Hello!")
+    lift (putStrLn "Hello!")
     sync setTimeout 500
     contents <- sync readFile "README.md"
-    lift (print ("File contents is: " ++ take 10 contents ++ "..."))
+    lift (putStrLn ("File contents is: " ++ take 10 contents ++ "..."))
 
 --------------------------------------------------------------------------------
 -- Deferred library.

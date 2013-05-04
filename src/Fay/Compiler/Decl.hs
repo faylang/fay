@@ -70,9 +70,6 @@ compilePatBind toplevel sig pat =
       compileUnguardedRhs srcloc toplevel ident (Let bdecls rhs)
     _ -> throwError (UnsupportedDeclaration pat)
 
-  where ffiExp (App (Var (UnQual (Ident "ffi"))) (Lit (String formatstr))) = Just formatstr
-        ffiExp _ = Nothing
-
 -- | Compile a normal simple pattern binding.
 compileUnguardedRhs :: SrcLoc -> Bool -> Name -> Exp -> Compile [JsStmt]
 compileUnguardedRhs srcloc toplevel ident rhs = do

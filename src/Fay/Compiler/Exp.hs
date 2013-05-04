@@ -9,6 +9,7 @@ module Fay.Compiler.Exp where
 import Fay.Compiler.Misc
 import Fay.Compiler.Pattern
 import Fay.Compiler.Print
+import Fay.Compiler.FFI             (ffiFun)
 import Fay.Types
 
 import Control.Applicative
@@ -47,7 +48,10 @@ compileExp exp =
     RecConstr name fieldUpdates   -> compileRecConstr name fieldUpdates
     RecUpdate rec  fieldUpdates   -> updateRec rec fieldUpdates
     ListComp exp stmts            -> compileExp =<< desugarListComp exp stmts
-    ExpTypeSig _ e _ -> compileExp e
+    ExpTypeSig srcloc exp sig     ->
+      case ffiExp exp of
+        Nothing -> compileExp exp
+        Just formatstr -> ffiFun srcloc Nothing formatstr sig
 
     exp -> throwError (UnsupportedExpression exp)
 

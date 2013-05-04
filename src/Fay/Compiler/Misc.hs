@@ -347,6 +347,7 @@ data CPPState = NoCPP
 parseMode :: ParseMode
 parseMode = defaultParseMode
   { extensions = [GADTs
+                 ,ExistentialQuantification
                  ,StandaloneDeriving
                  ,PackageImports
                  ,EmptyDataDecls

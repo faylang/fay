@@ -8,8 +8,7 @@ module Fay.Compiler.ModuleScope
   ,bindAsLocals
   ,findTopLevelNames
   ,resolveName
-  ,moduleLocals
-  ,convertGADT)
+  ,moduleLocals)
   where
 
 import Fay.Compiler.GADT

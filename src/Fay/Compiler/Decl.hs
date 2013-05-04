@@ -10,6 +10,7 @@ module Fay.Compiler.Decl where
 
 import Fay.Compiler.Exp
 import Fay.Compiler.FFI
+import Fay.Compiler.GADT
 import Fay.Compiler.Misc
 import Fay.Compiler.Pattern
 import Fay.Types

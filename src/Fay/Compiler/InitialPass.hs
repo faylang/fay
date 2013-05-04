@@ -6,6 +6,7 @@ import Fay.Compiler.Misc
 import Fay.Types
 import Fay.Compiler.Config
 import Fay.Compiler.Decl (compileNewtypeDecl)
+import Fay.Compiler.GADT
 
 import Control.Applicative
 import Control.Monad.Error

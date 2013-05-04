@@ -8,8 +8,11 @@ module Fay.Compiler.ModuleScope
   ,bindAsLocals
   ,findTopLevelNames
   ,resolveName
-  ,moduleLocals)
+  ,moduleLocals
+  ,convertGADT)
   where
+
+import Fay.Compiler.GADT
 
 import           Control.Arrow
 import           Control.Monad.Reader
@@ -122,6 +125,7 @@ bindName k = ask >>= \mod -> tell (ModuleScope $ M.singleton (UnQual k) (Qual mo
 d_decl :: Decl -> ModuleScopeSt
 d_decl d = case d of
   DataDecl _ _ _ _ _ dd _         -> mapM_ d_qualCon dd
+  GDataDecl _ DataType _l _i _v _n decls _ -> mapM_ d_qualCon (map convertGADT decls)
   PatBind _ (PVar n) _ _ _        -> bindName n
   FunBind (Match _ n _ _ _ _ : _) -> bindName n
   ClassDecl _ _ _ _ _ cds         -> mapM_ d_classDecl cds

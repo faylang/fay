@@ -289,19 +289,6 @@ findImport alldirs mname = go alldirs mname where
     | mname == ModuleName "Language.Fay.FFI"    = const "module Language.Fay.FFI where\n\ndata Nullable a = Nullable a | Null\n\ndata Defined a = Defined a | Undefined"
     | otherwise = id
 
--- | Convert a GADT to a normal data type.
-convertGADT :: GadtDecl -> QualConDecl
-convertGADT d =
-  case d of
-    GadtDecl srcloc name typ -> QualConDecl srcloc tyvars context
-                                            (ConDecl name (convertFunc typ))
-  where tyvars = []
-        context = []
-        convertFunc (TyCon _) = []
-        convertFunc (TyFun x xs) = UnBangedTy x : convertFunc xs
-        convertFunc (TyParen x) = convertFunc x
-        convertFunc _ = []
-
 -- | Run the compiler.
 runCompile :: CompileReader -> CompileState
            -> Compile a

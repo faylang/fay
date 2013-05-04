@@ -10,6 +10,7 @@ module Fay.Compiler.FFI
   (emitFayToJs
   ,emitJsToFay
   ,compileFFI
+  ,ffiFun
   ,jsToFayDispatcher
   ,fayToJsDispatcher)
   where
@@ -62,13 +63,22 @@ compileFFI srcloc name formatstr sig =
 
 compileFFI' :: SrcLoc -> Name -> String -> Type -> Compile [JsStmt]
 compileFFI' srcloc name formatstr sig = do
+  fun <- ffiFun srcloc (Just name) formatstr sig
+  stmt <- bindToplevel srcloc True name fun
+  return [stmt]
+
+ffiFun :: SrcLoc -> Maybe Name -> String -> Type -> Compile JsExp
+ffiFun srcloc nameopt formatstr sig = do
+  let name = case nameopt of
+               Nothing -> "<exp>"
+               Just n -> n
   inner <- formatFFI srcloc formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.parseExpression (prettyPrint name) (printJSString (wrapReturn inner)) of
     Left err -> throwError (FfiFormatInvalidJavaScript srcloc inner (show err))
     Right exp  -> do
       config' <- config id
       when (configGClosure config') $ warnDotUses srcloc inner exp
-      fmap return (bindToplevel srcloc True name (body inner))
+      return (body inner)
 
   where body inner = foldr wrapParam (wrapReturn inner) params
         wrapParam pname inner = JsFun [pname] [] (Just inner)

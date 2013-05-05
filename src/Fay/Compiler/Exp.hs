@@ -132,7 +132,7 @@ compileLet decls exp = do
     generateScope $ mapM compileLetDecl decls
     binds <- mapM compileLetDecl decls
     body <- compileExp exp
-    return (JsApp (JsFun [] (concat binds) (Just body)) [])
+    return (JsApp (JsFun [] [] (Just $ stmtsThunk $ concat binds ++ [JsEarlyReturn body])) [])
 
 -- | Compile let declaration.
 compileLetDecl :: Decl -> Compile [JsStmt]

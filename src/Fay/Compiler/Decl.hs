@@ -69,6 +69,11 @@ compilePatBind toplevel sig pat =
         _ -> compileUnguardedRhs srcloc toplevel ident rhs
     PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) bdecls -> do
       compileUnguardedRhs srcloc toplevel ident (Let bdecls rhs)
+    PatBind srcloc pat Nothing (UnGuardedRhs rhs) _bdecls -> do
+      exp <- compileExp rhs
+      [JsIf t b1 []] <- compilePat exp pat []
+      let err = [throw (prettyPrint srcloc ++ "Irrefutable pattern failed for pattern: " ++ prettyPrint pat) (JsList [])]
+      return [JsIf t b1 err]
     _ -> throwError (UnsupportedDeclaration pat)
 
 -- | Compile a normal simple pattern binding.

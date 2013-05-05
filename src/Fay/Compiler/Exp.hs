@@ -128,7 +128,7 @@ compileLet decls exp = do
     generateScope $ mapM compileLetDecl decls
     binds <- mapM compileLetDecl decls
     body <- compileExp exp
-    return (JsApp (JsFun [] (concat binds) (Just body)) [])
+    return (JsApp (JsFun Nothing [] (concat binds) (Just body)) [])
 
 -- | Compile let declaration.
 compileLetDecl :: Decl -> Compile [JsStmt]
@@ -161,7 +161,8 @@ compileCase exp alts = do
   withScopedTmpJsName $ \tmpName -> do
     pats <- fmap optimizePatConditions $ mapM (compilePatAlt (JsName tmpName)) alts
     return $
-      JsApp (JsFun [tmpName]
+      JsApp (JsFun Nothing
+                   [tmpName]
                    (concat pats)
                    (if any isWildCardAlt alts
                        then Nothing
@@ -223,7 +224,7 @@ compileLambda pats exp = do
         generateStatements exp =
           foldM (\inner (param,pat) -> do
                   stmts <- compilePat (JsName param) pat inner
-                  return [JsEarlyReturn (JsFun [param] (stmts ++ [unhandledcase param | not allfree]) Nothing)])
+                  return [JsEarlyReturn (JsFun Nothing [param] (stmts ++ [unhandledcase param | not allfree]) Nothing)])
                 [JsEarlyReturn exp]
                 (reverse (zip uniqueNames pats))
 
@@ -283,7 +284,7 @@ compileRecConstr name fieldUpdates = do
     qname <- resolveName name
     let record = JsVar (JsNameVar name) (JsNew (JsConstructor qname) [])
     setFields <- liftM concat (forM fieldUpdates (updateStmt name))
-    return $ JsApp (JsFun [] (record:setFields) (Just (JsName (JsNameVar name)))) []
+    return $ JsApp (JsFun Nothing [] (record:setFields) (Just (JsName (JsNameVar name)))) []
   where updateStmt :: QName -> FieldUpdate -> Compile [JsStmt]
         updateStmt o (FieldUpdate field value) = do
           exp <- compileExp value
@@ -306,7 +307,7 @@ updateRec rec fieldUpdates = do
         copy = JsVar (JsNameVar copyName)
                      (JsRawExp ("Object.create(" ++ printJSString record ++ ")"))
     setFields <- forM fieldUpdates (updateExp copyName)
-    return $ JsApp (JsFun [] (copy:setFields) (Just (JsName (JsNameVar copyName)))) []
+    return $ JsApp (JsFun Nothing [] (copy:setFields) (Just (JsName (JsNameVar copyName)))) []
   where updateExp :: QName -> FieldUpdate -> Compile JsStmt
         updateExp copyName (FieldUpdate field value) =
           JsSetProp (JsNameVar copyName) (JsNameVar field) <$> compileExp value

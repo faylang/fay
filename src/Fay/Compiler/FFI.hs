@@ -71,7 +71,7 @@ compileFFI' srcloc name formatstr sig = do
       fmap return (bindToplevel srcloc True name (body inner))
 
   where body inner = foldr wrapParam (wrapReturn inner) params
-        wrapParam pname inner = JsFun [pname] [] (Just inner)
+        wrapParam pname inner = JsFun Nothing [pname] [] (Just inner)
         params = zipWith const uniqueNames [1..typeArity sig]
         wrapReturn inner = thunk $
           case lastMay funcFundamentalTypes of
@@ -112,13 +112,15 @@ warnDotUses srcloc string expr =
 emitFayToJs :: Name -> [([Name],BangType)] -> Compile ()
 emitFayToJs name (explodeFields -> fieldTypes) = do
   qname <- qualify name
-  tell (mempty { writerFayToJs = [translator qname] })
+  let ctrName = printJSString $ JsConstructor qname
+  tell $ mempty { writerFayToJs = [(ctrName, translator)] }
 
   where
-    translator qname =
-      JsIf (JsInstanceOf (JsName transcodingObjForced) (JsConstructor qname))
-           (obj : fieldStmts (zip [0..] fieldTypes) ++ [ret])
-           []
+    translator =
+      JsFun Nothing
+            [JsNameVar "type", argTypes, transcodingObjForced]
+            (obj : fieldStmts (zip [0..] fieldTypes))
+            (Just $ JsName obj_)
 
     obj :: JsStmt
     obj = JsVar obj_ $
@@ -138,9 +140,6 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
         (d, field) = declField i fieldType
 
     obj_ = JsNameVar (UnQual (Ident "obj_"))
-
-    ret :: JsStmt
-    ret = JsEarlyReturn (JsName obj_)
 
     -- Declare/encode Fay→JS field
     declField :: Int -> (Name,BangType) -> (String,JsExp)
@@ -326,48 +325,67 @@ explodeFields :: [([a], t)] -> [(a, t)]
 explodeFields = concatMap $ \(names,typ) -> map (,typ) names
 
 -- | The dispatcher for Fay->JS conversion.
-fayToJsDispatcher :: [JsStmt] -> JsStmt
+fayToJsDispatcher :: [(String,JsExp)] -> [JsStmt]
 fayToJsDispatcher cases =
-  JsVar (JsBuiltIn "fayToJsUserDefined")
-        (JsFun [JsNameVar "type",transcodingObj]
-               (decl ++ cases ++ [baseCase])
-               Nothing)
+  [JsVar fayToJsHash $ JsObj cases
+  ,JsExpStmt $
+     JsFun (Just $ JsBuiltIn "fayToJsUserDefined")
+           [JsNameVar "type",transcodingObj]
+           [JsVar transcodingObjForced $ force (JsName transcodingObj)
+           ,JsVar fayToJsFun  $ JsLookup
+                  (JsName fayToJsHash)
+                  (JsGetProp (JsGetProp (JsName transcodingObjForced)
+                                        (JsNameVar "constructor"))
+                             (JsNameVar "name"))
+           ]
+           (Just $ JsTernaryIf
+                 (JsName fayToJsFun)
+                 (JsApp (JsName fayToJsFun)
+                        [JsName $ JsNameVar "type"
+                        ,JsLookup (JsName JsParametrizedType) (JsLit (JsInt 2))
+                        ,JsName transcodingObjForced
+                        ])
+                 (JsName transcodingObj))
+  ]
+  where fayToJsHash = JsBuiltIn "fayToJsHash"
+        fayToJsFun  = JsNameVar "fayToJsFun"
 
-  where decl = [JsVar transcodingObjForced
-                      (force (JsName transcodingObj))
-               ,JsVar argTypes
-                      (JsLookup (JsName JsParametrizedType)
-                                (JsLit (JsInt 2)))]
-        baseCase =
-          JsEarlyReturn (JsName transcodingObj)
 
 -- | The dispatcher for JS->Fay conversion.
-jsToFayDispatcher :: [JsStmt] -> JsStmt
+jsToFayDispatcher :: [(String,JsExp)] -> [JsStmt]
 jsToFayDispatcher cases =
-  JsVar (JsBuiltIn "jsToFayUserDefined")
-        (JsFun [JsNameVar "type",transcodingObj]
-               (decl ++ cases ++ [baseCase])
-               Nothing)
+  [JsVar jsToFayHash $ JsObj cases
+  ,JsExpStmt $
+     JsFun (Just $ JsBuiltIn "jsToFayUserDefined")
+           [JsNameVar "type",transcodingObj]
+           [JsVar jsToFayFun  $ JsLookup
+                  (JsName jsToFayHash)
+                  (JsGetPropExtern (JsName transcodingObj) "instance")
+           ]
+           (Just $ JsTernaryIf
+                 (JsName jsToFayFun)
+                 (JsApp (JsName jsToFayFun)
+                        [JsName $ JsNameVar "type"
+                        ,JsLookup (JsName JsParametrizedType) (JsLit (JsInt 2))
+                        ,JsName transcodingObj
+                        ])
+                 (JsName transcodingObj))
+  ]
+  where jsToFayHash = JsBuiltIn "jsToFayHash"
+        jsToFayFun  = JsNameVar "jsToFayFun"
 
-  where baseCase =
-          JsEarlyReturn (JsName transcodingObj)
-        decl = [JsVar argTypes
-                      (JsLookup (JsName JsParametrizedType)
-                                (JsLit (JsInt 2)))]
 
 -- | Make a JS→Fay decoder.
 emitJsToFay ::  Name -> [([Name], BangType)] -> Compile ()
 emitJsToFay name (explodeFields -> fieldTypes) = do
   qname <- qualify name
-  tell (mempty { writerJsToFay = [translator qname] })
+  tell (mempty { writerJsToFay = [(printJSString name, translator qname)] })
 
   where
     translator qname =
-      JsIf (JsEq (JsGetPropExtern (JsName transcodingObj) "instance")
-                 (JsLit (JsStr (printJSString name))))
-           [JsEarlyReturn (JsNew (JsConstructor qname)
-                                 (zipWith decodeField fieldTypes [0..]))]
-           []
+      JsFun Nothing [JsNameVar "type", argTypes, transcodingObj] []
+            (Just $ JsNew (JsConstructor qname)
+                          (zipWith decodeField fieldTypes [0..]))
     -- Decode JS→Fay field
     decodeField :: (Name,BangType) -> Int -> JsExp
     decodeField (fname,typ) i =

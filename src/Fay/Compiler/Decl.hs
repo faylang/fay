@@ -126,9 +126,11 @@ compileDataDecl toplevel _decl constructors =
       qname <- qualify name
       emitExport (EVar qname)
       return $
-        JsVar (JsConstructor qname) $
-          JsFun fields (for fields $ \field -> JsSetProp JsThis field (JsName field))
-            Nothing
+        JsExpStmt $
+          JsFun (Just $ JsConstructor qname)
+                fields
+                (for fields $ \field -> JsSetProp JsThis field (JsName field))
+                Nothing
 
     -- Creates a function to initialize the record by regular application
     makeFunc :: Name -> [Name] -> Compile JsStmt
@@ -136,7 +138,7 @@ compileDataDecl toplevel _decl constructors =
       let fieldExps = map JsName fields
       qname <- qualify name
       return $ JsVar (JsNameVar qname) $
-        foldr (\slot inner -> JsFun [slot] [] (Just inner))
+        foldr (\slot inner -> JsFun Nothing [slot] [] (Just inner))
           (thunk $ JsNew (JsConstructor qname) fieldExps)
           fields
 
@@ -147,7 +149,8 @@ compileDataDecl toplevel _decl constructors =
            bindToplevel srcloc
                         toplevel
                         name
-                        (JsFun [JsNameVar "x"]
+                        (JsFun Nothing
+                               [JsNameVar "x"]
                                []
                                (Just (thunk (JsGetProp (force (JsName (JsNameVar "x")))
                                                        (JsNameVar (UnQual name))))))
@@ -185,7 +188,7 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
   bind <- bindToplevel srcloc
                        toplevel
                        name
-                       (foldr (\arg inner -> JsFun [arg] [] (Just inner))
+                       (foldr (\arg inner -> JsFun Nothing [arg] [] (Just inner))
                               (stmtsThunk (concat pats ++ basecase))
                               args)
   return [bind]
@@ -204,11 +207,11 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
                       then return $ either id JsEarlyReturn rhsform
                       else do
                           binds <- mapM compileLetDecl whereDecls'
-                          return $ case rhsform of
+                          return . JsEarlyReturn $ case rhsform of
                             Right exp ->
-                              (JsEarlyReturn (JsApp (JsFun [] (concat binds) (Just exp)) []))
+                              JsApp (JsFun Nothing [] (concat binds) (Just exp)) []
                             Left stmt ->
-                              (JsEarlyReturn (JsApp (JsFun [] (concat binds ++ [stmt]) Nothing) []))
+                              JsApp (JsFun Nothing [] (concat binds ++ [stmt]) Nothing) []
             foldM (\inner (arg,pat) ->
                     compilePat (JsName arg) pat inner)
                   [body]

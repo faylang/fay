@@ -126,9 +126,11 @@ compileDataDecl toplevel _decl constructors =
       qname <- qualify name
       emitExport (EVar qname)
       return $
-        JsVar (JsConstructor qname) $
-          JsFun Nothing fields (for fields $ \field -> JsSetProp JsThis field (JsName field))
-            Nothing
+        JsExpStmt $
+          JsFun (Just $ JsConstructor qname)
+                fields
+                (for fields $ \field -> JsSetProp JsThis field (JsName field))
+                Nothing
 
     -- Creates a function to initialize the record by regular application
     makeFunc :: Name -> [Name] -> Compile JsStmt

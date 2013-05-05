@@ -99,8 +99,8 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   cs <- io defaultCompileState
   modify $ \s -> s { stateImported = stateImported cs }
   (stmts,CompileWriter{..}) <- listen $ compileModule True mod
-  let fay2js = if null writerFayToJs then [] else [fayToJsDispatcher writerFayToJs]
-      js2fay = if null writerJsToFay then [] else [jsToFayDispatcher writerJsToFay]
+  let fay2js = if null writerFayToJs then [] else fayToJsDispatcher writerFayToJs
+      js2fay = if null writerJsToFay then [] else jsToFayDispatcher writerJsToFay
       maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
   if configDispatcherOnly cfg
      then return (maybeOptimize (writerCons ++ fay2js ++ js2fay))

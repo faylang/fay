@@ -59,7 +59,7 @@ describePackage :: Maybe FilePath -> String -> IO String
 describePackage db name = do
   result <- readAllFromProcess ghc_pkg args ""
   case result of
-    Left err -> error $ "ghc-pkg describe error:\n" ++ err
+    Left  (err,_out) -> error $ "ghc-pkg describe error:\n" ++ err
     Right (_err,out) -> return out
 
   where args = concat [["describe",name]

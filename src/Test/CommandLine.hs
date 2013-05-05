@@ -27,8 +27,8 @@ compileFile flags = do
   if exists
      then do r <- readAllFromProcess path flags ""
              return $ case r of
-               Left l -> Left ("Reason: " ++ l)
-               Right t -> Right $ snd t
+               Left  (l,_) -> Left ("Reason: " ++ l)
+               Right (_,t) -> Right t
      else error $ "fay path not are existing: " ++ path
 
 case_executable :: Assertion

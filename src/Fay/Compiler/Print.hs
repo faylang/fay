@@ -165,8 +165,10 @@ instance Printable JsExp where
   printJS (JsObj assoc) =
     "{" +> (intercalateM "," (map cons assoc)) +> "}"
       where cons (key,value) = "\"" +> key +> "\": " +> value
-  printJS (JsFun params stmts ret) =
-    "function("
+  printJS (JsFun nm params stmts ret) =
+    "function"
+    +> maybe (return ()) ((" " +>) . printJS) nm
+    +> "("
     +> (intercalateM "," (map printJS params))
     +> "){" +> newline
     +> indented (stmts +>

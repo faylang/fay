@@ -71,7 +71,7 @@ compileFFI' srcloc name formatstr sig = do
       fmap return (bindToplevel srcloc True name (body inner))
 
   where body inner = foldr wrapParam (wrapReturn inner) params
-        wrapParam pname inner = JsFun [pname] [] (Just inner)
+        wrapParam pname inner = JsFun Nothing [pname] [] (Just inner)
         params = zipWith const uniqueNames [1..typeArity sig]
         wrapReturn inner = thunk $
           case lastMay funcFundamentalTypes of
@@ -329,7 +329,8 @@ explodeFields = concatMap $ \(names,typ) -> map (,typ) names
 fayToJsDispatcher :: [JsStmt] -> JsStmt
 fayToJsDispatcher cases =
   JsVar (JsBuiltIn "fayToJsUserDefined")
-        (JsFun [JsNameVar "type",transcodingObj]
+        (JsFun Nothing
+               [JsNameVar "type",transcodingObj]
                (decl ++ cases ++ [baseCase])
                Nothing)
 
@@ -345,7 +346,8 @@ fayToJsDispatcher cases =
 jsToFayDispatcher :: [JsStmt] -> JsStmt
 jsToFayDispatcher cases =
   JsVar (JsBuiltIn "jsToFayUserDefined")
-        (JsFun [JsNameVar "type",transcodingObj]
+        (JsFun Nothing
+               [JsNameVar "type",transcodingObj]
                (decl ++ cases ++ [baseCase])
                Nothing)
 

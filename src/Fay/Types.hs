@@ -96,8 +96,8 @@ data CompileState = CompileState
 -- | Things written out by the compiler.
 data CompileWriter = CompileWriter
   { writerCons     :: [JsStmt] -- ^ Constructors.
-  , writerFayToJs  :: [JsStmt] -- ^ Fay to JS dispatchers.
-  , writerJsToFay  :: [JsStmt] -- ^ JS to Fay dispatchers.
+  , writerFayToJs  :: [(String,JsExp)] -- ^ Fay to JS dispatchers.
+  , writerJsToFay  :: [(String,JsExp)] -- ^ JS to Fay dispatchers.
   }
   deriving (Show)
 

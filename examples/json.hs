@@ -4,24 +4,23 @@ module Console where
 
 import           FFI
 import           Prelude
+import           Fay.Text
 
-data MyData = MyData  { xVar :: Int, yVar :: Int }
+data MyData = MyData  { xVar :: Text, yVar :: Int }
 
 myData :: MyData
-myData = MyData { yVar = 3, xVar = 9 }
+myData = MyData { xVar = pack "asdfasd", yVar = 9 }
 
-myFunction :: MyData -> MyData -> Int
-myFunction a b = (xVar a) + (xVar b)
 
 main = do
 	jsonSerialized <- toJSON myData
 	jsonDeserialized <- toMyData jsonSerialized
 	fromStringData <- toMyData "{\"xVar\":3,\"yVar\":-1,\"instance\":\"MyData\"}"
-	printInt $ myFunction jsonDeserialized fromStringData
+	print' jsonSerialized
 
 -- | Print using console.log.
-print :: String -> Fay ()
-print = ffi "console.log(%1)"
+print' :: String -> Fay ()
+print' = ffi "console.log(%1)"
 
 printBool :: Bool -> Fay ()
 printBool = ffi "console.log(%1)"

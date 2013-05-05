@@ -94,6 +94,7 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   when (configTypecheck cfg) $
     typecheck (configPackageConf cfg) (configWall cfg) $
       fromMaybe modulename $ configFilePath cfg
+  modify $ \s -> s { stateModuleName = ModuleName modulename }
   initialPass mod
   -- collectRecords mod
   cs <- io defaultCompileState

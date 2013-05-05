@@ -69,7 +69,7 @@ inlineMonad = map go where
         Just x  -> x
 
       -- Plumbing
-      JsFun names stmts mexp           -> JsFun names (map go stmts) (fmap inline mexp)
+      JsFun nm names stmts mexp        -> JsFun nm names (map go stmts) (fmap inline mexp)
 
       JsNegApp exp                     -> JsNegApp (inline exp)
       JsTernaryIf exp1 exp2 exp3       -> JsTernaryIf (inline exp1) (inline exp2) (inline exp3)
@@ -124,12 +124,12 @@ tco = map inStmt where
     JsVar name exp -> JsVar name (inject name exp)
     e -> e
   inject name exp = case exp of
-    JsFun params [] (Just (JsNew JsThunk [JsFun [] stmts ret])) ->
-      JsFun params
+    JsFun nm params [] (Just (JsNew JsThunk [JsFun _ [] stmts ret])) ->
+      JsFun nm params
             []
             (Just
               (JsNew JsThunk
-                     [JsFun []
+                     [JsFun Nothing []
                             (optimize params name (stmts ++ [ JsEarlyReturn e | Just e <- [ret] ]))
                             Nothing]))
     _ -> exp
@@ -163,9 +163,9 @@ stripAndUncurry = applyToExpsInStmts stripFuncForces where
   stripFuncForces arities exp = case exp of
     JsApp (JsName JsForce) [JsName (JsNameVar f)]
       | Just _ <- lookup f arities -> return (JsName (JsNameVar f))
-    JsFun ps stmts body            -> do substmts <- mapM stripInStmt stmts
+    JsFun nm ps stmts body         -> do substmts <- mapM stripInStmt stmts
                                          sbody <- maybe (return Nothing) (fmap Just . go) body
-                                         return (JsFun ps substmts sbody)
+                                         return (JsFun nm ps substmts sbody)
     JsApp a b                      -> do
       result <- walkAndStripForces arities exp
       case result of
@@ -237,7 +237,7 @@ collectFuncs = (++ prim) . concat . map collectFunc where
 
 -- | Get the arity of an expression.
 expArity :: JsExp -> Int
-expArity (JsFun _ _ mexp) = 1 + maybe 0 expArity mexp
+expArity (JsFun _ _ _ mexp) = 1 + maybe 0 expArity mexp
 expArity _ = 0
 
 -- | Change foo(x)(y) to foo$uncurried(x,y).
@@ -253,8 +253,8 @@ uncurryBinding stmts qname = listToMaybe (mapMaybe funBinding stmts)
 
     uncurryIt = Just . go [] where
       go args exp = case exp of
-        JsFun [arg] [] (Just body) -> go (arg : args) body
-        inner -> JsFun (reverse args) [] (Just inner)
+        JsFun _ [arg] [] (Just body) -> go (arg : args) body
+        inner -> JsFun Nothing (reverse args) [] (Just inner)
 
 -- | Rename an uncurried copy of a curried function.
 renameUncurried :: QName -> QName

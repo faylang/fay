@@ -52,11 +52,11 @@ thunk expr =
     -- optimization.
     JsApp fun@JsFun{} [] -> JsNew JsThunk [fun]
     -- Otherwise make a regular thunk.
-    _ -> JsNew JsThunk [JsFun [] [] (Just expr)]
+    _ -> JsNew JsThunk [JsFun Nothing [] [] (Just expr)]
 
 -- | Wrap an expression in a thunk.
 stmtsThunk :: [JsStmt] -> JsExp
-stmtsThunk stmts = JsNew JsThunk [JsFun [] stmts Nothing]
+stmtsThunk stmts = JsNew JsThunk [JsFun Nothing [] stmts Nothing]
 
 -- | Generate unique names.
 uniqueNames :: [JsName]

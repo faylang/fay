@@ -127,7 +127,6 @@ compileDataDecl toplevel _decl constructors =
     makeConstructor :: Name -> [Name] -> Compile JsStmt
     makeConstructor name (map (JsNameVar . UnQual) -> fields) = do
       qname <- qualify name
-      emitExport (EVar qname)
       return $
         JsVar (JsConstructor qname) $
           JsFun fields (for fields $ \field -> JsSetProp JsThis field (JsName field))

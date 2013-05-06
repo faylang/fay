@@ -1,10 +1,10 @@
 // Workaround for missing functionality in IE 8 and earlier.
 if( Object.create === undefined ) {
-	Object.create = function( o ) {
-	    function F(){}
-	    F.prototype = o;
-	    return new F();
-	};
+  Object.create = function( o ) {
+    function F(){}
+    F.prototype = o;
+    return new F();
+  };
 }
 
 /*******************************************************************************

@@ -19,11 +19,11 @@ import Fay.Compiler.ModuleScope
 import Control.Monad.Extra
 
 initialPass :: Module -> Compile ()
-initialPass (Module _ _ _ Nothing _ imports decls) = do
+initialPass (Module _ mod _ Nothing _ imports decls) = do
+  modify $ \s -> s { stateModuleName = mod }
   forM_ imports compileImport
   forM_ decls scanRecordDecls
   forM_ decls scanNewtypeDecls
-
 initialPass m = throwError (UnsupportedModuleSyntax m)
 
 compileImport :: ImportDecl -> Compile ()

@@ -14,33 +14,28 @@ import Control.Monad.RWS
 import Language.Haskell.Exts.Syntax
 import Language.Haskell.Exts.Parser
 
+import qualified Data.Set as S
+import Fay.Compiler.ModuleScope
+import Control.Monad.Extra
+
 initialPass :: Module -> Compile ()
 initialPass (Module _ _ _ Nothing _ imports decls) = do
-  forM_ imports $ \imp ->
-    case imp of
-      ImportDecl _ _ _ _ Just{} _ _ -> return ()
-
-      ImportDecl _ name False _ Nothing Nothing _ ->
-        void $ unlessImported name $ \filepath contents -> do
-          result <- compileWith filepath initialPass contents
-          case result of
-            Right ((),st,_) ->
-              -- Merges the state gotten from passing through an imported
-              -- module with the current state. We can assume no duplicate
-              -- records exist since GHC would pick that up.
-              modify $ \s -> s { stateRecords = stateRecords st
-                               , stateRecordTypes = stateRecordTypes st
-                               , stateImported = stateImported st
-                               , stateNewtypes = stateNewtypes st
-                               }
-            Left err -> throwError err
-
-      i -> throwError $ UnsupportedImport i
-
+  forM_ imports compileImport
   forM_ decls scanRecordDecls
   forM_ decls scanNewtypeDecls
 
 initialPass m = throwError (UnsupportedModuleSyntax m)
+
+compileImport :: ImportDecl -> Compile ()
+compileImport (ImportDecl _ _ _ _ Just{} _ _) = return ()
+compileImport (ImportDecl _ name False _ Nothing Nothing Nothing) =
+  compileImportWithFilter name (const $ return True)
+compileImport (ImportDecl _ name False _ Nothing Nothing (Just (True, specs))) =
+  compileImportWithFilter name (fmap not . imported specs)
+compileImport (ImportDecl _ name False _ Nothing Nothing (Just (False, specs))) =
+  compileImportWithFilter name (imported specs)
+compileImport i =
+  throwError $ UnsupportedImport i
 
 compileWith :: (Show from,Parseable from)
             => FilePath
@@ -58,12 +53,17 @@ compileWith filepath with from = do
 
 -- | Don't re-import the same modules.
 unlessImported :: ModuleName
-                           -> (FilePath -> String -> Compile ())
-                           -> Compile ()
-unlessImported name importIt = do
+               -> (QName -> Compile Bool)
+               -> (FilePath -> String -> Compile ())
+               -> Compile ()
+unlessImported "Fay.Types" _ _ = return ()
+unlessImported name importFilter importIt = do
   imported <- gets stateImported
   case lookup name imported of
-    Just _ -> return ()
+    Just _ -> do
+      exports <- gets $ getExportsFor name
+      imports <- filterM importFilter $ S.toList exports
+      modify $ \s -> s { stateModuleScope = bindAsLocals imports (stateModuleScope s) }
     Nothing -> do
       dirs <- configDirectoryIncludePaths <$> config id
       (filepath,contents) <- findImport dirs name
@@ -116,3 +116,49 @@ scanRecordDecls decl = do
         addRecordState :: Name -> [Name] -> Compile ()
         addRecordState name fields = modify $ \s -> s
           { stateRecords = (UnQual name,map UnQual fields) : stateRecords s }
+
+------------------------------------
+
+imported :: [ImportSpec] -> QName -> Compile Bool
+imported is qn = anyM (matching qn) is
+  where
+    matching :: QName -> ImportSpec -> Compile Bool
+    matching (Qual _ name) (IAbs typ) = return (name == typ)
+    matching (Qual _ name) (IVar var) = return $ name == var
+    matching (Qual _ name) (IThingAll typ) = do
+      recs <- typeToRecs $ UnQual typ
+      if UnQual name `elem` recs
+        then return True
+        else do
+          fields <- typeToFields $ UnQual typ
+          return $ UnQual name `elem` fields
+    matching (Qual _ name) (IThingWith typ cns) =
+      flip anyM cns $ \cn -> case cn of
+        ConName _ -> do
+          recs <- typeToRecs $ UnQual typ
+          return $ UnQual name `elem` recs
+        VarName _ -> do
+          fields <- typeToFields $ UnQual typ
+          return $ UnQual name `elem` fields
+    matching q is = error $ "compileImport: Unsupported QName ImportSpec combination " ++ show (q, is) ++ ", this is a bug!"
+
+
+compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile ()
+compileImportWithFilter name importFilter =
+  unlessImported name importFilter $ \filepath contents -> do
+    result <- compileWith filepath initialPass contents
+    case result of
+      Right ((),st,_) -> do
+        imports <- filterM importFilter $ S.toList $ getCurrentExports st
+        -- Merges the state gotten from passing through an imported
+        -- module with the current state. We can assume no duplicate
+        -- records exist since GHC would pick that up.
+        modify $ \s -> s { stateRecords = stateRecords st
+                         , stateLocalScope  = S.empty
+                         , stateRecordTypes = stateRecordTypes st
+                         , stateImported = stateImported st
+                         , stateNewtypes = stateNewtypes st
+                         , stateModuleScope = bindAsLocals imports (stateModuleScope s)
+                         , _stateExports = _stateExports st
+                         }
+      Left err -> throwError err

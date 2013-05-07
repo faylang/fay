@@ -23,7 +23,7 @@ import qualified Test.CommandLine               as Cmd
 import qualified Test.Convert                   as C
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
-import           Test.HUnit                     (assertEqual)
+import           Test.HUnit                     (assertEqual, assertFailure)
 
 -- | Main test runner.
 main :: IO ()
@@ -57,13 +57,22 @@ testFile packageConf opt file = do
               , configPackageConf = packageConf
               }
   outExists <- doesFileExist root
+  let partialName = root ++ "_partial"
+  partialExists <- doesFileExist partialName
   compileFromTo config file (Just out)
   result <- runJavaScriptFile out
   if outExists
      then do output <- readFile root
-             assertEqual file output (either show id result)
-     else assertEqual file True (either (const True) (const False) result)
+             assertEqual file output (either show snd result)
+     else
+       if partialExists
+         then case result of
+           Left (_,res) -> do
+             output <- readFile partialName
+             assertEqual file output res
+           Right (err,res) -> assertFailure $ "Did not fail:\n stdout: " ++ res ++ "\n\nstderr: " ++ err
+         else assertEqual file True (either (const True) (const False) result)
 
 -- | Run a JS file.
-runJavaScriptFile :: String -> IO (Either String String)
-runJavaScriptFile file = fmap (fmap snd) (readAllFromProcess "node" [file] "")
+runJavaScriptFile :: String -> IO (Either (String,String) (String,String))
+runJavaScriptFile file = readAllFromProcess "node" [file] ""

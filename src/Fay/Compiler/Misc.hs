@@ -215,6 +215,11 @@ isWildCardPat PWildCard{} = True
 isWildCardPat PVar{}      = True
 isWildCardPat _           = False
 
+-- | Return formatter string if expression is a FFI call.
+ffiExp :: Exp -> Maybe String
+ffiExp (App (Var (UnQual (Ident "ffi"))) (Lit (String formatstr))) = Just formatstr
+ffiExp _ = Nothing
+
 -- | Generate a temporary, SCOPED name for testing conditions and
 -- such.
 withScopedTmpJsName :: (JsName -> Compile a) -> Compile a

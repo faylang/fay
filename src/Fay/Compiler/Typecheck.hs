@@ -36,7 +36,7 @@ typecheck packageConf wall fp = do
           , "-i" ++ concat (intersperse ":" includeDirs)
           , fp ] ++ ghcPackageDbArgs ++ wallF ++ map ("-package " ++) packages
   res <- io $ readAllFromProcess GHCPaths.ghc flags ""
-  either error (warn . fst) res
+  either (error . fst) (warn . fst) res
    where
     wallF | wall = ["-Wall"]
           | otherwise = []

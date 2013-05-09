@@ -9,7 +9,6 @@
 module Fay.Compiler
   (runCompile
   ,compileViaStr
-  ,compileForDocs
   ,compileToAst
   ,compileModule
   ,compileExp
@@ -75,15 +74,6 @@ compileToAst filepath reader state with from =
              (parseResult (throwError . uncurry ParseError)
                           with
                           (parseFay filepath from))
-
--- | Compile the given Fay code for the documentation. This is
--- specialised because the documentation isn't really “real”
--- compilation.
-compileForDocs :: Module -> Compile [JsStmt]
-compileForDocs mod = do
-  initialPass mod
-  -- collectRecords mod
-  compileModule False mod
 
 -- | Compile the top-level Fay module.
 compileToplevelModule :: Module -> Compile [JsStmt]

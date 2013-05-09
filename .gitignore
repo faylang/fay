@@ -13,3 +13,4 @@ docs/home.js
 hackage-test/
 src/*.js
 fay-base
+fay-prim

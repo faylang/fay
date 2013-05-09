@@ -2,28 +2,36 @@
 
 module Fay.Compiler.InitialPass where
 
-import Fay.Compiler.Misc
-import Fay.Types
-import Fay.Compiler.Config
-import Fay.Compiler.Decl (compileNewtypeDecl)
-import Fay.Compiler.GADT
+import           Fay.Compiler.Misc
+import           Fay.Types
+import           Fay.Compiler.Config
+import           Fay.Compiler.Decl (compileNewtypeDecl)
+import           Fay.Compiler.GADT
 
-import Control.Applicative
-import Control.Monad.Error
-import Control.Monad.RWS
-import Language.Haskell.Exts.Syntax
-import Language.Haskell.Exts.Parser
-
+import           Control.Applicative
+import           Control.Monad.Error
+import           Control.Monad.Extra
+import           Control.Monad.RWS
 import qualified Data.Set as S
-import Fay.Compiler.ModuleScope
-import Control.Monad.Extra
+import           Fay.Compiler.ModuleScope
+import           Language.Haskell.Exts.Parser
+import           Language.Haskell.Exts.Syntax
+import           Prelude hiding (mod)
 
 initialPass :: Module -> Compile ()
-initialPass (Module _ mod _ Nothing _ imports decls) = do
-  modify $ \s -> s { stateModuleName = mod }
-  forM_ imports compileImport
-  forM_ decls scanRecordDecls
-  forM_ decls scanNewtypeDecls
+initialPass (Module _ mod _ Nothing exports imports decls) =
+  withModuleScope $ do
+    modify $ \s -> s { stateModuleName = mod
+                     , stateModuleScope = findTopLevelNames mod decls
+                     }
+    forM_ imports compileImport
+    forM_ decls scanRecordDecls
+    forM_ decls scanNewtypeDecls
+    case exports of
+      Just exps -> mapM_ emitExport exps
+      Nothing -> do
+        exps <- moduleLocals mod <$> gets stateModuleScope
+        modify $ flip (foldr addCurrentExport) exps
 initialPass m = throwError (UnsupportedModuleSyntax m)
 
 compileImport :: ImportDecl -> Compile ()
@@ -39,14 +47,14 @@ compileImport i =
 
 compileWith :: (Show from,Parseable from)
             => FilePath
+            -> CompileReader
+            -> CompileState
             -> (from -> Compile ())
             -> String
             -> Compile (Either CompileError ((),CompileState,CompileWriter))
-compileWith filepath with from = do
-  compileReader <- ask
-  compileState  <- get
-  liftIO $ runCompile compileReader
-                      compileState
+compileWith filepath r st with from = do
+  liftIO $ runCompile r
+                      st
                       (parseResult (throwError . uncurry ParseError)
                                    with
                                    (parseFay filepath from))
@@ -146,7 +154,9 @@ imported is qn = anyM (matching qn) is
 compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile ()
 compileImportWithFilter name importFilter =
   unlessImported name importFilter $ \filepath contents -> do
-    result <- compileWith filepath initialPass contents
+    reader <- ask
+    state  <- get
+    result <- compileWith filepath reader state initialPass contents
     case result of
       Right ((),st,_) -> do
         imports <- filterM importFilter $ S.toList $ getCurrentExports st

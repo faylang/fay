@@ -13,13 +13,14 @@ import           Control.Monad.Error
 import           Control.Monad.Extra
 import           Control.Monad.RWS
 import qualified Data.Set as S
+import qualified Data.Map as M
 import           Fay.Compiler.ModuleScope
 import           Language.Haskell.Exts.Parser
 import           Language.Haskell.Exts.Syntax
 import           Prelude hiding (mod)
 
 initialPass :: Module -> Compile ()
-initialPass (Module _ mod _ Nothing exports imports decls) =
+initialPass (Module _ mod _ Nothing exports imports decls) = do
   withModuleScope $ do
     modify $ \s -> s { stateModuleName = mod
                      , stateModuleScope = findTopLevelNames mod decls
@@ -32,6 +33,7 @@ initialPass (Module _ mod _ Nothing exports imports decls) =
       Nothing -> do
         exps <- moduleLocals mod <$> gets stateModuleScope
         modify $ flip (foldr addCurrentExport) exps
+    modify $ \s -> s { stateModuleScopes = M.insert mod (stateModuleScope s) (stateModuleScopes s) }
 initialPass m = throwError (UnsupportedModuleSyntax m)
 
 compileImport :: ImportDecl -> Compile ()
@@ -170,5 +172,6 @@ compileImportWithFilter name importFilter =
                          , stateNewtypes = stateNewtypes st
                          , stateModuleScope = bindAsLocals imports (stateModuleScope s)
                          , _stateExports = _stateExports st
+                         , stateModuleScopes = stateModuleScopes st
                          }
       Left err -> throwError err

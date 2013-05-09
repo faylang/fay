@@ -25,7 +25,7 @@ import           Fay.Compiler.Exp
 import           Fay.Compiler.Decl
 import           Fay.Compiler.FFI
 import           Fay.Compiler.Misc
-import           Fay.Compiler.ModuleScope (bindAsLocals, findTopLevelNames, moduleLocals)
+import           Fay.Compiler.ModuleScope (bindAsLocals)
 import           Fay.Compiler.Optimizer
 import           Fay.Compiler.Typecheck
 import           Fay.Types
@@ -38,6 +38,7 @@ import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default                    (def)
 import qualified Data.Set                        as S
+import qualified Data.Map                        as M
 import           Data.Maybe
 import           Language.Haskell.Exts
 
@@ -94,9 +95,7 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   when (configTypecheck cfg) $
     typecheck (configPackageConf cfg) (configWall cfg) $
       fromMaybe modulename $ configFilePath cfg
-  modify $ \s -> s { stateModuleName = ModuleName modulename }
   initialPass mod
-  -- collectRecords mod
   cs <- io defaultCompileState
   modify $ \s -> s { stateImported = stateImported cs }
   (stmts,CompileWriter{..}) <- listen $ compileModule True mod
@@ -113,10 +112,10 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
 
 -- | Compile Haskell module.
 compileModule :: Bool -> Module -> Compile [JsStmt]
-compileModule toplevel (Module _ modulename _pragmas Nothing exports imports decls) =
+compileModule toplevel (Module _ modulename _pragmas Nothing _exports imports decls) =
   withModuleScope $ do
     modify $ \s -> s { stateModuleName = modulename
-                     , stateModuleScope = findTopLevelNames modulename decls
+                     , stateModuleScope = fromMaybe (error $ "Could not find stateModuleScope for " ++ show modulename) $ M.lookup modulename $ stateModuleScopes s
                      }
     imported <- fmap concat (mapM compileImport imports)
     current <- compileDecls True decls

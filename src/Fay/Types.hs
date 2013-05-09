@@ -90,6 +90,7 @@ data CompileState = CompileState
   , stateNameDepth    :: Integer                    -- ^ Depth of the current lexical scope.
   , stateLocalScope   :: Set Name                   -- ^ Names in the current lexical scope.
   , stateModuleScope  :: ModuleScope                -- ^ Names in the module scope.
+  , stateModuleScopes :: Map ModuleName ModuleScope
   , stateModuleName   :: ModuleName                 -- ^ Name of the module currently being compiled.
   } deriving (Show)
 

@@ -39,4 +39,5 @@ defaultCompileState = do
   , stateNameDepth = 1
   , stateLocalScope = S.empty
   , stateModuleScope = def
+  , stateModuleScopes = M.empty
   }

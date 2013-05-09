@@ -191,7 +191,6 @@ compileImportWithFilter name importFilter =
         modify $ \s -> s { stateImported    = stateImported state
                          , stateLocalScope  = S.empty
                          , stateModuleScope = bindAsLocals imports (stateModuleScope s)
-                         , _stateExports    = _stateExports state
                          }
         return stmts
       Left err -> throwError err

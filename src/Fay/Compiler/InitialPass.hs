@@ -17,7 +17,7 @@ import qualified Data.Map as M
 import           Fay.Compiler.ModuleScope
 import           Language.Haskell.Exts.Parser
 import           Language.Haskell.Exts.Syntax
-import           Prelude hiding (mod)
+import           Prelude hiding (mod, read)
 
 initialPass :: Module -> Compile ()
 initialPass (Module _ mod _ Nothing exports imports decls) = do
@@ -68,8 +68,8 @@ unlessImported :: ModuleName
                -> Compile ()
 unlessImported "Fay.Types" _ _ = return ()
 unlessImported name importFilter importIt = do
-  imported <- gets stateImported
-  case lookup name imported of
+  isImported <- lookup name <$> gets stateImported
+  case isImported of
     Just _ -> do
       exports <- gets $ getExportsFor name
       imports <- filterM importFilter $ S.toList exports
@@ -77,7 +77,7 @@ unlessImported name importFilter importIt = do
     Nothing -> do
       dirs <- configDirectoryIncludePaths <$> config id
       (filepath,contents) <- findImport dirs name
-      modify $ \s -> s { stateImported = (name,filepath) : imported }
+      modify $ \s -> s { stateImported = (name,filepath) : stateImported s }
       importIt filepath contents
 
 scanNewtypeDecls :: Decl -> Compile ()
@@ -150,15 +150,15 @@ imported is qn = anyM (matching qn) is
         VarName _ -> do
           fields <- typeToFields $ UnQual typ
           return $ UnQual name `elem` fields
-    matching q is = error $ "compileImport: Unsupported QName ImportSpec combination " ++ show (q, is) ++ ", this is a bug!"
+    matching q is' = error $ "compileImport: Unsupported QName ImportSpec combination " ++ show (q, is') ++ ", this is a bug!"
 
 
 compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile ()
 compileImportWithFilter name importFilter =
   unlessImported name importFilter $ \filepath contents -> do
-    reader <- ask
-    state  <- get
-    result <- compileWith filepath reader state initialPass contents
+    read <- ask
+    stat <- get
+    result <- compileWith filepath read stat initialPass contents
     case result of
       Right ((),st,_) -> do
         imports <- filterM importFilter $ S.toList $ getCurrentExports st

@@ -81,8 +81,7 @@ unlessImported name importFilter importIt = do
       importIt filepath contents
 
 scanNewtypeDecls :: Decl -> Compile ()
-scanNewtypeDecls (DataDecl _ NewType _ _ _ constructors _) =
-  void $ compileNewtypeDecl constructors
+scanNewtypeDecls (DataDecl _ NewType _ _ _ constructors _) = compileNewtypeDecl constructors
 scanNewtypeDecls _ = return ()
 
 scanRecordDecls :: Decl -> Compile ()

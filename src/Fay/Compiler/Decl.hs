@@ -44,7 +44,7 @@ compileDecl toplevel decl =
     FunBind matches -> compileFunCase toplevel matches
     DataDecl _ DataType _ _ _ constructors _ -> compileDataDecl toplevel decl constructors
     GDataDecl _ DataType _l _i _v _n decls _ -> compileDataDecl toplevel decl (map convertGADT decls)
-    DataDecl _ NewType  _ _ _ constructors _ -> compileNewtypeDecl constructors
+    DataDecl _ NewType  _ _ _ _ _ -> return []
     -- Just ignore type aliases and signatures.
     TypeDecl{} -> return []
     TypeSig{} -> return []
@@ -158,14 +158,13 @@ compileDataDecl toplevel _decl constructors =
                                                        (JsNameVar (UnQual name))))))
 
 -- | Compile a newtype declaration.
-compileNewtypeDecl :: [QualConDecl] -> Compile [JsStmt]
+compileNewtypeDecl :: [QualConDecl] -> Compile ()
 compileNewtypeDecl [QualConDecl _ _ _ condecl] = do
   case condecl of
       -- newtype declaration without destructor
     ConDecl name  [ty]            -> addNewtype name Nothing ty
     RecDecl cname [([dname], ty)] -> addNewtype cname (Just dname) ty
     x -> error $ "compileNewtypeDecl case: Should be impossible (this is a bug). Got: " ++ show x
-  return []
   where
     getBangTy :: BangType -> Type
     getBangTy (BangedTy t)   = t

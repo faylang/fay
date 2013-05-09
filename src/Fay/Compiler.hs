@@ -17,12 +17,12 @@ module Fay.Compiler
   ,parseFay)
   where
 
-import           Fay.Compiler.InitialPass (initialPass)
 import           Fay.Compiler.Config
+import           Fay.Compiler.Decl
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Exp
-import           Fay.Compiler.Decl
 import           Fay.Compiler.FFI
+import           Fay.Compiler.InitialPass (initialPass)
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Optimizer
 import           Fay.Compiler.Typecheck
@@ -34,9 +34,9 @@ import           Control.Monad.IO
 import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default                    (def)
-import qualified Data.Set                        as S
 import qualified Data.Map                        as M
 import           Data.Maybe
+import qualified Data.Set                        as S
 import           Language.Haskell.Exts
 
 --------------------------------------------------------------------------------

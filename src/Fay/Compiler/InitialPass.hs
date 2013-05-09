@@ -2,11 +2,12 @@
 
 module Fay.Compiler.InitialPass where
 
-import           Fay.Compiler.Misc
-import           Fay.Types
 import           Fay.Compiler.Config
 import           Fay.Compiler.Decl (compileNewtypeDecl)
 import           Fay.Compiler.GADT
+import           Fay.Compiler.Misc
+import           Fay.Compiler.ModuleScope
+import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad.Error
@@ -14,7 +15,6 @@ import           Control.Monad.Extra
 import           Control.Monad.RWS
 import qualified Data.Set as S
 import qualified Data.Map as M
-import           Fay.Compiler.ModuleScope
 import           Language.Haskell.Exts.Parser
 import           Language.Haskell.Exts.Syntax
 import           Prelude hiding (mod, read)
@@ -93,7 +93,6 @@ scanRecordDecls decl = do
       addRecordTypeState name ns
     _ -> return ()
 
-
   case decl of
     DataDecl _ DataType _ _ _ constructors _ -> dataDecl constructors
     GDataDecl _ DataType _l _i _v _n decls _ -> dataDecl (map convertGADT decls)
@@ -126,8 +125,6 @@ scanRecordDecls decl = do
         addRecordState :: Name -> [Name] -> Compile ()
         addRecordState name fields = modify $ \s -> s
           { stateRecords = (UnQual name,map UnQual fields) : stateRecords s }
-
-------------------------------------
 
 imported :: [ImportSpec] -> QName -> Compile Bool
 imported is qn = anyM (matching qn) is
@@ -165,13 +162,13 @@ compileImportWithFilter name importFilter =
         -- Merges the state gotten from passing through an imported
         -- module with the current state. We can assume no duplicate
         -- records exist since GHC would pick that up.
-        modify $ \s -> s { stateRecords = stateRecords st
-                         , stateLocalScope  = S.empty
-                         , stateRecordTypes = stateRecordTypes st
-                         , stateImported = stateImported st
-                         , stateNewtypes = stateNewtypes st
-                         , stateModuleScope = bindAsLocals imports (stateModuleScope s)
-                         , _stateExports = _stateExports st
+        modify $ \s -> s { stateRecords      = stateRecords st
+                         , stateLocalScope   = S.empty
+                         , stateRecordTypes  = stateRecordTypes st
+                         , stateImported     = stateImported st
+                         , stateNewtypes     = stateNewtypes st
+                         , stateModuleScope  = bindAsLocals imports (stateModuleScope s)
+                         , _stateExports     = _stateExports st
                          , stateModuleScopes = stateModuleScopes st
                          }
       Left err -> throwError err

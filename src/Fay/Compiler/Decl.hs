@@ -46,11 +46,11 @@ compileDecl toplevel decl =
     GDataDecl _ DataType _l _i _v _n decls _ -> compileDataDecl toplevel decl (map convertGADT decls)
     DataDecl _ NewType  _ _ _ _ _ -> return []
     -- Just ignore type aliases and signatures.
-    TypeDecl{} -> return []
-    TypeSig{} -> return []
+    TypeDecl {} -> return []
+    TypeSig  {} -> return []
     InfixDecl{} -> return []
     ClassDecl{} -> return []
-    InstDecl{} -> return [] -- FIXME: Ignore.
+    InstDecl {} -> return [] -- FIXME: Ignore.
     DerivDecl{} -> return []
     _ -> throwError (UnsupportedDeclaration decl)
 

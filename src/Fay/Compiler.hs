@@ -121,12 +121,6 @@ compileModule toplevel (Module _ modulename _pragmas Nothing exports imports dec
     imported <- fmap concat (mapM compileImport imports)
     current <- compileDecls True decls
 
-    case exports of
-      Just exps -> mapM_ emitExport exps
-      Nothing -> do
-        exps <- moduleLocals modulename <$> gets stateModuleScope
-        modify $ flip (foldr addCurrentExport) exps
-
     exportStdlib     <- config configExportStdlib
     exportStdlibOnly <- config configExportStdlibOnly
     if exportStdlibOnly

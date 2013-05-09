@@ -32,7 +32,6 @@ import           Fay.Types
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.IO
-import           Control.Monad.Extra
 import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default                    (def)
@@ -141,67 +140,31 @@ anStdlibModule (ModuleName name) = elem name ["Prelude","FFI","Language.Fay.FFI"
 
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]
-compileImport (ImportDecl _ _ _ _ Just{} _ _) = do
 --  warn $ "import with package syntax ignored: " ++ prettyPrint i
-  return []
-compileImport (ImportDecl _ name False _ Nothing Nothing Nothing) =
-  compileImportWithFilter name (const $ return True)
-compileImport (ImportDecl _ name False _ Nothing Nothing (Just (True, specs))) =
-  compileImportWithFilter name (fmap not . imported specs)
-compileImport (ImportDecl _ name False _ Nothing Nothing (Just (False, specs))) =
-  compileImportWithFilter name (imported specs)
-compileImport i =
-  throwError $ UnsupportedImport i
-
-imported :: [ImportSpec] -> QName -> Compile Bool
-imported is qn = anyM (matching qn) is
-  where
-    matching :: QName -> ImportSpec -> Compile Bool
-    matching (Qual _ name) (IAbs typ) = return (name == typ)
-    matching (Qual _ name) (IVar var) = return $ name == var
-    matching (Qual _ name) (IThingAll typ) = do
-      recs <- typeToRecs $ UnQual typ
-      if UnQual name `elem` recs
-        then return True
-        else do
-          fields <- typeToFields $ UnQual typ
-          return $ UnQual name `elem` fields
-    matching (Qual _ name) (IThingWith typ cns) =
-      flip anyM cns $ \cn -> case cn of
-        ConName _ -> do
-          recs <- typeToRecs $ UnQual typ
-          return $ UnQual name `elem` recs
-        VarName _ -> do
-          fields <- typeToFields $ UnQual typ
-          return $ UnQual name `elem` fields
-    matching q is = error $ "compileImport: Unsupported QName ImportSpec combination " ++ show (q, is) ++ ", this is a bug!"
-
-compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile [JsStmt]
-compileImportWithFilter name importFilter =
-  unlessImported name importFilter $ \filepath contents -> do
+compileImport (ImportDecl _ _    _     _ Just{}  _       _) = return []
+compileImport (ImportDecl _ name False _ Nothing Nothing _) =
+  unlessImported name $ \filepath contents -> do
     state <- get
     reader <- ask
     result <- liftIO $ compileToAst filepath reader state (compileModule False) contents
     case result of
       Right (stmts,state,writer) -> do
-        imports <- filterM importFilter $ S.toList $ getCurrentExports state
         tell writer
         modify $ \s -> s { stateImported   = stateImported state
                          , stateLocalScope = S.empty
                          }
         return stmts
       Left err -> throwError err
+compileImport i = throwError $ UnsupportedImport i
 
 unlessImported :: ModuleName
-               -> (QName -> Compile Bool)
                -> (FilePath -> String -> Compile [JsStmt])
                -> Compile [JsStmt]
-unlessImported "Fay.Types" _ _ = return []
-unlessImported name importFilter importIt = do
+unlessImported "Fay.Types" _ = return []
+unlessImported name importIt = do
   imported <- gets stateImported
   case lookup name imported of
-    Just _ ->
-      return []
+    Just _  -> return []
     Nothing -> do
       dirs <- configDirectoryIncludePaths <$> config id
       (filepath,contents) <- findImport dirs name

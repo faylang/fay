@@ -25,7 +25,6 @@ import           Fay.Compiler.Exp
 import           Fay.Compiler.Decl
 import           Fay.Compiler.FFI
 import           Fay.Compiler.Misc
-import           Fay.Compiler.ModuleScope (bindAsLocals)
 import           Fay.Compiler.Optimizer
 import           Fay.Compiler.Typecheck
 import           Fay.Types
@@ -114,10 +113,10 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
 compileModule :: Bool -> Module -> Compile [JsStmt]
 compileModule toplevel (Module _ modulename _pragmas Nothing _exports imports decls) =
   withModuleScope $ do
+    imported <- fmap concat (mapM compileImport imports)
     modify $ \s -> s { stateModuleName = modulename
                      , stateModuleScope = fromMaybe (error $ "Could not find stateModuleScope for " ++ show modulename) $ M.lookup modulename $ stateModuleScopes s
                      }
-    imported <- fmap concat (mapM compileImport imports)
     current <- compileDecls True decls
 
     exportStdlib     <- config configExportStdlib
@@ -177,7 +176,6 @@ imported is qn = anyM (matching qn) is
           return $ UnQual name `elem` fields
     matching q is = error $ "compileImport: Unsupported QName ImportSpec combination " ++ show (q, is) ++ ", this is a bug!"
 
-
 compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile [JsStmt]
 compileImportWithFilter name importFilter =
   unlessImported name importFilter $ \filepath contents -> do
@@ -188,9 +186,8 @@ compileImportWithFilter name importFilter =
       Right (stmts,state,writer) -> do
         imports <- filterM importFilter $ S.toList $ getCurrentExports state
         tell writer
-        modify $ \s -> s { stateImported    = stateImported state
-                         , stateLocalScope  = S.empty
-                         , stateModuleScope = bindAsLocals imports (stateModuleScope s)
+        modify $ \s -> s { stateImported   = stateImported state
+                         , stateLocalScope = S.empty
                          }
         return stmts
       Left err -> throwError err
@@ -203,17 +200,11 @@ unlessImported "Fay.Types" _ _ = return []
 unlessImported name importFilter importIt = do
   imported <- gets stateImported
   case lookup name imported of
-    Just _ -> do
-      exports <- gets $ getExportsFor name
-      imports <- filterM importFilter $ S.toList exports
-      modify $ \s -> s { stateModuleScope = bindAsLocals imports (stateModuleScope s) }
+    Just _ ->
       return []
     Nothing -> do
       dirs <- configDirectoryIncludePaths <$> config id
       (filepath,contents) <- findImport dirs name
-                         -- TODO stateImported is already added in initialPass so it is not needed here
-                         -- but one Api test fails if it's removed.
-      modify $ \s -> s { stateImported     = (name,filepath) : imported
-                       }
+      modify $ \s -> s { stateImported = (name,filepath) : imported }
       res <- importIt filepath contents
       return res

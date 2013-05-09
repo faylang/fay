@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Fay.Compiler.InitialPass where
+module Fay.Compiler.InitialPass
+  (initialPass
+  ) where
 
 import           Fay.Compiler.Config
-import           Fay.Compiler.Decl (compileNewtypeDecl)
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
 import           Fay.Compiler.ModuleScope
@@ -80,10 +81,35 @@ unlessImported name importFilter importIt = do
       modify $ \s -> s { stateImported = (name,filepath) : stateImported s }
       importIt filepath contents
 
+-- | Find newtype declarations
 scanNewtypeDecls :: Decl -> Compile ()
 scanNewtypeDecls (DataDecl _ NewType _ _ _ constructors _) = compileNewtypeDecl constructors
 scanNewtypeDecls _ = return ()
 
+-- | Add new types to the state
+compileNewtypeDecl :: [QualConDecl] -> Compile ()
+compileNewtypeDecl [QualConDecl _ _ _ condecl] = do
+  case condecl of
+      -- newtype declaration without destructor
+    ConDecl name  [ty]            -> addNewtype name Nothing ty
+    RecDecl cname [([dname], ty)] -> addNewtype cname (Just dname) ty
+    x -> error $ "compileNewtypeDecl case: Should be impossible (this is a bug). Got: " ++ show x
+  where
+    getBangTy :: BangType -> Type
+    getBangTy (BangedTy t)   = t
+    getBangTy (UnBangedTy t) = t
+    getBangTy (UnpackedTy t) = t
+
+    addNewtype cname dname ty = do
+      qcname <- qualify cname
+      qdname <- case dname of
+                  Nothing -> return Nothing
+                  Just n  -> qualify n >>= return . Just
+      modify (\cs@CompileState{stateNewtypes=nts} ->
+               cs{stateNewtypes=(qcname,qdname,getBangTy ty):nts})
+compileNewtypeDecl q = error $ "compileNewtypeDecl: Should be impossible (this is a bug). Got: " ++ show q
+
+-- | Add record declarations to the state
 scanRecordDecls :: Decl -> Compile ()
 scanRecordDecls decl = do
   case decl of
@@ -125,6 +151,7 @@ scanRecordDecls decl = do
         addRecordState name fields = modify $ \s -> s
           { stateRecords = (UnQual name,map UnQual fields) : stateRecords s }
 
+-- | Is this name imported from anywhere?
 imported :: [ImportSpec] -> QName -> Compile Bool
 imported is qn = anyM (matching qn) is
   where
@@ -148,7 +175,7 @@ imported is qn = anyM (matching qn) is
           return $ UnQual name `elem` fields
     matching q is' = error $ "compileImport: Unsupported QName ImportSpec combination " ++ show (q, is') ++ ", this is a bug!"
 
-
+-- | Compile an import filtering the exports based on the current module's imports
 compileImportWithFilter :: ModuleName -> (QName -> Compile Bool) -> Compile ()
 compileImportWithFilter name importFilter =
   unlessImported name importFilter $ \filepath contents -> do

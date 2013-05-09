@@ -157,29 +157,6 @@ compileDataDecl toplevel _decl constructors =
                                (Just (thunk (JsGetProp (force (JsName (JsNameVar "x")))
                                                        (JsNameVar (UnQual name))))))
 
--- | Compile a newtype declaration.
-compileNewtypeDecl :: [QualConDecl] -> Compile ()
-compileNewtypeDecl [QualConDecl _ _ _ condecl] = do
-  case condecl of
-      -- newtype declaration without destructor
-    ConDecl name  [ty]            -> addNewtype name Nothing ty
-    RecDecl cname [([dname], ty)] -> addNewtype cname (Just dname) ty
-    x -> error $ "compileNewtypeDecl case: Should be impossible (this is a bug). Got: " ++ show x
-  where
-    getBangTy :: BangType -> Type
-    getBangTy (BangedTy t)   = t
-    getBangTy (UnBangedTy t) = t
-    getBangTy (UnpackedTy t) = t
-
-    addNewtype cname dname ty = do
-      qcname <- qualify cname
-      qdname <- case dname of
-                  Nothing -> return Nothing
-                  Just n  -> qualify n >>= return . Just
-      modify (\cs@CompileState{stateNewtypes=nts} ->
-               cs{stateNewtypes=(qcname,qdname,getBangTy ty):nts})
-compileNewtypeDecl q = error $ "compileNewtypeDecl: Should be impossible (this is a bug). Got: " ++ show q
-
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]
 compileFunCase _toplevel [] = return []

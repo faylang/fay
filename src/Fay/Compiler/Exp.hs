@@ -78,54 +78,45 @@ compileLit lit =
     lit           -> throwError (UnsupportedLiteral lit)
 
 -- | Compile simple application.
--- TODO Abstract
 compileApp :: Exp -> Exp -> Compile JsExp
 compileApp exp1@(Con q) exp2 = do
-  flattenApps <- config configFlattenApps
-  ntc <- lookupNewtypeConst q
-  if isJust ntc
-    then compileExp exp2
-    else do
-      jsexp1 <- compileExp exp1
-      (if flattenApps then flattenMethod2 else flattenMethod1) jsexp1 exp2
+  maybe (compileApp' exp1 exp2) (const $ compileExp exp2) =<< lookupNewtypeConst q
 compileApp exp1@(Var q) exp2 = do
-  flattenApps <- config configFlattenApps
-  ntd <- lookupNewtypeDest q
-  if isJust ntd
-    then compileExp exp2
-    else do
-      jsexp1 <- compileExp exp1
-      (if flattenApps then flattenMethod2 else flattenMethod1) jsexp1 exp2
-compileApp exp1 exp2 = do
+  maybe (compileApp' exp1 exp2) (const $ compileExp exp2) =<< lookupNewtypeDest q
+compileApp exp1 exp2 =
+  compileApp' exp1 exp2
+
+compileApp' :: Exp -> Exp -> Compile JsExp
+compileApp' exp1 exp2 = do
   flattenApps <- config configFlattenApps
   jsexp1 <- compileExp exp1
-  (if flattenApps then flattenMethod2 else flattenMethod1) jsexp1 exp2
+  (if flattenApps then method2 else method1) jsexp1 exp2
+    where
+    -- Method 1:
+    -- In this approach code ends up looking like this:
+    -- a(a(a(a(a(a(a(a(a(a(L)(c))(b))(0))(0))(y))(t))(a(a(F)(3*a(a(d)+a(a(f)/20))))*a(a(f)/2)))(140+a(f)))(y))(t)})
+    -- Which might be OK for speed, but increases the JS stack a fair bit.
+    method1 :: JsExp -> Exp -> Compile JsExp
+    method1 exp1 exp2 =
+      JsApp <$> (forceFlatName <$> return exp1)
+            <*> fmap return (compileExp exp2)
+      where
+        forceFlatName name = JsApp (JsName JsForce) [name]
 
--- Method 1:
--- In this approach code ends up looking like this:
--- a(a(a(a(a(a(a(a(a(a(L)(c))(b))(0))(0))(y))(t))(a(a(F)(3*a(a(d)+a(a(f)/20))))*a(a(f)/2)))(140+a(f)))(y))(t)})
--- Which might be OK for speed, but increases the JS stack a fair bit.
-flattenMethod1 :: JsExp -> Exp -> Compile JsExp
-flattenMethod1 exp1 exp2 =
-  JsApp <$> (forceFlatName <$> return exp1)
-        <*> fmap return (compileExp exp2)
-  where
-    forceFlatName name = JsApp (JsName JsForce) [name]
-
--- Method 2:
--- In this approach code ends up looking like this:
--- d(O,a,b,0,0,B,w,e(d(I,3*e(e(c)+e(e(g)/20))))*e(e(g)/2),140+e(g),B,w)}),d(K,g,e(c)+0.05))
--- Which should be much better for the stack and readability, but probably not great for speed.
-flattenMethod2 :: JsExp -> Exp -> Compile JsExp
-flattenMethod2 exp1 exp2 = fmap flatten $
-  JsApp <$> return exp1
-        <*> fmap return (compileExp exp2)
-  where
-    flatten (JsApp op args) =
-     case op of
-       JsApp l r -> JsApp l (r ++ args)
-       _        -> JsApp (JsName JsApply) (op : args)
-    flatten x = x
+    -- Method 2:
+    -- In this approach code ends up looking like this:
+    -- d(O,a,b,0,0,B,w,e(d(I,3*e(e(c)+e(e(g)/20))))*e(e(g)/2),140+e(g),B,w)}),d(K,g,e(c)+0.05))
+    -- Which should be much better for the stack and readability, but probably not great for speed.
+    method2 :: JsExp -> Exp -> Compile JsExp
+    method2 exp1 exp2 = fmap flatten $
+      JsApp <$> return exp1
+            <*> fmap return (compileExp exp2)
+      where
+        flatten (JsApp op args) =
+         case op of
+           JsApp l r -> JsApp l (r ++ args)
+           _        -> JsApp (JsName JsApply) (op : args)
+        flatten x = x
 
 -- | Compile a negate application
 compileNegApp :: Exp -> Compile JsExp

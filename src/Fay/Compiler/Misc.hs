@@ -63,7 +63,6 @@ uniqueNames :: [JsName]
 uniqueNames = map JsParam [1::Integer ..]
 
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
--- TODO change to (Maybe QName) and add unsafeResolveName
 tryResolveName :: QName -> Compile (Maybe QName)
 tryResolveName special@Special{} = return (Just special)
 tryResolveName q@Qual{} = do

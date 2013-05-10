@@ -71,7 +71,6 @@ data CompileConfig = CompileConfig
   , configLibrary            :: Bool                       -- ^ Don't invoke main in the produced JS.
   , configWarn               :: Bool                       -- ^ Warn on dubious stuff, not related to typechecking.
   , configFilePath           :: Maybe FilePath             -- ^ File path to output to.
-                                                           --   TODO: This flag is not used thoroughly, decide if it's needed.
   , configTypecheck          :: Bool                       -- ^ Typecheck with GHC.
   , configWall               :: Bool                       -- ^ Typecheck with -Wall.
   , configGClosure           :: Bool                       -- ^ Run Google Closure on the produced JS.

@@ -71,15 +71,15 @@ unlessImported "Fay.Types" _ _ = return ()
 unlessImported name importFilter importIt = do
   isImported <- lookup name <$> gets stateImported
   case isImported of
-    Just _ -> do
-      exports <- gets $ getExportsFor name
-      imports <- filterM importFilter $ S.toList exports
-      modify $ \s -> s { stateModuleScope = bindAsLocals imports (stateModuleScope s) }
+    Just _ -> return ()
     Nothing -> do
       dirs <- configDirectoryIncludePaths <$> config id
       (filepath,contents) <- findImport dirs name
       modify $ \s -> s { stateImported = (name,filepath) : stateImported s }
       importIt filepath contents
+  exports <- gets $ getExportsFor name
+  imports <- filterM importFilter $ S.toList exports
+  modify $ \s -> s { stateModuleScope = bindAsLocals imports (stateModuleScope s) }
 
 -- | Find newtype declarations
 scanNewtypeDecls :: Decl -> Compile ()

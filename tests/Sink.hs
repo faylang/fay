@@ -1,5 +1,5 @@
 -- https://github.com/faylang/fay/issues/285
-module Sink where
+module Main where
 
 import Prelude
 import FFI

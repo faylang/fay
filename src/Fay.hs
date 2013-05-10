@@ -95,7 +95,7 @@ compileToModule filepath config raw with hscode = do
     Left err -> return (Left err)
     Right (PrintState{..},state,_) ->
       return $ Right $ (generate (concat (reverse psOutput))
-                                        (S.toList $ getCurrentExports state)
+                                        (S.toList $ getCurrentExportsWithoutNewtypes state)
                                         (stateModuleName state), state)
 
   where generate | configNaked config = generateNaked

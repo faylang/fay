@@ -23,6 +23,7 @@ module Fay.Types
   ,CompileState(..)
   ,addCurrentExport
   ,getCurrentExports
+  ,getCurrentExportsWithoutNewtypes
   ,getExportsFor
   ,faySourceDir
   ,FundamentalType(..)
@@ -131,9 +132,8 @@ addCurrentExport q cs =
 getCurrentExports :: CompileState -> Set QName
 getCurrentExports cs = getExportsFor (stateModuleName cs) cs
 
--- | Get all of the exported identifiers for the given module.
-getExportsFor :: ModuleName -> CompileState -> Set QName
-getExportsFor mn cs = excludeNewtypes cs $ fromMaybe S.empty $ M.lookup mn (_stateExports cs)
+getCurrentExportsWithoutNewtypes :: CompileState -> Set QName
+getCurrentExportsWithoutNewtypes cs = excludeNewtypes cs $ getCurrentExports cs
   where
     excludeNewtypes :: CompileState -> Set QName -> Set QName
     excludeNewtypes cs' names =
@@ -141,6 +141,10 @@ getExportsFor mn cs = excludeNewtypes cs $ fromMaybe S.empty $ M.lookup mn (_sta
           constrs = map (\(c, _, _) -> c) newtypes
           destrs  = map (\(_, d, _) -> fromJust d) . filter (\(_, d, _) -> isJust d) $ newtypes
        in names `S.difference` (S.fromList constrs `S.union` S.fromList destrs)
+
+-- | Get all of the exported identifiers for the given module.
+getExportsFor :: ModuleName -> CompileState -> Set QName
+getExportsFor mn cs = fromMaybe S.empty $ M.lookup mn (_stateExports cs)
 
 -- | Compile monad.
 newtype Compile a = Compile

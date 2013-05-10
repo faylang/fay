@@ -88,7 +88,7 @@ compileUnguardedRhs srcloc toplevel ident rhs = do
 
 -- | Compile a data declaration.
 compileDataDecl :: Bool -> Decl -> [QualConDecl] -> Compile [JsStmt]
-compileDataDecl toplevel _decl constructors =
+compileDataDecl toplevel _decl constructors = do
   fmap concat $
     forM constructors $ \(QualConDecl srcloc _ _ condecl) ->
       case condecl of

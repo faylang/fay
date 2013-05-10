@@ -61,7 +61,7 @@ instance CompilesTo Exp JsExp where compileTo = compileExp
 -- | Compile variable.
 compileVar :: QName -> Compile JsExp
 compileVar qname = do
-  qname <- resolveName qname
+  qname <- unsafeResolveName qname
   return (JsName (JsNameVar qname))
 
 -- | Compile Haskell literal.
@@ -78,40 +78,54 @@ compileLit lit =
     lit           -> throwError (UnsupportedLiteral lit)
 
 -- | Compile simple application.
+-- TODO Abstract
 compileApp :: Exp -> Exp -> Compile JsExp
+compileApp exp1@(Con q) exp2 = do
+  flattenApps <- config configFlattenApps
+  ntc <- lookupNewtypeConst q
+  if isJust ntc
+    then compileExp exp2
+    else do
+      jsexp1 <- compileExp exp1
+      (if flattenApps then flattenMethod2 else flattenMethod1) jsexp1 exp2
+compileApp exp1@(Var q) exp2 = do
+  flattenApps <- config configFlattenApps
+  ntd <- lookupNewtypeDest q
+  if isJust ntd
+    then compileExp exp2
+    else do
+      jsexp1 <- compileExp exp1
+      (if flattenApps then flattenMethod2 else flattenMethod1) jsexp1 exp2
 compileApp exp1 exp2 = do
-   flattenApps <- config configFlattenApps
-   jsexp1 <- compileExp exp1
-   case jsexp1 of
-     JsName (JsNameVar qname) -> do
-       ntc <- lookupNewtypeConst qname
-       ntd <- lookupNewtypeDest  qname
-       if isJust ntc || isJust ntd
-         then compileExp exp2
-         else (if flattenApps then method2 else method1) jsexp1
-     _ -> (if flattenApps then method2 else method1) jsexp1
-   where
-  -- Method 1:
-  -- In this approach code ends up looking like this:
-  -- a(a(a(a(a(a(a(a(a(a(L)(c))(b))(0))(0))(y))(t))(a(a(F)(3*a(a(d)+a(a(f)/20))))*a(a(f)/2)))(140+a(f)))(y))(t)})
-  -- Which might be OK for speed, but increases the JS stack a fair bit.
-  method1 exp1 =
-    JsApp <$> (forceFlatName <$> return exp1)
-          <*> fmap return (compileExp exp2)
-  forceFlatName name = JsApp (JsName JsForce) [name]
+  flattenApps <- config configFlattenApps
+  jsexp1 <- compileExp exp1
+  (if flattenApps then flattenMethod2 else flattenMethod1) jsexp1 exp2
 
-  -- Method 2:
-  -- In this approach code ends up looking like this:
-  -- d(O,a,b,0,0,B,w,e(d(I,3*e(e(c)+e(e(g)/20))))*e(e(g)/2),140+e(g),B,w)}),d(K,g,e(c)+0.05))
-  -- Which should be much better for the stack and readability, but probably not great for speed.
-  method2 exp1 = fmap flatten $
-    JsApp <$> return exp1
-          <*> fmap return (compileExp exp2)
-  flatten (JsApp op args) =
-   case op of
-     JsApp l r -> JsApp l (r ++ args)
-     _        -> JsApp (JsName JsApply) (op : args)
-  flatten x = x
+-- Method 1:
+-- In this approach code ends up looking like this:
+-- a(a(a(a(a(a(a(a(a(a(L)(c))(b))(0))(0))(y))(t))(a(a(F)(3*a(a(d)+a(a(f)/20))))*a(a(f)/2)))(140+a(f)))(y))(t)})
+-- Which might be OK for speed, but increases the JS stack a fair bit.
+flattenMethod1 :: JsExp -> Exp -> Compile JsExp
+flattenMethod1 exp1 exp2 =
+  JsApp <$> (forceFlatName <$> return exp1)
+        <*> fmap return (compileExp exp2)
+  where
+    forceFlatName name = JsApp (JsName JsForce) [name]
+
+-- Method 2:
+-- In this approach code ends up looking like this:
+-- d(O,a,b,0,0,B,w,e(d(I,3*e(e(c)+e(e(g)/20))))*e(e(g)/2),140+e(g),B,w)}),d(K,g,e(c)+0.05))
+-- Which should be much better for the stack and readability, but probably not great for speed.
+flattenMethod2 :: JsExp -> Exp -> Compile JsExp
+flattenMethod2 exp1 exp2 = fmap flatten $
+  JsApp <$> return exp1
+        <*> fmap return (compileExp exp2)
+  where
+    flatten (JsApp op args) =
+     case op of
+       JsApp l r -> JsApp l (r ++ args)
+       _        -> JsApp (JsName JsApply) (op : args)
+    flatten x = x
 
 -- | Compile a negate application
 compileNegApp :: Exp -> Compile JsExp
@@ -246,7 +260,7 @@ desugarRightSection o e = withScopedTmpName $ \tmp ->
 compileEnumFrom :: Exp -> Compile JsExp
 compileEnumFrom i = do
   e <- compileExp i
-  name <- resolveName "enumFrom"
+  name <- unsafeResolveName "enumFrom"
   return (JsApp (JsName (JsNameVar name)) [e])
 
 -- | Compile [e1..e3] arithmetic sequences.
@@ -254,7 +268,7 @@ compileEnumFromTo :: Exp -> Exp -> Compile JsExp
 compileEnumFromTo i i' = do
   f <- compileExp i
   t <- compileExp i'
-  name <- resolveName "enumFromTo"
+  name <- unsafeResolveName "enumFromTo"
   cfg <- config id
   return $ case optEnumFromTo cfg f t of
     Just s -> s
@@ -265,7 +279,7 @@ compileEnumFromThen :: Exp -> Exp -> Compile JsExp
 compileEnumFromThen a b = do
   fr <- compileExp a
   th <- compileExp b
-  name <- resolveName "enumFromThen"
+  name <- unsafeResolveName "enumFromThen"
   return (JsApp (JsApp (JsName (JsNameVar name)) [fr]) [th])
 
 -- | Compile [e1,e2..e3] arithmetic sequences.
@@ -274,7 +288,7 @@ compileEnumFromThenTo a b z = do
   fr <- compileExp a
   th <- compileExp b
   to <- compileExp z
-  name <- resolveName "enumFromThenTo"
+  name <- unsafeResolveName "enumFromThenTo"
   cfg <- config id
   return $ case optEnumFromThenTo cfg fr th to of
     Just s -> s
@@ -285,7 +299,7 @@ compileEnumFromThenTo a b z = do
 compileRecConstr :: QName -> [FieldUpdate] -> Compile JsExp
 compileRecConstr name fieldUpdates = do
     -- var obj = new $_Type()
-    qname <- resolveName name
+    qname <- unsafeResolveName name
     let record = JsVar (JsNameVar name) (JsNew (JsConstructor qname) [])
     setFields <- liftM concat (forM fieldUpdates (updateStmt name))
     return $ JsApp (JsFun Nothing [] (record:setFields) (Just (JsName (JsNameVar name)))) []

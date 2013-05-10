@@ -53,7 +53,7 @@ compileFFI srcloc name formatstr sig =
         rmNewtys (TyApp t1 t2)    = TyApp <$> rmNewtys t1 <*> rmNewtys t2
         rmNewtys t@TyVar{}        = return t
         rmNewtys (TyCon qname)    = do
-          newty <- lookupNewtypeConst =<< qualifyQName qname
+          newty <- lookupNewtypeConst qname
           return $ case newty of
                      Nothing     -> TyCon qname
                      Just (_,ty) -> ty

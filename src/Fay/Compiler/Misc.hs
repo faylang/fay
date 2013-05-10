@@ -63,29 +63,37 @@ uniqueNames :: [JsName]
 uniqueNames = map JsParam [1::Integer ..]
 
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
-resolveName :: QName -> Compile QName
-resolveName special@Special{} = return special
-resolveName q@Qual{} = do
-  env <- gets stateModuleScope
-  maybe (throwError $ UnableResolveQualified q) return (ModuleScope.resolveName q env)
-resolveName u@(UnQual name) = do
+-- TODO change to (Maybe QName) and add unsafeResolveName
+tryResolveName :: QName -> Compile (Maybe QName)
+tryResolveName special@Special{} = return (Just special)
+tryResolveName q@Qual{} = do
+  ModuleScope.resolveName q <$> gets stateModuleScope
+tryResolveName u@(UnQual name) = do
   names <- gets stateLocalScope
   env <- gets stateModuleScope
   if S.member name names
-    then return (UnQual name)
-    else maybe (qualify name) return (ModuleScope.resolveName u env)
+    then return $ Just (UnQual name)
+    else maybe (Just <$> qualify name) (return . Just) $ ModuleScope.resolveName u env
+
+unsafeResolveName :: QName -> Compile QName
+unsafeResolveName q = maybe (throwError $ UnableResolveQualified q) return =<< tryResolveName q
 
 lookupNewtypeConst :: QName -> Compile (Maybe (Maybe QName,Type))
-lookupNewtypeConst name = do
-  newtypes <- gets stateNewtypes
-  case find (\(cname,_,_) -> cname == name) newtypes of
+lookupNewtypeConst n = do
+  mName <- tryResolveName n
+  case mName of
     Nothing -> return Nothing
-    Just (_,dname,ty) -> return $ Just (dname,ty)
+    Just name -> do
+      newtypes <- gets stateNewtypes
+      case find (\(cname,_,_) -> cname == name) newtypes of
+        Nothing -> return Nothing
+        Just (_,dname,ty) -> return $ Just (dname,ty)
 
 lookupNewtypeDest :: QName -> Compile (Maybe (QName,Type))
-lookupNewtypeDest name = do
+lookupNewtypeDest n = do
+  mName <- tryResolveName n
   newtypes <- gets stateNewtypes
-  case find (\(_,dname,_) -> dname == Just name) newtypes of
+  case find (\(_,dname,_) -> dname == mName) newtypes of
     Nothing -> return Nothing
     Just (cname,_,ty) -> return $ Just (cname,ty)
 
@@ -159,7 +167,7 @@ emitExport spec = case spec of
     liftIO (print e)
     throwError $ UnsupportedExportSpec e
  where
-   emitVar = return . UnQual >=> resolveName >=> emitExport . EVar
+   emitVar = return . UnQual >=> unsafeResolveName >=> emitExport . EVar
    emitCName (VarName n) = emitVar n
    emitCName (ConName n) = emitVar n
    unQName (UnQual u) = u

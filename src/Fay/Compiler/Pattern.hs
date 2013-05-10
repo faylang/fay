@@ -21,8 +21,7 @@ compilePat exp pat body =
   case pat of
     PVar name       -> compilePVar name exp body
     PApp cons pats  -> do
-      qcons <- qualifyQName cons
-      newty <- lookupNewtypeConst qcons
+      newty <- lookupNewtypeConst cons
       case newty of
         Nothing -> compilePApp cons pats exp body
         Just _  -> compileNewtypePat pats exp body
@@ -46,7 +45,7 @@ compilePVar name exp body = do
 compilePatFields :: JsExp -> QName -> [PatField] -> [JsStmt] -> Compile [JsStmt]
 compilePatFields exp name pats body = do
     c <- liftM (++ body) (compilePats' [] pats)
-    qname <- resolveName name
+    qname <- unsafeResolveName name
     return [JsIf (force exp `JsInstanceOf` JsConstructor qname) c []]
   where -- compilePats' collects field names that had already been matched so that
         -- wildcard generates code for the rest of the fields.
@@ -131,7 +130,7 @@ compilePApp cons pats exp body = do
                              compilePat (JsGetProp forcedExp (JsNameVar field)) pat body)
                   body
                   (reverse (zip recordFields pats))
-      qcons <- resolveName cons
+      qcons <- unsafeResolveName cons
       return [JsIf (forcedExp `JsInstanceOf` JsConstructor qcons)
                    substmts
                    []]

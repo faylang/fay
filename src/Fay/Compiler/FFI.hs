@@ -122,8 +122,7 @@ warnDotUses srcloc string expr =
 emitFayToJs :: Name -> [([Name],BangType)] -> Compile ()
 emitFayToJs name (explodeFields -> fieldTypes) = do
   qname <- qualify name
-  let ctrName = printJSString $ JsConstructor qname
-  tell $ mempty { writerFayToJs = [(ctrName, translator)] }
+  tell $ mempty { writerFayToJs = [(qname, translator)] }
 
   where
     translator =
@@ -146,7 +145,7 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
         fieldStmts fts
       where
         obj_v = JsNameVar (UnQual (Ident $ "obj_" ++ d))
-        decl = JsNameVar (UnQual (Ident d))
+        decl = JsLit $ JsStr d
         (d, field) = declField i fieldType
 
     obj_ = JsNameVar (UnQual (Ident "obj_"))
@@ -335,10 +334,22 @@ explodeFields :: [([a], t)] -> [(a, t)]
 explodeFields = concatMap $ \(names,typ) -> map (,typ) names
 
 -- | The dispatcher for Fay->JS conversion.
-fayToJsDispatcher :: [(String,JsExp)] -> [JsStmt]
+fayToJsDispatcher :: [(QName,JsExp)] -> [JsStmt]
 fayToJsDispatcher cases =
-  [JsVar fayToJsHash $ JsObj cases
-  ,JsExpStmt $
+  -- This strange hash initialization is to make it constructor renaming
+  -- resistant. E.g. this code will be still valid even if Google Closure
+  -- Compiler renames `$_Prelude$Left` function:
+  -- >    function $_Prelude$Left(slot1) {}
+  -- >    var Fay$$fayToJsHash = {}
+  -- >    Fay$$fayToJsHash[$_Prelude$Left.name] = ...
+  -- but this will not:
+  -- >    function $_Prelude$Left(slot1) {}
+  -- >    var Fay$$fayToJsHash = {
+  -- >        '$_Prelude$Left.name': ...
+  -- >    }
+  [JsVar fayToJsHash $ JsObj []]
+  ++ [setHash nm exp | (nm,exp) <- cases]
+  ++ [JsExpStmt $
      JsFun (Just $ JsBuiltIn "fayToJsUserDefined")
            [JsNameVar "type",transcodingObj]
            [JsVar transcodingObjForced $ force (JsName transcodingObj)
@@ -359,6 +370,9 @@ fayToJsDispatcher cases =
   ]
   where fayToJsHash = JsBuiltIn "fayToJsHash"
         fayToJsFun  = JsNameVar "fayToJsFun"
+        setHash k   = JsSetPropExtern fayToJsHash $
+                                      JsGetProp (JsName $ JsConstructor k) $
+                                                JsNameVar "name"
 
 
 -- | The dispatcher for JS->Fay conversion.

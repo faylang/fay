@@ -56,7 +56,7 @@ inlineMonad = map go where
       JsWhile exp stmts       -> JsWhile (inline exp) (map go stmts)
       JsUpdate name exp       -> JsUpdate name (inline exp)
       JsSetProp a b exp       -> JsSetProp a b (inline exp)
-      JsSetPropExtern a b exp -> JsSetPropExtern a b (inline exp)
+      JsSetPropExtern a b exp -> JsSetPropExtern a (inline b) (inline exp)
       JsContinue              -> JsContinue
       JsBlock stmts           -> JsBlock (map go stmts)
       JsExpStmt exp           -> JsExpStmt (inline exp)

@@ -101,7 +101,7 @@ instance Printable JsStmt where
   printJS (JsSetProp name prop expr) =
     name +> "." +> prop +> " = " +> expr +> ";" +> newline
   printJS (JsSetPropExtern name prop expr) =
-    name +> "['" +> prop +> "'] = " +> expr +> ";" +> newline
+    name +> "[" +> prop +> "] = " +> expr +> ";" +> newline
   printJS (JsIf exp thens elses) =
     "if (" +> exp +> ") {" +> newline +>
     indented (printJS thens) +>

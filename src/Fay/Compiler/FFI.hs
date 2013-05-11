@@ -347,29 +347,8 @@ fayToJsDispatcher cases =
   -- >    var Fay$$fayToJsHash = {
   -- >        '$_Prelude$Left.name': ...
   -- >    }
-  [JsVar fayToJsHash $ JsObj []]
-  ++ [setHash nm exp | (nm,exp) <- cases]
-  ++ [JsExpStmt $
-     JsFun (Just $ JsBuiltIn "fayToJsUserDefined")
-           [JsNameVar "type",transcodingObj]
-           [JsVar transcodingObjForced $ force (JsName transcodingObj)
-           ,JsVar fayToJsFun  $ JsLookup
-                  (JsName fayToJsHash)
-                  (JsGetProp (JsGetProp (JsName transcodingObjForced)
-                                        (JsNameVar "constructor"))
-                             (JsNameVar "name"))
-           ]
-           (Just $ JsTernaryIf
-                 (JsName fayToJsFun)
-                 (JsApp (JsName fayToJsFun)
-                        [JsName $ JsNameVar "type"
-                        ,JsLookup (JsName JsParametrizedType) (JsLit (JsInt 2))
-                        ,JsName transcodingObjForced
-                        ])
-                 (JsName transcodingObj))
-  ]
+  JsVar fayToJsHash (JsObj []) : [setHash nm exp | (nm,exp) <- cases]
   where fayToJsHash = JsBuiltIn "fayToJsHash"
-        fayToJsFun  = JsNameVar "fayToJsFun"
         setHash k   = JsSetPropExtern fayToJsHash $
                                       JsGetProp (JsName $ JsConstructor k) $
                                                 JsNameVar "name"
@@ -377,26 +356,7 @@ fayToJsDispatcher cases =
 
 -- | The dispatcher for JS->Fay conversion.
 jsToFayDispatcher :: [(String,JsExp)] -> [JsStmt]
-jsToFayDispatcher cases =
-  [JsVar jsToFayHash $ JsObj cases
-  ,JsExpStmt $
-     JsFun (Just $ JsBuiltIn "jsToFayUserDefined")
-           [JsNameVar "type",transcodingObj]
-           [JsVar jsToFayFun  $ JsLookup
-                  (JsName jsToFayHash)
-                  (JsGetPropExtern (JsName transcodingObj) "instance")
-           ]
-           (Just $ JsTernaryIf
-                 (JsName jsToFayFun)
-                 (JsApp (JsName jsToFayFun)
-                        [JsName $ JsNameVar "type"
-                        ,JsLookup (JsName JsParametrizedType) (JsLit (JsInt 2))
-                        ,JsName transcodingObj
-                        ])
-                 (JsName transcodingObj))
-  ]
-  where jsToFayHash = JsBuiltIn "jsToFayHash"
-        jsToFayFun  = JsNameVar "jsToFayFun"
+jsToFayDispatcher cases = [JsVar (JsBuiltIn "jsToFayHash") (JsObj cases)]
 
 
 -- | Make a JS→Fay decoder.

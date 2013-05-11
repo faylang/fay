@@ -236,6 +236,12 @@ function Fay$$fayToJs(type,fayObj){
   return jsObj;
 }
 
+function Fay$$fayToJsUserDefined(type,obj){
+  var _obj = Fay$$_(obj);
+  var fayToJsFun = Fay$$fayToJsHash[_obj.constructor.name];
+  return fayToJsFun ? fayToJsFun(type,type[2],_obj) : obj;
+};
+
 // Specialized serializer for string.
 function Fay$$fayToJs_string(fayObj){
   // Serialize Fay string to JavaScript string.
@@ -337,6 +343,12 @@ function Fay$$jsToFay(type,jsObj){
   else { throw new Error("Unhandled JS->Fay translation type: " + base); }
   return fayObj;
 }
+
+function Fay$$jsToFayUserDefined(type,obj){
+  var jsToFayFun = Fay$$jsToFayHash[obj["instance"]];
+  return jsToFayFun ? jsToFayFun(type,type[2],obj) : obj;
+};
+
 
 /*******************************************************************************
  * Lists.

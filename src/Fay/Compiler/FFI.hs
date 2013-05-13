@@ -109,15 +109,15 @@ warnDotUses srcloc string expr =
         globalNames = ["Math","console","JSON"]
 
 -- | Make a Fay→JS encoder.
-emitFayToJs :: Name -> [([Name],BangType)] -> Compile ()
-emitFayToJs name (explodeFields -> fieldTypes) = do
+emitFayToJs :: Name -> [TyVarBind] -> [([Name],BangType)] -> Compile ()
+emitFayToJs name tyvars (explodeFields -> fieldTypes) = do
   qname <- qualify name
   tell (mempty { writerFayToJs = [translator qname] })
 
   where
     translator qname =
       JsIf (JsInstanceOf (JsName transcodingObjForced) (JsConstructor qname))
-           (obj : fieldStmts (zip [0..] fieldTypes) ++ [ret])
+           (obj : fieldStmts (map (getIndex name tyvars) fieldTypes) ++ [ret])
            []
 
     obj :: JsStmt
@@ -150,6 +150,19 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
                (argType (bangType typ))
                (JsGetProp (JsName transcodingObjForced)
                           (JsNameVar (UnQual fname))))
+
+getIndex name tyvars (sname,ty) =
+  case bangType ty of
+    TyVar tyname -> case lookup tyname (zip (map tyvar tyvars) [0..]) of
+      Nothing -> error $ "unknown type variable " ++ prettyPrint tyname ++
+                         " for " ++ prettyPrint name ++ "." ++ prettyPrint sname ++ "," ++
+                         " vars were: " ++ unwords (map prettyPrint tyvars)
+      Just i -> (i,(sname,ty))
+    v -> (0,(sname,ty))
+
+-- | Extract the name from a possibly-kinded tyvar.
+tyvar (UnkindedVar v) = v
+tyvar (KindedVar v _) = v
 
 -- | A name used for transcoding.
 transcodingObj :: JsName
@@ -356,8 +369,8 @@ jsToFayDispatcher cases =
                                 (JsLit (JsInt 2)))]
 
 -- | Make a JS→Fay decoder.
-emitJsToFay ::  Name -> [([Name], BangType)] -> Compile ()
-emitJsToFay name (explodeFields -> fieldTypes) = do
+emitJsToFay ::  Name -> [TyVarBind] -> [([Name], BangType)] -> Compile ()
+emitJsToFay name tyvars (explodeFields -> fieldTypes) = do
   qname <- qualify name
   tell (mempty { writerJsToFay = [translator qname] })
 
@@ -366,11 +379,11 @@ emitJsToFay name (explodeFields -> fieldTypes) = do
       JsIf (JsEq (JsGetPropExtern (JsName transcodingObj) "instance")
                  (JsLit (JsStr (printJSString name))))
            [JsEarlyReturn (JsNew (JsConstructor qname)
-                                 (zipWith decodeField fieldTypes [0..]))]
+                                 (map decodeField (map (getIndex name tyvars) fieldTypes)))]
            []
     -- Decode JS→Fay field
-    decodeField :: (Name,BangType) -> Int -> JsExp
-    decodeField (fname,typ) i =
+    decodeField :: (Int,(Name,BangType)) -> JsExp
+    decodeField (i,(fname,typ)) =
       jsToFay (SerializeUserArg i)
               (argType (bangType typ))
               (JsGetPropExtern (JsName transcodingObj)

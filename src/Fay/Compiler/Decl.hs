@@ -84,7 +84,7 @@ compileUnguardedRhs srcloc toplevel ident rhs = do
 
 -- | Compile a data declaration.
 compileDataDecl :: Bool -> Decl -> [QualConDecl] -> Compile [JsStmt]
-compileDataDecl toplevel _decl constructors =
+compileDataDecl toplevel (DataDecl _ _ _ _ tyvars _ _) constructors =
   fmap concat $
     forM constructors $ \(QualConDecl srcloc _ _ condecl) ->
       case condecl of
@@ -93,8 +93,8 @@ compileDataDecl toplevel _decl constructors =
               fields' = (zip (map return fields) types)
           cons <- makeConstructor name fields
           func <- makeFunc name fields
-          emitFayToJs name fields'
-          emitJsToFay name fields'
+          emitFayToJs name tyvars fields'
+          emitJsToFay name tyvars fields'
           emitCons cons
           return [func]
         InfixConDecl t1 name t2 -> do
@@ -102,8 +102,8 @@ compileDataDecl toplevel _decl constructors =
               fields = zip (map return slots) [t1, t2]
           cons <- makeConstructor name slots
           func <- makeFunc name slots
-          emitFayToJs name fields
-          emitJsToFay name fields
+          emitFayToJs name tyvars fields
+          emitJsToFay name tyvars fields
           emitCons cons
           return [func]
         RecDecl name fields' -> do
@@ -111,8 +111,8 @@ compileDataDecl toplevel _decl constructors =
           cons <- makeConstructor name fields
           func <- makeFunc name fields
           funs <- makeAccessors srcloc fields
-          emitFayToJs name fields'
-          emitJsToFay name fields'
+          emitFayToJs name tyvars fields'
+          emitJsToFay name tyvars fields'
           emitCons cons
           return (func : funs)
 

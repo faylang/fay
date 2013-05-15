@@ -350,6 +350,20 @@ function Fay$$jsToFayUserDefined(type,obj){
 };
 
 
+// Fill type variables in type representation
+function Fay$$evalType(type,rep){
+  if (rep instanceof Array) {
+    return rep.map(function(r){return Fay$$evalType(type,r)})
+  }
+  else if (rep instanceof Object && rep.arg !== undefined) {
+    var argTypes = type[2]
+    return argTypes && argTypes[rep.arg]
+      ? argTypes[rep.arg]
+      : [type[0] === "automatic" ? "automatic" : "unknown"]
+  }
+  else return rep
+}
+
 /*******************************************************************************
  * Lists.
  */

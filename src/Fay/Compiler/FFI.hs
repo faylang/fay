@@ -243,10 +243,13 @@ translate method context typ exp = case typ of
   where flat specialize =
           JsApp (JsName (JsBuiltIn (fromString (method ++ "_" ++ specialize))))
                 [exp]
-        recursive =
-          JsApp (JsName (JsBuiltIn (fromString method)))
-                [typeRep context typ
-                ,exp]
+        recursive = JsApp (JsName (JsBuiltIn (fromString method)))
+                          [typ', exp]
+          where typ' = case context of
+                  SerializeAnywhere  -> typeRep context typ
+                  SerializeUserArg{} -> JsApp (JsName (JsBuiltIn "evalType"))
+                                              [JsName $ JsNameVar "type"
+                                              ,typeRep context typ]
         js ty' =
           JsNew (JsBuiltIn "Monad")
                 [translate method context ty' exp]
@@ -280,15 +283,7 @@ typeRep context typ = case typ of
       _          ->
         case context of
           SerializeAnywhere -> ret "unknown"
-          SerializeUserArg i ->
-            let args = JsName argTypes
-                automatic = JsIndex 0 (JsName JsParametrizedType)
-                thisArg = JsIndex i args
-            in JsTernaryIf (JsInfix "&&" args thisArg)
-                           thisArg
-                           (JsTernaryIf (JsEq automatic (JsLit "automatic"))
-                                        (ret "automatic")
-                                        (ret "unknown"))
+          SerializeUserArg i -> JsObj [("arg", JsLit $ JsInt i)]
 
 -- | Get the arity of a type.
 typeArity :: Type -> Int

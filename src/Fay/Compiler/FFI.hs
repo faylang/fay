@@ -125,47 +125,19 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
   tell $ mempty { writerFayToJs = [(qname, translator)] }
 
   where
-    translator =
-      JsFun Nothing
-            [JsNameVar "type", argTypes, transcodingObjForced]
-            (obj : fieldStmts (zip [0..] fieldTypes))
-            (Just $ JsName obj_)
+    translator = JsList
+      $ JsLit (JsStr (printJSString name)) -- instance tag
+      : zipWith fieldRep [0..] fieldTypes  -- typeRep for each field
 
-    obj :: JsStmt
-    obj = JsVar obj_ $
-      JsObj [("instance",JsLit (JsStr (printJSString name)))]
-
-    fieldStmts :: [(Int,(Name,BangType))] -> [JsStmt]
-    fieldStmts [] = []
-    fieldStmts ((i,fieldType):fts) =
-      (JsVar obj_v field) :
-        (JsIf (JsNeq JsUndefined (JsName obj_v))
-          [JsSetPropExtern obj_ decl (JsName obj_v)]
-          []) :
-        fieldStmts fts
-      where
-        obj_v = JsNameVar (UnQual (Ident $ "obj_" ++ d))
-        decl = JsLit $ JsStr d
-        (d, field) = declField i fieldType
-
-    obj_ = JsNameVar (UnQual (Ident "obj_"))
-
-    -- Declare/encode Fay→JS field
-    declField :: Int -> (Name,BangType) -> (String,JsExp)
-    declField i (fname,typ) =
-      (prettyPrint fname
-      ,fayToJs (SerializeUserArg i)
-               (argType (bangType typ))
-               (JsGetProp (JsName transcodingObjForced)
-                          (JsNameVar (UnQual fname))))
+    fieldRep :: Int -> (Name,BangType) -> JsExp
+    fieldRep i (fname,typ) = JsList
+      [JsLit (JsStr (prettyPrint fname))
+      ,typeRep (SerializeUserArg i) (argType (bangType typ))
+      ]
 
 -- | A name used for transcoding.
 transcodingObj :: JsName
 transcodingObj = JsNameVar "obj"
-
--- | The name used for the forced version of a transcoding variable.
-transcodingObjForced :: JsName
-transcodingObjForced = JsNameVar "_obj"
 
 -- | Get arg types of a function type.
 functionTypeArgs :: Type -> [FundamentalType]

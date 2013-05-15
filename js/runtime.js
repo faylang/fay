@@ -238,8 +238,21 @@ function Fay$$fayToJs(type,fayObj){
 
 function Fay$$fayToJsUserDefined(type,obj){
   var _obj = Fay$$_(obj);
-  var fayToJsFun = Fay$$fayToJsHash[_obj.constructor.name];
-  return fayToJsFun ? fayToJsFun(type,type[2],_obj) : obj;
+  var fayToJs = Fay$$fayToJsHash[_obj.constructor.name];
+  if (fayToJs) {
+    var res = {instance: fayToJs[0]};
+    for (var i = 1; i < fayToJs.length; ++i) {
+      var fName = fayToJs[i][0];
+      var fTypR = fayToJs[i][1];
+      var fTyp  = Fay$$evalType(type, fTypR);
+      var fVal  = Fay$$fayToJs(fTyp, _obj[fName]);
+      if (undefined !== fVal) {
+        res[fName] = fVal;
+      }
+    }
+    return res;
+  }
+  else return obj;
 };
 
 // Specialized serializer for string.

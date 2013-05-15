@@ -358,8 +358,25 @@ function Fay$$jsToFay(type,jsObj){
 }
 
 function Fay$$jsToFayUserDefined(type,obj){
-  var jsToFayFun = Fay$$jsToFayHash[obj["instance"]];
-  return jsToFayFun ? jsToFayFun(type,type[2],obj) : obj;
+  var ctr = Fay$$jsToFayHash[obj["instance"]];
+  if (ctr) {
+    var fayToJs = Fay$$fayToJsHash[ctr.name];
+    var args = [null];
+    for (var i = 1; i < fayToJs.length; ++i) {
+      var fName = fayToJs[i][0];
+      var fTypR = fayToJs[i][1];
+      var fTyp  = Fay$$evalType(type, fTypR);
+      var fVal  = fTyp[0] == "action"
+        ? new Fay$$Monad(Fay$$jsToFay(fTyp[1][0], obj[fName]))
+        : Fay$$jsToFay(fTyp, obj[fName]);
+      args.push(fVal);
+    }
+    // NB! Function.prototype.bind is not supported by older browsers.
+    // It could be replaced by some trick if necessary
+    // (like this one: http://stackoverflow.com/a/1608546/147057).
+    return new (Function.prototype.bind.apply(ctr, args));
+  }
+  else return obj;
 };
 
 

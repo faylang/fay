@@ -118,27 +118,6 @@ warnDotUses srcloc string expr =
 
         globalNames = ["Math","console","JSON"]
 
--- | Make a Fay→JS encoder.
-emitFayToJs :: Name -> [([Name],BangType)] -> Compile ()
-emitFayToJs name (explodeFields -> fieldTypes) = do
-  qname <- qualify name
-  tell $ mempty { writerFayToJs = [(qname, translator)] }
-
-  where
-    translator = JsList
-      $ JsLit (JsStr (printJSString name)) -- instance tag
-      : zipWith fieldRep [0..] fieldTypes  -- typeRep for each field
-
-    fieldRep :: Int -> (Name,BangType) -> JsExp
-    fieldRep i (fname,typ) = JsList
-      [JsLit (JsStr (prettyPrint fname))
-      ,typeRep (SerializeUserArg i) (argType (bangType typ))
-      ]
-
--- | A name used for transcoding.
-transcodingObj :: JsName
-transcodingObj = JsNameVar "obj"
-
 -- | Get arg types of a function type.
 functionTypeArgs :: Type -> [FundamentalType]
 functionTypeArgs t =
@@ -312,7 +291,7 @@ fayToJsDispatcher cases =
   -- but this will not:
   -- >    function $_Prelude$Left(slot1) {}
   -- >    var Fay$$fayToJsHash = {
-  -- >        '$_Prelude$Left.name': ...
+  -- >        '$_Prelude$Leftname': ...
   -- >    }
   JsVar fayToJsHash (JsObj []) : [setHash nm exp | (nm,exp) <- cases]
   where fayToJsHash = JsBuiltIn "fayToJsHash"
@@ -320,31 +299,33 @@ fayToJsDispatcher cases =
                                       JsGetProp (JsName $ JsConstructor k) $
                                                 JsNameVar "name"
 
+-- | Make a Fay→JS encoder.
+emitFayToJs :: Name -> [([Name],BangType)] -> Compile ()
+emitFayToJs name (explodeFields -> fieldTypes) = do
+  qname <- qualify name
+  tell $ mempty { writerFayToJs = [(qname, translator)] }
+
+  where
+    translator = JsList
+      $ JsLit (JsStr (printJSString name)) -- instance tag
+      : zipWith fieldRep fieldTypes [0..]  -- typeRep for each field
+
+    -- | Make [fieldName, fieldType] pair to be used for serialization
+    fieldRep :: (Name,BangType) -> Int -> JsExp
+    fieldRep (fname,typ) i = JsList
+      [JsLit $ JsStr (prettyPrint fname)
+      ,typeRep (SerializeUserArg i) (argType (bangType typ))
+      ]
+
 
 -- | The dispatcher for JS->Fay conversion.
 jsToFayDispatcher :: [(String,JsExp)] -> [JsStmt]
 jsToFayDispatcher cases = [JsVar (JsBuiltIn "jsToFayHash") (JsObj cases)]
 
-
 -- | Make a JS→Fay decoder.
+-- Actually it just maps instance tags to constructors.
 emitJsToFay ::  Name -> [([Name], BangType)] -> Compile ()
-emitJsToFay name (explodeFields -> fieldTypes) = do
+emitJsToFay name _ = do
   qname <- qualify name
-  tell (mempty { writerJsToFay = [(printJSString name, translator qname)] })
-
-  where
-    translator qname =
-      JsFun Nothing [JsNameVar "type", argTypes, transcodingObj] []
-            (Just $ JsNew (JsConstructor qname)
-                          (zipWith decodeField fieldTypes [0..]))
-    -- Decode JS→Fay field
-    decodeField :: (Name,BangType) -> Int -> JsExp
-    decodeField (fname,typ) i =
-      jsToFay (SerializeUserArg i)
-              (argType (bangType typ))
-              (JsGetPropExtern (JsName transcodingObj)
-                               (prettyPrint fname))
-
--- | The argument types used in serialization of parametrized user-defined types.
-argTypes :: JsName
-argTypes = JsNameVar "argTypes"
+  tell (mempty { writerJsToFay
+    = [(printJSString name, JsName (JsConstructor qname))] })

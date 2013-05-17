@@ -157,7 +157,12 @@ emitExport spec = case spec of
     mapM_ emitCName ns
   EAbs _ -> return () -- Type only, skip
   EModuleContents mod -> do
-    mapM_ (emitExport . EVar) =<< (\se -> case M.lookup mod se of Just set -> S.toList set) <$> gets _stateExports
+    known_exports <- gets _stateExports
+    current_scope <- gets stateModuleScope
+    let names = case M.lookup mod known_exports of
+          Just exports -> S.toList exports                      -- in case we're exporting other module take it's export list
+          Nothing -> ModuleScope.moduleLocals mod current_scope -- in case we're exporting outselves export local names
+    mapM_ (emitExport . EVar) names
 
   -- Skip qualified exports for type exports in fay-base since
   -- qualified imports are not supported yet an error will be thrown

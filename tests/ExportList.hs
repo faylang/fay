@@ -14,3 +14,5 @@ main = do
   print $ a1 a
   print $ b1 b
   print c
+  print d
+

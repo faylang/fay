@@ -16,6 +16,7 @@ import           Control.Monad.IO
 import           Control.Monad.RWS
 import           Data.List
 import           Data.Maybe
+import qualified Data.Map                        as M
 import qualified Data.Set                        as S
 import           Data.String
 import           Data.Version                    (parseVersion)
@@ -155,8 +156,8 @@ emitExport spec = case spec of
     emitVar name
     mapM_ emitCName ns
   EAbs _ -> return () -- Type only, skip
-  EModuleContents mod ->
-    mapM_ (emitExport . EVar) =<< ModuleScope.moduleLocals mod <$> gets stateModuleScope
+  EModuleContents mod -> do
+    mapM_ (emitExport . EVar) =<< (\se -> case M.lookup mod se of Just set -> S.toList set) <$> gets _stateExports
 
   -- Skip qualified exports for type exports in fay-base since
   -- qualified imports are not supported yet an error will be thrown

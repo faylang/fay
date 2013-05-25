@@ -101,6 +101,7 @@ readFromFay value = do
   `extR` parseBool value
   `extR` parseString value
   `extR` parseText value
+  `extR` parseUnit value
 
 -- | Parse a data type or record.
 parseData :: Data a => Value -> Maybe a
@@ -195,4 +196,11 @@ parseArray :: Data a => Value -> Maybe [a]
 parseArray value =
   case value of
     Array xs -> mapM readFromFay (Vector.toList xs)
+    _ -> mzero
+
+-- | Parse unit.
+parseUnit :: Value -> Maybe ()
+parseUnit value =
+  case value of
+    emptyArray -> return ()
     _ -> mzero

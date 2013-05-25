@@ -46,6 +46,9 @@ showToFay = Show.reify >=> convert where
     Show.Rec name fields -> fmap (Object . Map.fromList . (("instance",string name) :))
                                  (mapM (uncurry keyval) fields)
 
+    -- ()
+    Show.Tuple [] -> return Null
+
     -- List types
     Show.Tuple values -> fmap (Array . Vector.fromList) (mapM convert values)
     Show.List values  -> fmap (Array . Vector.fromList) (mapM convert values)
@@ -202,5 +205,5 @@ parseArray value =
 parseUnit :: Value -> Maybe ()
 parseUnit value =
   case value of
-    emptyArray -> return ()
+    Null -> return ()
     _ -> mzero

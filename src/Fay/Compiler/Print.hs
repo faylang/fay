@@ -214,12 +214,16 @@ instance Printable (Printer ()) where
 -- | Words reserved in haskell as well are not needed here:
 -- case, class, do, else, if, import, in, let
 reservedWords :: [String]
-reservedWords = [
-  "break", "catch", "const", "continue", "debugger", "delete", "enum", "export",
-  "extends", "finally", "for", "function", "global", "implements", "instanceof",
-  "interface", "new", "null", "package", "private", "protected", "public", "return",
-  "static", "super", "switch", "this", "throw", "try", "typeof", "undefined",
-  "var", "void", "while", "window", "with", "yield","true","false"]
+reservedWords =
+  ["abstract","boolean","break","byte","case","catch","char","class"
+  ,"comment","const","continue","debugger","default","delete","do","double"
+  ,"else","enum","export","extends","false","final","finally","float"
+  ,"for","function","global","goto","if","implements","import","in"
+  ,"instanceOf","instanceof","int","interface","label","long","native"
+  ,"new","null","package","private","protected","public","return","short"
+  ,"static","super","switch","synchronized","this","throw","throws"
+  ,"transient","true","try","typeof","undefined","var","void","while"
+  ,"window","with","yield"]
 
 -- | Encode a Haskell name to JavaScript.
 encodeName :: String -> String

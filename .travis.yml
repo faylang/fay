@@ -1,6 +1,6 @@
 language: "haskell"
 install:
-  - "cabal install"          # make sure everything builds
+  - "travis_retry cabal install"
 script: "scripts/travis-test"
 notifications:
   irc:

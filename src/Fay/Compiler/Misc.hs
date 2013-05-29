@@ -359,6 +359,9 @@ parseMode = defaultParseMode
                  ,EmptyDataDecls
                  ,TypeOperators
                  ,RecordWildCards
-                 ,NamedFieldPuns]
+                 ,NamedFieldPuns
+                 ,FlexibleContexts
+                 ,FlexibleInstances
+                 ,KindSignatures]
   , fixities = Just (preludeFixities ++ baseFixities)
   }

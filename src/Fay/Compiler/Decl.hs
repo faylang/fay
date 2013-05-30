@@ -182,17 +182,20 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
             generateScope $ mapM compileLetDecl whereDecls'
             rhsform <- compileRhs rhs
             body <- if null whereDecls'
-                      then return $ either id JsEarlyReturn rhsform
+                      then return [either id JsEarlyReturn rhsform]
                       else do
                           binds <- mapM compileLetDecl whereDecls'
-                          return . JsEarlyReturn $ case rhsform of
+                          case rhsform of
                             Right exp ->
-                              JsApp (JsFun Nothing [] (concat binds) (Just exp)) []
+                              return [JsEarlyReturn $ JsApp (JsFun Nothing [] (concat binds) (Just exp)) []]
                             Left stmt ->
-                              JsApp (JsFun Nothing [] (concat binds ++ [stmt]) Nothing) []
+                              withScopedTmpJsName $ \n -> return
+                                [ JsVar n (JsApp (JsFun Nothing [] (concat binds ++ [stmt]) Nothing) [])
+                                , JsIf (JsNeq JsUndefined (JsName n)) [JsEarlyReturn (JsName n)] []
+                                ]
             foldM (\inner (arg,pat) ->
                     compilePat (JsName arg) pat inner)
-                  [body]
+                  body
                   (zip args pats)
 
         whereDecls :: Match -> Compile [Decl]

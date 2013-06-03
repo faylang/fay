@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE TupleSections      #-}
+{-# LANGUAGE PatternGuards      #-}
 {-# OPTIONS -fno-warn-type-defaults #-}
 
 -- | Convert a Haskell value to a (JSON representation of a) Fay value.
@@ -24,6 +25,7 @@ import qualified Data.HashMap.Strict    as Map
 import           Data.Maybe
 import           Data.Text              (Text)
 import qualified Data.Text              as Text
+import           Data.Vector            (Vector)
 import qualified Data.Vector            as Vector
 import           Numeric
 import           Safe
@@ -94,27 +96,40 @@ showToFay = Show.reify >=> convert where
   keyval key val = fmap (Text.pack key,) (convert val)
 
 -- | Convert a value representing a Fay value to a Haskell value.
-
 readFromFay :: Data a => Value -> Maybe a
 readFromFay value = do
-  parseData value
+  parseDataOrTuple value
   `ext1R` parseArray value
   `extR` parseDouble value
   `extR` parseInt value
   `extR` parseBool value
   `extR` parseString value
+  `extR` parseChar value
   `extR` parseText value
   `extR` parseUnit value
 
--- | Parse a data type or record.
-parseData :: Data a => Value -> Maybe a
-parseData value = result where
-  result = getObject value >>= parseObject typ
+-- | Parse a data type or record or tuple.
+parseDataOrTuple :: Data a => Value -> Maybe a
+parseDataOrTuple value = result where
+  result = getAndParse value
   typ = dataTypeOf (fromJust result)
-  getObject x =
+  getAndParse x =
     case x of
-      Object obj -> return obj
+      Object obj -> parseObject typ obj
+      Array tuple -> parseTuple typ tuple
       _ -> mzero
+
+-- | Parse a tuple.
+parseTuple :: Data a => DataType -> Vector Value -> Maybe a
+parseTuple typ arr =
+  case dataTypeConstrs typ of
+    [cons] -> evalStateT (fromConstrM (do i:next <- get
+                                          put next
+                                          value <- lift (Vector.indexM arr i)
+                                          lift (readFromFay value))
+                                      cons)
+                         [0..]
+    _ -> Nothing
 
 -- | Parse a data constructor from an object.
 parseObject :: Data a => DataType -> HashMap Text Value -> Maybe a
@@ -185,6 +200,13 @@ parseString :: Value -> Maybe String
 parseString value =
   case value of
     String s -> return (Text.unpack s)
+    _ -> mzero
+
+-- | Parse a char.
+parseChar :: Value -> Maybe Char
+parseChar value =
+  case value of
+    String s | Just (c,_) <- Text.uncons s -> return c
     _ -> mzero
 
 -- | Parse a Text.

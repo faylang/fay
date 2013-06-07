@@ -119,8 +119,8 @@ warnDotUses srcloc string expr =
         globalNames = ["Math","console","JSON"]
 
 -- | Make a Fay→JS encoder.
-emitFayToJs :: Name -> [([Name],BangType)] -> Compile ()
-emitFayToJs name (explodeFields -> fieldTypes) = do
+emitFayToJs :: Name -> [TyVarBind] -> [([Name],BangType)] -> Compile ()
+emitFayToJs name tyvars (explodeFields -> fieldTypes) = do
   qname <- qualify name
   let ctrName = printJSString $ JsConstructor qname
   tell $ mempty { writerFayToJs = [(ctrName, translator)] }
@@ -129,7 +129,7 @@ emitFayToJs name (explodeFields -> fieldTypes) = do
     translator =
       JsFun Nothing
             [JsNameVar "type", argTypes, transcodingObjForced]
-            (obj : fieldStmts (zip [0..] fieldTypes))
+            (obj : fieldStmts (map (getIndex name tyvars) fieldTypes))
             (Just $ JsName obj_)
 
     obj :: JsStmt
@@ -386,8 +386,8 @@ jsToFayDispatcher cases =
 
 
 -- | Make a JS→Fay decoder.
-emitJsToFay ::  Name -> [([Name], BangType)] -> Compile ()
-emitJsToFay name (explodeFields -> fieldTypes) = do
+emitJsToFay ::  Name -> [TyVarBind] -> [([Name], BangType)] -> Compile ()
+emitJsToFay name tyvars (explodeFields -> fieldTypes) = do
   qname <- qualify name
   tell (mempty { writerJsToFay = [(printJSString name, translator qname)] })
 
@@ -395,10 +395,10 @@ emitJsToFay name (explodeFields -> fieldTypes) = do
     translator qname =
       JsFun Nothing [JsNameVar "type", argTypes, transcodingObj] []
             (Just $ JsNew (JsConstructor qname)
-                          (zipWith decodeField fieldTypes [0..]))
+                          (map decodeField (map (getIndex name tyvars) fieldTypes)))
     -- Decode JS→Fay field
-    decodeField :: (Name,BangType) -> Int -> JsExp
-    decodeField (fname,typ) i =
+    decodeField :: (Int,(Name,BangType)) -> JsExp
+    decodeField (i,(fname,typ)) =
       jsToFay (SerializeUserArg i)
               (argType (bangType typ))
               (JsGetPropExtern (JsName transcodingObj)
@@ -407,3 +407,19 @@ emitJsToFay name (explodeFields -> fieldTypes) = do
 -- | The argument types used in serialization of parametrized user-defined types.
 argTypes :: JsName
 argTypes = JsNameVar "argTypes"
+
+-- | Get the index of a name from the set of type variables bindings.
+getIndex :: Name -> [TyVarBind] -> (Name,BangType) -> (Int,(Name,BangType))
+getIndex name tyvars (sname,ty) =
+  case bangType ty of
+    TyVar tyname -> case lookup tyname (zip (map tyvar tyvars) [0..]) of
+      Nothing -> error $ "unknown type variable " ++ prettyPrint tyname ++
+                         " for " ++ prettyPrint name ++ "." ++ prettyPrint sname ++ "," ++
+                         " vars were: " ++ unwords (map prettyPrint tyvars)
+      Just i -> (i,(sname,ty))
+    _ -> (0,(sname,ty))
+
+-- | Extract the name from a possibly-kinded tyvar.
+tyvar :: TyVarBind -> Name
+tyvar (UnkindedVar v) = v
+tyvar (KindedVar v _) = v

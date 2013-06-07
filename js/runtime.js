@@ -268,7 +268,40 @@ function Fay$$jsToFay(type,jsObj){
   if(base == "action") {
     // Unserialize a "monadic" JavaScript return value into a monadic value.
     fayObj = new Fay$$Monad(Fay$$jsToFay(args[0],jsObj));
-
+  }
+  else if(base == "function") {
+    // Unserialize a function from JavaScript to a function that Fay can call.
+    // So
+    //
+    //    var f = function(x,y,z){ … }
+    //
+    // becomes something like:
+    //
+    //    function(x){
+    //      return function(y){
+    //        return function(z){
+    //          return new Fay$$$(function(){
+    //            return Fay$$jsToFay(f(Fay$$fayTojs(x),
+    //                                  Fay$$fayTojs(y),
+    //                                  Fay$$fayTojs(z))
+    //    }}}}};
+    var returnType = args[args.length-1];
+    var funArgs = args.slice(0,-1);
+    var makePartial = function(args){
+      return function(arg){
+        var i = args.length;
+        var fayArg = Fay$$fayToJs(funArgs[i],arg);
+        var newArgs = args.concat(fayArg);
+        if(newArgs.length == funArgs.length) {
+          return new Fay$$$(function(){
+            return Fay$$jsToFay(returnType,jsObj.apply(this,newArgs));
+          });
+        } else {
+          return makePartial(newArgs);
+        }
+      };
+    };
+    return makePartial([]);
   }
   else if(base == "string") {
     // Unserialize a JS string into Fay list (String).

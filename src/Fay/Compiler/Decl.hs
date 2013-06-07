@@ -42,8 +42,8 @@ compileDecl toplevel decl =
   case decl of
     pat@PatBind{} -> compilePatBind toplevel Nothing pat
     FunBind matches -> compileFunCase toplevel matches
-    DataDecl _ DataType _ _ _ constructors _ -> compileDataDecl toplevel decl constructors
-    GDataDecl _ DataType _l _i _v _n decls _ -> compileDataDecl toplevel decl (map convertGADT decls)
+    DataDecl _ DataType _ _ tyvars constructors _ -> compileDataDecl toplevel tyvars constructors
+    GDataDecl _ DataType _l _i tyvars _n decls _ -> compileDataDecl toplevel tyvars (map convertGADT decls)
     DataDecl _ NewType  _ _ _ _ _ -> return []
     -- Just ignore type aliases and signatures.
     TypeDecl {} -> return []
@@ -86,9 +86,9 @@ compileUnguardedRhs srcloc toplevel ident rhs = do
     bind <- bindToplevel srcloc toplevel ident (thunk body)
     return [bind]
 
--- | Compile a data declaration.
-compileDataDecl :: Bool -> Decl -> [QualConDecl] -> Compile [JsStmt]
-compileDataDecl toplevel _decl constructors = do
+-- | Compile a data declaration (or a GADT, latter is converted to former).
+compileDataDecl :: Bool -> [TyVarBind] -> [QualConDecl] -> Compile [JsStmt]
+compileDataDecl toplevel tyvars constructors =
   fmap concat $
     forM constructors $ \(QualConDecl srcloc _ _ condecl) ->
       case condecl of
@@ -97,8 +97,8 @@ compileDataDecl toplevel _decl constructors = do
               fields' = (zip (map return fields) types)
           cons <- makeConstructor name fields
           func <- makeFunc name fields
-          emitFayToJs name fields'
-          emitJsToFay name fields'
+          emitFayToJs name tyvars fields'
+          emitJsToFay name tyvars fields'
           emitCons cons
           return [func]
         InfixConDecl t1 name t2 -> do
@@ -106,8 +106,8 @@ compileDataDecl toplevel _decl constructors = do
               fields = zip (map return slots) [t1, t2]
           cons <- makeConstructor name slots
           func <- makeFunc name slots
-          emitFayToJs name fields
-          emitJsToFay name fields
+          emitFayToJs name tyvars fields
+          emitJsToFay name tyvars fields
           emitCons cons
           return [func]
         RecDecl name fields' -> do
@@ -115,8 +115,8 @@ compileDataDecl toplevel _decl constructors = do
           cons <- makeConstructor name fields
           func <- makeFunc name fields
           funs <- makeAccessors srcloc fields
-          emitFayToJs name fields'
-          emitJsToFay name fields'
+          emitFayToJs name tyvars fields'
+          emitJsToFay name tyvars fields'
           emitCons cons
           return (func : funs)
 
@@ -156,6 +156,7 @@ compileDataDecl toplevel _decl constructors = do
                                []
                                (Just (thunk (JsGetProp (force (JsName (JsNameVar "x")))
                                                        (JsNameVar (UnQual name))))))
+
 
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]

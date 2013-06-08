@@ -61,6 +61,7 @@ readTests =
   ,ReadTest $ ((pack "foo",'a',23) :: (Text,Char,Int))
   ,ReadTest $ TupleList [(pack "foo",pack "bar")]
   ,ReadTest $ TupleList' [((pack "foo",23) :: (Text,Int))]
+  ,ReadTest $ ()
   ]
 
 -- | Test cases.
@@ -75,6 +76,7 @@ showTests =
   ,((1,2) :: (Int,Int)) → "[1,2]"
   ,"abc" → "\"abc\""
   ,'a' → "\"a\""
+  , () → "null"
   -- Data records
   ,NullaryConstructor → "{\"instance\":\"NullaryConstructor\"}"
   ,NAryConstructor 123 4.5 → "{\"slot1\":123,\"slot2\":4.5,\"instance\":\"NAryConstructor\"}"

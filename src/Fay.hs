@@ -147,7 +147,7 @@ toJsName x = case reverse x of
 -- | Print a compile error for human consumption.
 showCompileError :: CompileError -> String
 showCompileError e = case e of
-  ParseError _ err -> err
+  ParseError pos err -> err ++ " at line: " ++ show (srcLine pos) ++ " column: " ++ show (srcColumn pos)
   UnsupportedDeclaration d -> "unsupported declaration: " ++ prettyPrint d
   UnsupportedExportSpec es -> "unsupported export specification: " ++ prettyPrint es
   UnsupportedMatchSyntax m -> "unsupported match/binding syntax: " ++ prettyPrint m

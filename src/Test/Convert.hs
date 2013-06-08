@@ -57,6 +57,10 @@ readTests =
   ,ReadTest $ StepcutFoo' 789
   ,ReadTest $ Baz (StepcutFoo' 10112)
   ,ReadTest $ TextConstructor $ pack "This is \"some text\n\n\""
+  ,ReadTest $ (("foo",'a') :: (String,Char))
+  ,ReadTest $ ((pack "foo",'a',23) :: (Text,Char,Int))
+  ,ReadTest $ TupleList [(pack "foo",pack "bar")]
+  ,ReadTest $ TupleList' [((pack "foo",23) :: (Text,Int))]
   ]
 
 -- | Test cases.
@@ -142,3 +146,9 @@ data Baz = Baz StepcutFoo'
 
 data TextConstructor = TextConstructor Text
     deriving (Eq, Show, Read, Typeable, Data)
+
+data TupleList = TupleList [(Text,Text)]
+  deriving (Read, Typeable, Data, Show, Eq)
+
+data TupleList' a = TupleList' [(Text,a)]
+  deriving (Read, Typeable, Data, Show, Eq)

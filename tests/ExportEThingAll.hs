@@ -1,4 +1,4 @@
-module ExportEThingAll_Export where
+module ExportEThingAll where
 
 import Prelude
 import ExportEThingAll_Export

@@ -149,13 +149,10 @@ emitExport spec = case spec of
   EVar (UnQual n) -> emitVar n
   EVar q@Qual{} -> modify $ addCurrentExport q
   EThingAll (UnQual name) -> do
-    emitVar name
     cons <- typeToRecs (UnQual name)
     fields <- typeToFields (UnQual name)
     mapM_ (emitVar . unQName) $ cons ++ fields
-  EThingWith (UnQual name) ns -> do
-    emitVar name
-    mapM_ emitCName ns
+  EThingWith (UnQual _) ns -> mapM_ emitCName ns
   EAbs _ -> return () -- Type only, skip
   EModuleContents mod -> do
     known_exports <- gets _stateExports

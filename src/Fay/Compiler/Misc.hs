@@ -150,8 +150,9 @@ emitExport spec = case spec of
   EVar q@Qual{} -> modify $ addCurrentExport q
   EThingAll (UnQual name) -> do
     emitVar name
-    r <- lookup (UnQual name) <$> gets stateRecords
-    maybe (return ()) (mapM_ (emitVar . unQName)) r
+    cons <- typeToRecs (UnQual name)
+    fields <- typeToFields (UnQual name)
+    mapM_ (emitVar . unQName) $ cons ++ fields
   EThingWith (UnQual name) ns -> do
     emitVar name
     mapM_ emitCName ns
@@ -169,7 +170,6 @@ emitExport spec = case spec of
   -- on the import so hopefully this won't be confusing.
   EThingAll (Qual _ _) -> return ()
   e -> do
-    liftIO (print e)
     throwError $ UnsupportedExportSpec e
  where
    emitVar = return . UnQual >=> unsafeResolveName >=> emitExport . EVar

@@ -1,5 +1,5 @@
 name:                fay
-version:             0.14.5.0
+version:             0.15.0.0
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which is type-checked
                      with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
@@ -7,24 +7,15 @@ description:         Fay is a proper subset of Haskell which is type-checked
                      .
                      /Documentation/
                      .
-                     See documentation at <http://fay-lang.org/> or build your own documentation with:
-                     .
-                     > $ cabal unpack fay
-                     > $ cd fay-*
-                     > $ cabal install
-                     > $ cabal install fay-base
-                     .
+                     See <http://fay-lang.org/>
                      .
                      /Examples/
                      .
-                     See <http://fay-lang.org/#examples>.
+                     See the examples directory and <https://github.com/faylang/fay/wiki#fay-in-the-wild>
                      .
                      /Release Notes/
-                     * Support for newtypes (with no runtime cost!)
                      .
-                     * --base-path flag to specify custom location for fay-base
-                     .
-                     * Fix a bug where imports shadowing local bindings would prevent the local binding from being exported
+                     See <https://github.com/faylang/fay/wiki/Changelog>
                      .
                      See full history at: <https://github.com/faylang/fay/wiki/Changelog>
 homepage:            http://fay-lang.org/
@@ -97,7 +88,7 @@ Flag devel
 library
   hs-source-dirs:    src
   exposed-modules:   Fay, Fay.Types, Language.Fay.FFI, Fay.Convert, Fay.Compiler, Fay.Compiler.Debug, Fay.Compiler.Config
-  other-modules:     Fay.Compiler.Print, Control.Monad.IO, System.Process.Extra, Data.List.Extra, Paths_fay, Fay.Compiler.Misc, Fay.Compiler.FFI, Fay.Compiler.Optimizer, Fay.Compiler.Packages, Fay.Compiler.ModuleScope, Control.Monad.Extra, Fay.Compiler.InitialPass, Fay.Compiler.Decl, Fay.Compiler.Defaults, Fay.Compiler.Exp, Fay.Compiler.Pattern, Fay.Compiler.Typecheck
+  other-modules:     Fay.Compiler.Print, Control.Monad.IO, System.Process.Extra, Data.List.Extra, Paths_fay, Fay.Compiler.Misc, Fay.Compiler.FFI, Fay.Compiler.Optimizer, Fay.Compiler.Packages, Fay.Compiler.ModuleScope, Control.Monad.Extra, Fay.Compiler.InitialPass, Fay.Compiler.Decl, Fay.Compiler.Defaults, Fay.Compiler.Exp, Fay.Compiler.Pattern, Fay.Compiler.Typecheck, Fay.Compiler.GADT
   ghc-options:       -O2 -Wall -fno-warn-name-shadowing
   build-depends:     base >= 4 && < 5,
                      aeson,

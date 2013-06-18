@@ -29,6 +29,7 @@ typecheck packageConf wall fp = do
         return [flag ++ '=' : pk]
   let flags =
           [ "-fno-code"
+          , "-XNoImplicitPrelude"
           , "-hide-package base"
           , "-cpp", "-DFAY=1"
           , "-main-is"

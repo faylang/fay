@@ -242,7 +242,7 @@ function Fay$$fayToJs_string(fayObj){
   var str = "";
   fayObj = Fay$$_(fayObj);
   while(fayObj instanceof Fay$$Cons) {
-    str += fayObj.car;
+    str += Fay$$_(fayObj.car);
     fayObj = Fay$$_(fayObj.cdr);
   }
   return str;

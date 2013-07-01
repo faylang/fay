@@ -47,6 +47,8 @@ extra-source-files:
   tests/Api/Records.hs
   tests/asPatternMatch.hs
   tests/asPatternMatch.res
+  tests/AutomaticList.hs
+  tests/AutomaticList.res
   tests/baseFixities.hs
   tests/baseFixities.res
   tests/basicFunctions.hs

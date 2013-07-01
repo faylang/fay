@@ -1,7 +1,4 @@
-{ car: { car: 1, cdr: { car: 2, cdr: [Object] } },
-  cdr: { car: { car: 1, cdr: [Object] }, cdr: null } }
-{ car: { car: 1, cdr: { car: 2, cdr: [Object] } },
-  cdr: { car: 1, cdr: { car: [Object], cdr: null } } }
-{ car: { car: 1, cdr: { car: 2, cdr: [Object] } },
-  cdr: { car: 1, cdr: { car: [Object], cdr: null } } }
-{ car: 'o', cdr: { car: 'k', cdr: null } }
+[ [ 1, 2, 3 ], [ 1, 2, 3 ] ]
+[ [ 1, 2, 3 ], 1, [ 2, 3 ] ]
+[ [ 1, 2, 3 ], 1, [ 2, 3 ] ]
+[ 'o', 'k' ]

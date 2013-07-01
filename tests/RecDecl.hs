@@ -2,9 +2,7 @@ import           FFI
 import           Prelude
 
 data R = R { i :: Double, c :: Char }
-instance Foreign R
 data S = S Double Char
-instance Foreign S
 
 -- RecDecl
 r1 :: R
@@ -28,7 +26,6 @@ s1 = S 1 'a'
 
 -- Multiple fields with the same type
 data X = X { _x1, _x2 :: Int }
-instance Foreign X
 
 x1 = X 1 2
 x2 = X { _x1 = 1, _x2 = 2 }
@@ -53,4 +50,3 @@ main = do
   print s1
   print x1
   print x2
-

@@ -21,9 +21,12 @@ nonExhaustive x | x > 1 = True
 
 main :: Fay ()
 main = do
-  putStrLn $ showList [isPositive 1, isPositive 0]
-  putStrLn $ showList [threeConds 3, threeConds 1, threeConds 0]
-  putStrLn $ showList [withOtherwise 2, withOtherwise 0]
+  putStrLn $ showListB [isPositive 1, isPositive 0]
+  putStrLn $ showListD [threeConds 3, threeConds 1, threeConds 0]
+  putStrLn $ showListB [withOtherwise 2, withOtherwise 0]
 
-showList :: [Double] -> String
-showList = ffi "JSON.stringify(%1)"
+showListB :: [Bool] -> String
+showListB = ffi "JSON.stringify(%1)"
+
+showListD :: [Double] -> String
+showListD = ffi "JSON.stringify(%1)"

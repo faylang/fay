@@ -2,12 +2,11 @@ import           FFI
 import           Prelude
 
 data R = R (Nullable Double)
-instance Foreign R
 
 main :: Fay ()
 main = do
   printD $ Nullable (1 :: Double)
-  printS $ Nullable "Hello, World!"
+  printNS $ Nullable "Hello, World!"
   printSS $ Nullable ["Hello,","World!"]
   printD $ (Null :: Nullable Double)
   print' $ R (Nullable 1)
@@ -18,8 +17,11 @@ main = do
   print' $ parseInt "x"
   return ()
 
-printD :: Foreign f => Nullable Double -> Fay ()
+printD :: Nullable Double -> Fay ()
 printD = ffi "console.log(%1)"
+
+printNS :: Nullable String -> Fay ()
+printNS = ffi "console.log(%1)"
 
 printS :: Defined String -> Fay ()
 printS = ffi "console.log(%1)"
@@ -27,7 +29,7 @@ printS = ffi "console.log(%1)"
 printSS :: Defined [String] -> Fay ()
 printSS = ffi "console.log(%1)"
 
-print' :: Foreign f => Automatic f -> Fay ()
+print' :: Automatic f -> Fay ()
 print' = ffi "console.log(%1)"
 
 r1 :: R

@@ -8,7 +8,6 @@ import Prelude
 data Munge a b = Fudge a b
 
 data Foo = Foo (Munge [String] [Int])
-instance Foreign Foo
 
 munge :: Foo -> Foo
 munge = ffi "%1"

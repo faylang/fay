@@ -4,7 +4,6 @@ import           FFI
 import           Prelude
 
 data SomeRec = SomeRec { a :: Integer, b :: Integer } | Y | X
-instance Foreign SomeRec
 
 fun :: SomeRec -> SomeRec
 fun SomeRec{a} = SomeRec{a=a+1, b=10}
@@ -23,4 +22,3 @@ main = do
     putStrLn $ case t of
                     SomeRec{a} -> "Bad"
                     Y -> "OK."
-

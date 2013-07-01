@@ -10,4 +10,3 @@ y :: Double
 y = 1
 
 data R = S
-instance Foreign R

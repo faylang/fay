@@ -2,7 +2,6 @@ import           FFI
 import           Prelude
 
 data R = R (Defined Double)
-instance Foreign R
 
 main :: Fay ()
 main = do

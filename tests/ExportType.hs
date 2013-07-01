@@ -11,19 +11,14 @@ import           FFI
 import           Prelude
 
 data X = X
-instance Foreign X
 
 data Y = Y
-instance Foreign Y
 
 data Z = Z { z :: Double }
-instance Foreign Z
 
 data W = W
-instance Foreign W
 
 w :: W
 w = W
 
 data V = V { v1 :: Double, v2 :: Double }
-instance Foreign V

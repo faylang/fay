@@ -2,5 +2,5 @@
 
 for i in `ls tests/*.hs`; do
   echo $i;
-  ghc -package fay -XNoImplicitPrelude -fno-code -itests $i
+  ghc -hide-package base -cpp -DFAY=1 -main-is Language.Fay.DummyMain -package fay-base -XNoImplicitPrelude -fno-code -itests $i
 done

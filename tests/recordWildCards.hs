@@ -5,7 +5,6 @@ import           FFI
 import           Prelude
 
 data C = C { a :: Int, b :: Int, c :: Int, d :: Int }
-instance Foreign C
 
 data X = X { foo :: Int } | Y { foo :: Int }
 
@@ -29,4 +28,3 @@ main = do
     -- TODO: is there a way to test for exceptions ?
     --let y = Y{foo=6}
     --print (test2 y)
-

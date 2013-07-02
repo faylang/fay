@@ -123,7 +123,7 @@ compileDataDecl toplevel tyvars constructors =
   where
     emitCons cons = tell (mempty { writerCons = [cons] })
 
-    -- Creates a constructor R_RecConstr for a Record
+    -- Creates a constructor _RecConstr for a Record
     makeConstructor :: Name -> [Name] -> Compile JsStmt
     makeConstructor name (map (JsNameVar . UnQual) -> fields) = do
       qname <- qualify name
@@ -139,7 +139,7 @@ compileDataDecl toplevel tyvars constructors =
     makeFunc name (map (JsNameVar . UnQual) -> fields) = do
       let fieldExps = map JsName fields
       qname <- qualify name
-      return $ JsVar (JsNameVar qname) $
+      return $ JsSetProp' qname $
         foldr (\slot inner -> JsFun Nothing [slot] [] (Just inner))
           (thunk $ JsNew (JsConstructor qname) fieldExps)
           fields

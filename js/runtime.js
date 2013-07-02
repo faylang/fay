@@ -202,7 +202,7 @@ function Fay$$fayToJs(type,fayObj){
   }
   else if(base == "defined") {
     fayObj = Fay$$_(fayObj);
-    if (fayObj instanceof $_Language$Fay$FFI$Undefined) {
+    if (fayObj instanceof Language.Fay.FFI._Undefined) {
       jsObj = undefined;
     } else {
       jsObj = Fay$$fayToJs(args[0],fayObj.slot1);
@@ -211,7 +211,7 @@ function Fay$$fayToJs(type,fayObj){
   }
   else if(base == "nullable") {
     fayObj = Fay$$_(fayObj);
-    if (fayObj instanceof $_Language$Fay$FFI$Null) {
+    if (fayObj instanceof Language.Fay.FFI._Null) {
       jsObj = null;
     } else {
       jsObj = Fay$$fayToJs(args[0],fayObj.slot1);
@@ -331,17 +331,17 @@ function Fay$$jsToFay(type,jsObj){
   }
   else if(base == "defined") {
     if (jsObj === undefined) {
-      fayObj = new $_Language$Fay$FFI$Undefined();
+      fayObj = new Language.Fay.FFI._Undefined();
     } else {
-      fayObj = new $_Language$Fay$FFI$Defined(Fay$$jsToFay(args[0],jsObj));
+      fayObj = new Language.Fay.FFI._Defined(Fay$$jsToFay(args[0],jsObj));
     }
 
   }
   else if(base == "nullable") {
     if (jsObj === null) {
-      fayObj = new $_Language$Fay$FFI$Null();
+      fayObj = new Language.Fay.FFI._Null();
     } else {
-      fayObj = new $_Language$Fay$FFI$Nullable(Fay$$jsToFay(args[0],jsObj));
+      fayObj = new Language.Fay.FFI.Nullable(Fay$$jsToFay(args[0],jsObj));
     }
 
   }

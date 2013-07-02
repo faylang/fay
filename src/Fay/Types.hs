@@ -246,6 +246,7 @@ data JsStmt
   | JsWhile JsExp [JsStmt]
   | JsUpdate JsName JsExp
   | JsSetProp JsName JsName JsExp
+  | JsSetProp' QName JsExp
   | JsSetPropExtern JsName JsName JsExp
   | JsContinue
   | JsBlock [JsStmt]

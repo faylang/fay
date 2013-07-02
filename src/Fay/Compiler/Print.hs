@@ -16,6 +16,7 @@
 module Fay.Compiler.Print where
 
 import           Fay.Types
+import           Fay.Compiler.Misc
 
 import           Control.Monad
 import           Control.Monad.State
@@ -54,7 +55,7 @@ instance Printable JsLit where
 instance Printable QName where
   printJS qname =
     case qname of
-      Qual moduleName name -> moduleName +> "$" +> name
+      Qual moduleName name -> moduleName +> "." +> name
       UnQual name -> printJS name
       Special con -> printJS con
 
@@ -64,7 +65,7 @@ instance Printable ModuleName where
     write "Fay$"
   printJS (ModuleName moduleName) = write $ go moduleName
 
-    where go ('.':xs) = '$' : go xs
+    where go ('.':xs) = '.' : go xs
           go (x:xs) = normalizeName [x] ++ go xs
           go [] = []
 
@@ -100,6 +101,8 @@ instance Printable JsStmt where
     name +> " = " +> expr +> ";" +> newline
   printJS (JsSetProp name prop expr) =
     name +> "." +> prop +> " = " +> expr +> ";" +> newline
+  printJS (JsSetProp' name expr) =
+    name +> " = " +> expr +> ";" +> newline
   printJS (JsSetPropExtern name prop expr) =
     name +> "['" +> prop +> "'] = " +> expr +> ";" +> newline
   printJS (JsIf exp thens elses) =
@@ -196,9 +199,17 @@ instance Printable JsName where
       JsApply             -> write "Fay$$__"
       JsParam i           -> write ("$p" ++ show i)
       JsTmp i             -> write ("$tmp" ++ show i)
-      JsConstructor qname -> "$_" +> printJS qname
+      JsConstructor qname -> printCons qname
       JsBuiltIn qname     -> "Fay$$" +> printJS qname
       JsParametrizedType  -> write "type"
+
+printCons :: QName -> Printer ()
+printCons (UnQual n) = printConsName n
+printCons (Qual (ModuleName m) n) = printJS m +> "." +> printConsName n
+printCons (Special _) = error "qname2String Special"
+
+printConsName :: Name -> Printer ()
+printConsName n = write "$_" >> printJS n
 
 -- | Just write out strings.
 instance Printable String where

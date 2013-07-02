@@ -173,6 +173,7 @@ executable fay-tests
                      process,
                      safe,
                      syb,
+                     split,
                      text,
                      unordered-containers,
                      utf8-string,

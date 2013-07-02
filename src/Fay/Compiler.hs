@@ -1,7 +1,8 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS -Wall -fno-warn-name-shadowing -fno-warn-orphans #-}
 
 -- | The Haskell→Javascript compiler.
@@ -14,6 +15,7 @@ module Fay.Compiler
   ,compileExp
   ,compileDecl
   ,compileToplevelModule
+  ,createModulePath
   ,parseFay)
   where
 
@@ -34,6 +36,8 @@ import           Control.Monad.IO
 import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default                    (def)
+import           Data.List
+import           Data.List.Split
 import qualified Data.Map                        as M
 import           Data.Maybe
 import qualified Data.Set                        as S
@@ -87,16 +91,30 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   cs <- io defaultCompileState
   modify $ \s -> s { stateImported = stateImported cs }
   (stmts,CompileWriter{..}) <- listen $ compileModule True mod
-  let fay2js = if null writerFayToJs then [] else fayToJsDispatcher writerFayToJs
-      js2fay = if null writerJsToFay then [] else jsToFayDispatcher writerJsToFay
-      maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
-  if configDispatcherOnly cfg
-     then return (maybeOptimize (writerCons ++ fay2js ++ js2fay))
-     else return (maybeOptimize (stmts ++
-                    if configDispatchers cfg then writerCons ++ fay2js ++ js2fay else []))
+  return stmts
+--  let fay2js = if null writerFayToJs then [] else fayToJsDispatcher writerFayToJs
+--      js2fay = if null writerJsToFay then [] else jsToFayDispatcher writerJsToFay
+--      maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
+--  if configDispatcherOnly cfg
+--     then return (maybeOptimize (writerCons ++ fay2js ++ js2fay))
+--     else return (maybeOptimize (stmts ++
+--                    if configDispatchers cfg then writerCons ++ fay2js ++ js2fay else []))
 
 --------------------------------------------------------------------------------
 -- Compilers
+
+createModulePath :: ModuleName -> [JsStmt]
+createModulePath (ModuleName ps) =
+  concatMap (\ns -> case ns of
+      []  -> []
+      [n] -> [JsVar (JsNameVar $ UnQual $ Ident n) (JsObj [])]
+      ns  -> [JsSetProp' (mkQn ns) (JsObj [])]
+    ) . inits . splitOn "." $ ps
+  where
+    mkQn :: [String] -> QName
+    mkQn []  = error "mkQn []"
+    mkQn [_] = error "mkQn [_]"
+    mkQn (reverse -> x:xs) = Qual (ModuleName . intercalate "." $ reverse xs) (Ident x)
 
 -- | Compile Haskell module.
 compileModule :: Bool -> Module -> Compile [JsStmt]
@@ -110,7 +128,8 @@ compileModule toplevel (Module _ modulename _pragmas Nothing _exports imports de
 
     exportStdlib     <- config configExportStdlib
     exportStdlibOnly <- config configExportStdlibOnly
-    if exportStdlibOnly
+    (createModulePath modulename ++) <$>
+      (if exportStdlibOnly
        then if anStdlibModule modulename || toplevel
                then if toplevel
                        then return imported
@@ -118,7 +137,7 @@ compileModule toplevel (Module _ modulename _pragmas Nothing _exports imports de
                else return []
        else if not exportStdlib && anStdlibModule modulename
                then return []
-               else return (imported ++ current)
+               else return (imported ++ current))
 compileModule _ mod = throwError (UnsupportedModuleSyntax mod)
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModule False

@@ -103,10 +103,10 @@ compileToModule filepath config raw with hscode = do
         generateNaked jscode _exports _module = unlines $
           [if configExportRuntime config then raw else ""
           ,jscode]
-        generateWrapped jscode exports (ModuleName (clean -> modulename)) = unlines $ filter (not . null) $
+        generateWrapped jscode exports (ModuleName modulename) = unlines $ filter (not . null) $
           ["/** @constructor"
           ,"*/"
-          ,"var " ++ modulename ++ " = function(){"
+          ,"var " ++ (clean modulename) ++ " = function(){"
           ,if configExportRuntime config then raw else ""
           ,jscode
           ,"// Exports"
@@ -122,8 +122,8 @@ compileToModule filepath config raw with hscode = do
           ,"};"
           ,if not (configLibrary config)
               then unlines [";"
-                           ,"var main = new " ++ modulename ++ "();"
-                           ,"main._(main." ++ modulename ++ "$main);"
+                           ,"var main = new " ++ (clean modulename) ++ "();"
+                           ,"main._(main." ++ modulename ++ ".main);"
                            ]
               else ""
           ]
@@ -131,12 +131,18 @@ compileToModule filepath config raw with hscode = do
         clean (c:cs)   = c : clean cs
         clean [] = []
 
+createExportPath :: QName -> [JsStmt]
+createExportPath (UnQual _) = []
+createExportPath (Special _) = []
+createExportPath (Qual (ModuleName m) _) = createModulePath . ModuleName $ "this." ++ m
+
 -- | Print an this.x = x; export out.
 printExport :: QName -> String
 printExport name =
-  printJSString (JsSetProp JsThis
-                           (JsNameVar name)
-                           (JsName (JsNameVar name)))
+  printJSString (createExportPath name)
+    ++ printJSString (JsSetProp JsThis
+                               (JsNameVar name)
+                               (JsName (JsNameVar name)))
 
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String

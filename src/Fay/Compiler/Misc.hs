@@ -112,7 +112,17 @@ qualifyQName n             = return n
 bindToplevel :: SrcLoc -> Bool -> Name -> JsExp -> Compile JsStmt
 bindToplevel srcloc toplevel name expr = do
   qname <- (if toplevel then qualify else return . UnQual) name
-  return (JsMappedVar srcloc (JsNameVar qname) expr)
+  return $ JsSetProp' qname expr
+
+-- TODO tmp
+qname2String :: QName -> String
+qname2String (UnQual n) = name2String n
+qname2String (Qual (ModuleName m) n) = m ++ "." ++ name2String n
+qname2String (Special _) = error "qname2String Special"
+
+name2String :: Name -> String
+name2String (Ident n) = n
+name2String (Symbol n) = n
 
 -- | Create a temporary environment and discard it after the given computation.
 withModuleScope :: Compile a -> Compile a

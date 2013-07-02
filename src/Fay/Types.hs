@@ -225,6 +225,7 @@ data CompileError
   | FfiFormatInvalidJavaScript SrcLoc String String
   | UnableResolveUnqualified Name
   | UnableResolveQualified QName
+  | GHCError String
   deriving (Show)
 instance Error CompileError
 

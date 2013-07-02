@@ -3,6 +3,7 @@
 module Fay.Compiler.Typecheck where
 
 import           Control.Monad.IO
+import           Control.Monad.Error
 import           Data.List
 import           Data.Maybe
 import           Fay.Compiler.Misc
@@ -37,7 +38,7 @@ typecheck packageConf wall fp = do
           , "-i" ++ concat (intersperse ":" includeDirs)
           , fp ] ++ ghcPackageDbArgs ++ wallF ++ map ("-package " ++) packages
   res <- io $ readAllFromProcess GHCPaths.ghc flags ""
-  either (error . fst) (warn . fst) res
+  either (throwError . GHCError . fst) (warn . fst) res
    where
     wallF | wall = ["-Wall"]
           | otherwise = []

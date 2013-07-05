@@ -280,6 +280,8 @@ data JsExp
   | JsInfix String JsExp JsExp -- Used to optimize *, /, +, etc
   | JsObj [(String,JsExp)]
   | JsUndefined
+  | JsAnd JsExp JsExp
+  | JsOr  JsExp JsExp
   deriving (Show,Eq)
 
 -- | A name of some kind.

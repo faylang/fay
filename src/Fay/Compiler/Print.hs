@@ -16,7 +16,6 @@
 module Fay.Compiler.Print where
 
 import           Fay.Types
-import           Fay.Compiler.Misc
 
 import           Control.Monad
 import           Control.Monad.State
@@ -55,6 +54,7 @@ instance Printable JsLit where
 instance Printable QName where
   printJS qname =
     case qname of
+      Qual (ModuleName "Fay$") name -> "Fay$$" +> name
       Qual moduleName name -> moduleName +> "." +> name
       UnQual name -> printJS name
       Special con -> printJS con
@@ -169,16 +169,28 @@ instance Printable JsExp where
     "{" +> (intercalateM "," (map cons assoc)) +> "}"
       where cons (key,value) = "\"" +> key +> "\": " +> value
   printJS (JsFun nm params stmts ret) =
-    "function"
-    +> maybe (return ()) ((" " +>) . printJS) nm
-    +> "("
-    +> (intercalateM "," (map printJS params))
-    +> "){" +> newline
-    +> indented (stmts +>
-                 case ret of
-                   Just ret' -> "return " +> ret' +> ";" +> newline
-                   Nothing   -> return ())
-    +> "}"
+    case nm of
+      Just n ->
+           printJS n
+        +> " = function ("
+        +> (intercalateM "," (map printJS params))
+        +> "){" +> newline
+        +> indented (stmts +>
+                     case ret of
+                       Just ret' -> "return " +> ret' +> ";" +> newline
+                       Nothing   -> return ())
+        +> "}"
+      Nothing ->
+           "function"
+        +> maybe (return ()) ((" " +>) . printJS) nm
+        +> "("
+        +> (intercalateM "," (map printJS params))
+        +> "){" +> newline
+        +> indented (stmts +>
+                     case ret of
+                       Just ret' -> "return " +> ret' +> ";" +> newline
+                       Nothing   -> return ())
+        +> "}"
   printJS (JsApp op args) =
     (if isFunc op then JsParen op else op)
     +> "("
@@ -187,6 +199,10 @@ instance Printable JsExp where
      where isFunc JsFun{..} = True; isFunc _ = False
   printJS (JsNegApp args) =
       "(-(" +> printJS args +> "))"
+  printJS (JsAnd a b) =
+      printJS a +> "&&" +> printJS b
+  printJS (JsOr a b) =
+      printJS a +> "||" +> printJS b
 
 -- | Print one of the kinds of names.
 instance Printable JsName where

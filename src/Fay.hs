@@ -27,6 +27,7 @@ import           Fay.Types
 import           Control.Applicative
 import           Control.Monad
 import           Data.List
+import           Data.List.Split
 import qualified Data.Set                     as S
 import           Language.Haskell.Exts        (prettyPrint)
 import           Language.Haskell.Exts.Syntax
@@ -106,7 +107,7 @@ compileToModule filepath config raw with hscode = do
         generateWrapped jscode exports (ModuleName modulename) = unlines $ filter (not . null) $
           ["/** @constructor"
           ,"*/"
-          ,"var " ++ (clean modulename) ++ " = function(){"
+          ,"var " ++ clean modulename ++ " = function(){"
           ,if configExportRuntime config then raw else ""
           ,jscode
           ,"// Exports"
@@ -114,15 +115,15 @@ compileToModule filepath config raw with hscode = do
           ,"// Built-ins"
           ,"this._ = Fay$$_;"
           ,if configExportBuiltins config
-              then unlines ["this.$           = Fay$$$;"
-                           ,"this.$fayToJs    = Fay$$fayToJs;"
-                           ,"this.$jsToFay    = Fay$$jsToFay;"
+              then unlines ["this.$ = Fay$$$;"
+                           ,"this.$fayToJs = Fay$$fayToJs;"
+                           ,"this.$jsToFay = Fay$$jsToFay;"
                            ]
               else ""
           ,"};"
           ,if not (configLibrary config)
               then unlines [";"
-                           ,"var main = new " ++ (clean modulename) ++ "();"
+                           ,"var main = new " ++ clean modulename ++ "();"
                            ,"main._(main." ++ modulename ++ ".main);"
                            ]
               else ""
@@ -130,6 +131,22 @@ compileToModule filepath config raw with hscode = do
         clean ('.':cs) = '$' : clean cs
         clean (c:cs)   = c : clean cs
         clean [] = []
+
+createModulePath :: ModuleName -> [JsStmt]
+createModulePath (ModuleName ps) =
+  concatMap (\ns -> case ns of
+      []  -> []
+      ["this"] -> []
+      n  -> [JsSetProp' (mkQn n) (JsOr (f ps) (JsObj []))]
+    ) . inits . splitOn "." $ ps
+  where
+    f :: String -> JsExp
+    f = JsName . JsNameVar . (\n -> Qual (ModuleName . intercalate "." $ init n) (Ident $ last n)) .  splitOn "."
+    mkQn :: [String] -> QName
+    mkQn []  = error "mkQn []"
+    mkQn [_] = error "mkQn [_]"
+    mkQn (reverse -> x:xs) = Qual (ModuleName . intercalate "." $ reverse xs) (Ident x)
+
 
 createExportPath :: QName -> [JsStmt]
 createExportPath (UnQual _) = []

@@ -101,18 +101,34 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
 --------------------------------------------------------------------------------
 -- Compilers
 
-createModulePath :: ModuleName -> [JsStmt]
-createModulePath (ModuleName ps) =
-  concatMap (\ns -> case ns of
-      []  -> []
-      [n] -> [JsVar (JsNameVar $ UnQual $ Ident n) (JsObj [])]
-      ns  -> [JsSetProp' (mkQn ns) (JsObj [])]
-    ) . inits . splitOn "." $ ps
+moduleNameToModulePaths :: ModuleName -> [ModulePath]
+moduleNameToModulePaths (ModuleName n) = inits $ splitOn "." n
+
+createModulePath :: ModuleName -> Compile [JsStmt]
+createModulePath =
+  liftM concat . mapM (\ns -> case ns of
+      []  -> return []
+      [n] -> topLevelMod n
+      ns  -> nestedMod ns
+    ) . moduleNameToModulePaths
   where
     mkQn :: [String] -> QName
     mkQn []  = error "mkQn []"
     mkQn [_] = error "mkQn [_]"
     mkQn (reverse -> x:xs) = Qual (ModuleName . intercalate "." $ reverse xs) (Ident x)
+    topLevelMod :: String -> Compile [JsStmt]
+    topLevelMod n = whenImportNotGenerated [n] (\_ -> [JsVar (JsNameVar . UnQual $ Ident n) (JsObj [])])
+    nestedMod :: ModulePath -> Compile [JsStmt]
+    nestedMod ns = whenImportNotGenerated ns (\ns -> [JsSetProp' (mkQn ns) (JsObj [])])
+
+whenImportNotGenerated :: ModulePath -> (ModulePath -> [JsStmt]) -> Compile [JsStmt]
+whenImportNotGenerated mp f = do
+  b <- S.member mp <$> gets stateJsModulePaths
+  if b
+    then return []
+    else do
+      modify $ \s -> s { stateJsModulePaths = mp `S.insert` stateJsModulePaths s }
+      return $ f mp
 
 -- | Compile Haskell module.
 compileModule :: Bool -> Module -> Compile [JsStmt]
@@ -126,7 +142,8 @@ compileModule toplevel (Module _ modulename _pragmas Nothing _exports imports de
 
     exportStdlib     <- config configExportStdlib
     exportStdlibOnly <- config configExportStdlibOnly
-    (createModulePath modulename ++) <$>
+    modulePaths <- createModulePath modulename
+    (modulePaths ++) <$>
       (if exportStdlibOnly
        then if anStdlibModule modulename || toplevel
                then if toplevel
@@ -159,6 +176,7 @@ compileImport (ImportDecl _ name False _ Nothing Nothing _) =
         tell writer
         modify $ \s -> s { stateImported   = stateImported state
                          , stateLocalScope = S.empty
+                         , stateJsModulePaths = stateJsModulePaths state
                          }
         return stmts
       Left err -> throwError err

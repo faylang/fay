@@ -40,4 +40,5 @@ defaultCompileState = do
   , stateLocalScope = S.empty
   , stateModuleScope = def
   , stateModuleScopes = M.empty
+  , stateJsModulePaths = S.empty
   }

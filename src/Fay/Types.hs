@@ -30,8 +30,9 @@ module Fay.Types
   ,PrintState(..)
   ,Printer(..)
   ,Mapping(..)
-  ,SerializeContext(..))
-  where
+  ,SerializeContext(..)
+  ,ModulePath
+  ) where
 
 import           Control.Applicative
 import           Control.Monad.Error    (Error, ErrorT, MonadError)
@@ -80,6 +81,8 @@ data CompileConfig = CompileConfig
   , configBasePath           :: Maybe FilePath             -- ^ Custom source location for fay-base
   } deriving (Show)
 
+type ModulePath = [String]
+
 -- | State of the compiler.
 data CompileState = CompileState
   { _stateExports     :: Map ModuleName (Set QName) -- ^ Collects exports from modules
@@ -92,6 +95,7 @@ data CompileState = CompileState
   , stateModuleScope  :: ModuleScope                -- ^ Names in the module scope.
   , stateModuleScopes :: Map ModuleName ModuleScope
   , stateModuleName   :: ModuleName                 -- ^ Name of the module currently being compiled.
+  , stateJsModulePaths :: Set ModulePath
   } deriving (Show)
 
 -- | Things written out by the compiler.

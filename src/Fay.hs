@@ -94,7 +94,7 @@ compileToModule filepath config raw with hscode = do
   result <- compileViaStr filepath config with hscode
   case result of
     Left err -> return (Left err)
-    Right (PrintState{..},state,_) ->
+    Right (PrintState{..},state,_) -> do
       return $ Right $ (generate (concat (reverse psOutput))
                                         (S.toList $ getCurrentExportsWithoutNewtypes state)
                                         (stateModuleName state), state)
@@ -104,14 +104,14 @@ compileToModule filepath config raw with hscode = do
         generateNaked jscode _exports _module = unlines $
           [if configExportRuntime config then raw else ""
           ,jscode]
-        generateWrapped jscode exports (ModuleName modulename) = unlines $ filter (not . null) $
+        generateWrapped jscode exports mod@(ModuleName modulename) = unlines $ filter (not . null) $
           ["/** @constructor"
           ,"*/"
           ,"var " ++ clean modulename ++ " = function(){"
           ,if configExportRuntime config then raw else ""
           ,jscode
           ,"// Exports"
-          ,unlines (map printExport exports)
+          ,unlines (map (printExport mod) exports)
           ,"// Built-ins"
           ,"this._ = Fay$$_;"
           ,if configExportBuiltins config
@@ -154,12 +154,18 @@ createExportPath (Special _) = []
 createExportPath (Qual (ModuleName m) _) = createModulePath . ModuleName $ "this." ++ m
 
 -- | Print an this.x = x; export out.
-printExport :: QName -> String
-printExport name =
-  printJSString (createExportPath name)
-    ++ printJSString (JsSetProp JsThis
-                               (JsNameVar name)
-                               (JsName (JsNameVar name)))
+printExport :: ModuleName -> QName -> String
+printExport mod name =
+  let exportName = qualifyAs mod name in
+    printJSString (createExportPath exportName)
+      ++ printJSString (JsSetProp JsThis
+                                 (JsNameVar exportName)
+                                 (JsName (JsNameVar name)))
+
+qualifyAs :: ModuleName -> QName -> QName
+qualifyAs m (UnQual n) = Qual m n
+qualifyAs m (Qual _ n) = Qual m n
+qualifyAs _ Special{}  = error "qualifyAs Special{}"
 
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String

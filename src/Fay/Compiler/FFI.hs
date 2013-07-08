@@ -122,10 +122,14 @@ warnDotUses srcloc string expr =
 emitFayToJs :: Name -> [TyVarBind] -> [([Name],BangType)] -> Compile ()
 emitFayToJs name tyvars (explodeFields -> fieldTypes) = do
   qname <- qualify name
-  let ctrName = printJSString $ JsConstructor qname
+  let ctrName = printJSString $ unqualName qname
   tell $ mempty { writerFayToJs = [(ctrName, translator)] }
 
   where
+    unqualName :: QName -> Name
+    unqualName (UnQual n) = n
+    unqualName (Qual _ n) = n
+    unqualName Special{}  = error "unqualName: Special{}"
     translator =
       JsFun Nothing
             [JsNameVar "type", argTypes, transcodingObjForced]

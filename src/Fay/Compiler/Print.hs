@@ -172,7 +172,7 @@ instance Printable JsExp where
     case nm of
       Just n ->
            printJS n
-        +> " = function ("
+        +> " = function " +> printJS (ident n) +> "("
         +> (intercalateM "," (map printJS params))
         +> "){" +> newline
         +> indented (stmts +>
@@ -204,6 +204,12 @@ instance Printable JsExp where
   printJS (JsOr a b) =
       printJS a +> "||" +> printJS b
 
+ident :: JsName -> JsName
+ident n = case n of
+  JsConstructor (Qual _ s) -> JsNameVar $ UnQual s
+  a -> a
+
+
 -- | Print one of the kinds of names.
 instance Printable JsName where
   printJS name =
@@ -224,8 +230,9 @@ printCons (UnQual n) = printConsName n
 printCons (Qual (ModuleName m) n) = printJS m +> "." +> printConsName n
 printCons (Special _) = error "qname2String Special"
 
+-- TODO This should be $_
 printConsName :: Name -> Printer ()
-printConsName n = write "$_" >> printJS n
+printConsName n = write "_" >> printJS n
 
 -- | Just write out strings.
 instance Printable String where

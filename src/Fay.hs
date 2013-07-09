@@ -107,7 +107,7 @@ compileToModule filepath config raw with hscode = do
         generateWrapped jscode exports mod@(ModuleName modulename) = unlines $ filter (not . null) $
           ["/** @constructor"
           ,"*/"
-          ,"var " ++ clean modulename ++ " = function(){"
+          ,"var " ++ clean modulename ++ " = (function(){"
           ,if configExportRuntime config then raw else ""
           ,jscode
           ,"// Exports"
@@ -120,11 +120,11 @@ compileToModule filepath config raw with hscode = do
                            ,"this.$jsToFay = Fay$$jsToFay;"
                            ]
               else ""
-          ,"};"
+          ,"return this;"
+          ,"})();"
           ,if not (configLibrary config)
               then unlines [";"
-                           ,"var main = new " ++ clean modulename ++ "();"
-                           ,"main._(main." ++ modulename ++ ".main);"
+                           ,clean modulename ++ "._(" ++ clean modulename ++ "." ++ clean modulename ++ ".main);"
                            ]
               else ""
           ]

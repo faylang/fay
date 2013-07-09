@@ -82,7 +82,7 @@ instance Printable SpecialCon where
 instance Printable Name where
   printJS name = write $
     case name of
-      Ident ident -> encodeName ident
+      Ident  idn -> encodeName idn
       Symbol sym -> encodeName sym
 
 -- | Print a list of statements.
@@ -101,8 +101,10 @@ instance Printable JsStmt where
     name +> " = " +> expr +> ";" +> newline
   printJS (JsSetProp name prop expr) =
     name +> "." +> prop +> " = " +> expr +> ";" +> newline
-  printJS (JsSetProp' name expr) =
+  printJS (JsSetQName name expr) =
     name +> " = " +> expr +> ";" +> newline
+  printJS (JsSetModule mp expr) =
+    mp +> " = " +> expr +> ";" +> newline
   printJS (JsSetPropExtern name prop expr) =
     name +> "['" +> prop +> "'] = " +> expr +> ";" +> newline
   printJS (JsIf exp thens elses) =
@@ -124,6 +126,9 @@ instance Printable JsStmt where
     printJS "continue;" +> newline
   printJS (JsMappedVar _ name expr) =
     "var " +> name +> " = " +> expr +> ";" +> newline
+
+instance Printable ModulePath where
+  printJS (ModulePath l) = write $ intercalate "." l
 
 -- | Print an expression.
 instance Printable JsExp where

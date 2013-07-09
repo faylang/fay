@@ -79,11 +79,11 @@ compilePatBind toplevel sig pat =
 
 -- | Compile a normal simple pattern binding.
 compileUnguardedRhs :: SrcLoc -> Bool -> Name -> Exp -> Compile [JsStmt]
-compileUnguardedRhs srcloc toplevel ident rhs = do
+compileUnguardedRhs _srcloc toplevel ident rhs = do
   unless toplevel $ bindVar ident
   withScope $ do
     body <- compileExp rhs
-    bind <- bindToplevel srcloc toplevel ident (thunk body)
+    bind <- bindToplevel toplevel ident (thunk body)
     return [bind]
 
 -- | Compile a data declaration (or a GADT, latter is converted to former).
@@ -139,17 +139,16 @@ compileDataDecl toplevel tyvars constructors =
     makeFunc name (map (JsNameVar . UnQual) -> fields) = do
       let fieldExps = map JsName fields
       qname <- qualify name
-      return $ JsSetProp' qname $
+      return $ JsSetQName qname $
         foldr (\slot inner -> JsFun Nothing [slot] [] (Just inner))
           (thunk $ JsNew (JsConstructor qname) fieldExps)
           fields
 
     -- Creates getters for a RecDecl's values
     makeAccessors :: SrcLoc -> [Name] -> Compile [JsStmt]
-    makeAccessors srcloc fields =
+    makeAccessors _srcloc fields =
       forM fields $ \name ->
-           bindToplevel srcloc
-                        toplevel
+           bindToplevel toplevel
                         name
                         (JsFun Nothing
                                [JsNameVar "x"]
@@ -161,11 +160,10 @@ compileDataDecl toplevel tyvars constructors =
 -- | Compile a function which pattern matches (causing a case analysis).
 compileFunCase :: Bool -> [Match] -> Compile [JsStmt]
 compileFunCase _toplevel [] = return []
-compileFunCase toplevel matches@(Match srcloc name argslen _ _ _:_) = do
+compileFunCase toplevel matches@(Match _ name argslen _ _ _:_) = do
   pats <- fmap optimizePatConditions (mapM compileCase matches)
   bindVar name
-  bind <- bindToplevel srcloc
-                       toplevel
+  bind <- bindToplevel toplevel
                        name
                        (foldr (\arg inner -> JsFun Nothing [arg] [] (Just inner))
                               (stmtsThunk (concat pats ++ basecase))

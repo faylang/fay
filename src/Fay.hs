@@ -104,14 +104,14 @@ compileToModule filepath config raw with hscode = do
         generateNaked jscode _exports _module = unlines $
           [if configExportRuntime config then raw else ""
           ,jscode]
-        generateWrapped jscode exports mod@(ModuleName modulename) = unlines $ filter (not . null) $
+        generateWrapped jscode exports m@(ModuleName modulename) = unlines $ filter (not . null) $
           ["/** @constructor"
           ,"*/"
           ,"var " ++ clean modulename ++ " = (function(){"
           ,if configExportRuntime config then raw else ""
           ,jscode
           ,"// Exports"
-          ,unlines (map (printExport mod) exports)
+          ,unlines (map (printExport m) exports)
           ,"// Built-ins"
           ,"this._ = Fay$$_;"
           ,if configExportBuiltins config
@@ -137,16 +137,11 @@ createModulePath (ModuleName ps) =
   concatMap (\ns -> case ns of
       []  -> []
       ["this"] -> []
-      n  -> [JsSetProp' (mkQn n) (JsOr (f ps) (JsObj []))]
+      n  -> [JsSetModule (ModulePath n) (JsOr (f ps) (JsObj []))]
     ) . inits . splitOn "." $ ps
   where
     f :: String -> JsExp
     f = JsName . JsNameVar . (\n -> Qual (ModuleName . intercalate "." $ init n) (Ident $ last n)) .  splitOn "."
-    mkQn :: [String] -> QName
-    mkQn []  = error "mkQn []"
-    mkQn [_] = error "mkQn [_]"
-    mkQn (reverse -> x:xs) = Qual (ModuleName . intercalate "." $ reverse xs) (Ident x)
-
 
 createExportPath :: QName -> [JsStmt]
 createExportPath (UnQual _) = []
@@ -155,8 +150,8 @@ createExportPath (Qual (ModuleName m) _) = createModulePath . ModuleName $ "this
 
 -- | Print an this.x = x; export out.
 printExport :: ModuleName -> QName -> String
-printExport mod name =
-  let exportName = qualifyAs mod name in
+printExport m name =
+  let exportName = qualifyAs m name in
     printJSString (createExportPath exportName)
       ++ printJSString (JsSetProp JsThis
                                  (JsNameVar exportName)

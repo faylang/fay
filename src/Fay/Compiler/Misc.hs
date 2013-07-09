@@ -109,10 +109,10 @@ qualifyQName (UnQual name) = qualify name
 qualifyQName n             = return n
 
 -- | Make a top-level binding.
-bindToplevel :: SrcLoc -> Bool -> Name -> JsExp -> Compile JsStmt
-bindToplevel srcloc toplevel name expr = do
+bindToplevel :: Bool -> Name -> JsExp -> Compile JsStmt
+bindToplevel toplevel name expr = do
   qname <- (if toplevel then qualify else return . UnQual) name
-  return $ JsSetProp' qname expr
+  return $ JsSetQName qname expr
 
 -- TODO tmp
 qname2String :: QName -> String

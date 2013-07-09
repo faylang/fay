@@ -31,7 +31,7 @@ module Fay.Types
   ,Printer(..)
   ,Mapping(..)
   ,SerializeContext(..)
-  ,ModulePath
+  ,ModulePath(..)
   ) where
 
 import           Control.Applicative
@@ -81,7 +81,8 @@ data CompileConfig = CompileConfig
   , configBasePath           :: Maybe FilePath             -- ^ Custom source location for fay-base
   } deriving (Show)
 
-type ModulePath = [String]
+newtype ModulePath = ModulePath [String]
+  deriving (Eq, Ord, Show)
 
 -- | State of the compiler.
 data CompileState = CompileState
@@ -250,7 +251,8 @@ data JsStmt
   | JsWhile JsExp [JsStmt]
   | JsUpdate JsName JsExp
   | JsSetProp JsName JsName JsExp
-  | JsSetProp' QName JsExp
+  | JsSetQName QName JsExp
+  | JsSetModule ModulePath JsExp
   | JsSetPropExtern JsName JsName JsExp
   | JsContinue
   | JsBlock [JsStmt]

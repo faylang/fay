@@ -64,7 +64,7 @@ compileFFI srcloc name formatstr sig =
 compileFFI' :: SrcLoc -> Name -> String -> Type -> Compile [JsStmt]
 compileFFI' srcloc name formatstr sig = do
   fun <- ffiFun srcloc (Just name) formatstr sig
-  stmt <- bindToplevel srcloc True name fun
+  stmt <- bindToplevel True name fun
   return [stmt]
 
 ffiFun :: SrcLoc -> Maybe Name -> String -> Type -> Compile JsExp

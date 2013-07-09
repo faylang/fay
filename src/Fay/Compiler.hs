@@ -102,24 +102,16 @@ compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
 -- Compilers
 
 moduleNameToModulePaths :: ModuleName -> [ModulePath]
-moduleNameToModulePaths (ModuleName n) = inits $ splitOn "." n
+moduleNameToModulePaths (ModuleName n) = map ModulePath . tail . inits $ splitOn "." n
 
 createModulePath :: ModuleName -> Compile [JsStmt]
 createModulePath =
-  liftM concat . mapM (\ns -> case ns of
-      []  -> return []
-      [n] -> topLevelMod n
-      ns  -> nestedMod ns
-    ) . moduleNameToModulePaths
+  liftM concat . mapM modPath . moduleNameToModulePaths
   where
-    mkQn :: [String] -> QName
-    mkQn []  = error "mkQn []"
-    mkQn [_] = error "mkQn [_]"
-    mkQn (reverse -> x:xs) = Qual (ModuleName . intercalate "." $ reverse xs) (Ident x)
-    topLevelMod :: String -> Compile [JsStmt]
-    topLevelMod n = whenImportNotGenerated [n] (\_ -> [JsVar (JsNameVar . UnQual $ Ident n) (JsObj [])])
-    nestedMod :: ModulePath -> Compile [JsStmt]
-    nestedMod ns = whenImportNotGenerated ns (\ns -> [JsSetProp' (mkQn ns) (JsObj [])])
+    modPath :: ModulePath -> Compile [JsStmt]
+    modPath mp = whenImportNotGenerated mp $ \_ -> case mp of
+     ModulePath [n] -> [JsVar (JsNameVar . UnQual $ Ident n) (JsObj [])]
+     _   -> [JsSetModule mp (JsObj [])]
 
 whenImportNotGenerated :: ModulePath -> (ModulePath -> [JsStmt]) -> Compile [JsStmt]
 whenImportNotGenerated mp f = do

@@ -25,8 +25,10 @@ import           Fay.Compiler.Exp
 import           Fay.Compiler.FFI
 import           Fay.Compiler.InitialPass (initialPass)
 import           Fay.Compiler.Misc
+import           Fay.Compiler.ModuleScope (namesNotFromModule, findPrimOp)
 import           Fay.Compiler.Optimizer
 import           Fay.Compiler.Typecheck
+import           Fay.Compiler.QName
 import           Fay.Types
 
 import           Control.Applicative
@@ -79,30 +81,78 @@ compileToAst filepath reader state with from =
                           (parseFay filepath from))
 
 -- | Compile the top-level Fay module.
-compileToplevelModule :: Module -> Compile [JsStmt]
-compileToplevelModule mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
+compileToplevelModule :: FilePath -> Module -> Compile [JsStmt]
+compileToplevelModule filein mod@(Module _ mname@(ModuleName modulename) _ _ _ _ _)  = do
   cfg <- config id
-
   when (configTypecheck cfg) $
     typecheck (configPackageConf cfg) (configWall cfg) $
       fromMaybe modulename $ configFilePath cfg
   initialPass mod
   cs <- io defaultCompileState
   modify $ \s -> s { stateImported = stateImported cs }
-  (stmts,CompileWriter{..}) <- listen $ compileModule True mod
-  let fay2js = if null writerFayToJs then [] else fayToJsDispatcher writerFayToJs
-      js2fay = if null writerJsToFay then [] else jsToFayDispatcher writerJsToFay
-      maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
-  if configDispatcherOnly cfg
-     then return (maybeOptimize (writerCons ++ fay2js ++ js2fay))
-     else return (maybeOptimize (stmts ++
-                    if configDispatchers cfg then writerCons ++ fay2js ++ js2fay else []))
+  (stmts,writer) <- listen $ compileModule (Just filein) mname
+  makeDispatchers mname stmts writer
 
 --------------------------------------------------------------------------------
 -- Compilers
 
-moduleNameToModulePaths :: ModuleName -> [ModulePath]
-moduleNameToModulePaths (ModuleName n) = map ModulePath . tail . inits $ splitOn "." n
+compileModule :: Maybe FilePath -> ModuleName -> Compile [JsStmt]
+compileModule (Just filein) _name = do
+    contents <- io $ readFile filein
+    state <- get
+    reader <- ask
+    result <- liftIO $ compileToAst filein reader state compileModule' contents
+    case result of
+      Right (stmts,state,writer) -> do
+        modify $ \s -> s { stateImported      = stateImported state
+                         , stateLocalScope    = S.empty
+                         , stateJsModulePaths = stateJsModulePaths state
+                         }
+        makeDispatchers (stateModuleName state) stmts writer
+      Left err -> throwError err
+compileModule Nothing name =
+  unlessImported name $ \filepath contents -> do
+    state <- get
+    reader <- ask
+    result <- liftIO $ compileToAst filepath reader state compileModule' contents
+    case result of
+      Right (stmts,state,writer) -> do
+        modify $ \s -> s { stateImported      = stateImported state
+                         , stateLocalScope    = S.empty
+                         , stateJsModulePaths = stateJsModulePaths state
+                         }
+        makeDispatchers (stateModuleName state) stmts writer
+      Left err -> throwError err
+
+-- | Compile Haskell module.
+compileModule' :: Module -> Compile [JsStmt]
+compileModule' (Module _ modulename _pragmas Nothing _exports imports decls) =
+  withModuleScope $ do
+    imported <- fmap concat (mapM compileImport imports)
+    modify $ \s -> s { stateModuleName = modulename
+                     , stateModuleScope = fromMaybe (error $ "Could not find stateModuleScope for " ++ show modulename) $ M.lookup modulename $ stateModuleScopes s
+                     }
+    current <- compileDecls True decls
+
+    exportStdlib     <- config configExportStdlib
+    exportStdlibOnly <- config configExportStdlibOnly
+    modulePaths      <- createModulePath modulename
+    extExports       <- generateExports
+    return $
+         [JsStmtComment (show modulename ++ " imported"    )] ++ imported
+      ++ [JsStmtComment (show modulename ++ " modulePaths" )] ++ modulePaths
+      ++ [JsStmtComment (show modulename ++ " definitions" )] ++ current
+      ++ [JsStmtComment (show modulename ++ " ext exports" )] ++ extExports
+--    if exportStdlibOnly
+--      then if anStdlibModule modulename || toplevel
+--              then if toplevel
+--                      then return (imported ++ exportStmt)
+--                      else return (imported ++ modulePaths ++ current ++ exportStmt)
+--              else return []
+--      else if not exportStdlib && anStdlibModule modulename
+--              then return []
+--              else return (imported ++ modulePaths ++ importStmts ++ current ++ exportStmt)
+compileModule' mod = throwError (UnsupportedModuleSyntax mod)
 
 createModulePath :: ModuleName -> Compile [JsStmt]
 createModulePath =
@@ -113,41 +163,29 @@ createModulePath =
      ModulePath [n] -> [JsVar (JsNameVar . UnQual $ Ident n) (JsObj [])]
      _   -> [JsSetModule mp (JsObj [])]
 
-whenImportNotGenerated :: ModulePath -> (ModulePath -> [JsStmt]) -> Compile [JsStmt]
-whenImportNotGenerated mp f = do
-  b <- S.member mp <$> gets stateJsModulePaths
-  if b
-    then return []
-    else do
-      modify $ \s -> s { stateJsModulePaths = mp `S.insert` stateJsModulePaths s }
-      return $ f mp
+    moduleNameToModulePaths :: ModuleName -> [ModulePath]
+    moduleNameToModulePaths (ModuleName n) = map ModulePath . tail . inits $ splitOn "." n
 
--- | Compile Haskell module.
-compileModule :: Bool -> Module -> Compile [JsStmt]
-compileModule toplevel (Module _ modulename _pragmas Nothing _exports imports decls) =
-  withModuleScope $ do
-    imported <- fmap concat (mapM compileImport imports)
-    modify $ \s -> s { stateModuleName = modulename
-                     , stateModuleScope = fromMaybe (error $ "Could not find stateModuleScope for " ++ show modulename) $ M.lookup modulename $ stateModuleScopes s
-                     }
-    current <- compileDecls True decls
+    whenImportNotGenerated :: ModulePath -> (ModulePath -> [JsStmt]) -> Compile [JsStmt]
+    whenImportNotGenerated mp f = do
+      b <- S.member mp <$> gets stateJsModulePaths
+      if b
+        then return []
+        else do
+          modify $ \s -> s { stateJsModulePaths = mp `S.insert` stateJsModulePaths s }
+          return $ f mp
 
-    exportStdlib     <- config configExportStdlib
-    exportStdlibOnly <- config configExportStdlibOnly
-    modulePaths <- createModulePath modulename
-    (modulePaths ++) <$>
-      (if exportStdlibOnly
-       then if anStdlibModule modulename || toplevel
-               then if toplevel
-                       then return imported
-                       else return (current ++ imported)
-               else return []
-       else if not exportStdlib && anStdlibModule modulename
-               then return []
-               else return (imported ++ current))
-compileModule _ mod = throwError (UnsupportedModuleSyntax mod)
+generateExports :: Compile [JsStmt]
+generateExports = do
+  m <- gets stateModuleName
+  map (exportExp m) . S.toList . getNonLocalExports <$> gets id
+  where
+    exportExp :: ModuleName -> QName -> JsStmt
+    exportExp m v = JsSetQName (changeModule m v) $ case findPrimOp v of
+      Just p  -> JsName $ JsNameVar p
+      Nothing -> JsName $ JsNameVar v
 
-instance CompilesTo Module [JsStmt] where compileTo = compileModule False
+instance CompilesTo Module [JsStmt] where compileTo = compileModule'
 
 -- | Is the module a standard module, i.e., one that we'd rather not
 -- output code for if we're compiling separate files.
@@ -158,21 +196,22 @@ anStdlibModule (ModuleName name) = elem name ["Prelude","FFI","Language.Fay.FFI"
 compileImport :: ImportDecl -> Compile [JsStmt]
 --  warn $ "import with package syntax ignored: " ++ prettyPrint i
 compileImport (ImportDecl _ _    _     _ Just{}  _       _) = return []
-compileImport (ImportDecl _ name False _ Nothing Nothing _) =
-  unlessImported name $ \filepath contents -> do
-    state <- get
-    reader <- ask
-    result <- liftIO $ compileToAst filepath reader state (compileModule False) contents
-    case result of
-      Right (stmts,state,writer) -> do
-        tell writer
-        modify $ \s -> s { stateImported   = stateImported state
-                         , stateLocalScope = S.empty
-                         , stateJsModulePaths = stateJsModulePaths state
-                         }
-        return stmts
-      Left err -> throwError err
+compileImport (ImportDecl _ name False _ Nothing Nothing _) = compileModule Nothing name
 compileImport i = throwError $ UnsupportedImport i
+
+
+makeDispatchers :: ModuleName -> [JsStmt] -> CompileWriter -> Compile [JsStmt]
+makeDispatchers mod stmts CompileWriter{..} = do
+  return stmts
+--  cfg <- config id
+--  let fay2js = if null writerFayToJs then return [] else fayToJsDispatcher mod writerFayToJs
+--  let js2fay = if null writerJsToFay then [] else jsToFayDispatcher writerJsToFay
+--      maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
+--  if configDispatcherOnly cfg
+--     then return (maybeOptimize (writerCons ++ fay2js ++ js2fay))
+--     else return (maybeOptimize (stmts ++
+--                    if configDispatchers cfg then writerCons ++ fay2js ++ js2fay else []))
+
 
 unlessImported :: ModuleName
                -> (FilePath -> String -> Compile [JsStmt])

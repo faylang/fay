@@ -110,9 +110,13 @@ qualifyQName n             = return n
 
 -- | Make a top-level binding.
 bindToplevel :: Bool -> Name -> JsExp -> Compile JsStmt
-bindToplevel toplevel name expr = do
-  qname <- (if toplevel then qualify else return . UnQual) name
-  return $ JsSetQName qname expr
+bindToplevel toplevel name expr =
+  if toplevel
+    then do
+      mod <- gets stateModuleName
+      return $ JsSetQName (Qual mod name) expr
+    else return $ JsVar (JsNameVar $ UnQual name) expr
+
 
 -- TODO tmp
 qname2String :: QName -> String

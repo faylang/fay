@@ -13,6 +13,7 @@ import Fay.Compiler.FFI
 import Fay.Compiler.GADT
 import Fay.Compiler.Misc
 import Fay.Compiler.Pattern
+import Fay.Compiler.QName
 import Fay.Types
 
 import Control.Applicative
@@ -126,10 +127,9 @@ compileDataDecl toplevel tyvars constructors =
     -- Creates a constructor _RecConstr for a Record
     makeConstructor :: Name -> [Name] -> Compile JsStmt
     makeConstructor name (map (JsNameVar . UnQual) -> fields) = do
-      qname <- qualify name
       return $
         JsExpStmt $
-          JsFun (Just $ JsConstructor qname)
+          JsFun (Just $ JsConstructor $ UnQual name)
                 fields
                 (for fields $ \field -> JsSetProp JsThis field (JsName field))
                 Nothing
@@ -139,7 +139,7 @@ compileDataDecl toplevel tyvars constructors =
     makeFunc name (map (JsNameVar . UnQual) -> fields) = do
       let fieldExps = map JsName fields
       qname <- qualify name
-      return $ JsSetQName qname $
+      return $ JsVar (JsNameVar $ unQual' qname) $
         foldr (\slot inner -> JsFun Nothing [slot] [] (Just inner))
           (thunk $ JsNew (JsConstructor qname) fieldExps)
           fields

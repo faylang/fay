@@ -126,6 +126,8 @@ instance Printable JsStmt where
     printJS "continue;" +> newline
   printJS (JsMappedVar _ name expr) =
     "var " +> name +> " = " +> expr +> ";" +> newline
+  printJS (JsStmtComment s) =
+    "/* " +> s +> " */" +> newline
 
 instance Printable ModulePath where
   printJS (ModulePath l) = write $ intercalate "." l
@@ -173,6 +175,11 @@ instance Printable JsExp where
   printJS (JsObj assoc) =
     "{" +> (intercalateM "," (map cons assoc)) +> "}"
       where cons (key,value) = "\"" +> key +> "\": " +> value
+  printJS (JsLitObj assoc) =
+    "{" +> (intercalateM "," (map cons assoc)) +> "}"
+      where
+        cons :: (Name, JsExp) -> Printer ()
+        cons (key,value) = "\"" +> key +> "\": " +> value
   printJS (JsFun nm params stmts ret) =
     case nm of
       Just n ->
@@ -229,6 +236,7 @@ instance Printable JsName where
       JsConstructor qname -> printCons qname
       JsBuiltIn qname     -> "Fay$$" +> printJS qname
       JsParametrizedType  -> write "type"
+      JsModuleName (ModuleName m) -> write m
 
 printCons :: QName -> Printer ()
 printCons (UnQual n) = printConsName n
@@ -274,7 +282,7 @@ encodeName name
   | otherwise                 = normalizeName name
 
 -- | Normalize the given name to JavaScript-valid names.
-normalizeName :: [Char] -> [Char]
+normalizeName :: String -> String
 normalizeName name =
   concatMap encodeChar name
 

@@ -8,10 +8,13 @@ module Fay.Compiler.ModuleScope
   ,bindAsLocals
   ,findTopLevelNames
   ,resolveName
-  ,moduleLocals)
-  where
+  ,moduleLocals
+  ,findPrimOp
+  ,namesNotFromModule
+  ) where
 
-import Fay.Compiler.GADT
+import           Fay.Compiler.GADT
+import           Fay.Compiler.QName
 
 import           Control.Arrow
 import           Control.Monad.Reader
@@ -31,6 +34,10 @@ import           Prelude hiding (mod)
 --   , (  Qual "M" "insertWith", Qual "Data.Map" "insertWith") ]
 newtype ModuleScope = ModuleScope (Map QName QName)
   deriving Show
+
+namesNotFromModule :: ModuleName -> ModuleScope -> [(QName, QName)]
+namesNotFromModule md (ModuleScope m) =
+  filter (\(_,d) -> qModName d /= Just md) $ M.toList m
 
 instance Monoid ModuleScope where
   mempty                                  = ModuleScope M.empty
@@ -108,6 +115,10 @@ envPrimOpsMap = M.fromList
   , (Symbol "&&",    (Qual (ModuleName "Fay$") (Ident "and")))
   , (Symbol "||",    (Qual (ModuleName "Fay$") (Ident "or")))
   ]
+
+findPrimOp :: QName -> Maybe QName
+findPrimOp (Qual (ModuleName "Prelude") s) = M.lookup s envPrimOpsMap
+findPrimOp _ = Nothing
 
 --------------------------------------------------------------------------------
 -- AST

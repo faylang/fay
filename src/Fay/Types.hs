@@ -23,6 +23,7 @@ module Fay.Types
   ,CompileState(..)
   ,addCurrentExport
   ,getCurrentExports
+  ,getNonLocalExports
   ,getCurrentExportsWithoutNewtypes
   ,getExportsFor
   ,faySourceDir
@@ -32,6 +33,7 @@ module Fay.Types
   ,Mapping(..)
   ,SerializeContext(..)
   ,ModulePath(..)
+  ,mkModulePath
   ) where
 
 import           Control.Applicative
@@ -40,6 +42,7 @@ import           Control.Monad.Identity (Identity)
 import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default
+import           Data.List.Split
 import           Data.Maybe
 import           Data.Map              (Map)
 import qualified Data.Map              as M
@@ -50,6 +53,7 @@ import           Language.Haskell.Exts
 import           System.FilePath
 
 import           Fay.Compiler.ModuleScope (ModuleScope)
+import           Fay.Compiler.QName
 import           Paths_fay
 
 --------------------------------------------------------------------------------
@@ -83,6 +87,9 @@ data CompileConfig = CompileConfig
 
 newtype ModulePath = ModulePath [String]
   deriving (Eq, Ord, Show)
+
+mkModulePath :: ModuleName -> ModulePath
+mkModulePath (ModuleName m) = ModulePath . splitOn "." $ m
 
 -- | State of the compiler.
 data CompileState = CompileState
@@ -136,6 +143,9 @@ addCurrentExport q cs =
 -- | Get all of the exported identifiers for the current module.
 getCurrentExports :: CompileState -> Set QName
 getCurrentExports cs = getExportsFor (stateModuleName cs) cs
+
+getNonLocalExports :: CompileState -> Set QName
+getNonLocalExports st = S.filter ((/= Just (stateModuleName st)) . qModName) . getCurrentExportsWithoutNewtypes $ st
 
 getCurrentExportsWithoutNewtypes :: CompileState -> Set QName
 getCurrentExportsWithoutNewtypes cs = excludeNewtypes cs $ getCurrentExports cs
@@ -257,6 +267,7 @@ data JsStmt
   | JsContinue
   | JsBlock [JsStmt]
   | JsExpStmt JsExp
+  | JsStmtComment String
   deriving (Show,Eq)
 
 -- | Expression type.
@@ -285,6 +296,7 @@ data JsExp
   | JsNeq JsExp JsExp
   | JsInfix String JsExp JsExp -- Used to optimize *, /, +, etc
   | JsObj [(String,JsExp)]
+  | JsLitObj [(Name,JsExp)]
   | JsUndefined
   | JsAnd JsExp JsExp
   | JsOr  JsExp JsExp
@@ -302,6 +314,7 @@ data JsName
   | JsTmp Integer
   | JsConstructor QName
   | JsBuiltIn Name
+  | JsModuleName ModuleName
   deriving (Eq,Show)
 
 -- | Literal value type.

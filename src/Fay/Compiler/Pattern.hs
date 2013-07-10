@@ -6,6 +6,7 @@
 module Fay.Compiler.Pattern where
 
 import Fay.Compiler.Misc
+import Fay.Compiler.QName
 import Fay.Types
 
 import Control.Monad.Error
@@ -74,10 +75,6 @@ compilePatFields exp name pats body = do
         compilePats' _ [] = return []
 
         compilePats' _ (pat:_) = throwError (UnsupportedFieldPattern pat)
-
-        unQual (Qual _ n) = n
-        unQual (UnQual n) = n
-        unQual Special{} = error "Trying to unqualify a Special..."
 
 -- | Compile a literal value from a pattern match.
 compilePLit :: JsExp -> Literal -> [JsStmt] -> Compile [JsStmt]

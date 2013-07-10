@@ -31,7 +31,7 @@ import Language.ECMAScript3.Parser  as JS
 import Language.ECMAScript3.Syntax
 import Language.Haskell.Exts        (prettyPrint)
 import Language.Haskell.Exts.Syntax
-import Prelude                      hiding (exp)
+import Prelude                      hiding (exp, mod)
 import Safe
 
 -- | Compile an FFI call.
@@ -339,9 +339,9 @@ explodeFields :: [([a], t)] -> [(a, t)]
 explodeFields = concatMap $ \(names,typ) -> map (,typ) names
 
 -- | The dispatcher for Fay->JS conversion.
-fayToJsDispatcher :: [(String,JsExp)] -> [JsStmt]
-fayToJsDispatcher cases =
-  [JsVar fayToJsHash $ JsObj cases
+fayToJsDispatcher :: ModuleName -> [(String,JsExp)] -> [JsStmt]
+fayToJsDispatcher mod cases =
+  [JsSetQName modfn $ JsObj cases
   ,JsExpStmt $
      JsFun (Just $ JsBuiltIn "fayToJsUserDefined")
            [JsNameVar "type",transcodingObj]
@@ -363,7 +363,7 @@ fayToJsDispatcher cases =
   ]
   where fayToJsHash = JsBuiltIn "fayToJsHash"
         fayToJsFun  = JsNameVar "fayToJsFun"
-
+        modfn       = Qual mod "fayToJsFun"
 
 -- | The dispatcher for JS->Fay conversion.
 jsToFayDispatcher :: [(String,JsExp)] -> [JsStmt]

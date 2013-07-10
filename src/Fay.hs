@@ -83,7 +83,7 @@ compileFileWithState config filein = do
   hscode <- readFile filein
   raw <- readFile runtime
   config' <- resolvePackages config
-  compileToModule filein config' raw compileToplevelModule hscode
+  compileToModule filein config' raw (compileToplevelModule filein) hscode
 
 -- | Compile the given module to a runnable module.
 compileToModule :: (Show from,Show to,CompilesTo from to)
@@ -105,26 +105,12 @@ compileToModule filepath config raw with hscode = do
           [if configExportRuntime config then raw else ""
           ,jscode]
         generateWrapped jscode exports m@(ModuleName modulename) = unlines $ filter (not . null) $
-          ["/** @constructor"
-          ,"*/"
-          ,"var " ++ clean modulename ++ " = (function(){"
-          ,if configExportRuntime config then raw else ""
+          [if configExportRuntime config then raw else ""
           ,jscode
           ,"// Exports"
-          ,unlines (map (printExport m) exports)
-          ,"// Built-ins"
-          ,"this._ = Fay$$_;"
-          ,if configExportBuiltins config
-              then unlines ["this.$ = Fay$$$;"
-                           ,"this.$fayToJs = Fay$$fayToJs;"
-                           ,"this.$jsToFay = Fay$$jsToFay;"
-                           ]
-              else ""
-          ,"return this;"
-          ,"})();"
           ,if not (configLibrary config)
               then unlines [";"
-                           ,clean modulename ++ "._(" ++ clean modulename ++ "." ++ clean modulename ++ ".main);"
+                           ,"Fay$$_(" ++ modulename ++ ".main);"
                            ]
               else ""
           ]
@@ -147,15 +133,6 @@ createExportPath :: QName -> [JsStmt]
 createExportPath (UnQual _) = []
 createExportPath (Special _) = []
 createExportPath (Qual (ModuleName m) _) = createModulePath . ModuleName $ "this." ++ m
-
--- | Print an this.x = x; export out.
-printExport :: ModuleName -> QName -> String
-printExport m name =
-  let exportName = qualifyAs m name in
-    printJSString (createExportPath exportName)
-      ++ printJSString (JsSetProp JsThis
-                                 (JsNameVar exportName)
-                                 (JsName (JsNameVar name)))
 
 qualifyAs :: ModuleName -> QName -> QName
 qualifyAs m (UnQual n) = Qual m n

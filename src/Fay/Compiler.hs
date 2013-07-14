@@ -11,7 +11,6 @@ module Fay.Compiler
   (runCompile
   ,compileViaStr
   ,compileToAst
-  ,compileModule
   ,compileExp
   ,compileDecl
   ,compileToplevelModule
@@ -82,7 +81,7 @@ compileToAst filepath reader state with from =
 
 -- | Compile the top-level Fay module.
 compileToplevelModule :: FilePath -> Module -> Compile [JsStmt]
-compileToplevelModule filein mod@(Module _ mname@(ModuleName modulename) _ _ _ _ _)  = do
+compileToplevelModule filein mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
   cfg <- config id
   when (configTypecheck cfg) $
     typecheck (configPackageConf cfg) (configWall cfg) $
@@ -90,32 +89,40 @@ compileToplevelModule filein mod@(Module _ mname@(ModuleName modulename) _ _ _ _
   initialPass mod
   cs <- io defaultCompileState
   modify $ \s -> s { stateImported = stateImported cs }
-  (stmts,writer) <- listen $ compileModule (Just filein) mname
-  makeHashes stmts writer
+  fmap fst . listen $ compileModuleFromFile filein
 
 --------------------------------------------------------------------------------
 -- Compilers
 
 -- TODO combine cases
-compileModule :: Maybe FilePath -> ModuleName -> Compile [JsStmt]
-compileModule (Just filein) _name = do
-    contents <- io $ readFile filein
+compileModuleFromFile :: FilePath -> Compile [JsStmt]
+compileModuleFromFile fp = do
+    contents <- io $ readFile fp
+    compileModule fp contents
+compileModuleFromName :: ModuleName -> Compile [JsStmt]
+compileModuleFromName name =
+  unlessImported name compileModule
+    where
+      unlessImported :: ModuleName
+                     -> (FilePath -> String -> Compile [JsStmt])
+                     -> Compile [JsStmt]
+      unlessImported "Fay.Types" _ = return []
+      unlessImported name importIt = do
+        imported <- gets stateImported
+        case lookup name imported of
+          Just _  -> return []
+          Nothing -> do
+            dirs <- configDirectoryIncludePaths <$> config id
+            (filepath,contents) <- findImport dirs name
+            modify $ \s -> s { stateImported = (name,filepath) : imported }
+            res <- importIt filepath contents
+            return res
+
+compileModule :: FilePath -> String -> Compile [JsStmt]
+compileModule filepath contents = do
     state <- get
     reader <- ask
-    result <- liftIO $ compileToAst filein reader state compileModule' contents
-    case result of
-      Right (stmts,state,writer) -> do
-        modify $ \s -> s { stateImported      = stateImported state
-                         , stateLocalScope    = S.empty
-                         , stateJsModulePaths = stateJsModulePaths state
-                         }
-        makeHashes stmts writer
-      Left err -> throwError err
-compileModule Nothing name =
-  unlessImported name $ \filepath contents -> do
-    state <- get
-    reader <- ask
-    result <- liftIO $ compileToAst filepath reader state compileModule' contents
+    result <- liftIO $ compileToAst filepath reader state compileModuleFromAST contents
     case result of
       Right (stmts,state,writer) -> do
         modify $ \s -> s { stateImported      = stateImported state
@@ -126,8 +133,8 @@ compileModule Nothing name =
       Left err -> throwError err
 
 -- | Compile Haskell module.
-compileModule' :: Module -> Compile [JsStmt]
-compileModule' (Module _ modulename _pragmas Nothing _exports imports decls) =
+compileModuleFromAST :: Module -> Compile [JsStmt]
+compileModuleFromAST (Module _ modulename _pragmas Nothing _exports imports decls) =
   withModuleScope $ do
     imported <- fmap concat (mapM compileImport imports)
     modify $ \s -> s { stateModuleName = modulename
@@ -154,7 +161,9 @@ compileModule' (Module _ modulename _pragmas Nothing _exports imports decls) =
 --      else if not exportStdlib && anStdlibModule modulename
 --              then return []
 --              else return (imported ++ modulePaths ++ importStmts ++ current ++ exportStmt)
-compileModule' mod = throwError (UnsupportedModuleSyntax mod)
+compileModuleFromAST mod = throwError (UnsupportedModuleSyntax mod)
+
+instance CompilesTo Module [JsStmt] where compileTo = compileModuleFromAST
 
 createModulePath :: ModuleName -> Compile [JsStmt]
 createModulePath =
@@ -187,8 +196,6 @@ generateExports = do
       Just p  -> JsName $ JsNameVar p
       Nothing -> JsName $ JsNameVar v
 
-instance CompilesTo Module [JsStmt] where compileTo = compileModule'
-
 -- | Is the module a standard module, i.e., one that we'd rather not
 -- output code for if we're compiling separate files.
 anStdlibModule :: ModuleName -> Bool
@@ -198,7 +205,7 @@ anStdlibModule (ModuleName name) = elem name ["Prelude","FFI","Language.Fay.FFI"
 compileImport :: ImportDecl -> Compile [JsStmt]
 -- Package imports are ignored since they are used for some trickery in fay-base.
 compileImport (ImportDecl _ _    _     _ Just{}  _       _) = return []
-compileImport (ImportDecl _ name False _ Nothing Nothing _) = compileModule Nothing name
+compileImport (ImportDecl _ name False _ Nothing Nothing _) = compileModuleFromName name
 compileImport i = throwError $ UnsupportedImport i
 
 makeHashes :: [JsStmt] -> CompileWriter -> Compile [JsStmt]
@@ -212,18 +219,3 @@ makeHashes stmts CompileWriter{..} = do
 --     else return (maybeOptimize (stmts ++
 --                    if configDispatchers cfg then writerCons ++ fay2js ++ js2fay else []))
   return $ maybeOptimize $ stmts ++ writerCons ++ fay2js ++ js2fay
-
-unlessImported :: ModuleName
-               -> (FilePath -> String -> Compile [JsStmt])
-               -> Compile [JsStmt]
-unlessImported "Fay.Types" _ = return []
-unlessImported name importIt = do
-  imported <- gets stateImported
-  case lookup name imported of
-    Just _  -> return []
-    Nothing -> do
-      dirs <- configDirectoryIncludePaths <$> config id
-      (filepath,contents) <- findImport dirs name
-      modify $ \s -> s { stateImported = (name,filepath) : imported }
-      res <- importIt filepath contents
-      return res

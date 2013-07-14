@@ -118,16 +118,6 @@ bindToplevel toplevel name expr =
     else return $ JsVar (JsNameVar $ UnQual name) expr
 
 
--- TODO tmp
-qname2String :: QName -> String
-qname2String (UnQual n) = name2String n
-qname2String (Qual (ModuleName m) n) = m ++ "." ++ name2String n
-qname2String (Special _) = error "qname2String Special"
-
-name2String :: Name -> String
-name2String (Ident n) = n
-name2String (Symbol n) = n
-
 -- | Create a temporary environment and discard it after the given computation.
 withModuleScope :: Compile a -> Compile a
 withModuleScope m = do

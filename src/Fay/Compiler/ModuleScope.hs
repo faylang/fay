@@ -10,7 +10,6 @@ module Fay.Compiler.ModuleScope
   ,resolveName
   ,moduleLocals
   ,findPrimOp
---  ,namesNotFromModule
   ) where
 
 import           Fay.Compiler.GADT
@@ -33,11 +32,6 @@ import           Prelude hiding (mod)
 --   , (  Qual "M" "insertWith", Qual "Data.Map" "insertWith") ]
 newtype ModuleScope = ModuleScope (Map QName QName)
   deriving Show
-
--- TODO Remove?
---namesNotFromModule :: ModuleName -> ModuleScope -> [(QName, QName)]
---namesNotFromModule md (ModuleScope m) =
---  filter (\(_,d) -> qModName d /= Just md) $ M.toList m
 
 instance Monoid ModuleScope where
   mempty                                  = ModuleScope M.empty

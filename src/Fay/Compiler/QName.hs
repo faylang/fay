@@ -20,3 +20,8 @@ changeModule :: ModuleName -> QName -> QName
 changeModule m (Qual _ n) = Qual m n
 changeModule m (UnQual n) = Qual m n
 changeModule _ Special{}  = error "changeModule Special{}"
+
+changeName :: (Name -> Name) -> QName -> QName
+changeName f (UnQual n) = UnQual $ f n
+changeName f (Qual m n) = Qual m $ f n
+changeName _ Special{} = error "changeName Special{}"

@@ -183,8 +183,7 @@ instance Printable JsExp where
   printJS (JsFun nm params stmts ret) =
     case nm of
       Just n ->
-           printJS n
-        +> " = function " +> printJS (ident n) +> "("
+           "function " +> printJS (ident n) +> "("
         +> (intercalateM "," (map printJS params))
         +> "){" +> newline
         +> indented (stmts +>

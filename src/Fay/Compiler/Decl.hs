@@ -127,19 +127,23 @@ compileDataDecl toplevel tyvars constructors =
     -- Creates a constructor _RecConstr for a Record
     makeConstructor :: Name -> [Name] -> Compile JsStmt
     makeConstructor name (map (JsNameVar . UnQual) -> fields) = do
+      qname <- qualify name
       return $
-        JsExpStmt $
-          JsFun (Just $ JsConstructor $ UnQual name)
+        JsSetQName (changeName f qname) $
+          JsFun (Just $ JsConstructor $ qname)
                 fields
                 (for fields $ \field -> JsSetProp JsThis field (JsName field))
                 Nothing
+
+    f (Ident s) = Ident $ "_" ++ s
+    f (Symbol s) = Symbol $ "_" ++ s
 
     -- Creates a function to initialize the record by regular application
     makeFunc :: Name -> [Name] -> Compile JsStmt
     makeFunc name (map (JsNameVar . UnQual) -> fields) = do
       let fieldExps = map JsName fields
       qname <- qualify name
-      return $ JsVar (JsNameVar $ unQual' qname) $
+      return $ JsSetQName qname $
         foldr (\slot inner -> JsFun Nothing [slot] [] (Just inner))
           (thunk $ JsNew (JsConstructor qname) fieldExps)
           fields

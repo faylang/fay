@@ -51,6 +51,7 @@ testFile :: Maybe FilePath -> Maybe FilePath -> Bool -> String -> IO ()
 testFile packageConf basePath opt file = do
   let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
       out = toJsName file
+      resf = root <.> "res"
       config =
         addConfigDirectoryIncludePaths ["tests/"] $
           def { configOptimize = opt
@@ -58,13 +59,13 @@ testFile packageConf basePath opt file = do
               , configPackageConf = packageConf
               , configBasePath = basePath
               }
-  outExists <- doesFileExist root
+  resExists <- doesFileExist resf
   let partialName = root ++ "_partial"
   partialExists <- doesFileExist partialName
   compileFromTo config file (Just out)
   result <- runJavaScriptFile out
-  if outExists
-     then do output <- readFile root
+  if resExists
+     then do output <- readFile resf
              assertEqual file output (either show snd result)
      else
        if partialExists
@@ -73,7 +74,7 @@ testFile packageConf basePath opt file = do
              output <- readFile partialName
              assertEqual file output res
            Right (err,res) -> assertFailure $ "Did not fail:\n stdout: " ++ res ++ "\n\nstderr: " ++ err
-         else assertEqual file True (either (const True) (const False) result)
+         else assertEqual (file ++ ": Expected program to fail") True (either (const True) (const False) result)
 
 -- | Run a JS file.
 runJavaScriptFile :: String -> IO (Either (String,String) (String,String))

@@ -1,3 +1,7 @@
+/*******************************************************************************
+ * Misc.
+ */
+
 // Workaround for missing functionality in IE 8 and earlier.
 if( Object.create === undefined ) {
   Object.create = function( o ) {
@@ -5,6 +9,13 @@ if( Object.create === undefined ) {
     F.prototype = o;
     return new F();
   };
+}
+
+// Insert properties of b in place into a.
+function Fay$$objConcat(a,b){
+  for (var p in b) if (b.hasOwnProperty(p)){
+    a[p] = b[p];
+  }
 }
 
 /*******************************************************************************
@@ -236,6 +247,17 @@ function Fay$$fayToJs(type,fayObj){
   return jsObj;
 }
 
+// The dispatcher for Fay->JS conversion.
+function Fay$$fayToJsUserDefined(type,obj){
+  var _obj = Fay$$_(obj);
+  var fayToJsFun = Fay$$fayToJsHash[_obj.constructor.name];
+  return fayToJsFun ? fayToJsFun(type,type[2],_obj) : obj;
+}
+
+// Stores the mappings from fay types to js objects.
+// This will be populated by compiled modules.
+var Fay$$fayToJsHash = {};
+
 // Specialized serializer for string.
 function Fay$$fayToJs_string(fayObj){
   // Serialize Fay string to JavaScript string.
@@ -370,6 +392,15 @@ function Fay$$jsToFay(type,jsObj){
   else { throw new Error("Unhandled JS->Fay translation type: " + base); }
   return fayObj;
 }
+
+// The dispatcher for JS->Fay conversion.
+function Fay$$jsToFayUserDefined(type,obj){
+  var jsToFayFun = Fay$$jsToFayHash[obj["instance"]];
+  return jsToFayFun ? jsToFayFun(type,type[2],obj) : obj;
+};
+// Stores the mappings from js objects to fay types.
+// This will be populated by compiled modules.
+var Fay$$jsToFayHash = {};
 
 /*******************************************************************************
  * Lists.

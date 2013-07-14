@@ -91,11 +91,12 @@ compileToplevelModule filein mod@(Module _ mname@(ModuleName modulename) _ _ _ _
   cs <- io defaultCompileState
   modify $ \s -> s { stateImported = stateImported cs }
   (stmts,writer) <- listen $ compileModule (Just filein) mname
-  makeDispatchers mname stmts writer
+  makeHashes stmts writer
 
 --------------------------------------------------------------------------------
 -- Compilers
 
+-- TODO combine cases
 compileModule :: Maybe FilePath -> ModuleName -> Compile [JsStmt]
 compileModule (Just filein) _name = do
     contents <- io $ readFile filein
@@ -108,7 +109,7 @@ compileModule (Just filein) _name = do
                          , stateLocalScope    = S.empty
                          , stateJsModulePaths = stateJsModulePaths state
                          }
-        makeDispatchers (stateModuleName state) stmts writer
+        makeHashes stmts writer
       Left err -> throwError err
 compileModule Nothing name =
   unlessImported name $ \filepath contents -> do
@@ -121,7 +122,7 @@ compileModule Nothing name =
                          , stateLocalScope    = S.empty
                          , stateJsModulePaths = stateJsModulePaths state
                          }
-        makeDispatchers (stateModuleName state) stmts writer
+        makeHashes stmts writer
       Left err -> throwError err
 
 -- | Compile Haskell module.
@@ -200,11 +201,11 @@ compileImport (ImportDecl _ _    _     _ Just{}  _       _) = return []
 compileImport (ImportDecl _ name False _ Nothing Nothing _) = compileModule Nothing name
 compileImport i = throwError $ UnsupportedImport i
 
-makeDispatchers :: ModuleName -> [JsStmt] -> CompileWriter -> Compile [JsStmt]
-makeDispatchers mod stmts CompileWriter{..} = do
+makeHashes :: [JsStmt] -> CompileWriter -> Compile [JsStmt]
+makeHashes stmts CompileWriter{..} = do
   cfg <- config id
-  let fay2js = if null writerFayToJs then [] else fayToJsDispatcher mod writerFayToJs
-  let js2fay = if null writerJsToFay then [] else jsToFayDispatcher writerJsToFay
+  let fay2js = if null writerFayToJs then [] else fayToJsHash writerFayToJs
+  let js2fay = if null writerJsToFay then [] else jsToFayHash writerJsToFay
       maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
 --  if configDispatcherOnly cfg
 --     then return (maybeOptimize (writerCons ++ fay2js ++ js2fay))

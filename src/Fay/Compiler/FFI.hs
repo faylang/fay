@@ -11,9 +11,9 @@ module Fay.Compiler.FFI
   ,emitJsToFay
   ,compileFFI
   ,ffiFun
-  ,jsToFayDispatcher
-  ,fayToJsDispatcher)
-  where
+  ,jsToFayHash
+  ,fayToJsHash
+  ) where
 
 import Fay.Compiler.Misc
 import Fay.Compiler.Print           (printJSString)
@@ -338,55 +338,11 @@ formatFFI srcloc formatstr args = go formatstr where
 explodeFields :: [([a], t)] -> [(a, t)]
 explodeFields = concatMap $ \(names,typ) -> map (,typ) names
 
--- | The dispatcher for Fay->JS conversion.
-fayToJsDispatcher :: ModuleName -> [(String,JsExp)] -> [JsStmt]
-fayToJsDispatcher mod cases =
-  [JsSetQName modfn $ JsObj cases
-  ,JsExpStmt $
-     JsFun (Just $ JsBuiltIn "fayToJsUserDefined")
-           [JsNameVar "type",transcodingObj]
-           [JsVar transcodingObjForced $ force (JsName transcodingObj)
-           ,JsVar fayToJsFun  $ JsLookup
-                  (JsName fayToJsHash)
-                  (JsGetProp (JsGetProp (JsName transcodingObjForced)
-                                        (JsNameVar "constructor"))
-                             (JsNameVar "name"))
-           ]
-           (Just $ JsTernaryIf
-                 (JsName fayToJsFun)
-                 (JsApp (JsName fayToJsFun)
-                        [JsName $ JsNameVar "type"
-                        ,JsLookup (JsName JsParametrizedType) (JsLit (JsInt 2))
-                        ,JsName transcodingObjForced
-                        ])
-                 (JsName transcodingObj))
-  ]
-  where fayToJsHash = JsBuiltIn "fayToJsHash"
-        fayToJsFun  = JsNameVar "fayToJsFun"
-        modfn       = Qual mod "$fayToJsFun"
+fayToJsHash :: [(String, JsExp)] -> [JsStmt]
+fayToJsHash cases = [JsExpStmt $ JsApp (JsName $ JsBuiltIn "objConcat") [JsName $ JsBuiltIn "fayToJsHash", JsObj cases]]
 
--- | The dispatcher for JS->Fay conversion.
-jsToFayDispatcher :: [(String,JsExp)] -> [JsStmt]
-jsToFayDispatcher cases =
-  [JsVar jsToFayHash $ JsObj cases
-  ,JsExpStmt $
-     JsFun (Just $ JsBuiltIn "jsToFayUserDefined")
-           [JsNameVar "type",transcodingObj]
-           [JsVar jsToFayFun  $ JsLookup
-                  (JsName jsToFayHash)
-                  (JsGetPropExtern (JsName transcodingObj) "instance")
-           ]
-           (Just $ JsTernaryIf
-                 (JsName jsToFayFun)
-                 (JsApp (JsName jsToFayFun)
-                        [JsName $ JsNameVar "type"
-                        ,JsLookup (JsName JsParametrizedType) (JsLit (JsInt 2))
-                        ,JsName transcodingObj
-                        ])
-                 (JsName transcodingObj))
-  ]
-  where jsToFayHash = JsBuiltIn "jsToFayHash"
-        jsToFayFun  = JsNameVar "jsToFayFun"
+jsToFayHash :: [(String, JsExp)] -> [JsStmt]
+jsToFayHash cases = [JsExpStmt $ JsApp (JsName $ JsBuiltIn "objConcat") [JsName $ JsBuiltIn "jsToFayHash", JsObj cases]]
 
 
 -- | Make a JS→Fay decoder.

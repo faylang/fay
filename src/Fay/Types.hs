@@ -263,6 +263,7 @@ data JsStmt
   | JsSetProp JsName JsName JsExp
   | JsSetQName QName JsExp
   | JsSetModule ModulePath JsExp
+  | JsSetConstructor QName JsExp
   | JsSetPropExtern JsName JsName JsExp
   | JsContinue
   | JsBlock [JsStmt]

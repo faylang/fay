@@ -13,7 +13,6 @@ import Fay.Compiler.FFI
 import Fay.Compiler.GADT
 import Fay.Compiler.Misc
 import Fay.Compiler.Pattern
-import Fay.Compiler.QName
 import Fay.Types
 
 import Control.Applicative
@@ -129,14 +128,11 @@ compileDataDecl toplevel tyvars constructors =
     makeConstructor name (map (JsNameVar . UnQual) -> fields) = do
       qname <- qualify name
       return $
-        JsSetQName (changeName f qname) $
+        JsSetConstructor qname $
           JsFun (Just $ JsConstructor $ qname)
                 fields
                 (for fields $ \field -> JsSetProp JsThis field (JsName field))
                 Nothing
-
-    f (Ident s) = Ident $ "_" ++ s
-    f (Symbol s) = Symbol $ "_" ++ s
 
     -- Creates a function to initialize the record by regular application
     makeFunc :: Name -> [Name] -> Compile JsStmt

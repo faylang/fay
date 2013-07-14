@@ -103,6 +103,8 @@ instance Printable JsStmt where
     name +> "." +> prop +> " = " +> expr +> ";" +> newline
   printJS (JsSetQName name expr) =
     name +> " = " +> expr +> ";" +> newline
+  printJS (JsSetConstructor name expr) =
+    printCons name +> " = " +> expr +> ";" +> newline
   printJS (JsSetModule mp expr) =
     mp +> " = " +> expr +> ";" +> newline
   printJS (JsSetPropExtern name prop expr) =
@@ -242,7 +244,6 @@ printCons (UnQual n) = printConsName n
 printCons (Qual (ModuleName m) n) = printJS m +> "." +> printConsName n
 printCons (Special _) = error "qname2String Special"
 
--- TODO This should be $_
 printConsName :: Name -> Printer ()
 printConsName n = write "_" >> printJS n
 

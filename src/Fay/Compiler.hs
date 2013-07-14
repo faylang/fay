@@ -173,6 +173,11 @@ compileModuleFromAST mod = throwError (UnsupportedModuleSyntax mod)
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModuleFromAST
 
+
+-- TODO Nested modules will shadow constructors.
+-- | For a module A.B, generate
+-- | var A = {}; TODO this breaks stuff
+-- | A.B = A.B || {};
 createModulePath :: ModuleName -> Compile [JsStmt]
 createModulePath =
   liftM concat . mapM modPath . moduleNameToModulePaths
@@ -194,6 +199,7 @@ createModulePath =
           modify $ \s -> s { stateJsModulePaths = mp `S.insert` stateJsModulePaths s }
           return $ f mp
 
+-- | Generate exports for non local names, local exports have already been added to the module.
 generateExports :: Compile [JsStmt]
 generateExports = do
   m <- gets stateModuleName

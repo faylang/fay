@@ -25,7 +25,7 @@ import           Fay.Compiler.Exp
 import           Fay.Compiler.FFI
 import           Fay.Compiler.InitialPass (initialPass)
 import           Fay.Compiler.Misc
-import           Fay.Compiler.ModuleScope (namesNotFromModule, findPrimOp)
+import           Fay.Compiler.ModuleScope (findPrimOp)
 import           Fay.Compiler.Optimizer
 import           Fay.Compiler.Typecheck
 import           Fay.Compiler.QName
@@ -143,6 +143,7 @@ compileModule' (Module _ modulename _pragmas Nothing _exports imports decls) =
       ++ [JsStmtComment (show modulename ++ " modulePaths" )] ++ modulePaths
       ++ [JsStmtComment (show modulename ++ " definitions" )] ++ current
       ++ [JsStmtComment (show modulename ++ " ext exports" )] ++ extExports
+
 --    if exportStdlibOnly
 --      then if anStdlibModule modulename || toplevel
 --              then if toplevel
@@ -194,24 +195,22 @@ anStdlibModule (ModuleName name) = elem name ["Prelude","FFI","Language.Fay.FFI"
 
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]
---  warn $ "import with package syntax ignored: " ++ prettyPrint i
+-- Package imports are ignored since they are used for some trickery in fay-base.
 compileImport (ImportDecl _ _    _     _ Just{}  _       _) = return []
 compileImport (ImportDecl _ name False _ Nothing Nothing _) = compileModule Nothing name
 compileImport i = throwError $ UnsupportedImport i
 
-
 makeDispatchers :: ModuleName -> [JsStmt] -> CompileWriter -> Compile [JsStmt]
 makeDispatchers mod stmts CompileWriter{..} = do
-  return stmts
---  cfg <- config id
---  let fay2js = if null writerFayToJs then return [] else fayToJsDispatcher mod writerFayToJs
---  let js2fay = if null writerJsToFay then [] else jsToFayDispatcher writerJsToFay
---      maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
+  cfg <- config id
+  let fay2js = if null writerFayToJs then [] else fayToJsDispatcher mod writerFayToJs
+  let js2fay = if null writerJsToFay then [] else jsToFayDispatcher writerJsToFay
+      maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
 --  if configDispatcherOnly cfg
 --     then return (maybeOptimize (writerCons ++ fay2js ++ js2fay))
 --     else return (maybeOptimize (stmts ++
 --                    if configDispatchers cfg then writerCons ++ fay2js ++ js2fay else []))
-
+  return $ maybeOptimize $ stmts ++ writerCons ++ fay2js ++ js2fay
 
 unlessImported :: ModuleName
                -> (FilePath -> String -> Compile [JsStmt])

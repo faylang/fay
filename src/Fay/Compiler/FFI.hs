@@ -363,7 +363,7 @@ fayToJsDispatcher mod cases =
   ]
   where fayToJsHash = JsBuiltIn "fayToJsHash"
         fayToJsFun  = JsNameVar "fayToJsFun"
-        modfn       = Qual mod "fayToJsFun"
+        modfn       = Qual mod "$fayToJsFun"
 
 -- | The dispatcher for JS->Fay conversion.
 jsToFayDispatcher :: [(String,JsExp)] -> [JsStmt]

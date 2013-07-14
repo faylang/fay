@@ -10,11 +10,10 @@ module Fay.Compiler.ModuleScope
   ,resolveName
   ,moduleLocals
   ,findPrimOp
-  ,namesNotFromModule
+--  ,namesNotFromModule
   ) where
 
 import           Fay.Compiler.GADT
-import           Fay.Compiler.QName
 
 import           Control.Arrow
 import           Control.Monad.Reader
@@ -35,9 +34,10 @@ import           Prelude hiding (mod)
 newtype ModuleScope = ModuleScope (Map QName QName)
   deriving Show
 
-namesNotFromModule :: ModuleName -> ModuleScope -> [(QName, QName)]
-namesNotFromModule md (ModuleScope m) =
-  filter (\(_,d) -> qModName d /= Just md) $ M.toList m
+-- TODO Remove?
+--namesNotFromModule :: ModuleName -> ModuleScope -> [(QName, QName)]
+--namesNotFromModule md (ModuleScope m) =
+--  filter (\(_,d) -> qModName d /= Just md) $ M.toList m
 
 instance Monoid ModuleScope where
   mempty                                  = ModuleScope M.empty

@@ -21,14 +21,11 @@ module Fay
 import           Fay.Compiler
 import           Fay.Compiler.Misc   (printSrcLoc)
 import           Fay.Compiler.Packages
-import           Fay.Compiler.Print
 import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad
 import           Data.List
-import           Data.List.Split
-import qualified Data.Set                     as S
 import           Language.Haskell.Exts        (prettyPrint)
 import           Language.Haskell.Exts.Syntax
 import           Paths_fay
@@ -95,16 +92,17 @@ compileToModule filepath config raw with hscode = do
   case result of
     Left err -> return (Left err)
     Right (PrintState{..},state,_) -> do
-      return $ Right $ (generate (concat (reverse psOutput))
-                                        (S.toList $ getCurrentExportsWithoutNewtypes state)
-                                        (stateModuleName state), state)
+      return $ Right ( generate (concat $ reverse psOutput)
+                                (stateModuleName state)
+                     , state
+                     )
 
   where generate | configNaked config = generateNaked
                  | otherwise          = generateWrapped
-        generateNaked jscode _exports _module = unlines $
+        generateNaked jscode _module = unlines $
           [if configExportRuntime config then raw else ""
           ,jscode]
-        generateWrapped jscode exports m@(ModuleName modulename) = unlines $ filter (not . null) $
+        generateWrapped jscode (ModuleName modulename) = unlines $ filter (not . null) $
           [if configExportRuntime config then raw else ""
           ,jscode
           ,"// Exports"
@@ -114,30 +112,6 @@ compileToModule filepath config raw with hscode = do
                            ]
               else ""
           ]
-        clean ('.':cs) = '$' : clean cs
-        clean (c:cs)   = c : clean cs
-        clean [] = []
-
-createModulePath :: ModuleName -> [JsStmt]
-createModulePath (ModuleName ps) =
-  concatMap (\ns -> case ns of
-      []  -> []
-      ["this"] -> []
-      n  -> [JsSetModule (ModulePath n) (JsOr (f ps) (JsObj []))]
-    ) . inits . splitOn "." $ ps
-  where
-    f :: String -> JsExp
-    f = JsName . JsNameVar . (\n -> Qual (ModuleName . intercalate "." $ init n) (Ident $ last n)) .  splitOn "."
-
-createExportPath :: QName -> [JsStmt]
-createExportPath (UnQual _) = []
-createExportPath (Special _) = []
-createExportPath (Qual (ModuleName m) _) = createModulePath . ModuleName $ "this." ++ m
-
-qualifyAs :: ModuleName -> QName -> QName
-qualifyAs m (UnQual n) = Qual m n
-qualifyAs m (Qual _ n) = Qual m n
-qualifyAs _ Special{}  = error "qualifyAs Special{}"
 
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String

@@ -86,8 +86,7 @@ main = do
                    }
            void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
            case optFiles opts of
--- TODO
---                ["-"] -> hGetContents stdin >>= printCompile config (compileModule True)
+                ["-"] -> hGetContents stdin >>= printCompile config compileModuleFromAST
                 []    -> runInteractive
                 files -> forM_ files $ \file -> do
                   if optStdout opts

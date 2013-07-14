@@ -13,9 +13,8 @@ import Control.Monad.Error
 import Data.Default
 
 -- | Compile a String of Fay and print it as beautified JavaScript.
--- TODO
--- printTestCompile :: String -> IO ()
--- printTestCompile = printCompile def { configWarn = False } (compileModule False)
+printTestCompile :: String -> IO ()
+printTestCompile = printCompile def { configWarn = False } compileModuleFromAST
 
 -- | Compile a Haskell source string to a JavaScript source string.
 compileTestAst :: (Show from,Show to,CompilesTo from to)

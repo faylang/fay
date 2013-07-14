@@ -14,6 +14,11 @@ module Fay.Compiler
   ,compileExp
   ,compileDecl
   ,compileToplevelModule
+  ,compileModuleFromFile
+  ,compileModuleFromContents
+  ,compileModuleFromName
+  ,compileModule
+  ,compileModuleFromAST
   ,parseFay)
   where
 
@@ -94,11 +99,14 @@ compileToplevelModule filein mod@(Module _ (ModuleName modulename) _ _ _ _ _)  =
 --------------------------------------------------------------------------------
 -- Compilers
 
--- TODO combine cases
 compileModuleFromFile :: FilePath -> Compile [JsStmt]
 compileModuleFromFile fp = do
     contents <- io $ readFile fp
     compileModule fp contents
+
+compileModuleFromContents :: String -> Compile [JsStmt]
+compileModuleFromContents contents = compileModule "<interactive>" contents
+
 compileModuleFromName :: ModuleName -> Compile [JsStmt]
 compileModuleFromName name =
   unlessImported name compileModule

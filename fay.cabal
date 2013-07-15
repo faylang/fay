@@ -34,47 +34,281 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      examples/tailrecursive.hs examples/data.hs examples/canvaswater.hs
                      examples/canvaswater.html examples/haskell.png
                      -- Test cases
-                     tests/ints.hs tests/ints tests/asPatternMatch
-                     tests/caseList.hs tests/Double2.hs
-                     tests/fromInteger tests/List.hs tests/RecCon
-                     tests/recordPatternMatch tests/String.hs
-                     tests/asPatternMatch.hs tests/fromInteger.hs
-                     tests/RecCon.hs tests/recordPatternMatch2
-                     tests/caseWildcard tests/Double3 tests/Monad
-                     tests/recordPatternMatch2.hs tests/tailRecursion
-                     tests/basicFunctions tests/caseWildcard.hs
-                     tests/Double3.hs tests/Monad2 tests/RecDecl
-                     tests/tailRecursion.hs tests/basicFunctions.hs
-                     tests/HierarchicalImport tests/Monad2.hs
-                     tests/RecDecl.hs tests/recordPatternMatch.hs
-                     tests/do tests/Double4 tests/then tests/Bool
-                     tests/doAssingPatternMatch tests/Double4.hs
-                     tests/HierarchicalImport.hs tests/Monad.hs
-                     tests/records tests/then.hs tests/Bool.hs
+                     tests/Api/CPPTypecheck.hs
+                     tests/Api/ImportRecords.hs
+                     tests/Api/Records.hs
+                     tests/asPatternMatch.hs
+                     tests/asPatternMatch.res
+                     tests/baseFixities.hs
+                     tests/baseFixities.res
+                     tests/basicFunctions.hs
+                     tests/basicFunctions.res
+                     tests/Bool.hs
+                     tests/Bool.res
+                     tests/case.hs
+                     tests/case.res
+                     tests/case2.hs
+                     tests/case2.res
+                     tests/caseList.hs
+                     tests/caseList.res
+                     tests/caseWildcard.hs
+                     tests/caseWildcard.res
+                     tests/Char.hs
+                     tests/Char.res
+                     tests/circular.hs
+                     tests/CPP.hs
+                     tests/CPP.res
+                     tests/curry.hs
+                     tests/curry.res
+                     tests/cycle.hs
+                     tests/cycle.res
+                     tests/Defined.hs
+                     tests/Defined.res
+                     tests/do.hs
+                     tests/do.res
                      tests/doAssingPatternMatch.hs
-                     tests/recordFunctionPatternMatch tests/records.hs
-                     tests/Double.hs tests/mutableReference
-                     tests/recordFunctionPatternMatch.hs tests/utf8
-                     tests/case tests/doBindAssign
-                     tests/infixDataConst tests/mutableReference.hs
-                     tests/recordUseBeforeDefine tests/utf8.hs
-                     tests/case2 tests/doBindAssign.hs tests/emptyMain
-                     tests/infixDataConst.hs tests/RecordImport_Export
-                     tests/recordUseBeforeDefine.hs tests/case2.hs
-                     tests/emptyMain.hs tests/patternGuards
-                     tests/RecordImport_Export.hs tests/where
-                     tests/do.hs tests/List tests/patternGuards.hs
-                     tests/reservedWords tests/where.hs tests/case.hs
-                     tests/fix tests/List2 tests/RecordImport_Import
-                     tests/reservedWords.hs tests/Double tests/fix.hs
-                     tests/List2.hs tests/patternMatchFail.hs
-                     tests/RecordImport_Import.hs tests/caseList
-                     tests/Double2 tests/String
+                     tests/doAssingPatternMatch.res
+                     tests/doBindAssign.hs
+                     tests/doBindAssign.res
+                     tests/doLet.hs
+                     tests/doLet.res
+                     tests/DoLet2.hs
+                     tests/DoLet2_partial.res
+                     tests/DoLet3.hs
+                     tests/DoLet3_partial.res
+                     tests/Double.hs
+                     tests/Double.res
+                     tests/Double2.hs
+                     tests/Double2.res
+                     tests/Double3.hs
+                     tests/Double3.res
+                     tests/Double4.hs
+                     tests/Double4.res
+                     tests/Either.hs
+                     tests/Either.res
+                     tests/emptyMain.hs
+                     tests/emptyMain.res
+                     tests/enumFrom.hs
+                     tests/enumFrom.res
+                     tests/Eq.hs
+                     tests/Eq.res
+                     tests/error.hs
+                     tests/ExportEThingAll.hs
+                     tests/ExportEThingAll.res
+                     tests/ExportEThingAll_Export.hs
+                     tests/ExportEThingAll_Export.res
+                     tests/ExportEThingWith.hs
+                     tests/ExportEThingWith.res
+                     tests/ExportList.hs
+                     tests/ExportList.res
+                     tests/ExportList_A.hs
+                     tests/ExportList_A.res
+                     tests/ExportList_B.hs
+                     tests/ExportList_B.res
+                     tests/ExportList_C.hs
+                     tests/ExportList_C.res
+                     tests/ExportList_D.hs
+                     tests/ExportList_D.res
+                     tests/ExportQualified_Export.hs
+                     tests/ExportQualified_Export.res
+                     tests/ExportQualified_Import.hs
+                     tests/ExportQualified_Import.res
+                     tests/ExportType.hs
+                     tests/ExportType.res
+                     tests/ffiExpr.hs
+                     tests/ffiExpr.res
+                     tests/ffimunging.hs
+                     tests/ffimunging.res
+                     tests/fix.hs
+                     tests/fix.res
+                     tests/Floating.hs
+                     tests/Floating.res
+                     tests/fromInteger.hs
+                     tests/fromInteger.res
+                     tests/GADTs_without_records.hs
+                     tests/GADTs_without_records.res
+                     tests/guards.hs
+                     tests/guards.res
+                     tests/GuardWhere.hs
+                     tests/GuardWhere.res
+                     tests/HidePreludeImport.hs
+                     tests/HidePreludeImport.res
+                     tests/HidePreludeImport_Import.hs
+                     tests/HidePreludeImport_Import.res
                      tests/Hierarchical/Export.hs
                      tests/Hierarchical/RecordDefined.hs
-                     tests/Api/Records.hs tests/Api/ImportRecords.hs
-                     tests/Api/CPPTypecheck.hs
-                     tests/serialization.hs tests/serialization
+                     tests/HierarchicalImport.hs
+                     tests/HierarchicalImport.res
+                     tests/ImportHiding.hs
+                     tests/ImportHiding.res
+                     tests/ImportIThingAll.hs
+                     tests/ImportIThingAll.res
+                     tests/ImportList.hs
+                     tests/ImportList.res
+                     tests/ImportList1/A.hs
+                     tests/ImportList1/B.hs
+                     tests/ImportList1/C.hs
+                     tests/ImportListType.hs
+                     tests/ImportListType.res
+                     tests/ImportType.hs
+                     tests/ImportType.res
+                     tests/ImportType2.hs
+                     tests/ImportType2.res
+                     tests/ImportType2I/A.hs
+                     tests/ImportType2I/B.hs
+                     tests/infixDataConst.hs
+                     tests/infixDataConst.res
+                     tests/Integral.hs
+                     tests/Integral.res
+                     tests/ints.hs
+                     tests/ints.res
+                     tests/Issue215/B.hs
+                     tests/Issue215A.hs
+                     tests/Issue215A.res
+                     tests/Js2FayFunc.hs
+                     tests/Js2FayFunc.res
+                     tests/LazyOperators.hs
+                     tests/LazyOperators.res
+                     tests/linesAndWords.hs
+                     tests/linesAndWords.res
+                     tests/List.hs
+                     tests/List.res
+                     tests/List2.hs
+                     tests/List2.res
+                     tests/listComprehensions.hs
+                     tests/listComprehensions.res
+                     tests/listlen.hs
+                     tests/listlen.res
+                     tests/ModuleRecordClash/R.hs
+                     tests/ModuleRecordClash.hs
+                     tests/Monad.hs
+                     tests/Monad.res
+                     tests/Monad2.hs
+                     tests/Monad2.res
+                     tests/mutableReference.hs
+                     tests/mutableReference.res
+                     tests/namedFieldPuns.hs
+                     tests/namedFieldPuns.res
+                     tests/nameGen.hs
+                     tests/nameGen.res
+                     tests/negation.hs
+                     tests/negation.res
+                     tests/NestedImporting/A.hs
+                     tests/NestedImporting.hs
+                     tests/NestedImporting.res
+                     tests/NestedImporting2/A.hs
+                     tests/NestedImporting2.hs
+                     tests/NestedImporting2.res
+                     tests/newtype.hs
+                     tests/newtype.res
+                     tests/NewtypeImport_Export.hs
+                     tests/NewtypeImport_Export.res
+                     tests/NewtypeImport_Import.hs
+                     tests/NewtypeImport_Import.res
+                     tests/Nullable.hs
+                     tests/Nullable.res
+                     tests/Num.hs
+                     tests/Num.res
+                     tests/nums.hs
+                     tests/nums.res
+                     tests/numTheory.hs
+                     tests/numTheory.res
+                     tests/Ord.hs
+                     tests/Ord.res
+                     tests/pats.hs
+                     tests/pats.res
+                     tests/patternGuards.hs
+                     tests/patternGuards.res
+                     tests/patternMatchFail.hs
+                     tests/patternMatchingTuples.hs
+                     tests/patternMatchingTuples.res
+                     tests/Ratio.hs
+                     tests/Ratio.res
+                     tests/RealFrac.hs
+                     tests/RealFrac.res
+                     tests/RecCon.hs
+                     tests/RecCon.res
+                     tests/RecDecl.hs
+                     tests/RecDecl.res
+                     tests/recordFunctionPatternMatch.hs
+                     tests/recordFunctionPatternMatch.res
+                     tests/RecordImport2_Export1.hs
+                     tests/RecordImport2_Export1.res
+                     tests/RecordImport2_Export2.hs
+                     tests/RecordImport2_Export2.res
+                     tests/RecordImport2_Import.hs
+                     tests/RecordImport2_Import.res
+                     tests/RecordImport_Export.hs
+                     tests/RecordImport_Export.res
+                     tests/RecordImport_Import.hs
+                     tests/RecordImport_Import.res
+                     tests/recordPatternMatch.hs
+                     tests/recordPatternMatch.res
+                     tests/recordPatternMatch2.hs
+                     tests/recordPatternMatch2.res
+                     tests/records.hs
+                     tests/records.res
+                     tests/recordUseBeforeDefine.hs
+                     tests/recordUseBeforeDefine.res
+                     tests/recordWildCards.hs
+                     tests/recordWildCards.res
+                     tests/recursive.hs
+                     tests/recursive.res
+                     tests/ReExport1.hs
+                     tests/ReExport1.res
+                     tests/ReExport2.hs
+                     tests/ReExport2.res
+                     tests/ReExport3.hs
+                     tests/ReExport3.res
+                     tests/reservedWords.hs
+                     tests/reservedWords.res
+                     tests/sections.hs
+                     tests/sections.res
+                     tests/seq-fake.hs
+                     tests/seq-fake.res
+                     tests/seq.hs
+                     tests/serialization.hs
+                     tests/serialization.res
+                     tests/Sink.hs
+                     tests/Sink.res
+                     tests/SkipLetTypes.hs
+                     tests/SkipLetTypes.res
+                     tests/SkipWhereTypes.hs
+                     tests/SkipWhereTypes.res
+                     tests/String.hs
+                     tests/String.res
+                     tests/StringForcing.hs
+                     tests/StringForcing.res
+                     tests/succPred.hs
+                     tests/succPred.res
+                     tests/T190.hs
+                     tests/T190.res
+                     tests/T190_A.hs
+                     tests/T190_A.res
+                     tests/T190_B.hs
+                     tests/T190_B.res
+                     tests/T190_C.hs
+                     tests/T190_C.res
+                     tests/tailRecursion.hs
+                     tests/tailRecursion.res
+                     tests/then.hs
+                     tests/then.res
+                     tests/TupleCalls.hs
+                     tests/TupleCalls.res
+                     tests/TyVarSerialization.hs
+                     tests/TyVarSerialization.res
+                     tests/unit.hs
+                     tests/unit.res
+                     tests/utf8.hs
+                     tests/utf8.res
+                     tests/where.hs
+                     tests/where.res
+                     tests/whereBind.hs
+                     tests/whereBind.res
+                     tests/whereBind2.hs
+                     tests/whereBind2.res
+                     tests/whereBind3.hs
+                     tests/whereBind3.res
 
 source-repository head
   type: git

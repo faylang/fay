@@ -1,0 +1,2 @@
+#!/usr/bin/env ruby
+Dir['tests/**/**'].select{|v| v =~ /\.hs$/ || v =~ /\.res$/}.each{|v| puts("                     "+v)}

@@ -239,19 +239,12 @@ function Fay$$fayToJs(type,fayObj){
   else if(base == "automatic" || base == "user") {
     if(fayObj instanceof Fay$$$)
       fayObj = Fay$$_(fayObj);
-    jsObj = Fay$$fayToJsUserDefined(type,fayObj);
-
+    var fayToJsFun = Fay$$fayToJsHash[fayObj.constructor.name];
+    jsObj = fayToJsFun ? fayToJsFun(type,type[2],fayObj) : fayObj;
   }
   else
     throw new Error("Unhandled Fay->JS translation type: " + base);
   return jsObj;
-}
-
-// The dispatcher for Fay->JS conversion.
-function Fay$$fayToJsUserDefined(type,obj){
-  var _obj = Fay$$_(obj);
-  var fayToJsFun = Fay$$fayToJsHash[_obj.constructor.name];
-  return fayToJsFun ? fayToJsFun(type,type[2],_obj) : obj;
 }
 
 // Stores the mappings from fay types to js objects.
@@ -383,7 +376,8 @@ function Fay$$jsToFay(type,jsObj){
   }
   else if(base == "automatic" || base == "user") {
     if (jsObj && jsObj['instance']) {
-      fayObj = Fay$$jsToFayUserDefined(type,jsObj);
+      var jsToFayFun = Fay$$jsToFayHash[jsObj["instance"]];
+      fayObj = jsToFayFun ? jsToFayFun(type,type[2],jsObj) : jsObj;
     }
     else
       fayObj = jsObj;
@@ -393,11 +387,6 @@ function Fay$$jsToFay(type,jsObj){
   return fayObj;
 }
 
-// The dispatcher for JS->Fay conversion.
-function Fay$$jsToFayUserDefined(type,obj){
-  var jsToFayFun = Fay$$jsToFayHash[obj["instance"]];
-  return jsToFayFun ? jsToFayFun(type,type[2],obj) : obj;
-};
 // Stores the mappings from js objects to fay types.
 // This will be populated by compiled modules.
 var Fay$$jsToFayHash = {};

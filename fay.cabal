@@ -331,8 +331,33 @@ Flag devel
 
 library
   hs-source-dirs:    src
-  exposed-modules:   Fay, Fay.Types, Language.Fay.FFI, Fay.Convert, Fay.Compiler, Fay.Compiler.Debug, Fay.Compiler.Config
-  other-modules:     Fay.Compiler.Print, Control.Monad.IO, System.Process.Extra, System.Directory.Extra, Data.List.Extra, Paths_fay, Fay.Compiler.Misc, Fay.Compiler.FFI, Fay.Compiler.Optimizer, Fay.Compiler.Packages, Fay.Compiler.ModuleScope, Control.Monad.Extra, Fay.Compiler.InitialPass, Fay.Compiler.Decl, Fay.Compiler.Defaults, Fay.Compiler.Exp, Fay.Compiler.Pattern, Fay.Compiler.Typecheck, Fay.Compiler.GADT, Fay.Compiler.QName
+  exposed-modules:     Fay
+                     , Fay.Compiler
+                     , Fay.Compiler.Config
+                     , Fay.Compiler.Debug
+                     , Fay.Convert
+                     , Fay.Types
+                     , Language.Fay.FFI
+  other-modules:       Control.Monad.Extra
+                     , Control.Monad.IO
+                     , Data.List.Extra
+                     , Fay.Compiler.Decl
+                     , Fay.Compiler.Defaults
+                     , Fay.Compiler.Exp
+                     , Fay.Compiler.FFI
+                     , Fay.Compiler.GADT
+                     , Fay.Compiler.InitialPass
+                     , Fay.Compiler.Misc
+                     , Fay.Compiler.ModuleScope
+                     , Fay.Compiler.Optimizer
+                     , Fay.Compiler.Packages
+                     , Fay.Compiler.Pattern
+                     , Fay.Compiler.Print
+                     , Fay.Compiler.QName
+                     , Fay.Compiler.Typecheck
+                     , Paths_fay
+                     , System.Directory.Extra
+                     , System.Process.Extra
   ghc-options:       -O2 -Wall -fno-warn-name-shadowing
   build-depends:     base >= 4 && < 5,
                      aeson,

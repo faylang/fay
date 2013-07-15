@@ -154,21 +154,14 @@ compileModuleFromAST (Module _ modulename _pragmas Nothing _exports imports decl
     exportStdlibOnly <- config configExportStdlibOnly
     modulePaths      <- createModulePath modulename
     extExports       <- generateExports
-    return $
-         [JsStmtComment (show modulename ++ " imported"    )] ++ imported
-      ++ [JsStmtComment (show modulename ++ " modulePaths" )] ++ modulePaths
-      ++ [JsStmtComment (show modulename ++ " definitions" )] ++ current
-      ++ [JsStmtComment (show modulename ++ " ext exports" )] ++ extExports
-
---    if exportStdlibOnly
---      then if anStdlibModule modulename || toplevel
---              then if toplevel
---                      then return (imported ++ exportStmt)
---                      else return (imported ++ modulePaths ++ current ++ exportStmt)
---              else return []
---      else if not exportStdlib && anStdlibModule modulename
---              then return []
---              else return (imported ++ modulePaths ++ importStmts ++ current ++ exportStmt)
+    let stmts = (imported ++ modulePaths ++ current ++ extExports)
+    if exportStdlibOnly
+      then if anStdlibModule modulename
+              then return stmts
+              else return []
+      else if not exportStdlib && anStdlibModule modulename
+              then return []
+              else return stmts
 compileModuleFromAST mod = throwError (UnsupportedModuleSyntax mod)
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModuleFromAST

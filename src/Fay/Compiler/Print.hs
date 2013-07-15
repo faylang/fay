@@ -128,8 +128,6 @@ instance Printable JsStmt where
     printJS "continue;" +> newline
   printJS (JsMappedVar _ name expr) =
     "var " +> name +> " = " +> expr +> ";" +> newline
-  printJS (JsStmtComment s) =
-    "/* " +> s +> " */" +> newline
 
 instance Printable ModulePath where
   printJS (ModulePath l) = write $ intercalate "." l

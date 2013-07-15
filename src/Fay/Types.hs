@@ -268,7 +268,6 @@ data JsStmt
   | JsContinue
   | JsBlock [JsStmt]
   | JsExpStmt JsExp
-  | JsStmtComment String
   deriving (Show,Eq)
 
 -- | Expression type.

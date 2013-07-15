@@ -67,9 +67,6 @@ data CompileConfig = CompileConfig
   , configExportRuntime      :: Bool                       -- ^ Export the runtime?
   , configExportStdlib       :: Bool                       -- ^ Export the stdlib?
   , configExportStdlibOnly   :: Bool                       -- ^ Export /only/ the stdlib?
-  , configDispatchers        :: Bool                       -- ^ Export dispatchers?
-  , configDispatcherOnly     :: Bool                       -- ^ Export /only/ the dispatcher?
-  , configNaked              :: Bool                       -- ^ Export without a module wrapper?
   , configDirectoryIncludes :: [(Maybe String, FilePath)]  -- ^ Possibly a fay package name, and a include directory.
   , configPrettyPrint        :: Bool                       -- ^ Pretty print the JS output?
   , configHtmlWrapper        :: Bool                       -- ^ Output a HTML file including the produced JS.

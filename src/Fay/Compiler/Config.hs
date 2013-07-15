@@ -47,9 +47,6 @@ instance Default CompileConfig where
       , configExportRuntime      = True
       , configExportStdlib       = True
       , configExportStdlibOnly   = False
-      , configDispatchers        = True
-      , configDispatcherOnly     = False
-      , configNaked              = False
       , configDirectoryIncludes  = []
       , configPrettyPrint        = False
       , configHtmlWrapper        = False

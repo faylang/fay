@@ -44,9 +44,6 @@ data FayCompilerOptions = FayCompilerOptions
   , optNoRTS        :: Bool
   , optNoStdlib     :: Bool
   , optPrintRuntime :: Bool
-  , optNaked        :: Bool
-  , optNoDispatcher :: Bool
-  , optDispatcher   :: Bool
   , optStdlibOnly   :: Bool
   , optNoBuiltins   :: Bool
   , optBasePath     :: Maybe FilePath
@@ -77,10 +74,7 @@ main = do
                    , configGClosure         = optGClosure opts
                    , configPackageConf      = optPackageConf opts <|> packageConf
                    , configExportRuntime    = not (optNoRTS opts)
-                   , configNaked            = optNaked opts
                    , configExportStdlib     = not (optNoStdlib opts)
-                   , configDispatchers      = not (optNoDispatcher opts)
-                   , configDispatcherOnly   = optDispatcher opts
                    , configExportStdlibOnly = optStdlibOnly opts
                    , configBasePath         = optBasePath opts
                    }
@@ -124,9 +118,6 @@ options = FayCompilerOptions
   <*> switch (long "no-rts" <> short 'r' <> help "Don't export the RTS")
   <*> switch (long "no-stdlib" <> help "Don't generate code for the Prelude/FFI")
   <*> switch (long "print-runtime" <> help "Print the runtime JS source to stdout")
-  <*> switch (long "naked" <> help "Print all declarations naked at the top-level (unwrapped)")
-  <*> switch (long "no-dispatcher" <> help "Don't output a type serialization dispatcher")
-  <*> switch (long "dispatcher" <> help "Only output the type serialization dispatchers")
   <*> switch (long "stdlib" <> help "Only output the stdlib")
   <*> switch (long "no-builtins" <> help "Don't export no-builtins")
   <*> optional (strOption (long "base-path" <> help "If fay can't find the sources of fay-base you can use this to provide the path. Use --base-path ~/example instead of --base-path=~/example to make sure ~ is expanded properly"))

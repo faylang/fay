@@ -92,26 +92,22 @@ compileToModule filepath config raw with hscode = do
   case result of
     Left err -> return (Left err)
     Right (PrintState{..},state,_) -> do
-      return $ Right ( generate (concat $ reverse psOutput)
-                                (stateModuleName state)
+      return $ Right ( generateWrapped (concat $ reverse psOutput)
+                                       (stateModuleName state)
                      , state
                      )
-
-  where generate | configNaked config = generateNaked
-                 | otherwise          = generateWrapped
-        generateNaked jscode _module = unlines $
-          [if configExportRuntime config then raw else ""
-          ,jscode]
-        generateWrapped jscode (ModuleName modulename) = unlines $ filter (not . null) $
-          [if configExportRuntime config then raw else ""
-          ,jscode
-          ,"// Exports"
-          ,if not (configLibrary config)
-              then unlines [";"
-                           ,"Fay$$_(" ++ modulename ++ ".main);"
-                           ]
-              else ""
-          ]
+  where
+    generateWrapped jscode (ModuleName modulename) =
+      unlines $ filter (not . null) $
+      [if configExportRuntime config then raw else ""
+      ,jscode
+      ,"// Exports"
+      ,if not (configLibrary config)
+          then unlines [";"
+                       ,"Fay$$_(" ++ modulename ++ ".main);"
+                       ]
+          else ""
+      ]
 
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String

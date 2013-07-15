@@ -136,7 +136,9 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      tests/HidePreludeImport_Import.hs
                      tests/HidePreludeImport_Import.res
                      tests/Hierarchical/Export.hs
+                     tests/Hierarchical/Export.res
                      tests/Hierarchical/RecordDefined.hs
+                     tests/Hierarchical/RecordDefined.res
                      tests/HierarchicalImport.hs
                      tests/HierarchicalImport.res
                      tests/ImportHiding.hs
@@ -146,8 +148,11 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      tests/ImportList.hs
                      tests/ImportList.res
                      tests/ImportList1/A.hs
+                     tests/ImportList1/A.res
                      tests/ImportList1/B.hs
+                     tests/ImportList1/B.res
                      tests/ImportList1/C.hs
+                     tests/ImportList1/C.res
                      tests/ImportListType.hs
                      tests/ImportListType.res
                      tests/ImportType.hs
@@ -155,7 +160,9 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      tests/ImportType2.hs
                      tests/ImportType2.res
                      tests/ImportType2I/A.hs
+                     tests/ImportType2I/A.res
                      tests/ImportType2I/B.hs
+                     tests/ImportType2I/B.res
                      tests/infixDataConst.hs
                      tests/infixDataConst.res
                      tests/Integral.hs
@@ -163,6 +170,7 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      tests/ints.hs
                      tests/ints.res
                      tests/Issue215/B.hs
+                     tests/Issue215/B.res
                      tests/Issue215A.hs
                      tests/Issue215A.res
                      tests/Js2FayFunc.hs
@@ -180,6 +188,7 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      tests/listlen.hs
                      tests/listlen.res
                      tests/ModuleRecordClash/R.hs
+                     tests/ModuleRecordClash/R.res
                      tests/ModuleRecordClash.hs
                      tests/Monad.hs
                      tests/Monad.res
@@ -194,9 +203,11 @@ extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examp
                      tests/negation.hs
                      tests/negation.res
                      tests/NestedImporting/A.hs
+                     tests/NestedImporting/A.res
                      tests/NestedImporting.hs
                      tests/NestedImporting.res
                      tests/NestedImporting2/A.hs
+                     tests/NestedImporting2/A.res
                      tests/NestedImporting2.hs
                      tests/NestedImporting2.res
                      tests/newtype.hs
@@ -321,7 +332,7 @@ Flag devel
 library
   hs-source-dirs:    src
   exposed-modules:   Fay, Fay.Types, Language.Fay.FFI, Fay.Convert, Fay.Compiler, Fay.Compiler.Debug, Fay.Compiler.Config
-  other-modules:     Fay.Compiler.Print, Control.Monad.IO, System.Process.Extra, Data.List.Extra, Paths_fay, Fay.Compiler.Misc, Fay.Compiler.FFI, Fay.Compiler.Optimizer, Fay.Compiler.Packages, Fay.Compiler.ModuleScope, Control.Monad.Extra, Fay.Compiler.InitialPass, Fay.Compiler.Decl, Fay.Compiler.Defaults, Fay.Compiler.Exp, Fay.Compiler.Pattern, Fay.Compiler.Typecheck, Fay.Compiler.GADT, Fay.Compiler.QName
+  other-modules:     Fay.Compiler.Print, Control.Monad.IO, System.Process.Extra, System.Directory.Extra, Data.List.Extra, Paths_fay, Fay.Compiler.Misc, Fay.Compiler.FFI, Fay.Compiler.Optimizer, Fay.Compiler.Packages, Fay.Compiler.ModuleScope, Control.Monad.Extra, Fay.Compiler.InitialPass, Fay.Compiler.Decl, Fay.Compiler.Defaults, Fay.Compiler.Exp, Fay.Compiler.Pattern, Fay.Compiler.Typecheck, Fay.Compiler.GADT, Fay.Compiler.QName
   ghc-options:       -O2 -Wall -fno-warn-name-shadowing
   build-depends:     base >= 4 && < 5,
                      aeson,

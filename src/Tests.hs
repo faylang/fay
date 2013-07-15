@@ -15,6 +15,7 @@ import           Data.Default
 import           Data.List
 import           Data.Maybe
 import           System.Directory
+import           System.Directory.Extra
 import           System.Environment
 import           System.FilePath
 import           System.Process.Extra
@@ -42,7 +43,7 @@ prefixed f (break f -> (x,y)) = (listToMaybe (drop 1 y),x ++ drop 2 y)
 -- | Make the case-by-case unit tests.
 makeCompilerTests :: Maybe FilePath -> Maybe FilePath -> IO Test
 makeCompilerTests packageConf basePath = do
-  files <- fmap (map ("tests" </>) . sort . filter (isSuffixOf ".hs")) $ getDirectoryContents "tests"
+  files <- sort . filter (not . isInfixOf "/Api/") . filter (isSuffixOf ".hs") <$> getRecursiveContents "tests"
   return $ testGroup "Tests" $ flip map files $ \file -> testCase file $ do
     testFile packageConf basePath False file
     testFile packageConf basePath True file

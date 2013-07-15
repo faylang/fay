@@ -181,27 +181,16 @@ instance Printable JsExp where
         cons :: (Name, JsExp) -> Printer ()
         cons (key,value) = "\"" +> key +> "\": " +> value
   printJS (JsFun nm params stmts ret) =
-    case nm of
-      Just n ->
-           "function " +> printJS (ident n) +> "("
-        +> (intercalateM "," (map printJS params))
-        +> "){" +> newline
-        +> indented (stmts +>
-                     case ret of
-                       Just ret' -> "return " +> ret' +> ";" +> newline
-                       Nothing   -> return ())
-        +> "}"
-      Nothing ->
-           "function"
-        +> maybe (return ()) ((" " +>) . printJS) nm
-        +> "("
-        +> (intercalateM "," (map printJS params))
-        +> "){" +> newline
-        +> indented (stmts +>
-                     case ret of
-                       Just ret' -> "return " +> ret' +> ";" +> newline
-                       Nothing   -> return ())
-        +> "}"
+       "function"
+    +> maybe (return ()) ((" " +>) . printJS . ident) nm
+    +> "("
+    +> (intercalateM "," (map printJS params))
+    +> "){" +> newline
+    +> indented (stmts +>
+                 case ret of
+                   Just ret' -> "return " +> ret' +> ";" +> newline
+                   Nothing   -> return ())
+    +> "}"
   printJS (JsApp op args) =
     (if isFunc op then JsParen op else op)
     +> "("

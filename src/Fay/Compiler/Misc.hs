@@ -259,7 +259,7 @@ warn :: String -> Compile ()
 warn "" = return ()
 warn w = do
   shouldWarn <- config configWarn
-  when shouldWarn . liftIO . hPutStrLn stderr $ "Warning: " ++ w
+  when shouldWarn . io . hPutStrLn stderr $ "Warning: " ++ w
 
 -- | Pretty print a source location.
 printSrcLoc :: SrcLoc -> String

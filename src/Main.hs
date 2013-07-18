@@ -13,6 +13,7 @@ import           Fay.Compiler.Debug
 import qualified Control.Exception        as E
 import           Control.Monad
 import           Control.Monad.Error
+import           Control.Monad.IO
 import           Data.Default
 import           Data.List.Split          (wordsBy)
 import           Data.Maybe
@@ -161,17 +162,17 @@ runInteractive = runInputT defaultSettings loop where
       Nothing -> return ()
       Just "" -> loop
       Just input -> do
-        result <- liftIO $ compileViaStr "<interactive>" config compileExp input
+        result <- io $ compileViaStr "<interactive>" config compileExp input
         case result of
           Left err -> do
             -- an error occured, maybe input was not an expression,
             -- but a declaration, try compiling the input as a declaration
-            outputStrLn ("can't parse input as expression: " ++ show err)
-            result' <- liftIO $ compileViaStr "<interactive>" config (compileDecl True) input
+            outputStrLn $ "can't parse input as expression: " ++ show err
+            result' <- io $ compileViaStr "<interactive>" config (compileDecl True) input
             case result' of
               Right (PrintState{..},_,_) -> outputStr (concat (reverse psOutput))
               Left err' ->
-                outputStrLn ("can't parse input as declaration: " ++ show err')
+                outputStrLn $ "can't parse input as declaration: " ++ show err'
           Right (PrintState{..},_,_) -> outputStr (concat (reverse psOutput))
         loop
   config = def { configPrettyPrint = True }

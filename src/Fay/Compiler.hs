@@ -130,7 +130,7 @@ compileModule :: FilePath -> String -> Compile [JsStmt]
 compileModule filepath contents = do
   state <- get
   reader <- ask
-  result <- liftIO $ compileToAst filepath reader state compileModuleFromAST contents
+  result <- io $ compileToAst filepath reader state compileModuleFromAST contents
   case result of
     Right (stmts,state,writer) -> do
       modify $ \s -> s { stateImported      = stateImported state

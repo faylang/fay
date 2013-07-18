@@ -14,6 +14,7 @@ import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Extra
 import           Control.Monad.RWS
+import           Control.Monad.IO
 import qualified Data.Set as S
 import qualified Data.Map as M
 import           Language.Haskell.Exts.Parser
@@ -56,11 +57,11 @@ compileWith :: (Show from,Parseable from)
             -> String
             -> Compile (Either CompileError ((),CompileState,CompileWriter))
 compileWith filepath r st with from = do
-  liftIO $ runCompile r
-                      st
-                      (parseResult (throwError . uncurry ParseError)
-                                   with
-                                   (parseFay filepath from))
+  io $ runCompile r
+                  st
+                  (parseResult (throwError . uncurry ParseError)
+                  with
+                  (parseFay filepath from))
 
 -- | Don't re-import the same modules.
 unlessImported :: ModuleName

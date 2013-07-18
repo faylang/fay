@@ -168,7 +168,7 @@ instance CompilesTo Module [JsStmt] where compileTo = compileModuleFromAST
 
 
 -- | For a module A.B, generate
--- | var A = {}; TODO this breaks stuff
+-- | var A = {};
 -- | A.B = A.B || {};
 createModulePath :: ModuleName -> Compile [JsStmt]
 createModulePath =
@@ -220,8 +220,4 @@ makeHashes stmts CompileWriter{..} = do
   let fay2js = if null writerFayToJs then [] else fayToJsHash writerFayToJs
   let js2fay = if null writerJsToFay then [] else jsToFayHash writerJsToFay
       maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
---  if configDispatcherOnly cfg
---     then return (maybeOptimize (writerCons ++ fay2js ++ js2fay))
---     else return (maybeOptimize (stmts ++
---                    if configDispatchers cfg then writerCons ++ fay2js ++ js2fay else []))
   return $ maybeOptimize $ stmts ++ writerCons ++ fay2js ++ js2fay

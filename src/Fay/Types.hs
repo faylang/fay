@@ -33,8 +33,9 @@ module Fay.Types
   ,Printer(..)
   ,Mapping(..)
   ,SerializeContext(..)
-  ,ModulePath(..)
+  ,ModulePath (unModulePath)
   ,mkModulePath
+  ,mkModulePaths
   ,mkModulePathFromQName
   ,addModulePath
   ,addedModulePath
@@ -46,6 +47,7 @@ import           Control.Monad.Identity (Identity)
 import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default
+import           Data.List
 import           Data.List.Split
 import           Data.Maybe
 import           Data.Map              (Map)
@@ -86,11 +88,14 @@ data CompileConfig = CompileConfig
   , configBasePath           :: Maybe FilePath             -- ^ Custom source location for fay-base
   } deriving (Show)
 
-newtype ModulePath = ModulePath [String]
+newtype ModulePath = ModulePath { unModulePath :: [String] }
   deriving (Eq, Ord, Show)
 
 mkModulePath :: ModuleName -> ModulePath
 mkModulePath (ModuleName m) = ModulePath . splitOn "." $ m
+
+mkModulePaths :: ModuleName -> [ModulePath]
+mkModulePaths (ModuleName m) = map ModulePath . tail . inits . splitOn "." $ m
 
 -- | Converting a QName to a ModulePath is only relevant for constructors since
 -- they can conflict with module names.

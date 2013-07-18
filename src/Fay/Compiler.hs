@@ -1,9 +1,9 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS -Wall -fno-warn-name-shadowing -fno-warn-orphans #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 -- | The Haskell→Javascript compiler.
 
@@ -41,8 +41,6 @@ import           Control.Monad.IO
 import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default                    (def)
-import           Data.List
-import           Data.List.Split
 import qualified Data.Map                        as M
 import           Data.Maybe
 import qualified Data.Set                        as S
@@ -172,15 +170,12 @@ instance CompilesTo Module [JsStmt] where compileTo = compileModuleFromAST
 -- | A.B = A.B || {};
 createModulePath :: ModuleName -> Compile [JsStmt]
 createModulePath =
-  liftM concat . mapM modPath . moduleNameToModulePaths
+  liftM concat . mapM modPath . mkModulePaths
   where
     modPath :: ModulePath -> Compile [JsStmt]
-    modPath mp = whenImportNotGenerated mp $ \_ -> case mp of
-     ModulePath [n] -> [JsVar (JsNameVar . UnQual $ Ident n) (JsObj [])]
+    modPath mp = whenImportNotGenerated mp $ \(unModulePath -> l) -> case l of
+     [n] -> [JsVar (JsNameVar . UnQual $ Ident n) (JsObj [])]
      _   -> [JsSetModule mp (JsObj [])]
-
-    moduleNameToModulePaths :: ModuleName -> [ModulePath]
-    moduleNameToModulePaths (ModuleName n) = map ModulePath . tail . inits $ splitOn "." n
 
     whenImportNotGenerated :: ModulePath -> (ModulePath -> [JsStmt]) -> Compile [JsStmt]
     whenImportNotGenerated mp f = do

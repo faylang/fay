@@ -1,8 +1,9 @@
-{-# OPTIONS -fno-warn-orphans #-}
+{-# OPTIONS -fno-warn-orphans        #-}
 {-# OPTIONS -fno-warn-unused-do-bind #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE RecordWildCards      #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances       #-}
+{-# LANGUAGE RecordWildCards         #-}
+{-# LANGUAGE TypeSynonymInstances    #-}
+{-# LANGUAGE ViewPatterns            #-}
 
 -- | Simple code (non-pretty) printing.
 --
@@ -130,7 +131,7 @@ instance Printable JsStmt where
     "var " +> name +> " = " +> expr +> ";" +> newline
 
 instance Printable ModulePath where
-  printJS (ModulePath l) = write $ intercalate "." l
+  printJS (unModulePath -> l) = write $ intercalate "." l
 
 -- | Print an expression.
 instance Printable JsExp where

@@ -97,14 +97,15 @@ compileToplevelModule filein mod@(Module _ (ModuleName modulename) _ _ _ _ _)  =
 --------------------------------------------------------------------------------
 -- Compilers
 
+-- | Read a file and compile.
 compileModuleFromFile :: FilePath -> Compile [JsStmt]
-compileModuleFromFile fp = do
-    contents <- io $ readFile fp
-    compileModule fp contents
+compileModuleFromFile fp = io (readFile fp) >>= compileModule fp
 
+-- | Compile a source string.
 compileModuleFromContents :: String -> Compile [JsStmt]
 compileModuleFromContents contents = compileModule "<interactive>" contents
 
+-- | Lookup a module from include directories and compile.
 compileModuleFromName :: ModuleName -> Compile [JsStmt]
 compileModuleFromName name =
   unlessImported name compileModule
@@ -124,21 +125,34 @@ compileModuleFromName name =
             res <- importIt filepath contents
             return res
 
+-- | Compile given the location and source string.
 compileModule :: FilePath -> String -> Compile [JsStmt]
 compileModule filepath contents = do
-    state <- get
-    reader <- ask
-    result <- liftIO $ compileToAst filepath reader state compileModuleFromAST contents
-    case result of
-      Right (stmts,state,writer) -> do
-        modify $ \s -> s { stateImported      = stateImported state
-                         , stateLocalScope    = S.empty
-                         , stateJsModulePaths = stateJsModulePaths state
-                         }
-        makeHashes stmts writer
-      Left err -> throwError err
+  state <- get
+  reader <- ask
+  result <- liftIO $ compileToAst filepath reader state compileModuleFromAST contents
+  case result of
+    Right (stmts,state,writer) -> do
+      modify $ \s -> s { stateImported      = stateImported state
+                       , stateLocalScope    = S.empty
+                       , stateJsModulePaths = stateJsModulePaths state
+                       }
+      maybeOptimize $ stmts ++ writerCons writer ++ makeTranscoding writer
+    Left err -> throwError err
+  where
+    makeTranscoding :: CompileWriter -> [JsStmt]
+    makeTranscoding CompileWriter{..} =
+      let fay2js = if null writerFayToJs then [] else fayToJsHash writerFayToJs
+          js2fay = if null writerJsToFay then [] else jsToFayHash writerJsToFay
+      in fay2js ++ js2fay
+    maybeOptimize :: [JsStmt] -> Compile [JsStmt]
+    maybeOptimize stmts = do
+      cfg <- config id
+      return $ if configOptimize cfg
+        then runOptimizer optimizeToplevel stmts
+        else stmts
 
--- | Compile Haskell module.
+-- | Compile a parse HSE module.
 compileModuleFromAST :: Module -> Compile [JsStmt]
 compileModuleFromAST (Module _ modulename _pragmas Nothing _exports imports decls) =
   withModuleScope $ do
@@ -167,7 +181,7 @@ instance CompilesTo Module [JsStmt] where compileTo = compileModuleFromAST
 
 -- | For a module A.B, generate
 -- | var A = {};
--- | A.B = A.B || {};
+-- | A.B = {};
 createModulePath :: ModuleName -> Compile [JsStmt]
 createModulePath =
   liftM concat . mapM modPath . mkModulePaths
@@ -178,13 +192,13 @@ createModulePath =
      _   -> [JsSetModule mp (JsObj [])]
 
     whenImportNotGenerated :: ModulePath -> (ModulePath -> [JsStmt]) -> Compile [JsStmt]
-    whenImportNotGenerated mp f = do
+    whenImportNotGenerated mp makePath = do
       added <- gets $ addedModulePath mp
       if added
         then return []
         else do
           modify $ addModulePath mp
-          return $ f mp
+          return $ makePath mp
 
 -- | Generate exports for non local names, local exports have already been added to the module.
 generateExports :: Compile [JsStmt]
@@ -208,11 +222,3 @@ compileImport :: ImportDecl -> Compile [JsStmt]
 compileImport (ImportDecl _ _    _     _ Just{}  _       _) = return []
 compileImport (ImportDecl _ name False _ Nothing Nothing _) = compileModuleFromName name
 compileImport i = throwError $ UnsupportedImport i
-
-makeHashes :: [JsStmt] -> CompileWriter -> Compile [JsStmt]
-makeHashes stmts CompileWriter{..} = do
-  cfg <- config id
-  let fay2js = if null writerFayToJs then [] else fayToJsHash writerFayToJs
-  let js2fay = if null writerJsToFay then [] else jsToFayHash writerJsToFay
-      maybeOptimize = if configOptimize cfg then runOptimizer optimizeToplevel else id
-  return $ maybeOptimize $ stmts ++ writerCons ++ fay2js ++ js2fay

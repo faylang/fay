@@ -3,6 +3,7 @@ dist/
 examples/*.js
 tests/*.js
 tests/*/*.js
+tests/*.html
 TAGS
 *.hi
 *.o

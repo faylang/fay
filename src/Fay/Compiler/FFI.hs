@@ -73,7 +73,7 @@ ffiFun srcloc nameopt formatstr sig = do
                Nothing -> "<exp>"
                Just n -> n
   inner <- formatFFI srcloc formatstr (zip params funcFundamentalTypes)
-  case JS.parse JS.parseExpression (prettyPrint name) (printJSString (wrapReturn inner)) of
+  case JS.parse JS.expression (prettyPrint name) (printJSString (wrapReturn inner)) of
     Left err -> throwError (FfiFormatInvalidJavaScript srcloc inner (show err))
     Right exp  -> do
       config' <- config id
@@ -93,7 +93,7 @@ ffiFun srcloc nameopt formatstr sig = do
         returnType = last funcFundamentalTypes
 
 -- | Warn about uses of naked x.y which will not play nicely with Google Closure.
-warnDotUses :: SrcLoc -> String -> ParsedExpression -> Compile ()
+warnDotUses :: SrcLoc -> String -> Expression SourcePos -> Compile ()
 warnDotUses srcloc string expr =
   when anyrefs $
     warn $ printSrcLoc srcloc ++ ":\nDot ref syntax used in FFI JS code: " ++ string
@@ -101,7 +101,7 @@ warnDotUses srcloc string expr =
   where anyrefs = not (null (listify dotref expr)) ||
                   not (null (listify ldot expr))
 
-        dotref :: ParsedExpression -> Bool
+        dotref :: Expression SourcePos -> Bool
         dotref x = case x of
           DotRef _ (VarRef _ (Id _ name)) _
              | elem name globalNames -> False

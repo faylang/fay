@@ -369,7 +369,7 @@ library
                      ghc-paths,
                      Cabal,
                      haskell-src-exts,
-                     language-ecmascript >= 0.10,
+                     language-ecmascript >= 0.15,
                      mtl,
                      pretty-show,
                      process,

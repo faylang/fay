@@ -1,2 +1,2 @@
-{ 'instance' : 'R' }
+{ instance: 'R' }
 1

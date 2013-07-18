@@ -25,3 +25,7 @@ changeName :: (Name -> Name) -> QName -> QName
 changeName f (UnQual n) = UnQual $ f n
 changeName f (Qual m n) = Qual m $ f n
 changeName _ Special{} = error "changeName Special{}"
+
+name2String :: Name -> String
+name2String (Ident s) = s
+name2String (Symbol s) = s

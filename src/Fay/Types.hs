@@ -4,6 +4,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
 
 -- | All Fay types and instances.
 
@@ -34,6 +35,9 @@ module Fay.Types
   ,SerializeContext(..)
   ,ModulePath(..)
   ,mkModulePath
+  ,mkModulePathFromQName
+  ,addModulePath
+  ,addedModulePath
   ) where
 
 import           Control.Applicative
@@ -88,6 +92,13 @@ newtype ModulePath = ModulePath [String]
 mkModulePath :: ModuleName -> ModulePath
 mkModulePath (ModuleName m) = ModulePath . splitOn "." $ m
 
+-- | Converting a QName to a ModulePath is only relevant for constructors since
+-- they can conflict with module names.
+mkModulePathFromQName :: QName -> ModulePath
+-- TODO hacky name2string
+mkModulePathFromQName (Qual (ModuleName m) n) = mkModulePath $ ModuleName $ m ++ "." ++ name2String n
+mkModulePathFromQName _ = error "mkModulePathFromQName: Not a qualified name"
+
 -- | State of the compiler.
 data CompileState = CompileState
   { _stateExports     :: Map ModuleName (Set QName) -- ^ Collects exports from modules
@@ -127,6 +138,12 @@ data CompileReader = CompileReader
 -- | The data-files source directory.
 faySourceDir :: IO FilePath
 faySourceDir = fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
+
+addModulePath :: ModulePath -> CompileState -> CompileState
+addModulePath mp cs = cs { stateJsModulePaths = mp `S.insert` stateJsModulePaths cs }
+
+addedModulePath :: ModulePath -> CompileState -> Bool
+addedModulePath mp CompileState{..} = mp `S.member` stateJsModulePaths
 
 -- | Adds a new export to '_stateExports' for the module specified by
 -- 'stateModuleName'.

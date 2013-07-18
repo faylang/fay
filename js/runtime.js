@@ -16,6 +16,7 @@ function Fay$$objConcat(a,b){
   for (var p in b) if (b.hasOwnProperty(p)){
     a[p] = b[p];
   }
+  return a;
 }
 
 /*******************************************************************************

@@ -139,10 +139,19 @@ compileDataDecl toplevel tyvars constructors =
     makeFunc name (map (JsNameVar . UnQual) -> fields) = do
       let fieldExps = map JsName fields
       qname <- qualify name
-      return $ JsSetQName qname $
-        foldr (\slot inner -> JsFun Nothing [slot] [] (Just inner))
-          (thunk $ JsNew (JsConstructor qname) fieldExps)
-          fields
+      let mp = mkModulePathFromQName qname
+      let func = foldr (\slot inner -> JsFun Nothing [slot] [] (Just inner))
+                       (thunk $ JsNew (JsConstructor qname) fieldExps)
+                       fields
+      added <- gets (addedModulePath mp)
+      if added
+        then do
+          return $ JsSetQName qname $
+            JsApp (JsName $ JsBuiltIn "objConcat") [func, JsName $ JsNameVar qname]
+        else do
+          modify $ addModulePath mp
+          return $ JsSetQName qname $ func
+
 
     -- Creates getters for a RecDecl's values
     makeAccessors :: SrcLoc -> [Name] -> Compile [JsStmt]

@@ -103,7 +103,7 @@ compileModuleFromFile fp = io (readFile fp) >>= compileModule fp
 
 -- | Compile a source string.
 compileModuleFromContents :: String -> Compile [JsStmt]
-compileModuleFromContents contents = compileModule "<interactive>" contents
+compileModuleFromContents = compileModule "<interactive>"
 
 -- | Lookup a module from include directories and compile.
 compileModuleFromName :: ModuleName -> Compile [JsStmt]
@@ -122,8 +122,7 @@ compileModuleFromName name =
             dirs <- configDirectoryIncludePaths <$> config id
             (filepath,contents) <- findImport dirs name
             modify $ \s -> s { stateImported = (name,filepath) : imported }
-            res <- importIt filepath contents
-            return res
+            importIt filepath contents
 
 -- | Compile given the location and source string.
 compileModule :: FilePath -> String -> Compile [JsStmt]
@@ -166,14 +165,14 @@ compileModuleFromAST (Module _ modulename _pragmas Nothing _exports imports decl
     exportStdlibOnly <- config configExportStdlibOnly
     modulePaths      <- createModulePath modulename
     extExports       <- generateExports
-    let stmts = (imported ++ modulePaths ++ current ++ extExports)
-    if exportStdlibOnly
+    let stmts = imported ++ modulePaths ++ current ++ extExports
+    return $ if exportStdlibOnly
       then if anStdlibModule modulename
-              then return stmts
-              else return []
+              then stmts
+              else []
       else if not exportStdlib && anStdlibModule modulename
-              then return []
-              else return stmts
+              then []
+              else stmts
 compileModuleFromAST mod = throwError (UnsupportedModuleSyntax mod)
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModuleFromAST
@@ -214,7 +213,7 @@ generateExports = do
 -- | Is the module a standard module, i.e., one that we'd rather not
 -- output code for if we're compiling separate files.
 anStdlibModule :: ModuleName -> Bool
-anStdlibModule (ModuleName name) = elem name ["Prelude","FFI","Language.Fay.FFI","Data.Data"]
+anStdlibModule (ModuleName name) = name `elem` ["Prelude","FFI","Language.Fay.FFI","Data.Data"]
 
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]

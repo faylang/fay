@@ -64,7 +64,7 @@ bindAsLocals :: [QName] -> ModuleScope -> ModuleScope
 bindAsLocals qs (ModuleScope binds) =
   -- This needs to be changed to not use unqual to support qualified imports.
   ModuleScope $ binds `M.union` M.fromList (map (unqual &&& id) qs)
-    where unqual (Qual _ n) = (UnQual n)
+    where unqual (Qual _ n) = UnQual n
           unqual u@UnQual{} = u
           unqual Special{}  = error "fay: ModuleScope.bindAsLocals: Special"
 
@@ -91,23 +91,23 @@ moduleLocals mod (ModuleScope binds) = filter isLocal . M.elems $ binds
 -- So e.g. will compile to (*) Fay$$mult, which is in runtime.js.
 envPrimOpsMap :: Map Name QName
 envPrimOpsMap = M.fromList
-  [ (Symbol ">>",    (Qual (ModuleName "Fay$") (Ident "then")))
-  , (Symbol ">>=",   (Qual (ModuleName "Fay$") (Ident "bind")))
-  , (Ident "return", (Qual (ModuleName "Fay$") (Ident "return")))
-  , (Ident "force",  (Qual (ModuleName "Fay$") (Ident "force")))
-  , (Ident "seq",    (Qual (ModuleName "Fay$") (Ident "seq")))
-  , (Symbol "*",     (Qual (ModuleName "Fay$") (Ident "mult")))
-  , (Symbol "+",     (Qual (ModuleName "Fay$") (Ident "add")))
-  , (Symbol "-",     (Qual (ModuleName "Fay$") (Ident "sub")))
-  , (Symbol "/",     (Qual (ModuleName "Fay$") (Ident "divi")))
-  , (Symbol "==",    (Qual (ModuleName "Fay$") (Ident "eq")))
-  , (Symbol "/=",    (Qual (ModuleName "Fay$") (Ident "neq")))
-  , (Symbol ">",     (Qual (ModuleName "Fay$") (Ident "gt")))
-  , (Symbol "<",     (Qual (ModuleName "Fay$") (Ident "lt")))
-  , (Symbol ">=",    (Qual (ModuleName "Fay$") (Ident "gte")))
-  , (Symbol "<=",    (Qual (ModuleName "Fay$") (Ident "lte")))
-  , (Symbol "&&",    (Qual (ModuleName "Fay$") (Ident "and")))
-  , (Symbol "||",    (Qual (ModuleName "Fay$") (Ident "or")))
+  [ (Symbol ">>",    Qual (ModuleName "Fay$") (Ident "then"))
+  , (Symbol ">>=",   Qual (ModuleName "Fay$") (Ident "bind"))
+  , (Ident "return", Qual (ModuleName "Fay$") (Ident "return"))
+  , (Ident "force",  Qual (ModuleName "Fay$") (Ident "force"))
+  , (Ident "seq",    Qual (ModuleName "Fay$") (Ident "seq"))
+  , (Symbol "*",     Qual (ModuleName "Fay$") (Ident "mult"))
+  , (Symbol "+",     Qual (ModuleName "Fay$") (Ident "add"))
+  , (Symbol "-",     Qual (ModuleName "Fay$") (Ident "sub"))
+  , (Symbol "/",     Qual (ModuleName "Fay$") (Ident "divi"))
+  , (Symbol "==",    Qual (ModuleName "Fay$") (Ident "eq"))
+  , (Symbol "/=",    Qual (ModuleName "Fay$") (Ident "neq"))
+  , (Symbol ">",     Qual (ModuleName "Fay$") (Ident "gt"))
+  , (Symbol "<",     Qual (ModuleName "Fay$") (Ident "lt"))
+  , (Symbol ">=",    Qual (ModuleName "Fay$") (Ident "gte"))
+  , (Symbol "<=",    Qual (ModuleName "Fay$") (Ident "lte"))
+  , (Symbol "&&",    Qual (ModuleName "Fay$") (Ident "and"))
+  , (Symbol "||",    Qual (ModuleName "Fay$") (Ident "or"))
   ]
 
 findPrimOp :: QName -> Maybe QName
@@ -128,13 +128,13 @@ bindName k = ask >>= \mod -> tell (ModuleScope $ M.singleton (UnQual k) (Qual mo
 
 d_decl :: Decl -> ModuleScopeSt
 d_decl d = case d of
-  DataDecl _ _ _ _ _ dd _         -> mapM_ d_qualCon dd
-  GDataDecl _ DataType _l _i _v _n decls _ -> mapM_ d_qualCon (map convertGADT decls)
-  PatBind _ (PVar n) _ _ _        -> bindName n
-  FunBind (Match _ n _ _ _ _ : _) -> bindName n
-  ClassDecl _ _ _ _ _ cds         -> mapM_ d_classDecl cds
-  TypeSig _ ns _                  -> mapM_ bindName ns
-  _                               -> return ()
+  DataDecl _ _ _ _ _ dd _           -> mapM_ d_qualCon dd
+  GDataDecl _ DataType _ _ _ _ ds _ -> mapM_ (d_qualCon . convertGADT) ds
+  PatBind _ (PVar n) _ _ _          -> bindName n
+  FunBind (Match _ n _ _ _ _ : _)   -> bindName n
+  ClassDecl _ _ _ _ _ cds           -> mapM_ d_classDecl cds
+  TypeSig _ ns _                    -> mapM_ bindName ns
+  _                                 -> return ()
 
 d_classDecl :: ClassDecl -> ModuleScopeSt
 d_classDecl cd = case cd of

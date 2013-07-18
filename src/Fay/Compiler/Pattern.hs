@@ -98,8 +98,8 @@ compilePLit exp literal body = do
 compilePAsPat :: JsExp -> Name -> Pat -> [JsStmt] -> Compile [JsStmt]
 compilePAsPat exp name pat body = do
   bindVar name
-  x <- compilePat exp pat body
-  return ([JsVar (JsNameVar (UnQual name)) exp] ++ x)
+  p <- compilePat exp pat body
+  return $ JsVar (JsNameVar $ UnQual name) exp : p
 
 compileNewtypePat :: [Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
 compileNewtypePat [pat] exp body = compilePat exp pat body
@@ -153,7 +153,7 @@ compilePList pats body exp = do
 compileInfixPat :: JsExp -> Pat -> [JsStmt] -> Compile [JsStmt]
 compileInfixPat exp pat@(PInfixApp left (Special cons) right) body =
   case cons of
-    Cons -> do
+    Cons ->
       withScopedTmpJsName $ \tmpName -> do
         let forcedExp = JsName tmpName
             x = JsGetProp forcedExp (JsNameVar "car")

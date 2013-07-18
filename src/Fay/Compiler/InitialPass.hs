@@ -15,14 +15,16 @@ import           Control.Monad.Error
 import           Control.Monad.Extra
 import           Control.Monad.RWS
 import           Control.Monad.IO
+import           Data.List.Extra
 import qualified Data.Set as S
 import qualified Data.Map as M
 import           Language.Haskell.Exts.Parser
 import           Language.Haskell.Exts.Syntax
 import           Prelude hiding (mod, read)
 
+
 initialPass :: Module -> Compile ()
-initialPass (Module _ mod _ Nothing exports imports decls) = do
+initialPass (Module _ mod _ Nothing exports imports decls) =
   withModuleScope $ do
     modify $ \s -> s { stateModuleName = mod
                      , stateModuleScope = findTopLevelNames mod decls
@@ -56,7 +58,7 @@ compileWith :: (Show from,Parseable from)
             -> (from -> Compile ())
             -> String
             -> Compile (Either CompileError ((),CompileState,CompileWriter))
-compileWith filepath r st with from = do
+compileWith filepath r st with from =
   io $ runCompile r
                   st
                   (parseResult (throwError . uncurry ParseError)
@@ -89,7 +91,7 @@ scanNewtypeDecls _ = return ()
 
 -- | Add new types to the state
 compileNewtypeDecl :: [QualConDecl] -> Compile ()
-compileNewtypeDecl [QualConDecl _ _ _ condecl] = do
+compileNewtypeDecl [QualConDecl _ _ _ condecl] =
   case condecl of
       -- newtype declaration without destructor
     ConDecl name  [ty]            -> addNewtype name Nothing ty
@@ -105,7 +107,7 @@ compileNewtypeDecl [QualConDecl _ _ _ condecl] = do
       qcname <- qualify cname
       qdname <- case dname of
                   Nothing -> return Nothing
-                  Just n  -> qualify n >>= return . Just
+                  Just n  -> Just <$> qualify n
       modify (\cs@CompileState{stateNewtypes=nts} ->
                cs{stateNewtypes=(qcname,qdname,getBangTy ty):nts})
 compileNewtypeDecl q = error $ "compileNewtypeDecl: Should be impossible (this is a bug). Got: " ++ show q
@@ -115,7 +117,7 @@ scanRecordDecls :: Decl -> Compile ()
 scanRecordDecls decl = do
   case decl of
     DataDecl _loc DataType _ctx name _tyvarb qualcondecls _deriv -> do
-      let ns = flip map qualcondecls (\(QualConDecl _loc' _tyvarbinds _ctx' condecl) -> conDeclName condecl)
+      let ns = for qualcondecls (\(QualConDecl _loc' _tyvarbinds _ctx' condecl) -> conDeclName condecl)
       addRecordTypeState name ns
     _ -> return ()
 

@@ -39,8 +39,8 @@ compileFromTo config filein fileout = do
                   (compileFromToAndGenerateHtml config filein)
                   fileout
   case result of
-    Right out -> maybe (putStrLn out) (flip writeFile out) fileout
-    Left err -> error $ showCompileError $ err
+    Right out -> maybe (putStrLn out) (`writeFile` out) fileout
+    Left err -> error $ showCompileError err
 
 -- | Compile the given file and write to the output, also generate any HTML.
 compileFromToAndGenerateHtml :: CompileConfig -> FilePath -> FilePath -> IO (Either CompileError String)
@@ -54,7 +54,7 @@ compileFromToAndGenerateHtml config filein fileout = do
           , "<html>"
           , "  <head>"
           ,"    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>"
-          , unlines . map ("    "++) . map makeScriptTagSrc $ configHtmlJSLibs config
+          , unlines . map (("    "++) . makeScriptTagSrc) $ configHtmlJSLibs config
           , "    " ++ makeScriptTagSrc relativeJsPath
           , "    </script>"
           , "  </head>"
@@ -64,14 +64,12 @@ compileFromToAndGenerateHtml config filein fileout = do
       return (Right out)
             where relativeJsPath = makeRelative (dropFileName fileout) fileout
                   makeScriptTagSrc :: FilePath -> String
-                  makeScriptTagSrc = \s ->
-                    "<script type=\"text/javascript\" src=\"" ++ s ++ "\"></script>"
+                  makeScriptTagSrc s = "<script type=\"text/javascript\" src=\"" ++ s ++ "\"></script>"
     Left err -> return (Left err)
 
 -- | Compile the given file.
 compileFile :: CompileConfig -> FilePath -> IO (Either CompileError String)
-compileFile config filein = do
-  either Left (Right . fst) <$> compileFileWithState config filein
+compileFile config filein = either Left (Right . fst) <$> compileFileWithState config filein
 
 -- | Compile a file returning the state.
 compileFileWithState :: CompileConfig -> FilePath -> IO (Either CompileError (String,CompileState))
@@ -89,16 +87,16 @@ compileToModule :: (Show from,Show to,CompilesTo from to)
                 -> IO (Either CompileError (String,CompileState))
 compileToModule filepath config raw with hscode = do
   result <- compileViaStr filepath config with hscode
-  case result of
-    Left err -> return (Left err)
-    Right (PrintState{..},state,_) -> do
-      return $ Right ( generateWrapped (concat $ reverse psOutput)
-                                       (stateModuleName state)
-                     , state
-                     )
+  return $ case result of
+    Left err -> Left err
+    Right (PrintState{..},state,_) ->
+      Right ( generateWrapped (concat $ reverse psOutput)
+                              (stateModuleName state)
+            , state
+            )
   where
     generateWrapped jscode (ModuleName modulename) =
-      unlines $ filter (not . null) $
+      unlines $ filter (not . null)
       [if configExportRuntime config then raw else ""
       ,jscode
       ,"// Exports"

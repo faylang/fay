@@ -40,7 +40,7 @@ case_stateRecordTypes = do
   res <- compileFileWithState defConf { configPackageConf = whatAGreatFramework } "tests/Api/Records.hs"
   case res of
     Left err -> error (show err)
-    Right (_,r) -> do
+    Right (_,r) ->
       -- TODO order should not matter
       assertEqual "stateRecordTypes mismatch"
         [ (UnQual (Ident "T"),[UnQual (Symbol ":+")])
@@ -54,7 +54,7 @@ case_importStateRecordTypes = do
   res <- compileFileWithState defConf { configPackageConf = whatAGreatFramework } "tests/Api/ImportRecords.hs"
   case res of
     Left err -> error (show err)
-    Right (_,r) -> do
+    Right (_,r) ->
       -- TODO order should not matter
       assertEqual "stateRecordTypes mismatch"
         [ (UnQual (Ident "T"),[UnQual (Symbol ":+")])

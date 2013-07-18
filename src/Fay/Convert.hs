@@ -97,7 +97,7 @@ showToFay = Show.reify >=> convert where
 
 -- | Convert a value representing a Fay value to a Haskell value.
 readFromFay :: Data a => Value -> Maybe a
-readFromFay value = do
+readFromFay value =
   parseDataOrTuple value
   `ext1R` parseArray value
   `extR` parseDouble value

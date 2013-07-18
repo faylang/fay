@@ -35,7 +35,7 @@ typecheck packageConf wall fp = do
           , "-cpp", "-DFAY=1"
           , "-main-is"
           , "Language.Fay.DummyMain"
-          , "-i" ++ concat (intersperse ":" includeDirs)
+          , "-i" ++ intercalate ":" includeDirs
           , fp ] ++ ghcPackageDbArgs ++ wallF ++ map ("-package " ++) packages
   res <- io $ readAllFromProcess GHCPaths.ghc flags ""
   either (throwError . GHCError . fst) (warn . fst) res

@@ -12,7 +12,6 @@ import           Fay.Compiler.Debug
 
 import qualified Control.Exception        as E
 import           Control.Monad
-import           Control.Monad.Error
 import           Control.Monad.IO
 import           Data.Default
 import           Data.List.Split          (wordsBy)
@@ -22,7 +21,6 @@ import           Options.Applicative
 import           Paths_fay                (version)
 import           System.Console.Haskeline
 import           System.Environment
-import           System.IO
 
 -- | Options and help.
 data FayCompilerOptions = FayCompilerOptions
@@ -57,36 +55,33 @@ main = do
   opts <- execParser parser
   if optVersion opts
     then runCommandVersion
-    else do
-      if optPrintRuntime opts
-         then getRuntime >>= readFile >>= putStr
-         else do
-           let config = addConfigDirectoryIncludePaths ("." : optInclude opts) $
-                 addConfigPackages (optPackages opts) $ def
-                   { configOptimize         = optOptimize opts
-                   , configFlattenApps      = optFlattenApps opts
-                   , configExportBuiltins   = not (optNoBuiltins opts)
-                   , configPrettyPrint      = optPretty opts
-                   , configLibrary          = optLibrary opts
-                   , configHtmlWrapper      = optHTMLWrapper opts
-                   , configHtmlJSLibs       = optHTMLJSLibs opts
-                   , configTypecheck        = not $ optNoGHC opts
-                   , configWall             = optWall opts
-                   , configGClosure         = optGClosure opts
-                   , configPackageConf      = optPackageConf opts <|> packageConf
-                   , configExportRuntime    = not (optNoRTS opts)
-                   , configExportStdlib     = not (optNoStdlib opts)
-                   , configExportStdlibOnly = optStdlibOnly opts
-                   , configBasePath         = optBasePath opts
-                   }
-           void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
-           case optFiles opts of
-                ["-"] -> hGetContents stdin >>= printCompile config compileModuleFromAST
-                []    -> runInteractive
-                files -> forM_ files $ \file -> do
-                  if optStdout opts
-                    then compileFromTo config file Nothing
-                    else compileFromTo config file (Just (outPutFile opts file))
+    else if optPrintRuntime opts
+      then getRuntime >>= readFile >>= putStr
+      else do
+        let config = addConfigDirectoryIncludePaths ("." : optInclude opts) $
+              addConfigPackages (optPackages opts) $ def
+                { configOptimize         = optOptimize opts
+                , configFlattenApps      = optFlattenApps opts
+                , configExportBuiltins   = not (optNoBuiltins opts)
+                , configPrettyPrint      = optPretty opts
+                , configLibrary          = optLibrary opts
+                , configHtmlWrapper      = optHTMLWrapper opts
+                , configHtmlJSLibs       = optHTMLJSLibs opts
+                , configTypecheck        = not $ optNoGHC opts
+                , configWall             = optWall opts
+                , configGClosure         = optGClosure opts
+                , configPackageConf      = optPackageConf opts <|> packageConf
+                , configExportRuntime    = not (optNoRTS opts)
+                , configExportStdlib     = not (optNoStdlib opts)
+                , configExportStdlibOnly = optStdlibOnly opts
+                , configBasePath         = optBasePath opts
+                }
+        void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
+        case optFiles opts of
+             ["-"] -> getContents >>= printCompile config compileModuleFromAST
+             []    -> runInteractive
+             files -> forM_ files $ \file ->
+               compileFromTo config file (if optStdout opts then Nothing else Just (outPutFile opts file))
 
   where
     parser = info (helper <*> options) (fullDesc <> header helpTxt)
@@ -131,9 +126,9 @@ options = FayCompilerOptions
 incompatible :: Monad m
   => (FayCompilerOptions -> Bool)
   -> FayCompilerOptions -> String -> m Bool
-incompatible test opts message = case test opts of
-  True -> E.throw $ userError message
-  False -> return True
+incompatible test opts message = if test opts
+  then E.throw $ userError message
+  else return True
 
 -- | The basic help text.
 helpTxt :: String

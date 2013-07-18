@@ -40,7 +40,7 @@ data OptState = OptState
 runOptimizer :: ([JsStmt] -> Optimize [JsStmt]) -> [JsStmt] -> [JsStmt]
 runOptimizer optimizer stmts =
   let (newstmts,OptState _ uncurried) = flip runState st $ optimizer stmts
-  in (newstmts ++ (tco (catMaybes (map (uncurryBinding newstmts) (nub uncurried)))))
+  in newstmts ++ (tco . mapMaybe (uncurryBinding newstmts) $ nub uncurried)
   where st = OptState stmts []
 
 -- | Inline x >> y to x;y in the JS output.
@@ -67,9 +67,7 @@ inlineMonad = map go where
   inline expr =
     case expr of
       -- Optimizations
-      JsApp op args -> case flatten expr of
-        Nothing -> JsApp (inline op) (map inline args)
-        Just x  -> x
+      JsApp op args -> fromMaybe (JsApp (inline op) $ map inline args) (flatten expr)
 
       -- Plumbing
       JsFun nm names stmts mexp        -> JsFun nm names (map go stmts) (fmap inline mexp)
@@ -104,10 +102,9 @@ flatten exp = case collect exp of
 collect :: JsExp -> Maybe [JsExp]
 collect exp =
   case exp of
-    JsApp op args | isThen op -> do
+    JsApp op args | isThen op ->
       case args of
-        [rest,x] -> do xs <- collect rest
-                       return (x : xs)
+        [rest,x] -> (x :) <$> collect rest
         [x]  -> return [x]
         _ -> Nothing
     _ -> return [exp]
@@ -227,7 +224,7 @@ applyToExpsInStmt funcs f stmts = uncurryInStmt stmts where
 
 -- | Collect functions and their arity from the whole codeset.
 collectFuncs :: [JsStmt] -> [FuncArity]
-collectFuncs = (++ prim) . concat . map collectFunc where
+collectFuncs = (++ prim) . concatMap collectFunc where
   collectFunc (JsMappedVar _ name exp) = collectFunc (JsVar name exp)
   collectFunc (JsVar (JsNameVar name) exp) | arity > 0 = [(name,arity)]
     where arity = expArity exp

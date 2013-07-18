@@ -22,7 +22,7 @@ import System.Process.Extra
 -- | Given a configuration, resolve any packages specified to their
 -- data file directories for importing the *.hs sources.
 resolvePackages :: CompileConfig -> IO CompileConfig
-resolvePackages config = do
+resolvePackages config =
   foldM resolvePackage config (configPackages config)
 
 -- | Resolve package.
@@ -38,7 +38,7 @@ resolvePackage config name = do
                     else fmap ($ nameVer) getShareGen
       let includes = [shareDir,shareDir </> "src"]
       exists <- mapM doesSourceDirExist includes
-      if any id exists
+      if or exists
          then return (addConfigDirectoryIncludes (map (Just nameVer,) includes) config)
          else error $ "unable to find (existing) package's share dir: " ++ name ++ "\n" ++
                       "tried: " ++ unlines includes ++ "\n" ++
@@ -62,8 +62,7 @@ describePackage db name = do
     Left  (err,_out) -> error $ "ghc-pkg describe error:\n" ++ err
     Right (_err,out) -> return out
 
-  where args = concat [["describe",name]
-                      ,["-f" ++ db' | Just db' <- [db]]]
+  where args = ["describe",name] ++ ["-f" ++ db' | Just db' <- [db]]
 
 -- | Get the package version from the package description.
 packageVersion :: String -> Maybe String

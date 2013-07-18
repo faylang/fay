@@ -79,9 +79,9 @@ compileLit lit =
 
 -- | Compile simple application.
 compileApp :: Exp -> Exp -> Compile JsExp
-compileApp exp1@(Con q) exp2 = do
+compileApp exp1@(Con q) exp2 =
   maybe (compileApp' exp1 exp2) (const $ compileExp exp2) =<< lookupNewtypeConst q
-compileApp exp1@(Var q) exp2 = do
+compileApp exp1@(Var q) exp2 =
   maybe (compileApp' exp1 exp2) (const $ compileExp exp2) =<< lookupNewtypeDest q
 compileApp exp1 exp2 =
   compileApp' exp1 exp2
@@ -132,7 +132,7 @@ compileInfixApp exp1 ap exp2 = compileExp (App (App (Var op) exp1) exp2)
 
 -- | Compile a let expression.
 compileLet :: [Decl] -> Exp -> Compile JsExp
-compileLet decls exp = do
+compileLet decls exp =
   withScope $ do
     generateScope $ mapM compileLetDecl decls
     binds <- mapM compileLetDecl decls
@@ -143,12 +143,11 @@ compileLet decls exp = do
 compileLetDecl :: Decl -> Compile [JsStmt]
 compileLetDecl decl = do
   compileDecls <- asks readerCompileDecls
-  v <- case decl of
+  case decl of
     decl@PatBind{} -> compileDecls False [decl]
     decl@FunBind{} -> compileDecls False [decl]
     TypeSig{}      -> return []
     _              -> throwError (UnsupportedLetBinding decl)
-  return v
 
 -- | Compile a list expression.
 compileList :: [Exp] -> Compile JsExp
@@ -200,11 +199,11 @@ compileGuardedAlt alt =
 -- | Compile guards
 compileGuards :: [GuardedRhs] -> Compile JsStmt
 compileGuards ((GuardedRhs _ (Qualifier (Var (UnQual (Ident "otherwise"))):_) exp):_) =
-  (\e -> JsIf (JsLit (JsBool True)) [JsEarlyReturn e] []) <$> compileExp exp
+  (\e -> JsIf (JsLit $ JsBool True) [JsEarlyReturn e] []) <$> compileExp exp
 compileGuards (GuardedRhs _ (Qualifier guard:_) exp : rest) =
   makeIf <$> fmap force (compileExp guard)
          <*> compileExp exp
-         <*> if null rest then (return []) else do
+         <*> if null rest then return [] else do
            gs' <- compileGuards rest
            return [gs']
     where makeIf gs e gss = JsIf gs [JsEarlyReturn e] gss
@@ -219,10 +218,10 @@ compileDoBlock stmts = do
 
 -- | Compile a lambda.
 compileLambda :: [Pat] -> Exp -> Compile JsExp
-compileLambda pats exp = do
+compileLambda pats exp =
   withScope $ do
     generateScope $ generateStatements JsNull
-    exp <- compileExp exp
+    exp   <- compileExp exp
     stmts <- generateStatements exp
     case stmts of
       [JsEarlyReturn fun@JsFun{}] -> return fun
@@ -351,7 +350,7 @@ desugarListComp _ (s                             : _    ) =
 
 -- | Make a Fay list.
 makeList :: [JsExp] -> JsExp
-makeList exps = (JsApp (JsName (JsBuiltIn "list")) [JsList exps])
+makeList exps = JsApp (JsName $ JsBuiltIn "list") [JsList exps]
 
 -- | Compile a statement of a do block.
 compileStmt :: Maybe Exp -> Stmt -> Compile (Maybe Exp)

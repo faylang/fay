@@ -1,4 +1,3 @@
-{-# LANGUAGE EmptyDataDecls       #-}
 {-# LANGUAGE NoImplicitPrelude    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 

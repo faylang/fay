@@ -57,5 +57,4 @@ printCompile config with from = do
   result <- compileViaStr "<interactive>" config { configPrettyPrint = True } with from
   case result of
     Left err -> print err
-    Right (PrintState{..},_,_) -> do
-      putStrLn (concat (reverse (psOutput)))
+    Right (PrintState{..},_,_) -> putStrLn . concat . reverse $ psOutput

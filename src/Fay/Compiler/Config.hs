@@ -38,26 +38,25 @@ addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 
 -- | Default configuration.
 instance Default CompileConfig where
-  def =
-    addConfigPackage "fay-base" $
-      CompileConfig
-      { configOptimize           = False
-      , configFlattenApps        = False
-      , configExportBuiltins     = True
-      , configExportRuntime      = True
-      , configExportStdlib       = True
-      , configExportStdlibOnly   = False
-      , configDirectoryIncludes  = []
-      , configPrettyPrint        = False
-      , configHtmlWrapper        = False
-      , configHtmlJSLibs         = []
-      , configLibrary            = False
-      , configWarn               = True
-      , configFilePath           = Nothing
-      , configTypecheck          = True
-      , configWall               = False
-      , configGClosure           = False
-      , configPackageConf        = Nothing
-      , configPackages           = []
-      , configBasePath           = Nothing
-      }
+  def = addConfigPackage "fay-base"
+    CompileConfig
+    { configOptimize           = False
+    , configFlattenApps        = False
+    , configExportBuiltins     = True
+    , configExportRuntime      = True
+    , configExportStdlib       = True
+    , configExportStdlibOnly   = False
+    , configDirectoryIncludes  = []
+    , configPrettyPrint        = False
+    , configHtmlWrapper        = False
+    , configHtmlJSLibs         = []
+    , configLibrary            = False
+    , configWarn               = True
+    , configFilePath           = Nothing
+    , configTypecheck          = True
+    , configWall               = False
+    , configGClosure           = False
+    , configPackageConf        = Nothing
+    , configPackages           = []
+    , configBasePath           = Nothing
+    }

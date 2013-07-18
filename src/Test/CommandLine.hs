@@ -19,7 +19,7 @@ tests = $testGroupGenerator
 
 compileFile :: [String] -> IO (Either String String)
 compileFile flags = do
-  whatAGreatFramework <- fmap (fmap (\x -> x</>"bin"</>"fay") . (lookup "HASKELL_SANDBOX"))
+  whatAGreatFramework <- fmap (fmap (\x -> x</>"bin"</>"fay") . lookup "HASKELL_SANDBOX")
                               getEnvironment
   fay <- fayPath
   let path = fromMaybe "couldn't find fay" (whatAGreatFramework <|> fay)

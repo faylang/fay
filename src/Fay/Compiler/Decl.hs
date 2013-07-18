@@ -67,7 +67,7 @@ compilePatBind toplevel sig pat =
           Just sig -> compileFFI srcloc ident formatstr sig
           Nothing  -> throwError (FfiNeedsTypeSig pat)
         _ -> compileUnguardedRhs srcloc toplevel ident rhs
-    PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) bdecls -> do
+    PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) bdecls ->
       compileUnguardedRhs srcloc toplevel ident (Let bdecls rhs)
     PatBind srcloc pat Nothing (UnGuardedRhs rhs) _bdecls -> do
       exp <- compileExp rhs
@@ -94,7 +94,7 @@ compileDataDecl toplevel tyvars constructors =
       case condecl of
         ConDecl name types  -> do
           let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
-              fields' = (zip (map return fields) types)
+              fields' = zip (map return fields) types
           cons <- makeConstructor name fields
           func <- makeFunc name fields
           emitFayToJs name tyvars fields'
@@ -129,7 +129,7 @@ compileDataDecl toplevel tyvars constructors =
       qname <- qualify name
       return $
         JsSetConstructor qname $
-          JsFun (Just $ JsConstructor $ qname)
+          JsFun (Just $ JsConstructor qname)
                 fields
                 (for fields $ \field -> JsSetProp JsThis field (JsName field))
                 Nothing
@@ -145,13 +145,11 @@ compileDataDecl toplevel tyvars constructors =
                        fields
       added <- gets (addedModulePath mp)
       if added
-        then do
-          return $ JsSetQName qname $
-            JsApp (JsName $ JsBuiltIn "objConcat") [func, JsName $ JsNameVar qname]
+        then return . JsSetQName qname $ JsApp (JsName $ JsBuiltIn "objConcat")
+                                               [func, JsName $ JsNameVar qname]
         else do
           modify $ addModulePath mp
-          return $ JsSetQName qname $ func
-
+          return $ JsSetQName qname func
 
     -- Creates getters for a RecDecl's values
     makeAccessors :: SrcLoc -> [Name] -> Compile [JsStmt]
@@ -183,7 +181,7 @@ compileFunCase toplevel matches@(Match _ name argslen _ _ _:_) = do
         isWildCardMatch (Match _ _ pats _ _ _) = all isWildCardPat pats
 
         compileCase :: Match -> Compile [JsStmt]
-        compileCase match@(Match _ _ pats _ rhs _) = do
+        compileCase match@(Match _ _ pats _ rhs _) =
           withScope $ do
             whereDecls' <- whereDecls match
             generateScope $ zipWithM (\arg pat -> compilePat (JsName arg) pat []) args pats

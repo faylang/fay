@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE ViewPatterns      #-}
 {-# OPTIONS -Wall #-}
@@ -69,9 +68,7 @@ compileFFI' srcloc name formatstr sig = do
 
 ffiFun :: SrcLoc -> Maybe Name -> String -> Type -> Compile JsExp
 ffiFun srcloc nameopt formatstr sig = do
-  let name = case nameopt of
-               Nothing -> "<exp>"
-               Just n -> n
+  let name = fromMaybe "<exp>" nameopt
   inner <- formatFFI srcloc formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.expression (prettyPrint name) (printJSString (wrapReturn inner)) of
     Left err -> throwError (FfiFormatInvalidJavaScript srcloc inner (show err))
@@ -104,17 +101,17 @@ warnDotUses srcloc string expr =
         dotref :: Expression SourcePos -> Bool
         dotref x = case x of
           DotRef _ (VarRef _ (Id _ name)) _
-             | elem name globalNames -> False
-          DotRef{}                   -> True
-          _                          -> False
+             | name `elem` globalNames -> False
+          DotRef{}                     -> True
+          _                            -> False
 
         ldot :: LValue SourcePos -> Bool
         ldot x =
           case x of
             LDot _ (VarRef _ (Id _ name)) _
-             | elem name globalNames -> False
-            LDot{}                   -> True
-            _                        -> False
+             | name `elem` globalNames -> False
+            LDot{}                     -> True
+            _                          -> False
 
         globalNames = ["Math","console","JSON"]
 
@@ -143,10 +140,10 @@ emitFayToJs name tyvars (explodeFields -> fieldTypes) = do
     fieldStmts :: [(Int,(Name,BangType))] -> [JsStmt]
     fieldStmts [] = []
     fieldStmts ((i,fieldType):fts) =
-      (JsVar obj_v field) :
-        (JsIf (JsNeq JsUndefined (JsName obj_v))
+      JsVar obj_v field :
+        JsIf (JsNeq JsUndefined (JsName obj_v))
           [JsSetPropExtern obj_ decl (JsName obj_v)]
-          []) :
+          [] :
         fieldStmts fts
       where
         obj_v = JsNameVar (UnQual (Ident $ "obj_" ++ d))
@@ -331,7 +328,7 @@ formatFFI srcloc formatstr args = go formatstr where
   inject n =
     case listToMaybe (drop (n-1) args) of
       Nothing -> throwError (FfiFormatNoSuchArg srcloc n)
-      Just (arg,typ) -> do
+      Just (arg,typ) ->
         return (printJSString (fayToJs SerializeAnywhere typ (JsName arg)))
 
 -- | Generate n name-typ pairs from the given list.
@@ -355,7 +352,7 @@ emitJsToFay name tyvars (explodeFields -> fieldTypes) = do
     translator qname =
       JsFun Nothing [JsNameVar "type", argTypes, transcodingObj] []
             (Just $ JsNew (JsConstructor qname)
-                          (map decodeField (map (getIndex name tyvars) fieldTypes)))
+                          (map (decodeField . getIndex name tyvars) fieldTypes))
     -- Decode JS→Fay field
     decodeField :: (Int,(Name,BangType)) -> JsExp
     decodeField (i,(fname,typ)) =
@@ -372,7 +369,7 @@ argTypes = JsNameVar "argTypes"
 getIndex :: Name -> [TyVarBind] -> (Name,BangType) -> (Int,(Name,BangType))
 getIndex name tyvars (sname,ty) =
   case bangType ty of
-    TyVar tyname -> case lookup tyname (zip (map tyvar tyvars) [0..]) of
+    TyVar tyname -> case elemIndex tyname (map tyvar tyvars) of
       Nothing -> error $ "unknown type variable " ++ prettyPrint tyname ++
                          " for " ++ prettyPrint name ++ "." ++ prettyPrint sname ++ "," ++
                          " vars were: " ++ unwords (map prettyPrint tyvars)

@@ -29,16 +29,16 @@ defaultCompileReader config = do
 defaultCompileState :: IO CompileState
 defaultCompileState = do
   types <- getDataFileName "src/Language/Fay/Types.hs"
-  return $ CompileState {
-    _stateExports = M.empty
-  , stateModuleName = ModuleName "Main"
-  , stateRecordTypes = []
-  , stateRecords = []
-  , stateNewtypes = []
-  , stateImported = [("Fay.Types",types)]
-  , stateNameDepth = 1
-  , stateLocalScope = S.empty
-  , stateModuleScope = def
-  , stateModuleScopes = M.empty
-  , stateJsModulePaths = S.empty
-  }
+  return CompileState
+    {  _stateExports = M.empty
+    , stateModuleName = ModuleName "Main"
+    , stateRecordTypes = []
+    , stateRecords = []
+    , stateNewtypes = []
+    , stateImported = [("Fay.Types",types)]
+    , stateNameDepth = 1
+    , stateLocalScope = S.empty
+    , stateModuleScope = def
+    , stateModuleScopes = M.empty
+    , stateJsModulePaths = S.empty
+    }

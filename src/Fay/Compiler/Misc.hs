@@ -66,7 +66,7 @@ uniqueNames = map JsParam [1::Integer ..]
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
 tryResolveName :: QName -> Compile (Maybe QName)
 tryResolveName special@Special{} = return (Just special)
-tryResolveName q@Qual{} = do
+tryResolveName q@Qual{} =
   ModuleScope.resolveName q <$> gets stateModuleScope
 tryResolveName u@(UnQual name) = do
   names <- gets stateLocalScope
@@ -144,7 +144,7 @@ generateScope m = do
 
 -- | Bind a variable in the current scope.
 bindVar :: Name -> Compile ()
-bindVar name = do
+bindVar name =
   modify $ \s -> s { stateLocalScope = S.insert name (stateLocalScope s) }
 
 -- | Emit exported names.
@@ -170,8 +170,7 @@ emitExport spec = case spec of
   -- qualified imports are not supported yet an error will be thrown
   -- on the import so hopefully this won't be confusing.
   EThingAll (Qual _ _) -> return ()
-  e -> do
-    throwError $ UnsupportedExportSpec e
+  e -> throwError $ UnsupportedExportSpec e
  where
    emitVar = return . UnQual >=> unsafeResolveName >=> emitExport . EVar
    emitCName (VarName n) = emitVar n
@@ -295,7 +294,7 @@ findImport alldirs mname = go alldirs mname where
   go (dir:dirs) name = do
     exists <- io (doesFileExist path)
     if exists
-      then fmap (path,) (fmap stdlibHack (io (readFile path)))
+      then (path,) . stdlibHack <$> io (readFile path)
       else go dirs name
     where
       path = dir </> replace '.' '/' (prettyPrint name) ++ ".hs"

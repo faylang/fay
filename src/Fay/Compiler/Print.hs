@@ -260,7 +260,7 @@ reservedWords =
   ,"window","with","yield"]
   -- These are not reserved, but they exist on thunks (inherited from Object) meaning they shouldn't be overridden.
   -- The problem only occurs if there is a module A.B and a constructor B in module A.
---   ++ ["__defineGetter__", "__defineSetter__", "__lookupGetter__", "__lookupSetter__", "constructor", "force", "forced", "hasOwnProperty", "isPrototypeOf", "propertyIsEnumerable", "toLocaleString", "toString", "value", "valueOf"]
+   ++ ["__defineGetter__", "__defineSetter__", "__lookupGetter__", "__lookupSetter__", "constructor", "force", "forced", "hasOwnProperty", "isPrototypeOf", "propertyIsEnumerable", "toLocaleString", "toString", "value", "valueOf"]
 
 
 -- | Encode a Haskell name to JavaScript.

@@ -99,7 +99,6 @@ compileToModule filepath config raw with hscode = do
       unlines $ filter (not . null)
       [if configExportRuntime config then raw else ""
       ,jscode
-      ,"// Exports"
       ,if not (configLibrary config)
           then unlines [";"
                        ,"Fay$$_(" ++ modulename ++ ".main);"

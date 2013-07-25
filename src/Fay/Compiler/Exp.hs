@@ -362,7 +362,7 @@ compileStmt inner stmt =
   where initStmt =
           case stmt of
             Qualifier exp -> return (Just exp)
-            LetStmt{}     -> throwError LetUnsupported
+            LetStmt{}     -> throwError UnsupportedLet
             _             -> throwError InvalidDoBlock
 
         subsequentStmt inner =
@@ -372,8 +372,8 @@ compileStmt inner stmt =
                                                     (QVarOp (UnQual (Symbol ">>")))
                                                     inner))
             LetStmt (BDecls binds) -> return (Just (Let (BDecls binds) inner))
-            LetStmt _ -> throwError LetUnsupported
-            RecStmt{} -> throwError RecursiveDoUnsupported
+            LetStmt _ -> throwError UnsupportedLet
+            RecStmt{} -> throwError UnsupportedRecursiveDo
 
         compileGenerator srcloc pat inner exp = do
           let body = Lambda srcloc [pat] inner

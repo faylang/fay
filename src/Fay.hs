@@ -118,22 +118,21 @@ showCompileError e = case e of
   ParseError pos err -> err ++ " at line: " ++ show (srcLine pos) ++ " column: " ++ show (srcColumn pos)
   UnsupportedDeclaration d -> "unsupported declaration: " ++ prettyPrint d
   UnsupportedExportSpec es -> "unsupported export specification: " ++ prettyPrint es
-  UnsupportedMatchSyntax m -> "unsupported match/binding syntax: " ++ prettyPrint m
-  UnsupportedWhereInMatch m -> "unsupported `where' syntax: " ++ prettyPrint m
-  UnsupportedWhereInAlt alt -> "`where' not supported here: " ++ prettyPrint alt
   UnsupportedExpression expr -> "unsupported expression syntax: " ++ prettyPrint expr
-  UnsupportedQualStmt stmt -> "unsupported list qualifier: " ++ prettyPrint stmt
-  UnsupportedLiteral lit -> "unsupported literal syntax: " ++ prettyPrint lit
+  UnsupportedFieldPattern p -> "unsupported field pattern: " ++ prettyPrint p
+  UnsupportedImport i -> "unsupported import syntax, we're too lazy: " ++ prettyPrint i
+  UnsupportedLet -> "let not supported here"
   UnsupportedLetBinding d -> "unsupported let binding: " ++ prettyPrint d
-  UnsupportedOperator qop -> "unsupported operator syntax: " ++ prettyPrint qop
+  UnsupportedLiteral lit -> "unsupported literal syntax: " ++ prettyPrint lit
+  UnsupportedModuleSyntax m -> "unsupported module syntax" ++ prettyPrint m
   UnsupportedPattern pat -> "unsupported pattern syntax: " ++ prettyPrint pat
+  UnsupportedQualStmt stmt -> "unsupported list qualifier: " ++ prettyPrint stmt
+  UnsupportedRecursiveDo -> "recursive `do' isn't supported"
   UnsupportedRhs rhs -> "unsupported right-hand side syntax: " ++ prettyPrint rhs
-  UnsupportedGuardedAlts ga -> "unsupported guarded alts: " ++ prettyPrint ga
+  UnsupportedWhereInAlt alt -> "`where' not supported here: " ++ prettyPrint alt
+  UnsupportedWhereInMatch m -> "unsupported `where' syntax: " ++ prettyPrint m
   EmptyDoBlock -> "empty `do' block"
-  UnsupportedModuleSyntax{} -> "unsupported module syntax (may be supported later)"
-  LetUnsupported -> "let not supported here"
   InvalidDoBlock -> "invalid `do' block"
-  RecursiveDoUnsupported -> "recursive `do' isn't supported"
   FfiNeedsTypeSig d -> "your FFI declaration needs a type signature: " ++ prettyPrint d
   FfiFormatBadChars      srcloc cs -> printSrcLoc srcloc ++ ": invalid characters for FFI format string: " ++ show cs
   FfiFormatNoSuchArg     srcloc i  -> printSrcLoc srcloc ++ ": no such argument in FFI format string: " ++ show i
@@ -142,12 +141,9 @@ showCompileError e = case e of
     printSrcLoc srcloc ++ ":" ++
     "\ninvalid JavaScript code in FFI format string:\n"
                                          ++ err ++ "\nin " ++ code
-  UnsupportedFieldPattern p -> "unsupported field pattern: " ++ prettyPrint p
-  UnsupportedImport i -> "unsupported import syntax, we're too lazy: " ++ prettyPrint i
   Couldn'tFindImport i places ->
     "could not find an import in the path: " ++ prettyPrint i ++ ", \n" ++
     "searched in these places: " ++ intercalate ", " places
-  UnableResolveUnqualified name -> "unable to resolve unqualified name " ++ prettyPrint name
   UnableResolveQualified qname -> "unable to resolve qualified names " ++ prettyPrint qname
   GHCError s -> "ghc: " ++ s
 

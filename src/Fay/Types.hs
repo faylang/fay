@@ -233,31 +233,27 @@ data CompileError
   = ParseError SrcLoc String
   | UnsupportedDeclaration Decl
   | UnsupportedExportSpec ExportSpec
-  | UnsupportedMatchSyntax Match
-  | UnsupportedWhereInMatch Match
   | UnsupportedExpression Exp
-  | UnsupportedLiteral Literal
-  | UnsupportedLetBinding Decl
-  | UnsupportedOperator QOp
-  | UnsupportedPattern Pat
   | UnsupportedFieldPattern PatField
-  | UnsupportedRhs Rhs
-  | UnsupportedGuardedAlts GuardedAlts
-  | UnsupportedWhereInAlt Alt
   | UnsupportedImport ImportDecl
-  | UnsupportedQualStmt QualStmt
-  | EmptyDoBlock
+  | UnsupportedLet
+  | UnsupportedLetBinding Decl
+  | UnsupportedLiteral Literal
   | UnsupportedModuleSyntax Module
-  | LetUnsupported
+  | UnsupportedPattern Pat
+  | UnsupportedQualStmt QualStmt
+  | UnsupportedRecursiveDo
+  | UnsupportedRhs Rhs
+  | UnsupportedWhereInAlt Alt
+  | UnsupportedWhereInMatch Match
+  | EmptyDoBlock
   | InvalidDoBlock
-  | RecursiveDoUnsupported
   | Couldn'tFindImport ModuleName [FilePath]
   | FfiNeedsTypeSig Decl
   | FfiFormatBadChars SrcLoc String
   | FfiFormatNoSuchArg SrcLoc Int
   | FfiFormatIncompleteArg SrcLoc
   | FfiFormatInvalidJavaScript SrcLoc String String
-  | UnableResolveUnqualified Name
   | UnableResolveQualified QName
   | GHCError String
   deriving (Show)

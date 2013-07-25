@@ -100,7 +100,6 @@ mkModulePaths (ModuleName m) = map ModulePath . tail . inits . splitOn "." $ m
 -- | Converting a QName to a ModulePath is only relevant for constructors since
 -- they can conflict with module names.
 mkModulePathFromQName :: QName -> ModulePath
--- TODO hacky unname
 mkModulePathFromQName (Qual (ModuleName m) n) = mkModulePath $ ModuleName $ m ++ "." ++ unname n
 mkModulePathFromQName _ = error "mkModulePathFromQName: Not a qualified name"
 

@@ -32,11 +32,6 @@ import           System.IO
 import           System.Process                  (readProcess)
 import           Text.ParserCombinators.ReadP    (readP_to_S)
 
--- | Extra the string from an ident.
-unname :: Name -> String
-unname (Ident str) = str
-unname _ = error "Expected ident from uname." -- FIXME:
-
 -- | Make an identifier from the built-in HJ module.
 fayBuiltin :: String -> QName
 fayBuiltin = Qual (ModuleName "Fay$") . Ident

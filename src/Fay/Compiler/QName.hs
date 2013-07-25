@@ -26,6 +26,7 @@ changeName f (UnQual n) = UnQual $ f n
 changeName f (Qual m n) = Qual m $ f n
 changeName _ Special{} = error "changeName Special{}"
 
-name2String :: Name -> String
-name2String (Ident s) = s
-name2String (Symbol s) = s
+-- | Extract the string from a Name.
+unname :: Name -> String
+unname (Ident s) = s
+unname (Symbol s) = s

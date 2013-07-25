@@ -16,6 +16,7 @@ module Fay.Compiler.FFI
 
 import Fay.Compiler.Misc
 import Fay.Compiler.Print           (printJSString)
+import Fay.Compiler.QName
 import Fay.Types
 
 import Control.Monad.Error

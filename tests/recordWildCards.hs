@@ -25,6 +25,5 @@ main = do
     let x = X{foo=9}
     print (test2 x)
 
-    -- TODO: is there a way to test for exceptions ?
-    --let y = Y{foo=6}
-    --print (test2 y)
+    let y = Y{foo=6}
+    print (test2 y)

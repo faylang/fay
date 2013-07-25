@@ -213,7 +213,7 @@ generateExports = do
 -- | Is the module a standard module, i.e., one that we'd rather not
 -- output code for if we're compiling separate files.
 anStdlibModule :: ModuleName -> Bool
-anStdlibModule (ModuleName name) = name `elem` ["Prelude","FFI","Language.Fay.FFI","Data.Data"]
+anStdlibModule (ModuleName name) = name `elem` ["Prelude","FFI","Fay.FFI","Data.Data"]
 
 -- | Compile the given import.
 compileImport :: ImportDecl -> Compile [JsStmt]

@@ -1,8 +1,6 @@
-
-
 module Hierarchical.RecordDefined where
 
-import           Language.Fay.FFI
+import           FFI
 import           Prelude
 
 data Callback a = Callback Double

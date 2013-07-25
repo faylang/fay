@@ -1,9 +1,9 @@
 {-# LANGUAGE NoImplicitPrelude    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
--- | The internal FFI module. Needs to be renamed to Fay.FFI at some point.
+-- | The internal FFI module.
 
-module Language.Fay.FFI
+module Fay.FFI
   (Fay
   ,Nullable (..)
   ,Defined (..)
@@ -13,8 +13,7 @@ module Language.Fay.FFI
   where
 
 import           Fay.Types
-import           Prelude            (Bool, Char, Double, Int, Maybe, String,
-                                     error)
+import           Prelude      (Bool, Char, Double, Int, Maybe, String, error)
 
 -- | Values that may be null
 --  Nullable x decodes to x, Null decodes to null.
@@ -47,4 +46,4 @@ type Automatic a = a
 -- | Declare a foreign action.
 ffi :: String        -- ^ The foreign value.
     -> a             -- ^ Bottom.
-ffi = error "Language.Fay.FFI.foreignFay: Used foreign function not in a JS engine context."
+ffi = error "Fay.FFI.ffi: Used foreign function outside a JS engine context."

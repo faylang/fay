@@ -29,7 +29,7 @@ category:            Development
 build-type:          Custom
 cabal-version:       >=1.8
 data-files:          js/runtime.js
-                     src/Language/Fay/FFI.hs
+                     src/Fay/FFI.hs
 extra-source-files:  examples/ref.hs examples/alert.hs examples/console.hs examples/dom.hs
                      examples/tailrecursive.hs examples/data.hs examples/canvaswater.hs
                      examples/canvaswater.html examples/haskell.png
@@ -337,7 +337,7 @@ library
                      , Fay.Compiler.Debug
                      , Fay.Convert
                      , Fay.Types
-                     , Language.Fay.FFI
+                     , Fay.FFI
   other-modules:       Control.Monad.Extra
                      , Control.Monad.IO
                      , Data.List.Extra

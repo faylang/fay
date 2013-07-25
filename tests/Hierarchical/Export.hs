@@ -1,8 +1,6 @@
-
-
 module Hierarchical.Export where
 
-import           Language.Fay.FFI
+import           FFI
 import           Prelude
 
 exported :: String

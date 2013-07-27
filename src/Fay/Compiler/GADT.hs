@@ -1,4 +1,8 @@
-module Fay.Compiler.GADT(convertGADT) where
+-- | Convert GADTs into normal data types.
+
+module Fay.Compiler.GADT
+  (convertGADT
+  ) where
 
 import           Language.Haskell.Exts hiding (name, binds)
 

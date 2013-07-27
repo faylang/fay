@@ -1,3 +1,5 @@
+-- | Extras for haskell-src-exts names.
+
 module Fay.Compiler.QName where
 
 import Language.Haskell.Exts.Syntax

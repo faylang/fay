@@ -110,6 +110,7 @@ envPrimOpsMap = M.fromList
   , (Symbol "||",    Qual (ModuleName "Fay$") (Ident "or"))
   ]
 
+-- | Lookup a primop that was resolved to a Prelude definition.
 findPrimOp :: QName -> Maybe QName
 findPrimOp (Qual (ModuleName "Prelude") s) = M.lookup s envPrimOpsMap
 findPrimOp _ = Nothing

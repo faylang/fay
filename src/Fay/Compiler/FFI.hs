@@ -3,13 +3,13 @@
 {-# LANGUAGE ViewPatterns      #-}
 {-# OPTIONS -Wall #-}
 
--- | Compiling the FFI support.
+-- | Compile FFI definitions.
 
 module Fay.Compiler.FFI
   (emitFayToJs
   ,emitJsToFay
   ,compileFFI
-  ,ffiFun
+  ,compileFFIExp
   ,jsToFayHash
   ,fayToJsHash
   ) where
@@ -43,7 +43,7 @@ compileFFI :: SrcLoc -- ^ Location of the original FFI decl.
 compileFFI srcloc name formatstr sig =
   -- substitute newtypes with their child types before calling
   -- real compileFFI
-  compileFFI' srcloc name formatstr =<< rmNewtys sig
+  compileFFI' =<< rmNewtys sig
 
   where rmNewtys :: Type -> Compile Type
         rmNewtys (TyForall b c t) = TyForall b c <$> rmNewtys t
@@ -61,14 +61,15 @@ compileFFI srcloc name formatstr sig =
         rmNewtys (TyInfix t1 q t2)= flip TyInfix q <$> rmNewtys t1 <*> rmNewtys t2
         rmNewtys (TyKind t k)     = flip TyKind k <$> rmNewtys t
 
-compileFFI' :: SrcLoc -> Name -> String -> Type -> Compile [JsStmt]
-compileFFI' srcloc name formatstr sig = do
-  fun <- ffiFun srcloc (Just name) formatstr sig
-  stmt <- bindToplevel True name fun
-  return [stmt]
+        compileFFI' :: Type -> Compile [JsStmt]
+        compileFFI' sig' = do
+          fun <- compileFFIExp srcloc (Just name) formatstr sig'
+          stmt <- bindToplevel True name fun
+          return [stmt]
 
-ffiFun :: SrcLoc -> Maybe Name -> String -> Type -> Compile JsExp
-ffiFun srcloc nameopt formatstr sig = do
+-- | Compile an FFI expression (also used when compiling top level definitions).
+compileFFIExp :: SrcLoc -> Maybe Name -> String -> Type -> Compile JsExp
+compileFFIExp srcloc nameopt formatstr sig = do
   let name = fromMaybe "<exp>" nameopt
   inner <- formatFFI srcloc formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.expression (prettyPrint name) (printJSString (wrapReturn inner)) of
@@ -336,12 +337,13 @@ formatFFI srcloc formatstr args = go formatstr where
 explodeFields :: [([a], t)] -> [(a, t)]
 explodeFields = concatMap $ \(names,typ) -> map (,typ) names
 
+-- | Generate Fay→JS encoding.
 fayToJsHash :: [(String, JsExp)] -> [JsStmt]
 fayToJsHash cases = [JsExpStmt $ JsApp (JsName $ JsBuiltIn "objConcat") [JsName $ JsBuiltIn "fayToJsHash", JsObj cases]]
 
+-- | Generate JS→Fay decoding.
 jsToFayHash :: [(String, JsExp)] -> [JsStmt]
 jsToFayHash cases = [JsExpStmt $ JsApp (JsName $ JsBuiltIn "objConcat") [JsName $ JsBuiltIn "jsToFayHash", JsObj cases]]
-
 
 -- | Make a JS→Fay decoder.
 emitJsToFay ::  Name -> [TyVarBind] -> [([Name], BangType)] -> Compile ()

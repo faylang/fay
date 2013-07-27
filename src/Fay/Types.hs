@@ -88,12 +88,16 @@ data CompileConfig = CompileConfig
   , configBasePath           :: Maybe FilePath             -- ^ Custom source location for fay-base
   } deriving (Show)
 
+-- | The name of a module split into a list for code generation.
 newtype ModulePath = ModulePath { unModulePath :: [String] }
   deriving (Eq, Ord, Show)
 
+-- | Construct the complete ModulePath from a ModuleName.
 mkModulePath :: ModuleName -> ModulePath
 mkModulePath (ModuleName m) = ModulePath . splitOn "." $ m
 
+-- | Construct intermediate module paths from a ModuleName.
+-- mkModulePaths "A.B" => [["A"], ["A","B"]]
 mkModulePaths :: ModuleName -> [ModulePath]
 mkModulePaths (ModuleName m) = map ModulePath . tail . inits . splitOn "." $ m
 
@@ -143,9 +147,11 @@ data CompileReader = CompileReader
 faySourceDir :: IO FilePath
 faySourceDir = fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
 
+-- | Add a ModulePath to CompileState, meaning it has been printed.
 addModulePath :: ModulePath -> CompileState -> CompileState
 addModulePath mp cs = cs { stateJsModulePaths = mp `S.insert` stateJsModulePaths cs }
 
+-- | Has this ModulePath been added/printed?
 addedModulePath :: ModulePath -> CompileState -> Bool
 addedModulePath mp CompileState{..} = mp `S.member` stateJsModulePaths
 
@@ -158,13 +164,15 @@ addCurrentExport q cs =
     qnames = maybe (S.singleton q) (S.insert q)
            $ M.lookup (stateModuleName cs) (_stateExports cs)
 
--- | Get all of the exported identifiers for the current module.
+-- | Get all exports for the current module.
 getCurrentExports :: CompileState -> Set QName
 getCurrentExports cs = getExportsFor (stateModuleName cs) cs
 
+-- | Get exports from the current module originating from other modules.
 getNonLocalExports :: CompileState -> Set QName
 getNonLocalExports st = S.filter ((/= Just (stateModuleName st)) . qModName) . getCurrentExportsWithoutNewtypes $ st
 
+-- | Get all exports from the current module except newtypes.
 getCurrentExportsWithoutNewtypes :: CompileState -> Set QName
 getCurrentExportsWithoutNewtypes cs = excludeNewtypes cs $ getCurrentExports cs
   where

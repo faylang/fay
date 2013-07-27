@@ -130,6 +130,7 @@ instance Printable JsStmt where
   printJS (JsMappedVar _ name expr) =
     "var " +> name +> " = " +> expr +> ";" +> newline
 
+-- | Print a module path.
 instance Printable ModulePath where
   printJS (unModulePath -> l) = write $ intercalate "." l
 
@@ -205,11 +206,11 @@ instance Printable JsExp where
   printJS (JsOr a b) =
       printJS a +> "||" +> printJS b
 
+-- | Unqualify a JsName.
 ident :: JsName -> JsName
 ident n = case n of
   JsConstructor (Qual _ s) -> JsNameVar $ UnQual s
   a -> a
-
 
 -- | Print one of the kinds of names.
 instance Printable JsName where
@@ -227,11 +228,13 @@ instance Printable JsName where
       JsParametrizedType  -> write "type"
       JsModuleName (ModuleName m) -> write m
 
+-- | Print a constructor name given a QName.
 printCons :: QName -> Printer ()
 printCons (UnQual n) = printConsName n
 printCons (Qual (ModuleName m) n) = printJS m +> "." +> printConsName n
 printCons (Special _) = error "qname2String Special"
 
+-- | Print a constructor name given a Name. Helper for printCons.
 printConsName :: Name -> Printer ()
 printConsName n = write "_" >> printJS n
 

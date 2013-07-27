@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | Preprocessing collecting names, data types, newtypes, imports, and exports
+-- for all modules recursively.
 module Fay.Compiler.InitialPass
   (initialPass
   ) where
@@ -22,7 +24,7 @@ import           Language.Haskell.Exts.Parser
 import           Language.Haskell.Exts.Syntax
 import           Prelude hiding (mod, read)
 
-
+-- | Preprocess and collect all information needed during code generation.
 initialPass :: Module -> Compile ()
 initialPass (Module _ mod _ Nothing exports imports decls) =
   withModuleScope $ do

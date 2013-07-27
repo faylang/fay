@@ -101,6 +101,7 @@ compilePAsPat exp name pat body = do
   p <- compilePat exp pat body
   return $ JsVar (JsNameVar $ UnQual name) exp : p
 
+-- | Compile a pattern match on a newtype.
 compileNewtypePat :: [Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
 compileNewtypePat [pat] exp body = compilePat exp pat body
 compileNewtypePat ps _ _ = error $ "compileNewtypePat: Should be impossible (this is a bug). Got: " ++ show ps

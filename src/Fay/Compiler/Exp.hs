@@ -2,14 +2,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
--- | Compile expressions
+-- | Compile expressions.
 
 module Fay.Compiler.Exp where
 
 import Fay.Compiler.Misc
 import Fay.Compiler.Pattern
 import Fay.Compiler.Print
-import Fay.Compiler.FFI             (ffiFun)
+import Fay.Compiler.FFI             (compileFFIExp)
 import Fay.Types
 
 import Control.Applicative
@@ -46,12 +46,12 @@ compileExp exp =
     EnumFromThen a b              -> compileEnumFromThen a b
     EnumFromThenTo a b z          -> compileEnumFromThenTo a b z
     RecConstr name fieldUpdates   -> compileRecConstr name fieldUpdates
-    RecUpdate rec  fieldUpdates   -> updateRec rec fieldUpdates
+    RecUpdate rec  fieldUpdates   -> compileRecUpdate rec fieldUpdates
     ListComp exp stmts            -> compileExp =<< desugarListComp exp stmts
     ExpTypeSig srcloc exp sig     ->
       case ffiExp exp of
         Nothing -> compileExp exp
-        Just formatstr -> ffiFun srcloc Nothing formatstr sig
+        Just formatstr -> compileFFIExp srcloc Nothing formatstr sig
 
     exp -> throwError (UnsupportedExpression exp)
 
@@ -86,6 +86,7 @@ compileApp exp1@(Var q) exp2 =
 compileApp exp1 exp2 =
   compileApp' exp1 exp2
 
+-- | Helper for compileApp.
 compileApp' :: Exp -> Exp -> Compile JsExp
 compileApp' exp1 exp2 = do
   flattenApps <- config configFlattenApps
@@ -308,8 +309,9 @@ compileRecConstr name fieldUpdates = do
         -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
         updateStmt _ u = error ("updateStmt: " ++ show u)
 
-updateRec :: Exp -> [FieldUpdate] -> Compile JsExp
-updateRec rec fieldUpdates = do
+-- | Compile a record update.
+compileRecUpdate :: Exp -> [FieldUpdate] -> Compile JsExp
+compileRecUpdate rec fieldUpdates = do
     record <- force <$> compileExp rec
     let copyName = UnQual (Ident "$_record_to_update")
         copy = JsVar (JsNameVar copyName)

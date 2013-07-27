@@ -70,9 +70,12 @@ tryResolveName u@(UnQual name) = do
     then return $ Just (UnQual name)
     else maybe (Just <$> qualify name) (return . Just) $ ModuleScope.resolveName u env
 
+-- | Resolve a given maybe-qualified name to a fully qualifed name.
+-- Use this when a resolution failure is a bug.
 unsafeResolveName :: QName -> Compile QName
 unsafeResolveName q = maybe (throwError $ UnableResolveQualified q) return =<< tryResolveName q
 
+-- | Resolve a newtype constructor.
 lookupNewtypeConst :: QName -> Compile (Maybe (Maybe QName,Type))
 lookupNewtypeConst n = do
   mName <- tryResolveName n
@@ -84,6 +87,7 @@ lookupNewtypeConst n = do
         Nothing -> return Nothing
         Just (_,dname,ty) -> return $ Just (dname,ty)
 
+-- | Resolve a newtype destructor.
 lookupNewtypeDest :: QName -> Compile (Maybe (QName,Type))
 lookupNewtypeDest n = do
   mName <- tryResolveName n

@@ -56,7 +56,6 @@ import           Data.Set              (Set)
 import qualified Data.Set              as S
 import           Data.String
 import           Language.Haskell.Exts
-import           System.FilePath
 
 import           Fay.Compiler.ModuleScope (ModuleScope)
 import           Fay.Compiler.QName
@@ -145,7 +144,7 @@ data CompileReader = CompileReader
 
 -- | The data-files source directory.
 faySourceDir :: IO FilePath
-faySourceDir = fmap (takeDirectory . takeDirectory . takeDirectory) (getDataFileName "src/Language/Fay/Stdlib.hs")
+faySourceDir = getDataFileName "src/"
 
 -- | Add a ModulePath to CompileState, meaning it has been printed.
 addModulePath :: ModulePath -> CompileState -> CompileState

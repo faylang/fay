@@ -302,7 +302,6 @@ findImport alldirs mname = go alldirs mname where
     throwError $ Couldn'tFindImport name alldirs
 
   stdlibHack
-    | mname == ModuleName "Language.Fay.Stdlib" = \s -> s ++ "\n\ndata Maybe a = Just a | Nothing"
     | mname == ModuleName "Fay.FFI" = const "module Fay.FFI where\n\ndata Nullable a = Nullable a | Null\n\ndata Defined a = Defined a | Undefined"
     | otherwise = id
 

@@ -32,7 +32,7 @@ typecheck packageConf wall fp = do
           [ "-fno-code"
           , "-XNoImplicitPrelude"
           , "-hide-package base"
-          , "-cpp", "-DFAY=1"
+          , "-cpp", "-pgmPcpphs", "-optP--cpp", "-DFAY=1"
           , "-main-is"
           , "Language.Fay.DummyMain"
           , "-i" ++ intercalate ":" includeDirs

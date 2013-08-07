@@ -34,6 +34,9 @@ case_importedList = do
     Right (_,r) -> assertBool "RecordImport_Export was not added to stateImported" .
                      isJust . lookup (ModuleName "RecordImport_Export") $ stateImported r
 
+fp :: FilePath
+fp = "tests/RecordImport_Import.hs"
+
 case_stateRecordTypes :: Assertion
 case_stateRecordTypes = do
   whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
@@ -68,8 +71,11 @@ case_typecheckCPP = do
   res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Api/CPPTypecheck.hs" } "tests/Api/CPPTypecheck.hs"
   either (assertFailure . show) (const $ return ()) res
 
-fp :: FilePath
-fp = "tests/RecordImport_Import.hs"
+case_cppMultiLineStrings :: Assertion
+case_cppMultiLineStrings = do
+  whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
+  res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Api/CPPMultiLineStrings.hs" } "tests/Api/CPPMultiLineStrings.hs"
+  either (assertFailure . show) (const $ return ()) res
 
 defConf :: CompileConfig
 defConf = addConfigDirectoryIncludePaths ["tests/"]

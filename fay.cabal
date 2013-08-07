@@ -45,6 +45,7 @@ extra-source-files:
   tests/Api/CPPTypecheck.hs
   tests/Api/ImportRecords.hs
   tests/Api/Records.hs
+  tests/Api/CPPMultiLineStrings.hs
   tests/asPatternMatch.hs
   tests/asPatternMatch.res
   tests/AutomaticList.hs
@@ -379,6 +380,7 @@ library
                      filepath,
                      ghc-paths,
                      Cabal,
+                     cpphs,
                      haskell-src-exts,
                      language-ecmascript >= 0.15,
                      mtl,
@@ -412,6 +414,7 @@ executable fay
   build-depends:     base >= 4 && < 5,
                      aeson,
                      containers,
+                     cpphs,
                      data-default,
                      directory,
                      filepath,
@@ -442,6 +445,7 @@ executable fay-tests
                      attoparsec,
                      bytestring,
                      containers,
+                     cpphs,
                      data-default,
                      directory,
                      filepath,

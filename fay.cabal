@@ -1,5 +1,5 @@
 name:                fay
-version:             0.16.0.0
+version:             0.16.0.1
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which is type-checked
                      with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
@@ -25,7 +25,7 @@ license-file:        LICENSE
 author:              Chris Done, Adam Bergmark
 maintainer:          adam@edea.se
 copyright:           2012 Chris Done, Adam Bergmark
-category:            Development
+category:            Development, Web, Fay
 build-type:          Custom
 cabal-version:       >=1.8
 data-files:          js/runtime.js

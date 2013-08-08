@@ -19,7 +19,7 @@ import           System.Directory.Extra
 import           System.Environment
 import           System.FilePath
 import           System.Process.Extra
-import qualified Test.Api                       as Api
+import qualified Test.Compile                   as Compile
 import qualified Test.CommandLine               as Cmd
 import qualified Test.Convert                   as C
 import           Test.Framework
@@ -33,7 +33,7 @@ main = do
   (packageConf,args) <- fmap (prefixed (=="-package-conf")) getArgs
   let (basePath,args') = prefixed (=="-base-path") args
   compiler <- makeCompilerTests (packageConf <|> sandbox) basePath
-  defaultMainWithArgs [Api.tests, Cmd.tests, compiler, C.tests]
+  defaultMainWithArgs [Compile.tests, Cmd.tests, compiler, C.tests]
                       args'
 
 -- | Extract the element prefixed by the given element in the list.
@@ -43,7 +43,7 @@ prefixed f (break f -> (x,y)) = (listToMaybe (drop 1 y),x ++ drop 2 y)
 -- | Make the case-by-case unit tests.
 makeCompilerTests :: Maybe FilePath -> Maybe FilePath -> IO Test
 makeCompilerTests packageConf basePath = do
-  files <- sort . filter (not . isInfixOf "/Api/") . filter (isSuffixOf ".hs") <$> getRecursiveContents "tests"
+  files <- sort . filter (not . isInfixOf "/Compile/") . filter (isSuffixOf ".hs") <$> getRecursiveContents "tests"
   return $ testGroup "Tests" $ flip map files $ \file -> testCase file $ do
     testFile packageConf basePath False file
     testFile packageConf basePath True file

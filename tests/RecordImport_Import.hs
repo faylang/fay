@@ -1,4 +1,4 @@
-{- NOTE: This file is also used in the Api tests. -}
+{- NOTE: This file is also used in the Compile tests. -}
 
 import           Prelude
 import           RecordImport_Export

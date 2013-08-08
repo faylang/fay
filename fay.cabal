@@ -42,10 +42,10 @@ extra-source-files:
   examples/ref.hs
   examples/tailrecursive.hs
   -- Test cases
-  tests/Api/CPPTypecheck.hs
-  tests/Api/ImportRecords.hs
-  tests/Api/Records.hs
-  tests/Api/CPPMultiLineStrings.hs
+  tests/Compile/CPPTypecheck.hs
+  tests/Compile/ImportRecords.hs
+  tests/Compile/Records.hs
+  tests/Compile/CPPMultiLineStrings.hs
   tests/asPatternMatch.hs
   tests/asPatternMatch.res
   tests/AutomaticList.hs
@@ -439,7 +439,11 @@ executable fay-tests
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   ghc-prof-options:  -fprof-auto
   main-is:           Tests.hs
-  other-modules:     Fay.Compiler Test.Convert Test.Api Test.CommandLine Test.Util
+  other-modules:     Fay.Compiler
+                     Test.CommandLine
+                     Test.Compile
+                     Test.Convert
+                     Test.Util
   build-depends:     base >= 4 && < 5,
                      aeson,
                      attoparsec,

@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Test.Api (tests) where
+module Test.Compile (tests) where
 
 import Fay
 import Fay.Compiler.Config
@@ -40,7 +40,7 @@ fp = "tests/RecordImport_Import.hs"
 case_stateRecordTypes :: Assertion
 case_stateRecordTypes = do
   whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
-  res <- compileFileWithState defConf { configPackageConf = whatAGreatFramework } "tests/Api/Records.hs"
+  res <- compileFileWithState defConf { configPackageConf = whatAGreatFramework } "tests/Compile/Records.hs"
   case res of
     Left err -> error (show err)
     Right (_,r) ->
@@ -54,7 +54,7 @@ case_stateRecordTypes = do
 case_importStateRecordTypes :: Assertion
 case_importStateRecordTypes = do
   whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
-  res <- compileFileWithState defConf { configPackageConf = whatAGreatFramework } "tests/Api/ImportRecords.hs"
+  res <- compileFileWithState defConf { configPackageConf = whatAGreatFramework } "tests/Compile/ImportRecords.hs"
   case res of
     Left err -> error (show err)
     Right (_,r) ->
@@ -68,13 +68,13 @@ case_importStateRecordTypes = do
 case_typecheckCPP :: Assertion
 case_typecheckCPP = do
   whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
-  res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Api/CPPTypecheck.hs" } "tests/Api/CPPTypecheck.hs"
+  res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Compile/CPPTypecheck.hs" } "tests/Compile/CPPTypecheck.hs"
   either (assertFailure . show) (const $ return ()) res
 
 case_cppMultiLineStrings :: Assertion
 case_cppMultiLineStrings = do
   whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
-  res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Api/CPPMultiLineStrings.hs" } "tests/Api/CPPMultiLineStrings.hs"
+  res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Compile/CPPMultiLineStrings.hs" } "tests/Compile/CPPMultiLineStrings.hs"
   either (assertFailure . show) (const $ return ()) res
 
 defConf :: CompileConfig

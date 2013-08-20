@@ -350,16 +350,17 @@ data CPPState = NoCPP
 -- | The parse mode for Fay.
 parseMode :: ParseMode
 parseMode = defaultParseMode
-  { extensions = [GADTs
-                 ,ExistentialQuantification
-                 ,StandaloneDeriving
-                 ,PackageImports
-                 ,EmptyDataDecls
-                 ,TypeOperators
-                 ,RecordWildCards
-                 ,NamedFieldPuns
-                 ,FlexibleContexts
-                 ,FlexibleInstances
-                 ,KindSignatures]
+  { extensions = map EnableExtension
+                   [GADTs
+                   ,ExistentialQuantification
+                   ,StandaloneDeriving
+                   ,PackageImports
+                   ,EmptyDataDecls
+                   ,TypeOperators
+                   ,RecordWildCards
+                   ,NamedFieldPuns
+                   ,FlexibleContexts
+                   ,FlexibleInstances
+                   ,KindSignatures]
   , fixities = Just (preludeFixities ++ baseFixities)
   }

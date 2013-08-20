@@ -31,7 +31,7 @@ compilePat exp pat body =
     PWildCard       -> return body
     pat@PInfixApp{} -> compileInfixPat exp pat body
     PList pats      -> compilePList pats body exp
-    PTuple pats     -> compilePList pats body exp
+    PTuple _bx pats -> compilePList pats body exp
     PAsPat name pat -> compilePAsPat exp name pat body
     PRec name pats  -> compilePatFields exp name pats body
     pat             -> throwError (UnsupportedPattern pat)

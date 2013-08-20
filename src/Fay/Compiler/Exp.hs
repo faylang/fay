@@ -31,7 +31,7 @@ compileExp exp =
     Let (BDecls decls) exp        -> compileLet decls exp
     List []                       -> return JsNull
     List xs                       -> compileList xs
-    Tuple xs                      -> compileList xs
+    Tuple _boxed xs               -> compileList xs
     If cond conseq alt            -> compileIf cond conseq alt
     Case exp alts                 -> compileCase exp alts
     Con (UnQual (Ident "True"))   -> return (JsLit (JsBool True))

@@ -58,11 +58,22 @@ compileExp exp =
 -- | Compiling instance.
 instance CompilesTo Exp JsExp where compileTo = compileExp
 
+-- | Turn a tuple constructor into a normal lambda expression.
+tupleConToFunction :: Boxed -> Int -> Exp
+tupleConToFunction b n = Lambda noLoc params body
+  where names  = take n (Ident . pure <$> ['a'..])
+        params = PVar <$> names
+        body   = Tuple b (Var . UnQual <$> names)
+        noLoc  = error "no source location for SpecialCon"
+
 -- | Compile variable.
 compileVar :: QName -> Compile JsExp
 compileVar qname = do
-  qname <- unsafeResolveName qname
-  return (JsName (JsNameVar qname))
+  case qname of
+    Special (TupleCon b n) -> compileExp (tupleConToFunction b n)
+    _ -> do
+      qname <- unsafeResolveName qname
+      return (JsName (JsNameVar qname))
 
 -- | Compile Haskell literal.
 compileLit :: Literal -> Compile JsExp

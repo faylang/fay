@@ -339,10 +339,6 @@ source-repository head
   type: git
   location: https://github.com/faylang/fay.git
 
-Flag devel
-  Description:       Don't build fay-tests if this flag is supplied
-  Default:           False
-
 library
   hs-source-dirs:    src
   exposed-modules:     Fay
@@ -373,70 +369,62 @@ library
                      , System.Directory.Extra
                      , System.Process.Extra
   ghc-options:       -O2 -Wall -fno-warn-name-shadowing
-  build-depends:     base >= 4 && < 5,
-                     aeson,
-                     attoparsec,
-                     containers,
-                     data-default,
-                     directory,
-                     filepath,
-                     ghc-paths,
-                     Cabal,
-                     cpphs,
-                     haskell-src-exts >= 1.14,
-                     language-ecmascript >= 0.15,
-                     mtl,
-                     pretty-show >= 1.6,
-                     process,
-                     safe,
-                     syb,
-                     text,
-                     unordered-containers,
-                     utf8-string,
-                     vector
-
-  if !flag(devel)
-    build-depends:
-                     -- Requirements for the executables which
-                     -- `cabal-dev ghci' needs.
-                     HUnit,
-                     bytestring,
-                     time,
-                     optparse-applicative >= 0.5,
-                     split,
-                     test-framework,
-                     test-framework-hunit,
-                     test-framework-th
+  build-depends:     base >= 4 && < 5
+                   , Cabal
+                   , HUnit
+                   , aeson
+                   , attoparsec
+                   , bytestring
+                   , containers
+                   , cpphs
+                   , data-default
+                   , directory
+                   , filepath
+                   , ghc-paths
+                   , haskell-src-exts >= 1.14
+                   , language-ecmascript >= 0.15
+                   , mtl
+                   , optparse-applicative >= 0.5
+                   , pretty-show >= 1.6
+                   , process
+                   , safe
+                   , split
+                   , syb
+                   , test-framework
+                   , test-framework-hunit
+                   , test-framework-th
+                   , text
+                   , time
+                   , unordered-containers
+                   , utf8-string
+                   , vector
 
 executable fay
   hs-source-dirs:    src
   ghc-options:       -O2 -Wall
   ghc-prof-options:  -fprof-auto
   main-is:           Main.hs
-  build-depends:     base >= 4 && < 5,
-                     aeson,
-                     containers,
-                     cpphs,
-                     data-default,
-                     directory,
-                     filepath,
-                     ghc-paths,
-                     Cabal,
-                     haskell-src-exts >= 1.14,
-                     language-ecmascript >= 0.10,
-                     mtl,
-                     process,
-                     safe,
-                     syb,
-                     utf8-string,
-
-                     haskeline,
-                     optparse-applicative >= 0.5,
-                     split
+  build-depends:     base >= 4 && < 5
+                   , Cabal
+                   , aeson
+                   , containers
+                   , cpphs
+                   , data-default
+                   , directory
+                   , filepath
+                   , ghc-paths
+                   , haskeline
+                   , haskell-src-exts >= 1.14
+                   , language-ecmascript >= 0.15
+                   , mtl
+                   , optparse-applicative >= 0.5
+                   , process
+                   , safe
+                   , split
+                   , syb
+                   , utf8-string
 
 executable fay-tests
-  if flag(devel)
-    buildable:       False
   hs-source-dirs:    src
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   ghc-prof-options:  -fprof-auto
@@ -446,31 +434,30 @@ executable fay-tests
                      Test.Compile
                      Test.Convert
                      Test.Util
-  build-depends:     base >= 4 && < 5,
-                     aeson,
-                     attoparsec,
-                     bytestring,
-                     containers,
-                     cpphs,
-                     data-default,
-                     directory,
-                     filepath,
-                     ghc-paths,
-                     Cabal,
-                     haskell-src-exts >= 1.14,
-                     language-ecmascript >= 0.10,
-                     mtl,
-                     pretty-show >= 1.6,
-                     process,
-                     safe,
-                     syb,
-                     split,
-                     text,
-                     unordered-containers,
-                     utf8-string,
-                     vector,
-
-                     HUnit,
-                     test-framework,
-                     test-framework-hunit,
-                     test-framework-th
+  build-depends:     base >= 4 && < 5
+                   , Cabal
+                   , HUnit
+                   , aeson
+                   , attoparsec
+                   , bytestring
+                   , containers
+                   , cpphs
+                   , data-default
+                   , directory
+                   , filepath
+                   , ghc-paths
+                   , haskell-src-exts >= 1.14
+                   , language-ecmascript >= 0.15
+                   , mtl
+                   , pretty-show >= 1.6
+                   , process
+                   , safe
+                   , split
+                   , syb
+                   , test-framework
+                   , test-framework-hunit
+                   , test-framework-th
+                   , text
+                   , unordered-containers
+                   , utf8-string
+                   , vector

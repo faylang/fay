@@ -42,10 +42,6 @@ extra-source-files:
   examples/ref.hs
   examples/tailrecursive.hs
   -- Test cases
-  tests/Compile/CPPTypecheck.hs
-  tests/Compile/ImportRecords.hs
-  tests/Compile/Records.hs
-  tests/Compile/CPPMultiLineStrings.hs
   tests/asPatternMatch.hs
   tests/asPatternMatch.res
   tests/AutomaticList.hs
@@ -67,6 +63,10 @@ extra-source-files:
   tests/Char.hs
   tests/Char.res
   tests/circular.hs
+  tests/Compile/CPPMultiLineStrings.hs
+  tests/Compile/CPPTypecheck.hs
+  tests/Compile/ImportRecords.hs
+  tests/Compile/Records.hs
   tests/CPP.hs
   tests/CPP.res
   tests/curry.hs
@@ -318,6 +318,8 @@ extra-source-files:
   tests/then.res
   tests/TupleCalls.hs
   tests/TupleCalls.res
+  tests/tupleCon.hs
+  tests/tupleCon.res
   tests/TyVarSerialization.hs
   tests/TyVarSerialization.res
   tests/unit.hs

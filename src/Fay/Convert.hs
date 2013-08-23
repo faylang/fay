@@ -47,6 +47,7 @@ showToFay = Show.reify >=> convert where
                                  (slots values)
     Show.Rec name fields -> fmap (Object . Map.fromList . (("instance",string name) :))
                                  (mapM (uncurry keyval) fields)
+    Show.InfixCons _ _ -> Nothing -- TODO https://github.com/faylang/fay/issues/316
 
     -- ()
     Show.Tuple [] -> return Null

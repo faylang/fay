@@ -84,8 +84,12 @@ compileLit lit =
     Frac rational -> return (JsLit (JsFloating (fromRational rational)))
     -- TODO: Use real JS strings instead of array, probably it will
     -- lead to the same result.
-    String string -> return (JsApp (JsName (JsBuiltIn "list"))
-                                   [JsLit (JsStr string)])
+    String string -> do
+      fromString <- config configFromString
+      if fromString
+        then localConfig (\c -> c { configFromString = False }) $ do
+               compileExp $ App (Var "fromString") (Lit lit)
+        else return (JsApp (JsName (JsBuiltIn "list")) [JsLit (JsStr string)])
     lit           -> throwError (UnsupportedLiteral lit)
 
 -- | Compile simple application.

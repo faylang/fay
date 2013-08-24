@@ -46,6 +46,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optStdlibOnly   :: Bool
   , optNoBuiltins   :: Bool
   , optBasePath     :: Maybe FilePath
+  , optFromString   :: Bool
   }
 
 -- | Main entry point.
@@ -75,6 +76,7 @@ main = do
                 , configExportStdlib     = not (optNoStdlib opts)
                 , configExportStdlibOnly = optStdlibOnly opts
                 , configBasePath         = optBasePath opts
+                , configFromString       = optFromString opts
                 }
         void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
         case optFiles opts of
@@ -117,6 +119,7 @@ options = FayCompilerOptions
   <*> switch (long "stdlib" <> help "Only output the stdlib")
   <*> switch (long "no-builtins" <> help "Don't export no-builtins")
   <*> optional (strOption (long "base-path" <> help "If fay can't find the sources of fay-base you can use this to provide the path. Use --base-path ~/example instead of --base-path=~/example to make sure ~ is expanded properly"))
+  <*> switch (long "from-string" <> help "Use in-scope fromString for string literals")
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

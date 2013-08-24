@@ -22,6 +22,7 @@ module Fay.Types
   ,CompileWriter(..)
   ,CompileConfig(..)
   ,CompileState(..)
+  ,localConfig
   ,addCurrentExport
   ,getCurrentExports
   ,getNonLocalExports
@@ -198,6 +199,10 @@ newtype Compile a = Compile
            ,Monad
            ,Functor
            ,Applicative)
+
+-- | Run a compiler computation with an updated configuration.
+localConfig :: (CompileConfig -> CompileConfig) -> Compile a -> Compile a
+localConfig f = local (\r -> r { readerConfig = f (readerConfig r) })
 
 -- | Just a convenience class to generalize the parsing/printing of
 -- various types of syntax.

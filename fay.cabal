@@ -382,7 +382,7 @@ library
                    , filepath
                    , ghc-paths
                    , haskell-src-exts >= 1.14
-                   , language-ecmascript >= 0.15
+                   , language-ecmascript >= 0.15 && < 1.0
                    , mtl
                    , optparse-applicative >= 0.5
                    , pretty-show >= 1.6
@@ -415,7 +415,7 @@ executable fay
                    , ghc-paths
                    , haskeline
                    , haskell-src-exts >= 1.14
-                   , language-ecmascript >= 0.15
+                   , language-ecmascript >= 0.15 && < 1.0
                    , mtl
                    , optparse-applicative >= 0.5
                    , process
@@ -447,7 +447,7 @@ executable fay-tests
                    , filepath
                    , ghc-paths
                    , haskell-src-exts >= 1.14
-                   , language-ecmascript >= 0.15
+                   , language-ecmascript >= 0.15 && < 1.0
                    , mtl
                    , pretty-show >= 1.6
                    , process

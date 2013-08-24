@@ -387,6 +387,7 @@ library
                      pretty-show,
                      process,
                      safe,
+                     split,
                      syb,
                      text,
                      unordered-containers,

@@ -153,12 +153,12 @@ compileModule filepath contents = do
 
 -- | Compile a parse HSE module.
 compileModuleFromAST :: Module -> Compile [JsStmt]
-compileModuleFromAST (Module _ modulename _pragmas Nothing _exports imports decls) =
+compileModuleFromAST (Module _ modulename pragmas Nothing _exports imports decls) =
   withModuleScope $ do
     imported <- fmap concat (mapM compileImport imports)
     modify $ \s -> s { stateModuleName = modulename
                      , stateModuleScope = fromMaybe (error $ "Could not find stateModuleScope for " ++ show modulename) $ M.lookup modulename $ stateModuleScopes s
-                     , stateUseFromString = useFromString _pragmas
+                     , stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
                      }
     current <- compileDecls True decls
 
@@ -176,11 +176,14 @@ compileModuleFromAST (Module _ modulename _pragmas Nothing _exports imports decl
               else stmts
 compileModuleFromAST mod = throwError (UnsupportedModuleSyntax mod)
 
-useFromString :: [ModulePragma] -> Bool
-useFromString pragmas = any (hasPragma "OverloadedStrings") pragmas
-                     && any (hasPragma "RebindableSyntax") pragmas
-  where hasPragma p (LanguagePragma _ q) | p `elem` q = True
-        hasPragma _ _                                 = False
+hasLanguagePragmas :: [String] -> [ModulePragma] -> Bool
+hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter (`elem` pragmas) $ flattenPragmas modulePragmas
+  where
+    flattenPragmas :: [ModulePragma] -> [String]
+    flattenPragmas ps = concat $ map pragmaName ps
+    pragmaName (LanguagePragma _ q) = map unname q
+    pragmaName _ = []
+
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModuleFromAST
 

@@ -237,13 +237,12 @@ function Fay$$fayToJs(type,fayObj){
   else if(base == "ptr" || base == "unknown")
     return fayObj;
   else if(base == "automatic" || base == "user") {
-    if(fayObj instanceof Fay$$$)
-      fayObj = Fay$$_(fayObj);
 
-    if(fayObj instanceof Fay$$Cons){
+    fayObj = Fay$$_(fayObj);
+
+    if(fayObj instanceof Fay$$Cons || fayObj === null){
       // Serialize Fay list to JavaScript array.
       var arr = [];
-      fayObj = Fay$$_(fayObj);
       while(fayObj instanceof Fay$$Cons) {
         arr.push(Fay$$fayToJs(["automatic"],fayObj.car));
         fayObj = Fay$$_(fayObj.cdr);

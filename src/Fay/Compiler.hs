@@ -158,6 +158,7 @@ compileModuleFromAST (Module _ modulename _pragmas Nothing _exports imports decl
     imported <- fmap concat (mapM compileImport imports)
     modify $ \s -> s { stateModuleName = modulename
                      , stateModuleScope = fromMaybe (error $ "Could not find stateModuleScope for " ++ show modulename) $ M.lookup modulename $ stateModuleScopes s
+                     , stateUseFromString = useFromString _pragmas
                      }
     current <- compileDecls True decls
 
@@ -174,6 +175,12 @@ compileModuleFromAST (Module _ modulename _pragmas Nothing _exports imports decl
               then []
               else stmts
 compileModuleFromAST mod = throwError (UnsupportedModuleSyntax mod)
+
+useFromString :: [ModulePragma] -> Bool
+useFromString pragmas = any (hasPragma "OverloadedStrings") pragmas
+                     && any (hasPragma "RebindableSyntax") pragmas
+  where hasPragma p (LanguagePragma _ q) | p `elem` q = True
+        hasPragma _ _                                 = False
 
 instance CompilesTo Module [JsStmt] where compileTo = compileModuleFromAST
 

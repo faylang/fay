@@ -5,6 +5,8 @@ import FFI
 
 main :: Fay ()
 main = do
+  printA ()
+  printA ([] :: [Int])
   printA [1,2,3]
   printA [[1],[2],[3]]
   printA (1,2)
@@ -13,6 +15,7 @@ main = do
   printArr [[1],[2],[3]]
   printT (1,2)
   printT ([1],[2])
+  printA $ readA "[]"
   printA . tail $ readA "[1,2,3]"
   printA . tail $ readArr "[1,2,3]"
   printA . snd $ readT "[1,2]"

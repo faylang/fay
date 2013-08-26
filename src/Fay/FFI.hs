@@ -12,6 +12,7 @@ module Fay.FFI
   ,ffi)
   where
 
+import           Data.String (IsString)
 import           Fay.Types
 import           Prelude      (Bool, Char, Double, Int, Maybe, String, error)
 
@@ -44,6 +45,7 @@ type Ptr a = a
 type Automatic a = a
 
 -- | Declare a foreign action.
-ffi :: String        -- ^ The foreign value.
+ffi :: IsString s
+    => s             -- ^ The foreign value.
     -> a             -- ^ Bottom.
 ffi = error "Fay.FFI.ffi: Used foreign function outside a JS engine context."

@@ -41,4 +41,5 @@ defaultCompileState = do
     , stateModuleScope = def
     , stateModuleScopes = M.empty
     , stateJsModulePaths = S.empty
+    , stateUseFromString = False
     }

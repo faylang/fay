@@ -108,17 +108,18 @@ mkModulePathFromQName _ = error "mkModulePathFromQName: Not a qualified name"
 
 -- | State of the compiler.
 data CompileState = CompileState
-  { _stateExports     :: Map ModuleName (Set QName) -- ^ Collects exports from modules
-  , stateRecordTypes  :: [(QName,[QName])]          -- ^ Map types to constructors
-  , stateRecords      :: [(QName,[QName])]          -- ^ Map constructors to fields
-  , stateNewtypes     :: [(QName, Maybe QName, Type)] -- ^ Newtype constructor, destructor, wrapped type tuple
-  , stateImported     :: [(ModuleName,FilePath)]    -- ^ Map of all imported modules and their source locations.
-  , stateNameDepth    :: Integer                    -- ^ Depth of the current lexical scope.
-  , stateLocalScope   :: Set Name                   -- ^ Names in the current lexical scope.
-  , stateModuleScope  :: ModuleScope                -- ^ Names in the module scope.
-  , stateModuleScopes :: Map ModuleName ModuleScope
-  , stateModuleName   :: ModuleName                 -- ^ Name of the module currently being compiled.
+  { _stateExports      :: Map ModuleName (Set QName) -- ^ Collects exports from modules
+  , stateRecordTypes   :: [(QName,[QName])]          -- ^ Map types to constructors
+  , stateRecords       :: [(QName,[QName])]          -- ^ Map constructors to fields
+  , stateNewtypes      :: [(QName, Maybe QName, Type)] -- ^ Newtype constructor, destructor, wrapped type tuple
+  , stateImported      :: [(ModuleName,FilePath)]    -- ^ Map of all imported modules and their source locations.
+  , stateNameDepth     :: Integer                    -- ^ Depth of the current lexical scope.
+  , stateLocalScope    :: Set Name                   -- ^ Names in the current lexical scope.
+  , stateModuleScope   :: ModuleScope                -- ^ Names in the module scope.
+  , stateModuleScopes  :: Map ModuleName ModuleScope
+  , stateModuleName    :: ModuleName                 -- ^ Name of the module currently being compiled.
   , stateJsModulePaths :: Set ModulePath
+  , stateUseFromString :: Bool
   } deriving (Show)
 
 -- | Things written out by the compiler.

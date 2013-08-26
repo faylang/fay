@@ -136,6 +136,14 @@ extra-source-files:
   tests/Floating.res
   tests/fromInteger.hs
   tests/fromInteger.res
+  tests/FromString/Dep.hs
+  tests/FromString/Dep.res
+  tests/FromString/DepDep.hs
+  tests/FromString/DepDep.res
+  tests/FromString/FayText.hs
+  tests/FromString/FayText.res
+  tests/FromString.hs
+  tests/FromString.res
   tests/GADTs_without_records.hs
   tests/GADTs_without_records.res
   tests/guards.hs

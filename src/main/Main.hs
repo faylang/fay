@@ -9,10 +9,10 @@ import           Fay
 import           Fay.Compiler
 import           Fay.Compiler.Config
 import           Fay.Compiler.Debug
+import           Fay.Control.Monad.IO
 
 import qualified Control.Exception        as E
 import           Control.Monad
-import           Control.Monad.IO
 import           Data.Default
 import           Data.List.Split          (wordsBy)
 import           Data.Maybe

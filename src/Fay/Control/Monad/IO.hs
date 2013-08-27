@@ -1,6 +1,6 @@
 -- | Alias of MonadIO.
 
-module Control.Monad.IO where
+module Fay.Control.Monad.IO where
 
 import           Control.Monad.Trans
 

@@ -1,6 +1,6 @@
 -- | Extra list functions.
 
-module Data.List.Extra where
+module Fay.Data.List.Extra where
 
 import Data.List hiding (map)
 import Prelude hiding (map)

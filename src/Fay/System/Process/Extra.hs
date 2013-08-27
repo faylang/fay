@@ -1,9 +1,9 @@
 -- | Extra process functions.
 
-module System.Process.Extra where
+module Fay.System.Process.Extra where
 
-import System.Exit
-import System.Process
+import           System.Exit
+import           System.Process
 
 -- | Read from a process returning both std err and out.
 readAllFromProcess :: FilePath -> [String] -> String -> IO (Either (String,String) (String,String))

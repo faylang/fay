@@ -1,9 +1,9 @@
 -- | Extra monadic functions.
 
-module Control.Monad.Extra where
+module Fay.Control.Monad.Extra where
 
-import Control.Monad
-import Data.Maybe
+import           Control.Monad
+import           Data.Maybe
 
 -- | Word version of flip (>>=).
 bind :: (Monad m) => (a -> m b) -> m a -> m b

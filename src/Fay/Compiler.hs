@@ -31,13 +31,13 @@ import           Fay.Compiler.InitialPass (initialPass)
 import           Fay.Compiler.Misc
 import           Fay.Compiler.ModuleScope (findPrimOp)
 import           Fay.Compiler.Optimizer
-import           Fay.Compiler.Typecheck
 import           Fay.Compiler.QName
+import           Fay.Compiler.Typecheck
+import           Fay.Control.Monad.IO
 import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad.Error
-import           Control.Monad.IO
 import           Control.Monad.State
 import           Control.Monad.RWS
 import           Data.Default                    (def)

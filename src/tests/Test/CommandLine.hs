@@ -2,17 +2,18 @@
 
 module Test.CommandLine (tests) where
 
-import Control.Applicative
-import Data.Maybe
-import System.Directory
-import System.Environment
-import System.FilePath
-import System.Process.Extra
-import Test.Framework
-import Test.Framework.Providers.HUnit
-import Test.Framework.TH
-import Test.HUnit                     (Assertion, assertBool)
-import Test.Util
+import Fay.System.Process.Extra
+
+import           Control.Applicative
+import           Data.Maybe
+import           System.Directory
+import           System.Environment
+import           System.FilePath
+import           Test.Framework
+import           Test.Framework.Providers.HUnit
+import           Test.Framework.TH
+import           Test.HUnit                     (Assertion, assertBool)
+import           Test.Util
 
 tests :: Test
 tests = $testGroupGenerator

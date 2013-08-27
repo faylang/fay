@@ -2,14 +2,15 @@
 
 module Fay.Compiler.Typecheck where
 
-import           Control.Monad.IO
+import           Fay.Compiler.Misc
+import           Fay.Control.Monad.IO
+import           Fay.System.Process.Extra
+import           Fay.Types
+
 import           Control.Monad.Error
 import           Data.List
 import           Data.Maybe
-import           Fay.Compiler.Misc
-import           Fay.Types
-import qualified GHC.Paths                       as GHCPaths
-import           System.Process.Extra
+import qualified GHC.Paths                  as GHCPaths
 
 -- | Call out to GHC to type-check the file.
 typecheck :: Maybe FilePath -> Bool -> String -> Compile ()

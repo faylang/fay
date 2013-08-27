@@ -13,11 +13,11 @@ import Fay.Compiler.FFI
 import Fay.Compiler.GADT
 import Fay.Compiler.Misc
 import Fay.Compiler.Pattern
+import Fay.Data.List.Extra
 import Fay.Types
 
 import Control.Applicative
 import Control.Monad.Error
-import Data.List.Extra
 import Control.Monad.RWS
 import Language.Haskell.Exts
 

@@ -9,16 +9,16 @@ module Main where
 
 import           Fay
 import           Fay.Compiler.Config
+import           Fay.System.Directory.Extra
+import           Fay.System.Process.Extra
 
 import           Control.Applicative
 import           Data.Default
 import           Data.List
 import           Data.Maybe
 import           System.Directory
-import           System.Directory.Extra
 import           System.Environment
 import           System.FilePath
-import           System.Process.Extra
 import qualified Test.Compile                   as Compile
 import qualified Test.CommandLine               as Cmd
 import qualified Test.Convert                   as C

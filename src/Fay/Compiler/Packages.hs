@@ -4,20 +4,20 @@
 
 module Fay.Compiler.Packages where
 
-import Fay.Types
-import Fay.Compiler.Config
+import           Fay.Compiler.Config
+import           Fay.Control.Monad.Extra
+import           Fay.System.Process.Extra
+import           Fay.Types
+import           Paths_fay
 
-import Control.Applicative
-import Control.Monad
-import Control.Monad.Extra
-import Data.Maybe
-import Data.List
-import Data.Version
-import GHC.Paths
-import Paths_fay
-import System.Directory
-import System.FilePath
-import System.Process.Extra
+import           Control.Applicative
+import           Control.Monad
+import           Data.List
+import           Data.Maybe
+import           Data.Version
+import           GHC.Paths
+import           System.Directory
+import           System.FilePath
 
 -- | Given a configuration, resolve any packages specified to their
 -- data file directories for importing the *.hs sources.

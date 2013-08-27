@@ -353,13 +353,15 @@ library
                      , Fay.Compiler
                      , Fay.Compiler.Config
                      , Fay.Compiler.Debug
+                     , Fay.Control.Monad.Extra
+                     , Fay.Control.Monad.IO
                      , Fay.Convert
-                     , Fay.Types
+                     , Fay.Data.List.Extra
                      , Fay.FFI
-  other-modules:       Control.Monad.Extra
-                     , Control.Monad.IO
-                     , Data.List.Extra
-                     , Fay.Compiler.Decl
+                     , Fay.System.Directory.Extra
+                     , Fay.System.Process.Extra
+                     , Fay.Types
+  other-modules:       Fay.Compiler.Decl
                      , Fay.Compiler.Defaults
                      , Fay.Compiler.Exp
                      , Fay.Compiler.FFI
@@ -374,8 +376,6 @@ library
                      , Fay.Compiler.QName
                      , Fay.Compiler.Typecheck
                      , Paths_fay
-                     , System.Directory.Extra
-                     , System.Process.Extra
   ghc-options:       -O2 -Wall -fno-warn-name-shadowing
   build-depends:     base >= 4 && < 5
                    , Cabal
@@ -408,11 +408,12 @@ library
                    , vector
 
 executable fay
-  hs-source-dirs:    src
+  hs-source-dirs:    src/main
   ghc-options:       -O2 -Wall
   ghc-prof-options:  -fprof-auto
   main-is:           Main.hs
   build-depends:     base >= 4 && < 5
+                   , fay
                    , Cabal
                    , aeson
                    , containers
@@ -433,16 +434,16 @@ executable fay
                    , utf8-string
 
 executable fay-tests
-  hs-source-dirs:    src
+  hs-source-dirs:    src/tests
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   ghc-prof-options:  -fprof-auto
   main-is:           Tests.hs
-  other-modules:     Fay.Compiler
-                     Test.CommandLine
+  other-modules:     Test.CommandLine
                      Test.Compile
                      Test.Convert
                      Test.Util
   build-depends:     base >= 4 && < 5
+                   , fay
                    , Cabal
                    , HUnit
                    , aeson

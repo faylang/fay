@@ -10,14 +10,14 @@ import           Fay.Compiler.Config
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
 import           Fay.Compiler.ModuleScope
+import           Fay.Control.Monad.Extra
+import           Fay.Control.Monad.IO
+import           Fay.Data.List.Extra
 import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad.Error
-import           Control.Monad.Extra
 import           Control.Monad.RWS
-import           Control.Monad.IO
-import           Data.List.Extra
 import qualified Data.Set as S
 import qualified Data.Map as M
 import           Language.Haskell.Exts.Parser

@@ -7,12 +7,12 @@
 
 module Fay.Compiler.Misc where
 
+import           Fay.Control.Monad.IO
 import qualified Fay.Compiler.ModuleScope        as ModuleScope
 import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad.Error
-import           Control.Monad.IO
 import           Control.Monad.RWS
 import           Data.List
 import           Data.Maybe

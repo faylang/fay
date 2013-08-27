@@ -1,9 +1,9 @@
 -- | Extra directory functions.
-module System.Directory.Extra where
+module Fay.System.Directory.Extra where
 
-import Control.Monad (forM)
-import System.Directory (doesDirectoryExist, getDirectoryContents)
-import System.FilePath ((</>))
+import           Control.Monad (forM)
+import           System.Directory (doesDirectoryExist, getDirectoryContents)
+import           System.FilePath ((</>))
 
 -- | Get all files in a folder and its subdirectories.
 -- Taken from Real World Haskell

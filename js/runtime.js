@@ -165,8 +165,17 @@ function Fay$$fayToJs(type,fayObj){
         fayFunc = Fay$$_(fayFunc,true);
         // TODO: Perhaps we should throw an error when JS
         // passes more arguments than Haskell accepts.
+
+        // Unserialize the JS values to Fay for the Fay callback.
+        if (args == "automatic_function")
+        {
+          for (var i = 0; fayFunc instanceof Function; i++) {
+            fayFunc = Fay$$_(fayFunc(Fay$$jsToFay(["automatic"],arguments[i])),true);
+          }
+          return Fay$$fayToJs(["automatic"],fayFunc);
+        }
+
         for (var i = 0, len = len; i < len - 1 && fayFunc instanceof Function; i++) {
-          // Unserialize the JS values to Fay for the Fay callback.
           fayFunc = Fay$$_(fayFunc(Fay$$jsToFay(args[i],arguments[i])),true);
         }
         // Finally, serialize the Fay return value back to JS.
@@ -240,7 +249,9 @@ function Fay$$fayToJs(type,fayObj){
 
     fayObj = Fay$$_(fayObj);
 
-    if(fayObj instanceof Fay$$Cons || fayObj === null){
+    if(fayObj instanceof Function) {
+      jsObj = Fay$$fayToJs(["function", "automatic_function"], fayObj);
+    } else if(fayObj instanceof Fay$$Cons || fayObj === null){
       // Serialize Fay list to JavaScript array.
       var arr = [];
       while(fayObj instanceof Fay$$Cons) {

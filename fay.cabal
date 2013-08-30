@@ -357,6 +357,8 @@ library
                      , Fay.Control.Monad.IO
                      , Fay.Convert
                      , Fay.Data.List.Extra
+                     , Fay.Exts
+                     , Fay.Exts.NoAnnotation
                      , Fay.FFI
                      , Fay.System.Directory.Extra
                      , Fay.System.Process.Extra

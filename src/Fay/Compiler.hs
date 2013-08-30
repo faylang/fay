@@ -35,6 +35,9 @@ import           Fay.Compiler.QName
 import           Fay.Compiler.Typecheck
 import           Fay.Control.Monad.IO
 import           Fay.Types
+import qualified Fay.Exts as F
+import qualified Fay.Exts.NoAnnotation as N
+import Fay.Exts.NoAnnotation (unAnn)
 
 import           Control.Applicative
 import           Control.Monad.Error
@@ -44,7 +47,7 @@ import           Data.Default                    (def)
 import qualified Data.Map                        as M
 import           Data.Maybe
 import qualified Data.Set                        as S
-import           Language.Haskell.Exts
+import           Language.Haskell.Exts.Annotated
 
 --------------------------------------------------------------------------------
 -- Top level entry points
@@ -83,16 +86,17 @@ compileToAst filepath reader state with from =
                           (parseFay filepath from))
 
 -- | Compile the top-level Fay module.
-compileToplevelModule :: FilePath -> Module -> Compile [JsStmt]
-compileToplevelModule filein mod@(Module _ (ModuleName modulename) _ _ _ _ _)  = do
+compileToplevelModule :: FilePath -> F.Module -> Compile [JsStmt]
+compileToplevelModule filein mod@Module{}  = do
   cfg <- config id
   when (configTypecheck cfg) $
     typecheck (configPackageConf cfg) (configWall cfg) $
-      fromMaybe modulename $ configFilePath cfg
+      fromMaybe (F.moduleNameString (F.moduleName mod)) $ configFilePath cfg
   initialPass mod
   cs <- io defaultCompileState
   modify $ \s -> s { stateImported = stateImported cs }
   fmap fst . listen $ compileModuleFromFile filein
+compileToplevelModule _ m = throwError $ UnsupportedModuleSyntax "compileToplevelModule" m
 
 --------------------------------------------------------------------------------
 -- Compilers
@@ -106,15 +110,15 @@ compileModuleFromContents :: String -> Compile [JsStmt]
 compileModuleFromContents = compileModule "<interactive>"
 
 -- | Lookup a module from include directories and compile.
-compileModuleFromName :: ModuleName -> Compile [JsStmt]
+compileModuleFromName :: F.ModuleName -> Compile [JsStmt]
 compileModuleFromName name =
   unlessImported name compileModule
     where
-      unlessImported :: ModuleName
+      unlessImported :: ModuleName a
                      -> (FilePath -> String -> Compile [JsStmt])
                      -> Compile [JsStmt]
-      unlessImported "Fay.Types" _ = return []
-      unlessImported name importIt = do
+      unlessImported (ModuleName _ "Fay.Types") _ = return []
+      unlessImported (unAnn -> name) importIt = do
         imported <- gets stateImported
         case lookup name imported of
           Just _  -> return []
@@ -152,52 +156,54 @@ compileModule filepath contents = do
         else stmts
 
 -- | Compile a parse HSE module.
-compileModuleFromAST :: Module -> Compile [JsStmt]
-compileModuleFromAST (Module _ modulename pragmas Nothing _exports imports decls) =
+compileModuleFromAST :: F.Module -> Compile [JsStmt]
+compileModuleFromAST mod@(Module _ _ pragmas imports decls) =
   withModuleScope $ do
     imported <- fmap concat (mapM compileImport imports)
-    modify $ \s -> s { stateModuleName = modulename
-                     , stateModuleScope = fromMaybe (error $ "Could not find stateModuleScope for " ++ show modulename) $ M.lookup modulename $ stateModuleScopes s
+    modify $ \s -> s { stateModuleName = modName
+                     , stateModuleScope = fromMaybe (error $ "Could not find stateModuleScope for " ++ show modName) $ M.lookup modName $ stateModuleScopes s
                      , stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
                      }
     current <- compileDecls True decls
 
     exportStdlib     <- config configExportStdlib
     exportStdlibOnly <- config configExportStdlibOnly
-    modulePaths      <- createModulePath modulename
+    modulePaths      <- createModulePath modName
     extExports       <- generateExports
     let stmts = imported ++ modulePaths ++ current ++ extExports
     return $ if exportStdlibOnly
-      then if anStdlibModule modulename
+      then if anStdlibModule modName
               then stmts
               else []
-      else if not exportStdlib && anStdlibModule modulename
+      else if not exportStdlib && anStdlibModule modName
               then []
               else stmts
-compileModuleFromAST mod = throwError (UnsupportedModuleSyntax mod)
+  where
+    modName = unAnn $ F.moduleName mod
+compileModuleFromAST mod = throwError (UnsupportedModuleSyntax "compileModuleFromAST" mod)
 
-hasLanguagePragmas :: [String] -> [ModulePragma] -> Bool
+hasLanguagePragmas :: [String] -> [F.ModulePragma] -> Bool
 hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter (`elem` pragmas) $ flattenPragmas modulePragmas
   where
-    flattenPragmas :: [ModulePragma] -> [String]
+    flattenPragmas :: [F.ModulePragma] -> [String]
     flattenPragmas ps = concat $ map pragmaName ps
     pragmaName (LanguagePragma _ q) = map unname q
     pragmaName _ = []
 
 
-instance CompilesTo Module [JsStmt] where compileTo = compileModuleFromAST
+instance CompilesTo F.Module [JsStmt] where compileTo = compileModuleFromAST
 
 
 -- | For a module A.B, generate
 -- | var A = {};
 -- | A.B = {};
-createModulePath :: ModuleName -> Compile [JsStmt]
-createModulePath =
-  liftM concat . mapM modPath . mkModulePaths
+createModulePath :: ModuleName a -> Compile [JsStmt]
+createModulePath (unAnn -> m) =
+  liftM concat . mapM modPath . mkModulePaths $ m
   where
     modPath :: ModulePath -> Compile [JsStmt]
     modPath mp = whenImportNotGenerated mp $ \(unModulePath -> l) -> case l of
-     [n] -> [JsVar (JsNameVar . UnQual $ Ident n) (JsObj [])]
+     [n] -> [JsVar (JsNameVar . UnQual () $ Ident () n) (JsObj [])]
      _   -> [JsSetModule mp (JsObj [])]
 
     whenImportNotGenerated :: ModulePath -> (ModulePath -> [JsStmt]) -> Compile [JsStmt]
@@ -213,20 +219,20 @@ createModulePath =
 generateExports :: Compile [JsStmt]
 generateExports = do
   m <- gets stateModuleName
-  map (exportExp m) . S.toList . getNonLocalExports <$> gets id
+  map (exportExp m) . S.toList <$> gets getNonLocalExports
   where
-    exportExp :: ModuleName -> QName -> JsStmt
+    exportExp :: N.ModuleName -> N.QName -> JsStmt
     exportExp m v = JsSetQName (changeModule m v) $ case findPrimOp v of
       Just p  -> JsName $ JsNameVar p
       Nothing -> JsName $ JsNameVar v
 
 -- | Is the module a standard module, i.e., one that we'd rather not
 -- output code for if we're compiling separate files.
-anStdlibModule :: ModuleName -> Bool
-anStdlibModule (ModuleName name) = name `elem` ["Prelude","FFI","Fay.FFI","Data.Data"]
+anStdlibModule :: ModuleName a -> Bool
+anStdlibModule (ModuleName _ name) = name `elem` ["Prelude","FFI","Fay.FFI","Data.Data"]
 
 -- | Compile the given import.
-compileImport :: ImportDecl -> Compile [JsStmt]
+compileImport :: F.ImportDecl -> Compile [JsStmt]
 -- Package imports are ignored since they are used for some trickery in fay-base.
 compileImport (ImportDecl _ _    _     _ Just{}  _       _) = return []
 compileImport (ImportDecl _ name False _ Nothing Nothing _) = compileModuleFromName name

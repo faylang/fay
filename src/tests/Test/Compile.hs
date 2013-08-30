@@ -8,7 +8,7 @@ import Fay.Compiler.Config
 
 import Data.Default
 import Data.Maybe
-import Language.Haskell.Exts.Syntax
+import Language.Haskell.Exts.Annotated
 import System.Environment
 import Test.Framework
 import Test.Framework.Providers.HUnit
@@ -32,7 +32,7 @@ case_importedList = do
   case res of
     Left err -> error (show err)
     Right (_,r) -> assertBool "RecordImport_Export was not added to stateImported" .
-                     isJust . lookup (ModuleName "RecordImport_Export") $ stateImported r
+                     isJust . lookup (ModuleName () "RecordImport_Export") $ stateImported r
 
 fp :: FilePath
 fp = "tests/RecordImport_Import.hs"
@@ -46,8 +46,8 @@ case_stateRecordTypes = do
     Right (_,r) ->
       -- TODO order should not matter
       assertEqual "stateRecordTypes mismatch"
-        [ (UnQual (Ident "T"),[UnQual (Symbol ":+")])
-        , (UnQual (Ident "R"),[UnQual (Ident "R"), UnQual (Ident "S")])
+        [ (UnQual () (Ident () "T"),[UnQual () (Symbol () ":+")])
+        , (UnQual () (Ident () "R"),[UnQual () (Ident () "R"), UnQual () (Ident () "S")])
         ]
         (stateRecordTypes r)
 
@@ -60,8 +60,8 @@ case_importStateRecordTypes = do
     Right (_,r) ->
       -- TODO order should not matter
       assertEqual "stateRecordTypes mismatch"
-        [ (UnQual (Ident "T"),[UnQual (Symbol ":+")])
-        , (UnQual (Ident "R"),[UnQual (Ident "R"), UnQual (Ident "S")])
+        [ (UnQual () (Ident () "T"),[UnQual () (Symbol () ":+")])
+        , (UnQual () (Ident () "R"),[UnQual () (Ident () "R"), UnQual () (Ident () "S")])
         ]
         (stateRecordTypes r)
 

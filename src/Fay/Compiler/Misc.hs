@@ -1,7 +1,8 @@
+{-# OPTIONS -Wall -fno-warn-orphans  #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS -Wall -fno-warn-orphans  #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- | Miscellaneous functions used throughout the compiler.
 
@@ -10,6 +11,10 @@ module Fay.Compiler.Misc where
 import           Fay.Control.Monad.IO
 import qualified Fay.Compiler.ModuleScope        as ModuleScope
 import           Fay.Types
+import qualified Fay.Exts as F
+import Fay.Exts (noI)
+import qualified Fay.Exts.NoAnnotation as N
+import Fay.Exts.NoAnnotation (unAnn)
 
 import           Control.Applicative
 import           Control.Monad.Error
@@ -24,7 +29,8 @@ import           Language.Haskell.Exts.Extension
 import           Language.Haskell.Exts.Fixity
 import           Language.Haskell.Exts.Parser
 import           Language.Haskell.Exts.Pretty
-import           Language.Haskell.Exts.Syntax
+import Language.Haskell.Exts.SrcLoc
+import           Language.Haskell.Exts.Annotated hiding (name)
 import           Prelude                         hiding (exp, mod)
 import           System.Directory
 import           System.FilePath
@@ -33,8 +39,8 @@ import           System.Process                  (readProcess)
 import           Text.ParserCombinators.ReadP    (readP_to_S)
 
 -- | Make an identifier from the built-in HJ module.
-fayBuiltin :: String -> QName
-fayBuiltin = Qual (ModuleName "Fay$") . Ident
+fayBuiltin :: String -> N.QName
+fayBuiltin = Qual () (ModuleName () "Fay$") . Ident ()
 
 -- | Wrap an expression in a thunk.
 thunk :: JsExp -> JsExp
@@ -59,25 +65,25 @@ uniqueNames :: [JsName]
 uniqueNames = map JsParam [1::Integer ..]
 
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
-tryResolveName :: QName -> Compile (Maybe QName)
-tryResolveName special@Special{} = return (Just special)
+tryResolveName :: QName a -> Compile (Maybe N.QName)
+tryResolveName special@Special{} = return . Just $ unAnn special
 tryResolveName q@Qual{} =
   ModuleScope.resolveName q <$> gets stateModuleScope
-tryResolveName u@(UnQual name) = do
+tryResolveName u@(UnQual _ n) = let name = unAnn n in do
   names <- gets stateLocalScope
   env <- gets stateModuleScope
   if S.member name names
-    then return $ Just (UnQual name)
+    then return $ Just (UnQual () name)
     else maybe (Just <$> qualify name) (return . Just) $ ModuleScope.resolveName u env
 
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
 -- Use this when a resolution failure is a bug.
-unsafeResolveName :: QName -> Compile QName
-unsafeResolveName q = maybe (throwError $ UnableResolveQualified q) return =<< tryResolveName q
+unsafeResolveName :: QName a -> Compile N.QName
+unsafeResolveName (unAnn -> q) = maybe (throwError $ UnableResolveQualified q) return =<< tryResolveName q
 
 -- | Resolve a newtype constructor.
-lookupNewtypeConst :: QName -> Compile (Maybe (Maybe QName,Type))
-lookupNewtypeConst n = do
+lookupNewtypeConst :: QName a -> Compile (Maybe (Maybe N.QName,N.Type))
+lookupNewtypeConst (unAnn -> n) = do
   mName <- tryResolveName n
   case mName of
     Nothing -> return Nothing
@@ -88,8 +94,8 @@ lookupNewtypeConst n = do
         Just (_,dname,ty) -> return $ Just (dname,ty)
 
 -- | Resolve a newtype destructor.
-lookupNewtypeDest :: QName -> Compile (Maybe (QName,Type))
-lookupNewtypeDest n = do
+lookupNewtypeDest :: QName a -> Compile (Maybe (N.QName,N.Type))
+lookupNewtypeDest (unAnn -> n) = do
   mName <- tryResolveName n
   newtypes <- gets stateNewtypes
   case find (\(_,dname,_) -> dname == mName) newtypes of
@@ -97,24 +103,27 @@ lookupNewtypeDest n = do
     Just (cname,_,ty) -> return $ Just (cname,ty)
 
 -- | Qualify a name for the current module.
-qualify :: Name -> Compile QName
-qualify name = do
+qualify :: Name a -> Compile (N.QName)
+qualify (Ident _ name) = do
   modulename <- gets stateModuleName
-  return (Qual modulename name)
+  return (Qual () modulename (Ident () name))
+qualify (Symbol _ name) = do
+  modulename <- gets stateModuleName
+  return (Qual () modulename (Symbol () name))
 
 -- | Qualify a QName for the current module if unqualified.
-qualifyQName :: QName -> Compile QName
-qualifyQName (UnQual name) = qualify name
-qualifyQName n             = return n
+qualifyQName :: QName a -> Compile N.QName
+qualifyQName (UnQual _ name) = qualify name
+qualifyQName (unAnn -> n)    = return n
 
 -- | Make a top-level binding.
-bindToplevel :: Bool -> Name -> JsExp -> Compile JsStmt
-bindToplevel toplevel name expr =
+bindToplevel :: Bool -> Name a -> JsExp -> Compile JsStmt
+bindToplevel toplevel (unAnn -> name) expr =
   if toplevel
     then do
       mod <- gets stateModuleName
-      return $ JsSetQName (Qual mod name) expr
-    else return $ JsVar (JsNameVar $ UnQual name) expr
+      return $ JsSetQName (Qual () mod name) expr
+    else return $ JsVar (JsNameVar $ UnQual () name) expr
 
 
 -- | Create a temporary environment and discard it after the given computation.
@@ -142,39 +151,40 @@ generateScope m = do
   put st { stateLocalScope = scope }
 
 -- | Bind a variable in the current scope.
-bindVar :: Name -> Compile ()
-bindVar name =
+bindVar :: Name a -> Compile ()
+bindVar (unAnn -> name) =
   modify $ \s -> s { stateLocalScope = S.insert name (stateLocalScope s) }
 
 -- | Emit exported names.
-emitExport :: ExportSpec -> Compile ()
-emitExport spec = case spec of
-  EVar (UnQual n) -> emitVar n
-  EVar q@Qual{} -> modify $ addCurrentExport q
-  EThingAll (UnQual name) -> do
-    cons <- typeToRecs (UnQual name)
-    fields <- typeToFields (UnQual name)
+emitExport :: ExportSpec a -> Compile ()
+emitExport (unAnn -> spec) = case spec of
+  EVar _ (UnQual _ n) -> emitVar n
+  EVar _ q@Qual{} -> modify $ addCurrentExport q
+  EThingAll _ (UnQual _ name) -> do
+    cons <- typeToRecs (UnQual () name)
+    fields <- typeToFields (UnQual () name)
     mapM_ (emitVar . unQName) $ cons ++ fields
-  EThingWith (UnQual _) ns -> mapM_ emitCName ns
-  EAbs _ -> return () -- Type only, skip
-  EModuleContents mod -> do
+  EThingWith _ (UnQual {}) ns -> mapM_ emitCName ns
+  EAbs _ _ -> return () -- Type only, skip
+  EModuleContents _ mod -> do
     known_exports <- gets _stateExports
     current_scope <- gets stateModuleScope
     let names = case M.lookup mod known_exports of
           Just exports -> S.toList exports                      -- in case we're exporting other module take it's export list
           Nothing -> ModuleScope.moduleLocals mod current_scope -- in case we're exporting outselves export local names
-    mapM_ (emitExport . EVar) names
+    mapM_ (emitExport . EVar ()) names
 
   -- Skip qualified exports for type exports in fay-base since
   -- qualified imports are not supported yet an error will be thrown
   -- on the import so hopefully this won't be confusing.
-  EThingAll (Qual _ _) -> return ()
+  EThingAll _ (Qual _ _ _) -> return ()
   e -> throwError $ UnsupportedExportSpec e
  where
-   emitVar = return . UnQual >=> unsafeResolveName >=> emitExport . EVar
-   emitCName (VarName n) = emitVar n
-   emitCName (ConName n) = emitVar n
-   unQName (UnQual u) = u
+   emitVar :: Name a -> Compile ()
+   emitVar = return . UnQual () . unAnn >=> unsafeResolveName >=> emitExport . EVar ()
+   emitCName (VarName _ n) = emitVar n
+   emitCName (ConName _ n) = emitVar n
+   unQName (UnQual _ u) = u
    unQName _ = error "unQName Qual or Special -- should never happen"
 
 -- | Force an expression in a thunk.
@@ -189,7 +199,7 @@ isConstant JsLit{} = True
 isConstant _       = False
 
 -- | Deconstruct a parse result (a la maybe, foldr, either).
-parseResult :: ((SrcLoc,String) -> b) -> (a -> b) -> ParseResult a -> b
+parseResult :: ((F.SrcLoc,String) -> b) -> (a -> b) -> ParseResult a -> b
 parseResult die ok result = case result of
   ParseOk a -> ok a
   ParseFailed srcloc msg -> die (srcloc,msg)
@@ -218,18 +228,18 @@ throwExp :: String -> JsExp -> JsExp
 throwExp msg expr = JsThrowExp (JsList [JsLit (JsStr msg),expr])
 
 -- | Is an alt a wildcard?
-isWildCardAlt :: Alt -> Bool
+isWildCardAlt :: F.Alt -> Bool
 isWildCardAlt (Alt _ pat _ _) = isWildCardPat pat
 
 -- | Is a pattern a wildcard?
-isWildCardPat :: Pat -> Bool
+isWildCardPat :: F.Pat -> Bool
 isWildCardPat PWildCard{} = True
 isWildCardPat PVar{}      = True
 isWildCardPat _           = False
 
 -- | Return formatter string if expression is a FFI call.
-ffiExp :: Exp -> Maybe String
-ffiExp (App (Var (UnQual (Ident "ffi"))) (Lit (String formatstr))) = Just formatstr
+ffiExp :: F.Exp -> Maybe String
+ffiExp (App _ (Var _ (UnQual _ (Ident _ "ffi"))) (Lit _ (String _ formatstr _))) = Just formatstr
 ffiExp _ = Nothing
 
 -- | Generate a temporary, SCOPED name for testing conditions and
@@ -244,11 +254,11 @@ withScopedTmpJsName withName = do
 
 -- | Generate a temporary, SCOPED name for testing conditions and
 -- such. We don't have name tracking yet, so instead we use this.
-withScopedTmpName :: (Name -> Compile a) -> Compile a
+withScopedTmpName :: (F.Name -> Compile a) -> Compile a
 withScopedTmpName withName = do
   depth <- gets stateNameDepth
   modify $ \s -> s { stateNameDepth = depth + 1 }
-  ret <- withName $ Ident $ "$gen" ++ show depth
+  ret <- withName $ Ident noI $ "$gen" ++ show depth
   modify $ \s -> s { stateNameDepth = depth }
   return ret
 
@@ -260,16 +270,23 @@ warn w = do
   when shouldWarn . io . hPutStrLn stderr $ "Warning: " ++ w
 
 -- | Pretty print a source location.
-printSrcLoc :: SrcLoc -> String
+printSrcLoc :: F.SrcLoc -> String
 printSrcLoc SrcLoc{..} = srcFilename ++ ":" ++ show srcLine ++ ":" ++ show srcColumn
 
+printSrcSpanInfo :: SrcSpanInfo -> String
+printSrcSpanInfo (SrcSpanInfo a b) = concat $ printSrcSpan a : map printSrcSpan b
+
+printSrcSpan :: SrcSpan -> String
+printSrcSpan SrcSpan{..} = srcSpanFilename ++ ": (" ++ show srcSpanStartLine ++ "," ++ show srcSpanStartColumn ++ ")-(" ++ show srcSpanEndLine ++ "," ++ show srcSpanEndColumn
+
+
 -- | Lookup the record for a given type name.
-typeToRecs :: QName -> Compile [QName]
-typeToRecs typ = fromMaybe [] . lookup typ <$> gets stateRecordTypes
+typeToRecs :: QName a -> Compile [N.QName]
+typeToRecs (unAnn -> typ) = fromMaybe [] . lookup typ <$> gets stateRecordTypes
 
 -- | Get the fields for a given type.
-typeToFields :: QName -> Compile [QName]
-typeToFields typ = do
+typeToFields :: QName a -> Compile [N.QName]
+typeToFields (unAnn -> typ) = do
   allrecs <- gets stateRecords
   typerecs <- typeToRecs typ
   return . concatMap snd . filter ((`elem` typerecs) . fst) $ allrecs
@@ -288,8 +305,8 @@ getGhcPackageDbFlag = do
     readVersion = listToMaybe . filter (null . snd) . readP_to_S parseVersion
 
 -- | Find an import's filepath and contents from its module name.
-findImport :: [FilePath] -> ModuleName -> Compile (FilePath,String)
-findImport alldirs mname = go alldirs mname where
+findImport :: [FilePath] -> ModuleName a -> Compile (FilePath,String)
+findImport alldirs (unAnn -> mname) = go alldirs mname where
   go (dir:dirs) name = do
     exists <- io (doesFileExist path)
     if exists
@@ -301,9 +318,9 @@ findImport alldirs mname = go alldirs mname where
   go [] name =
     throwError $ Couldn'tFindImport name alldirs
 
-  stdlibHack
-    | mname == ModuleName "Fay.FFI" = const "module Fay.FFI where\n\ndata Nullable a = Nullable a | Null\n\ndata Defined a = Defined a | Undefined"
-    | otherwise = id
+  stdlibHack = case mname of
+    ModuleName _ "Fay.FFI" -> const "module Fay.FFI where\n\ndata Nullable a = Nullable a | Null\n\ndata Defined a = Defined a | Undefined"
+    _ -> id
 
 -- | Run the compiler.
 runCompile :: CompileReader -> CompileState

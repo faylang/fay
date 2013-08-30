@@ -17,8 +17,12 @@ module Fay.Compiler.FFI
 import Fay.Compiler.Misc
 import Fay.Compiler.Print           (printJSString)
 import Fay.Compiler.QName
+import qualified Fay.Exts as F
+import qualified Fay.Exts.NoAnnotation as N
+import Fay.Exts.NoAnnotation (unAnn)
 import Fay.Types
 
+import Control.Arrow ((***))
 import Control.Monad.Error
 import Control.Monad.Writer
 import Control.Applicative ((<$>), (<*>))
@@ -29,59 +33,60 @@ import Data.Maybe
 import Data.String
 import Language.ECMAScript3.Parser  as JS
 import Language.ECMAScript3.Syntax
-import Language.Haskell.Exts        (prettyPrint)
-import Language.Haskell.Exts.Syntax
+import Language.Haskell.Exts.Annotated        (prettyPrint, SrcSpanInfo)
+import Language.Haskell.Exts.Annotated.Syntax
 import Prelude                      hiding (exp, mod)
 import Safe
 
 -- | Compile an FFI call.
-compileFFI :: SrcLoc -- ^ Location of the original FFI decl.
-           -> Name  -- ^ Name of the to-be binding.
+compileFFI :: SrcSpanInfo -- ^ Location of the original FFI decl.
+           -> F.Name  -- ^ Name of the to-be binding.
            -> String -- ^ The format string.
-           -> Type   -- ^ Type signature.
+           -> F.Type   -- ^ Type signature.
            -> Compile [JsStmt]
-compileFFI srcloc name formatstr sig =
+compileFFI srcSpanInfo (unAnn -> name) formatstr (unAnn -> sig) =
   -- substitute newtypes with their child types before calling
   -- real compileFFI
-  compileFFI' =<< rmNewtys sig
+  compileFFI' =<< rmNewtys (unAnn sig)
 
-  where rmNewtys :: Type -> Compile Type
-        rmNewtys (TyForall b c t) = TyForall b c <$> rmNewtys t
-        rmNewtys (TyFun t1 t2)    = TyFun <$> rmNewtys t1 <*> rmNewtys t2
-        rmNewtys (TyTuple b tl)   = TyTuple b <$> mapM rmNewtys tl
-        rmNewtys (TyList t)       = TyList <$> rmNewtys t
-        rmNewtys (TyApp t1 t2)    = TyApp <$> rmNewtys t1 <*> rmNewtys t2
-        rmNewtys t@TyVar{}        = return t
-        rmNewtys (TyCon qname)    = do
+  where rmNewtys :: N.Type -> Compile N.Type
+        rmNewtys (TyForall () b c t) = TyForall () b c <$> rmNewtys t
+        rmNewtys (TyFun () t1 t2)    = TyFun () <$> rmNewtys t1 <*> rmNewtys t2
+        rmNewtys (TyTuple () b tl)   = TyTuple () b <$> mapM rmNewtys tl
+        rmNewtys (TyList () t)       = TyList () <$> rmNewtys t
+        rmNewtys (TyApp () t1 t2)    = TyApp () <$> rmNewtys t1 <*> rmNewtys t2
+        rmNewtys t@TyVar{}          = return t
+        rmNewtys (TyCon () qname)    = do
           newty <- lookupNewtypeConst qname
           return $ case newty of
-                     Nothing     -> TyCon qname
+                     Nothing     -> TyCon () qname
                      Just (_,ty) -> ty
-        rmNewtys (TyParen t)      = TyParen <$> rmNewtys t
-        rmNewtys (TyInfix t1 q t2)= flip TyInfix q <$> rmNewtys t1 <*> rmNewtys t2
-        rmNewtys (TyKind t k)     = flip TyKind k <$> rmNewtys t
+        rmNewtys (TyParen a t)      = TyParen a <$> rmNewtys t
+        rmNewtys (TyInfix a t1 q t2)= flip (TyInfix a) q <$> rmNewtys t1 <*> rmNewtys t2
+        rmNewtys (TyKind a t k)     = flip (TyKind a) k <$> rmNewtys t
 
-        compileFFI' :: Type -> Compile [JsStmt]
+        compileFFI' :: N.Type -> Compile [JsStmt]
         compileFFI' sig' = do
-          fun <- compileFFIExp srcloc (Just name) formatstr sig'
+          fun <- compileFFIExp srcSpanInfo (Just name) formatstr sig'
           stmt <- bindToplevel True name fun
           return [stmt]
 
 -- | Compile an FFI expression (also used when compiling top level definitions).
-compileFFIExp :: SrcLoc -> Maybe Name -> String -> Type -> Compile JsExp
-compileFFIExp srcloc nameopt formatstr sig = do
+compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> (Type a) -> Compile JsExp
+compileFFIExp srcSpanInfo (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
   let name = fromMaybe "<exp>" nameopt
-  inner <- formatFFI srcloc formatstr (zip params funcFundamentalTypes)
+  inner <- formatFFI srcSpanInfo formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.expression (prettyPrint name) (printJSString (wrapReturn inner)) of
-    Left err -> throwError (FfiFormatInvalidJavaScript srcloc inner (show err))
+    Left err -> throwError (FfiFormatInvalidJavaScript srcSpanInfo inner (show err))
     Right exp  -> do
       config' <- config id
-      when (configGClosure config') $ warnDotUses srcloc inner exp
+      when (configGClosure config') $ warnDotUses srcSpanInfo inner exp
       return (body inner)
 
   where body inner = foldr wrapParam (wrapReturn inner) params
         wrapParam pname inner = JsFun Nothing [pname] [] (Just inner)
         params = zipWith const uniqueNames [1..typeArity sig]
+        wrapReturn :: String -> JsExp
         wrapReturn inner = thunk $
           case lastMay funcFundamentalTypes of
             -- Returns a “pure” value;
@@ -92,10 +97,10 @@ compileFFIExp srcloc nameopt formatstr sig = do
         returnType = last funcFundamentalTypes
 
 -- | Warn about uses of naked x.y which will not play nicely with Google Closure.
-warnDotUses :: SrcLoc -> String -> Expression SourcePos -> Compile ()
-warnDotUses srcloc string expr =
+warnDotUses :: SrcSpanInfo -> String -> Expression SourcePos -> Compile ()
+warnDotUses srcSpanInfo string expr =
   when anyrefs $
-    warn $ printSrcLoc srcloc ++ ":\nDot ref syntax used in FFI JS code: " ++ string
+    warn $ printSrcSpanInfo srcSpanInfo ++ ":\nDot ref syntax used in FFI JS code: " ++ string
 
   where anyrefs = not (null (listify dotref expr)) ||
                   not (null (listify ldot expr))
@@ -118,17 +123,13 @@ warnDotUses srcloc string expr =
         globalNames = ["Math","console","JSON"]
 
 -- | Make a Fay→JS encoder.
-emitFayToJs :: Name -> [TyVarBind] -> [([Name],BangType)] -> Compile ()
-emitFayToJs name tyvars (explodeFields -> fieldTypes) = do
+emitFayToJs :: Name a -> [TyVarBind b] -> [([Name c], BangType d)] -> Compile ()
+emitFayToJs (unAnn -> name) (map unAnn -> tyvars) (explodeFields -> fieldTypes) = do
   qname <- qualify name
-  let ctrName = printJSString $ unqualName qname
+  let ctrName = printJSString $ unQual qname
   tell $ mempty { writerFayToJs = [(ctrName, translator)] }
 
   where
-    unqualName :: QName -> Name
-    unqualName (UnQual n) = n
-    unqualName (Qual _ n) = n
-    unqualName Special{}  = error "unqualName: Special{}"
     translator =
       JsFun Nothing
             [JsNameVar "type", argTypes, transcodingObjForced]
@@ -137,9 +138,9 @@ emitFayToJs name tyvars (explodeFields -> fieldTypes) = do
 
     obj :: JsStmt
     obj = JsVar obj_ $
-      JsObj [("instance",JsLit (JsStr (printJSString name)))]
+      JsObj [("instance",JsLit (JsStr (printJSString (unAnn name))))]
 
-    fieldStmts :: [(Int,(Name,BangType))] -> [JsStmt]
+    fieldStmts :: [(Int,(N.Name,N.BangType))] -> [JsStmt]
     fieldStmts [] = []
     fieldStmts ((i,fieldType):fts) =
       JsVar obj_v field :
@@ -148,20 +149,20 @@ emitFayToJs name tyvars (explodeFields -> fieldTypes) = do
           [] :
         fieldStmts fts
       where
-        obj_v = JsNameVar (UnQual (Ident $ "obj_" ++ d))
-        decl = JsNameVar (UnQual (Ident d))
+        obj_v = JsNameVar $ UnQual () (Ident () $ "obj_" ++ d)
+        decl = JsNameVar $ UnQual () (Ident () d)
         (d, field) = declField i fieldType
 
-    obj_ = JsNameVar (UnQual (Ident "obj_"))
+    obj_ = JsNameVar "obj_"
 
     -- Declare/encode Fay→JS field
-    declField :: Int -> (Name,BangType) -> (String,JsExp)
+    declField :: Int -> (N.Name,N.BangType) -> (String,JsExp)
     declField i (fname,typ) =
       (prettyPrint fname
       ,fayToJs (SerializeUserArg i)
                (argType (bangType typ))
                (JsGetProp (JsName transcodingObjForced)
-                          (JsNameVar (UnQual fname))))
+                          (JsNameVar (UnQual () fname))))
 
 -- | A name used for transcoding.
 transcodingObj :: JsName
@@ -172,54 +173,54 @@ transcodingObjForced :: JsName
 transcodingObjForced = JsNameVar "_obj"
 
 -- | Get arg types of a function type.
-functionTypeArgs :: Type -> [FundamentalType]
+functionTypeArgs :: N.Type -> [FundamentalType]
 functionTypeArgs t =
   case t of
-    TyForall _ _ i -> functionTypeArgs i
-    TyFun a b      -> argType a : functionTypeArgs b
-    TyParen st     -> functionTypeArgs st
-    r              -> [argType r]
+    TyForall _ _ _ i -> functionTypeArgs i
+    TyFun _ a b      -> argType a : functionTypeArgs b
+    TyParen _ st     -> functionTypeArgs st
+    r                -> [argType r]
 
 -- | Convert a Haskell type to an internal FFI representation.
-argType :: Type -> FundamentalType
+argType :: N.Type -> FundamentalType
 argType t = case t of
-  TyCon "String"              -> StringType
-  TyCon "Double"              -> DoubleType
-  TyCon "Int"                 -> IntType
-  TyCon "Bool"                -> BoolType
-  TyApp (TyCon "Ptr") _       -> PtrType
-  TyApp (TyCon "Automatic") _ -> Automatic
-  TyApp (TyCon "Defined") a   -> Defined (argType a)
-  TyApp (TyCon "Nullable") a  -> Nullable (argType a)
-  TyApp (TyCon "Fay") a       -> JsType (argType a)
-  TyFun x xs                  -> FunctionType (argType x : functionTypeArgs xs)
-  TyList x                    -> ListType (argType x)
-  TyTuple _ xs                -> TupleType (map argType xs)
-  TyParen st                  -> argType st
-  TyApp op arg                -> userDefined (reverse (arg : expandApp op))
+  TyCon _ (UnQual _ (Ident _ "String"))                -> StringType
+  TyCon _ (UnQual _ (Ident _ "Double"))                -> DoubleType
+  TyCon _ (UnQual _ (Ident _ "Int"))                   -> IntType
+  TyCon _ (UnQual _ (Ident _ "Bool"))                  -> BoolType
+  TyApp _ (TyCon _ (UnQual _ (Ident _ "Ptr"))) _       -> PtrType
+  TyApp _ (TyCon _ (UnQual _ (Ident _ "Automatic"))) _ -> Automatic
+  TyApp _ (TyCon _ (UnQual _ (Ident _ "Defined"))) a   -> Defined (argType a)
+  TyApp _ (TyCon _ (UnQual _ (Ident _ "Nullable"))) a  -> Nullable (argType a)
+  TyApp _ (TyCon _ (UnQual _ (Ident _ "Fay"))) a       -> JsType (argType a)
+  TyFun _ x xs                  -> FunctionType (argType x : functionTypeArgs xs)
+  TyList _ x                    -> ListType (argType x)
+  TyTuple _ _ xs                -> TupleType (map argType xs)
+  TyParen _ st                  -> argType st
+  TyApp _ op arg                -> userDefined (reverse (arg : expandApp op))
   _                     ->
     -- No semantic point to this, merely to avoid GHC's broken
     -- warning.
     case t of
-      TyCon (UnQual user)   -> UserDefined user []
+      TyCon _ (UnQual _ user)   -> UserDefined user []
       _ -> UnknownType
 
 -- | Extract the type.
-bangType :: BangType -> Type
+bangType :: N.BangType -> N.Type
 bangType typ = case typ of
-  BangedTy ty   -> ty
-  UnBangedTy ty -> ty
-  UnpackedTy ty -> ty
+  BangedTy _ ty   -> ty
+  UnBangedTy _ ty -> ty
+  UnpackedTy _ ty -> ty
 
 -- | Expand a type application.
-expandApp :: Type -> [Type]
-expandApp (TyParen t) = expandApp t
-expandApp (TyApp op arg) = arg : expandApp op
+expandApp :: N.Type -> [N.Type]
+expandApp (TyParen _ t) = expandApp t
+expandApp (TyApp _ op arg) = arg : expandApp op
 expandApp x = [x]
 
 -- | Generate a user-defined type.
-userDefined :: [Type] -> FundamentalType
-userDefined (TyCon (UnQual name):typs) = UserDefined name (map argType typs)
+userDefined :: [N.Type] -> FundamentalType
+userDefined (TyCon _ (UnQual _ name):typs) = UserDefined name (map argType typs)
 userDefined _ = UnknownType
 
 -- | Translate: JS → Fay.
@@ -245,10 +246,10 @@ translate method context typ exp = case typ of
   _ -> recursive
 
   where flat specialize =
-          JsApp (JsName (JsBuiltIn (fromString (method ++ "_" ++ specialize))))
+          JsApp (JsName (JsBuiltIn (Ident () (method ++ "_" ++ specialize))))
                 [exp]
         recursive =
-          JsApp (JsName (JsBuiltIn (fromString method)))
+          JsApp (JsName (JsBuiltIn (Ident () method)))
                 [typeRep context typ
                 ,exp]
         js ty' =
@@ -295,19 +296,19 @@ typeRep context typ = case typ of
                                         (ret "unknown"))
 
 -- | Get the arity of a type.
-typeArity :: Type -> Int
+typeArity :: Type a -> Int
 typeArity t = case t of
-  TyForall _ _ i -> typeArity i
-  TyFun _ b      -> 1 + typeArity b
-  TyParen st     -> typeArity st
+  TyForall _ _ _ i -> typeArity i
+  TyFun _ _ b      -> 1 + typeArity b
+  TyParen _ st     -> typeArity st
   _              -> 0
 
--- | Format the FFI format string with the given arguments.
-formatFFI :: SrcLoc                     -- ^ Location of the original FFI decl.
+-- | Format the FFI  format string with the given arguments.
+formatFFI :: SrcSpanInfo                -- ^ Location of the original FFI decl.
           -> String                     -- ^ The format string.
           -> [(JsName,FundamentalType)] -- ^ Arguments.
           -> Compile String             -- ^ The JS code.
-formatFFI srcloc formatstr args = go formatstr where
+formatFFI srcSpanInfo formatstr args = go formatstr where
   go ('%':'*':xs) = do
     these <- mapM inject (zipWith const [1..] args)
     rest <- go xs
@@ -315,10 +316,10 @@ formatFFI srcloc formatstr args = go formatstr where
   go ('%':'%':xs) = do
     rest <- go xs
     return ('%' : rest)
-  go ['%'] = throwError (FfiFormatIncompleteArg srcloc)
+  go ['%'] = throwError (FfiFormatIncompleteArg srcSpanInfo)
   go ('%':(span isDigit -> (op,xs))) =
     case readMay op of
-     Nothing -> throwError (FfiFormatBadChars srcloc op)
+     Nothing -> throwError (FfiFormatBadChars srcSpanInfo op)
      Just n -> do
        this <- inject n
        rest <- go xs
@@ -329,13 +330,14 @@ formatFFI srcloc formatstr args = go formatstr where
 
   inject n =
     case listToMaybe (drop (n-1) args) of
-      Nothing -> throwError (FfiFormatNoSuchArg srcloc n)
+      Nothing -> throwError (FfiFormatNoSuchArg srcSpanInfo n)
       Just (arg,typ) ->
         return (printJSString (fayToJs SerializeAnywhere typ (JsName arg)))
 
 -- | Generate n name-typ pairs from the given list.
 explodeFields :: [([a], t)] -> [(a, t)]
 explodeFields = concatMap $ \(names,typ) -> map (,typ) names
+
 
 -- | Generate Fay→JS encoding.
 fayToJsHash :: [(String, JsExp)] -> [JsStmt]
@@ -346,10 +348,10 @@ jsToFayHash :: [(String, JsExp)] -> [JsStmt]
 jsToFayHash cases = [JsExpStmt $ JsApp (JsName $ JsBuiltIn "objConcat") [JsName $ JsBuiltIn "jsToFayHash", JsObj cases]]
 
 -- | Make a JS→Fay decoder.
-emitJsToFay ::  Name -> [TyVarBind] -> [([Name], BangType)] -> Compile ()
-emitJsToFay name tyvars (explodeFields -> fieldTypes) = do
+emitJsToFay :: Name a -> [TyVarBind b] -> [([Name c],BangType d)] -> Compile ()
+emitJsToFay (unAnn -> name) (map unAnn -> tyvars) (map (unAnn *** unAnn) . explodeFields -> fieldTypes) = do
   qname <- qualify name
-  tell (mempty { writerJsToFay = [(printJSString name, translator qname)] })
+  tell (mempty { writerJsToFay = [(printJSString (unAnn name), translator qname)] })
 
   where
     translator qname =
@@ -357,7 +359,7 @@ emitJsToFay name tyvars (explodeFields -> fieldTypes) = do
             (Just $ JsNew (JsConstructor qname)
                           (map (decodeField . getIndex name tyvars) fieldTypes))
     -- Decode JS→Fay field
-    decodeField :: (Int,(Name,BangType)) -> JsExp
+    decodeField :: (Int,(N.Name,N.BangType)) -> JsExp
     decodeField (i,(fname,typ)) =
       jsToFay (SerializeUserArg i)
               (argType (bangType typ))
@@ -369,17 +371,17 @@ argTypes :: JsName
 argTypes = JsNameVar "argTypes"
 
 -- | Get the index of a name from the set of type variables bindings.
-getIndex :: Name -> [TyVarBind] -> (Name,BangType) -> (Int,(Name,BangType))
-getIndex name tyvars (sname,ty) =
+getIndex :: Name a -> [TyVarBind b] -> (Name c,BangType d) -> (Int,(N.Name,N.BangType))
+getIndex (unAnn -> name) (map unAnn -> tyvars) (unAnn -> sname,unAnn -> ty) =
   case bangType ty of
-    TyVar tyname -> case elemIndex tyname (map tyvar tyvars) of
+    TyVar _ tyname -> case elemIndex tyname (map tyvar tyvars) of
       Nothing -> error $ "unknown type variable " ++ prettyPrint tyname ++
                          " for " ++ prettyPrint name ++ "." ++ prettyPrint sname ++ "," ++
-                         " vars were: " ++ unwords (map prettyPrint tyvars)
+                         " vars were: " ++ unwords (map prettyPrint tyvars) ++ ", rest: " ++ show tyvars
       Just i -> (i,(sname,ty))
     _ -> (0,(sname,ty))
 
 -- | Extract the name from a possibly-kinded tyvar.
-tyvar :: TyVarBind -> Name
-tyvar (UnkindedVar v) = v
-tyvar (KindedVar v _) = v
+tyvar :: N.TyVarBind -> N.Name
+tyvar (UnkindedVar _ v) = v
+tyvar (KindedVar _ v _) = v

@@ -25,7 +25,9 @@ import qualified Data.ByteString.Lazy.UTF8    as UTF8
 import           Data.Default
 import           Data.List
 import           Data.String
-import           Language.Haskell.Exts.Syntax
+import qualified Fay.Exts.NoAnnotation as N
+
+import           Language.Haskell.Exts.Annotated.Syntax
 import           Prelude                      hiding (exp)
 
 --------------------------------------------------------------------------------
@@ -52,39 +54,39 @@ instance Printable JsLit where
       (JsBool b)       -> if b then "true" else "false"
 
 -- | Print (and properly encode to JS) a qualified name.
-instance Printable QName where
+instance Printable N.QName where
   printJS qname =
     case qname of
-      Qual (ModuleName "Fay$") name -> "Fay$$" +> name
-      Qual moduleName name -> moduleName +> "." +> name
-      UnQual name -> printJS name
-      Special con -> printJS con
+      Qual _ (ModuleName _ "Fay$") name -> "Fay$$" +> name
+      Qual _ moduleName name -> moduleName +> "." +> name
+      UnQual _ name -> printJS name
+      Special _ con -> printJS con
 
 -- | Print module name.
-instance Printable ModuleName where
-  printJS (ModuleName "Fay$") =
+instance Printable N.ModuleName where
+  printJS (ModuleName _ "Fay$") =
     write "Fay$"
-  printJS (ModuleName moduleName) = write $ go moduleName
+  printJS (ModuleName _ moduleName) = write $ go moduleName
 
     where go ('.':xs) = '.' : go xs
           go (x:xs) = normalizeName [x] ++ go xs
           go [] = []
 
 -- | Print special constructors (tuples, list, etc.)
-instance Printable SpecialCon where
+instance Printable N.SpecialCon where
   printJS specialCon =
-    printJS $ (Qual (ModuleName "Fay$") . Ident) $
+    printJS $ (Qual () (ModuleName () "Fay$") . Ident ()) $
       case specialCon of
-        UnitCon -> "unit"
-        Cons    -> "cons"
+        UnitCon _ -> "unit"
+        Cons    _ -> "cons"
         _       -> error $ "Special constructor not supported: " ++ show specialCon
 
 -- | Print (and properly encode) a name.
-instance Printable Name where
+instance Printable N.Name where
   printJS name = write $
     case name of
-      Ident  idn -> encodeName idn
-      Symbol sym -> encodeName sym
+      Ident  _ idn -> encodeName idn
+      Symbol _ sym -> encodeName sym
 
 -- | Print a list of statements.
 instance Printable [JsStmt] where
@@ -180,7 +182,7 @@ instance Printable JsExp where
   printJS (JsLitObj assoc) =
     "{" +> (intercalateM "," (map cons assoc)) +> "}"
       where
-        cons :: (Name, JsExp) -> Printer ()
+        cons :: (N.Name, JsExp) -> Printer ()
         cons (key,value) = "\"" +> key +> "\": " +> value
   printJS (JsFun nm params stmts ret) =
        "function"
@@ -209,7 +211,7 @@ instance Printable JsExp where
 -- | Unqualify a JsName.
 ident :: JsName -> JsName
 ident n = case n of
-  JsConstructor (Qual _ s) -> JsNameVar $ UnQual s
+  JsConstructor (Qual _ _ s) -> JsNameVar $ UnQual () s
   a -> a
 
 -- | Print one of the kinds of names.
@@ -226,16 +228,16 @@ instance Printable JsName where
       JsConstructor qname -> printCons qname
       JsBuiltIn qname     -> "Fay$$" +> printJS qname
       JsParametrizedType  -> write "type"
-      JsModuleName (ModuleName m) -> write m
+      JsModuleName (ModuleName _ m) -> write m
 
 -- | Print a constructor name given a QName.
-printCons :: QName -> Printer ()
-printCons (UnQual n) = printConsName n
-printCons (Qual (ModuleName m) n) = printJS m +> "." +> printConsName n
-printCons (Special _) = error "qname2String Special"
+printCons :: N.QName -> Printer ()
+printCons (UnQual _ n) = printConsName n
+printCons (Qual _ (ModuleName _ m) n) = printJS m +> "." +> printConsName n
+printCons (Special {}) = error "qname2String Special"
 
 -- | Print a constructor name given a Name. Helper for printCons.
-printConsName :: Name -> Printer ()
+printConsName :: N.Name -> Printer ()
 printConsName n = write "_" >> printJS n
 
 -- | Just write out strings.

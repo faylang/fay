@@ -19,15 +19,16 @@ module Fay
    where
 
 import           Fay.Compiler
-import           Fay.Compiler.Misc   (printSrcLoc)
+import           Fay.Compiler.Misc   (printSrcSpanInfo)
 import           Fay.Compiler.Packages
 import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad
 import           Data.List
-import           Language.Haskell.Exts        (prettyPrint)
-import           Language.Haskell.Exts.Syntax
+import           Language.Haskell.Exts.Annotated (prettyPrint)
+import           Language.Haskell.Exts.Annotated.Syntax
+import           Language.Haskell.Exts.SrcLoc
 import           Paths_fay
 import           System.FilePath
 
@@ -95,7 +96,7 @@ compileToModule filepath config raw with hscode = do
             , state
             )
   where
-    generateWrapped jscode (ModuleName modulename) =
+    generateWrapped jscode (ModuleName _ modulename) =
       unlines $ filter (not . null)
       [if configExportRuntime config then raw else ""
       ,jscode
@@ -124,7 +125,7 @@ showCompileError e = case e of
   UnsupportedLet -> "let not supported here"
   UnsupportedLetBinding d -> "unsupported let binding: " ++ prettyPrint d
   UnsupportedLiteral lit -> "unsupported literal syntax: " ++ prettyPrint lit
-  UnsupportedModuleSyntax m -> "unsupported module syntax" ++ prettyPrint m
+  UnsupportedModuleSyntax s m -> "unsupported module syntax in " ++ s ++ ": " ++ prettyPrint m
   UnsupportedPattern pat -> "unsupported pattern syntax: " ++ prettyPrint pat
   UnsupportedQualStmt stmt -> "unsupported list qualifier: " ++ prettyPrint stmt
   UnsupportedRecursiveDo -> "recursive `do' isn't supported"
@@ -134,11 +135,11 @@ showCompileError e = case e of
   EmptyDoBlock -> "empty `do' block"
   InvalidDoBlock -> "invalid `do' block"
   FfiNeedsTypeSig d -> "your FFI declaration needs a type signature: " ++ prettyPrint d
-  FfiFormatBadChars      srcloc cs -> printSrcLoc srcloc ++ ": invalid characters for FFI format string: " ++ show cs
-  FfiFormatNoSuchArg     srcloc i  -> printSrcLoc srcloc ++ ": no such argument in FFI format string: " ++ show i
-  FfiFormatIncompleteArg srcloc    -> printSrcLoc srcloc ++ ": incomplete `%' syntax in FFI format string"
+  FfiFormatBadChars      srcloc cs -> printSrcSpanInfo srcloc ++ ": invalid characters for FFI format string: " ++ show cs
+  FfiFormatNoSuchArg     srcloc i  -> printSrcSpanInfo srcloc ++ ": no such argument in FFI format string: " ++ show i
+  FfiFormatIncompleteArg srcloc    -> printSrcSpanInfo srcloc ++ ": incomplete `%' syntax in FFI format string"
   FfiFormatInvalidJavaScript srcloc code err ->
-    printSrcLoc srcloc ++ ":" ++
+    printSrcSpanInfo srcloc ++ ":" ++
     "\ninvalid JavaScript code in FFI format string:\n"
                                          ++ err ++ "\nin " ++ code
   Couldn'tFindImport i places ->

@@ -17,7 +17,8 @@ import Control.Monad.State
 import Data.List
 import Data.Maybe
 import Fay.Types
-import Language.Haskell.Exts (QName(..),ModuleName(..),Name(..))
+import qualified Fay.Exts.NoAnnotation as N
+import Language.Haskell.Exts.Annotated hiding (name, op, app)
 
 import Prelude hiding (exp)
 
@@ -25,7 +26,7 @@ import Prelude hiding (exp)
 -- of arguments that can be directly uncurried from a curried lambda
 -- abstraction. So \x y z -> if x then (\a -> a) else (\a -> a) has an
 -- arity of 3, not 4.
-type FuncArity = (QName,Int)
+type FuncArity = (N.QName,Int)
 
 -- | Optimize monad.
 type Optimize = State OptState
@@ -33,7 +34,7 @@ type Optimize = State OptState
 -- | State.
 data OptState = OptState
   { optStmts   :: [JsStmt]
-  , optUncurry :: [QName]
+  , optUncurry :: [N.QName]
   }
 
 -- | Run an optimizer, which may output additional statements.
@@ -109,7 +110,10 @@ collect exp =
         _ -> Nothing
     _ -> return [exp]
 
-  where isThen = (== JsName (JsNameVar (Qual (ModuleName "Fay$") (Ident "then$uncurried"))))
+  where
+    isThen (JsName (JsNameVar (Qual _ (ModuleName _ m) (Ident _ n)))) = m == "Fay$" && n == "then$uncurried"
+    isThen _ = False
+
 
 -- | Perform any top-level cross-module optimizations and GO DEEP to
 -- optimize further.
@@ -229,9 +233,9 @@ collectFuncs = (++ prim) . concatMap collectFunc where
   collectFunc (JsVar (JsNameVar name) exp) | arity > 0 = [(name,arity)]
     where arity = expArity exp
   collectFunc _ = []
-  prim = map (first (Qual (ModuleName "Fay$"))) (unary ++ binary)
-  unary = map (,1) [Ident "return"]
-  binary = map ((,2) . Ident)
+  prim = map (first (Qual () (ModuleName () "Fay$"))) (unary ++ binary)
+  unary = map (,1) [Ident () "return"]
+  binary = map ((,2) . Ident ())
                ["then","bind","mult","mult","add","sub","div"
                ,"eq","neq","gt","lt","gte","lte","and","or"]
 
@@ -241,7 +245,7 @@ expArity (JsFun _ _ _ mexp) = 1 + maybe 0 expArity mexp
 expArity _ = 0
 
 -- | Change foo(x)(y) to foo$uncurried(x,y).
-uncurryBinding :: [JsStmt] -> QName -> Maybe JsStmt
+uncurryBinding :: [JsStmt] -> N.QName -> Maybe JsStmt
 uncurryBinding stmts qname = listToMaybe (mapMaybe funBinding stmts)
   where
     funBinding stmt = case stmt of
@@ -257,13 +261,13 @@ uncurryBinding stmts qname = listToMaybe (mapMaybe funBinding stmts)
         inner -> JsFun Nothing (reverse args) [] (Just inner)
 
 -- | Rename an uncurried copy of a curried function.
-renameUncurried :: QName -> QName
+renameUncurried :: N.QName -> N.QName
 renameUncurried q = case q of
-  Qual m n -> Qual m (renameUnQual n)
-  UnQual n -> UnQual (renameUnQual n)
+  Qual _ m n -> Qual () m (renameUnQual n)
+  UnQual _ n -> UnQual () (renameUnQual n)
   s -> s
   where
     renameUnQual n = case n of
-      Ident nom -> Ident (nom ++ postfix)
-      Symbol nom -> Symbol (nom ++ postfix)
+      Ident _ nom -> Ident () (nom ++ postfix)
+      Symbol _ nom -> Symbol () (nom ++ postfix)
     postfix = "$uncurried"

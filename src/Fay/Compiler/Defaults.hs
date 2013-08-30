@@ -12,7 +12,6 @@ import Fay.Types
 import Data.Default
 import Data.Map as M
 import Data.Set as S
-import Language.Haskell.Exts.Syntax
 import Paths_fay
 
 -- | The default compiler reader value.
@@ -31,7 +30,7 @@ defaultCompileState = do
   types <- getDataFileName "src/Language/Fay/Types.hs"
   return CompileState
     {  _stateExports = M.empty
-    , stateModuleName = ModuleName "Main"
+    , stateModuleName = "Main"
     , stateRecordTypes = []
     , stateRecords = []
     , stateNewtypes = []

@@ -1,10 +1,13 @@
-{-# OPTIONS -fno-warn-orphans #-}
+{-# OPTIONS -fno-warn-orphans           #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE ViewPatterns               #-}
 
 -- | All Fay types and instances.
 
@@ -55,7 +58,10 @@ import qualified Data.Map              as M
 import           Data.Set              (Set)
 import qualified Data.Set              as S
 import           Data.String
-import           Language.Haskell.Exts
+import qualified Fay.Exts as F
+import qualified Fay.Exts.NoAnnotation as N
+import Fay.Exts.NoAnnotation (unAnn)
+import Language.Haskell.Exts.Annotated
 
 import           Fay.Compiler.ModuleScope (ModuleScope)
 import           Fay.Compiler.QName
@@ -92,32 +98,32 @@ newtype ModulePath = ModulePath { unModulePath :: [String] }
   deriving (Eq, Ord, Show)
 
 -- | Construct the complete ModulePath from a ModuleName.
-mkModulePath :: ModuleName -> ModulePath
-mkModulePath (ModuleName m) = ModulePath . splitOn "." $ m
+mkModulePath :: ModuleName a -> ModulePath
+mkModulePath (ModuleName _ m) = ModulePath . splitOn "." $ m
 
 -- | Construct intermediate module paths from a ModuleName.
 -- mkModulePaths "A.B" => [["A"], ["A","B"]]
-mkModulePaths :: ModuleName -> [ModulePath]
-mkModulePaths (ModuleName m) = map ModulePath . tail . inits . splitOn "." $ m
+mkModulePaths :: ModuleName a -> [ModulePath]
+mkModulePaths (ModuleName _ m) = map ModulePath . tail . inits . splitOn "." $ m
 
 -- | Converting a QName to a ModulePath is only relevant for constructors since
 -- they can conflict with module names.
-mkModulePathFromQName :: QName -> ModulePath
-mkModulePathFromQName (Qual (ModuleName m) n) = mkModulePath $ ModuleName $ m ++ "." ++ unname n
+mkModulePathFromQName :: QName a -> ModulePath
+mkModulePathFromQName (Qual _ (ModuleName _ m) n) = mkModulePath $ ModuleName F.noI $ m ++ "." ++ unname n
 mkModulePathFromQName _ = error "mkModulePathFromQName: Not a qualified name"
 
 -- | State of the compiler.
 data CompileState = CompileState
-  { _stateExports      :: Map ModuleName (Set QName) -- ^ Collects exports from modules
-  , stateRecordTypes   :: [(QName,[QName])]          -- ^ Map types to constructors
-  , stateRecords       :: [(QName,[QName])]          -- ^ Map constructors to fields
-  , stateNewtypes      :: [(QName, Maybe QName, Type)] -- ^ Newtype constructor, destructor, wrapped type tuple
-  , stateImported      :: [(ModuleName,FilePath)]    -- ^ Map of all imported modules and their source locations.
+  { _stateExports      :: Map N.ModuleName (Set N.QName) -- ^ Collects exports from modules
+  , stateRecordTypes   :: [(N.QName,[N.QName])]          -- ^ Map types to constructors
+  , stateRecords       :: [(N.QName,[N.QName])]          -- ^ Map constructors to fields
+  , stateNewtypes      :: [(N.QName, Maybe N.QName, N.Type)] -- ^ Newtype constructor, destructor, wrapped type tuple
+  , stateImported      :: [(N.ModuleName,FilePath)]    -- ^ Map of all imported modules and their source locations.
   , stateNameDepth     :: Integer                    -- ^ Depth of the current lexical scope.
-  , stateLocalScope    :: Set Name                   -- ^ Names in the current lexical scope.
+  , stateLocalScope    :: Set N.Name                   -- ^ Names in the current lexical scope.
   , stateModuleScope   :: ModuleScope                -- ^ Names in the module scope.
-  , stateModuleScopes  :: Map ModuleName ModuleScope
-  , stateModuleName    :: ModuleName                 -- ^ Name of the module currently being compiled.
+  , stateModuleScopes  :: Map N.ModuleName ModuleScope
+  , stateModuleName    :: N.ModuleName                 -- ^ Name of the module currently being compiled.
   , stateJsModulePaths :: Set ModulePath
   , stateUseFromString :: Bool
   } deriving (Show)
@@ -139,8 +145,8 @@ instance Monoid CompileWriter where
 -- | Configuration and globals for the compiler.
 data CompileReader = CompileReader
   { readerConfig       :: CompileConfig -- ^ The compilation configuration.
-  , readerCompileLit   :: Literal -> Compile JsExp
-  , readerCompileDecls :: Bool -> [Decl] -> Compile [JsStmt]
+  , readerCompileLit   :: F.Literal -> Compile JsExp
+  , readerCompileDecls :: Bool -> [F.Decl] -> Compile [JsStmt]
   }
 
 -- | The data-files source directory.
@@ -157,26 +163,26 @@ addedModulePath mp CompileState{..} = mp `S.member` stateJsModulePaths
 
 -- | Adds a new export to '_stateExports' for the module specified by
 -- 'stateModuleName'.
-addCurrentExport :: QName -> CompileState -> CompileState
-addCurrentExport q cs =
-    cs { _stateExports = M.insert (stateModuleName cs) qnames $ _stateExports cs}
+addCurrentExport :: QName a -> CompileState -> CompileState
+addCurrentExport (N.unAnn -> q) cs =
+    cs { _stateExports = M.insert (stateModuleName cs) qnames $ _stateExports cs }
   where
     qnames = maybe (S.singleton q) (S.insert q)
            $ M.lookup (stateModuleName cs) (_stateExports cs)
 
 -- | Get all exports for the current module.
-getCurrentExports :: CompileState -> Set QName
+getCurrentExports :: CompileState -> Set N.QName
 getCurrentExports cs = getExportsFor (stateModuleName cs) cs
 
 -- | Get exports from the current module originating from other modules.
-getNonLocalExports :: CompileState -> Set QName
+getNonLocalExports :: CompileState -> Set N.QName
 getNonLocalExports st = S.filter ((/= Just (stateModuleName st)) . qModName) . getCurrentExportsWithoutNewtypes $ st
 
 -- | Get all exports from the current module except newtypes.
-getCurrentExportsWithoutNewtypes :: CompileState -> Set QName
+getCurrentExportsWithoutNewtypes :: CompileState -> Set N.QName
 getCurrentExportsWithoutNewtypes cs = excludeNewtypes cs $ getCurrentExports cs
   where
-    excludeNewtypes :: CompileState -> Set QName -> Set QName
+    excludeNewtypes :: CompileState -> Set N.QName -> Set N.QName
     excludeNewtypes cs' names =
       let newtypes = stateNewtypes cs'
           constrs = map (\(c, _, _) -> c) newtypes
@@ -184,8 +190,8 @@ getCurrentExportsWithoutNewtypes cs = excludeNewtypes cs $ getCurrentExports cs
        in names `S.difference` (S.fromList constrs `S.union` S.fromList destrs)
 
 -- | Get all of the exported identifiers for the given module.
-getExportsFor :: ModuleName -> CompileState -> Set QName
-getExportsFor mn cs = fromMaybe S.empty $ M.lookup mn (_stateExports cs)
+getExportsFor :: ModuleName a -> CompileState -> Set N.QName
+getExportsFor (unAnn -> mn) cs = fromMaybe S.empty $ M.lookup mn (_stateExports cs)
 
 -- | Compile monad.
 newtype Compile a = Compile
@@ -237,31 +243,31 @@ class Printable a where
 
 -- | Error type.
 data CompileError
-  = ParseError SrcLoc String
-  | UnsupportedDeclaration Decl
-  | UnsupportedExportSpec ExportSpec
-  | UnsupportedExpression Exp
-  | UnsupportedFieldPattern PatField
-  | UnsupportedImport ImportDecl
+  = ParseError F.SrcLoc String
+  | UnsupportedDeclaration F.Decl
+  | UnsupportedExportSpec N.ExportSpec
+  | UnsupportedExpression F.Exp
+  | UnsupportedFieldPattern F.PatField
+  | UnsupportedImport F.ImportDecl
   | UnsupportedLet
-  | UnsupportedLetBinding Decl
-  | UnsupportedLiteral Literal
-  | UnsupportedModuleSyntax Module
-  | UnsupportedPattern Pat
-  | UnsupportedQualStmt QualStmt
+  | UnsupportedLetBinding F.Decl
+  | UnsupportedLiteral F.Literal
+  | UnsupportedModuleSyntax String F.Module
+  | UnsupportedPattern F.Pat
+  | UnsupportedQualStmt F.QualStmt
   | UnsupportedRecursiveDo
-  | UnsupportedRhs Rhs
-  | UnsupportedWhereInAlt Alt
-  | UnsupportedWhereInMatch Match
+  | UnsupportedRhs F.Rhs
+  | UnsupportedWhereInAlt F.Alt
+  | UnsupportedWhereInMatch F.Match
   | EmptyDoBlock
   | InvalidDoBlock
-  | Couldn'tFindImport ModuleName [FilePath]
-  | FfiNeedsTypeSig Decl
-  | FfiFormatBadChars SrcLoc String
-  | FfiFormatNoSuchArg SrcLoc Int
-  | FfiFormatIncompleteArg SrcLoc
-  | FfiFormatInvalidJavaScript SrcLoc String String
-  | UnableResolveQualified QName
+  | Couldn'tFindImport N.ModuleName [FilePath]
+  | FfiNeedsTypeSig F.Decl
+  | FfiFormatBadChars SrcSpanInfo String
+  | FfiFormatNoSuchArg SrcSpanInfo Int
+  | FfiFormatIncompleteArg SrcSpanInfo
+  | FfiFormatInvalidJavaScript SrcSpanInfo String String
+  | UnableResolveQualified N.QName
   | GHCError String
   deriving (Show)
 instance Error CompileError
@@ -283,9 +289,9 @@ data JsStmt
   | JsWhile JsExp [JsStmt]
   | JsUpdate JsName JsExp
   | JsSetProp JsName JsName JsExp
-  | JsSetQName QName JsExp
+  | JsSetQName N.QName JsExp
   | JsSetModule ModulePath JsExp
-  | JsSetConstructor QName JsExp
+  | JsSetConstructor N.QName JsExp
   | JsSetPropExtern JsName JsName JsExp
   | JsContinue
   | JsBlock [JsStmt]
@@ -318,7 +324,7 @@ data JsExp
   | JsNeq JsExp JsExp
   | JsInfix String JsExp JsExp -- Used to optimize *, /, +, etc
   | JsObj [(String,JsExp)]
-  | JsLitObj [(Name,JsExp)]
+  | JsLitObj [(N.Name,JsExp)]
   | JsUndefined
   | JsAnd JsExp JsExp
   | JsOr  JsExp JsExp
@@ -326,7 +332,7 @@ data JsExp
 
 -- | A name of some kind.
 data JsName
-  = JsNameVar QName
+  = JsNameVar N.QName
   | JsThis
   | JsParametrizedType
   | JsThunk
@@ -334,9 +340,9 @@ data JsName
   | JsApply
   | JsParam Integer
   | JsTmp Integer
-  | JsConstructor QName
-  | JsBuiltIn Name
-  | JsModuleName ModuleName
+  | JsConstructor N.QName
+  | JsBuiltIn N.Name
+  | JsModuleName N.ModuleName
   deriving (Eq,Show)
 
 -- | Literal value type.
@@ -362,7 +368,7 @@ data FundamentalType
  | JsType FundamentalType
  | ListType FundamentalType
  | TupleType [FundamentalType]
- | UserDefined Name [FundamentalType]
+ | UserDefined N.Name [FundamentalType]
  | Defined FundamentalType
  | Nullable FundamentalType
  -- Simple types.
@@ -379,16 +385,16 @@ data FundamentalType
    deriving (Show)
 
 -- | Helpful for some things.
-instance IsString Name where
-  fromString = Ident
+instance IsString N.Name where
+  fromString = Ident ()
 
 -- | Helpful for some things.
-instance IsString QName where
-  fromString = UnQual . Ident
+instance IsString N.QName where
+  fromString = UnQual () . Ident ()
 
 -- | Helpful for writing qualified symbols (Fay.*).
-instance IsString ModuleName where
-  fromString = ModuleName
+instance IsString N.ModuleName where
+   fromString = ModuleName ()
 
 -- | The serialization context indicates whether we're currently
 -- serializing some value or a particular field in a user-defined data

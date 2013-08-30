@@ -14,15 +14,19 @@ import Fay.Compiler.GADT
 import Fay.Compiler.Misc
 import Fay.Compiler.Pattern
 import Fay.Data.List.Extra
+import Fay.Compiler.ModuleScope (fieldDeclNames, convertFieldDecl)
 import Fay.Types
+import qualified Fay.Exts as F
+import Fay.Exts.NoAnnotation (unAnn)
+import Fay.Exts (noI)
 
 import Control.Applicative
 import Control.Monad.Error
 import Control.Monad.RWS
-import Language.Haskell.Exts
+import Language.Haskell.Exts.Annotated
 
 -- | Compile Haskell declaration.
-compileDecls :: Bool -> [Decl] -> Compile [JsStmt]
+compileDecls :: Bool -> [F.Decl] -> Compile [JsStmt]
 compileDecls toplevel decls =
   case decls of
     [] -> return []
@@ -37,14 +41,15 @@ compileDecls toplevel decls =
         scoped = if toplevel then withScope else id
 
 -- | Compile a declaration.
-compileDecl :: Bool -> Decl -> Compile [JsStmt]
+compileDecl :: Bool -> F.Decl -> Compile [JsStmt]
 compileDecl toplevel decl =
   case decl of
     pat@PatBind{} -> compilePatBind toplevel Nothing pat
-    FunBind matches -> compileFunCase toplevel matches
-    DataDecl _ DataType _ _ tyvars constructors _ -> compileDataDecl toplevel tyvars constructors
-    GDataDecl _ DataType _l _i tyvars _n decls _ -> compileDataDecl toplevel tyvars (map convertGADT decls)
-    DataDecl _ NewType  _ _ _ _ _ -> return []
+    FunBind _ matches -> compileFunCase toplevel matches
+--  DataDecl l (DataOrNew l) (Maybe (Context l)) (DeclHead l        ) [QualConDecl l] (Maybe (Deriving l))
+    DataDecl _ (DataType _ ) _                   head' constructors    _                     -> compileDataDecl toplevel (mkTyVars head') constructors
+    GDataDecl _ (DataType _) _l (mkTyVars -> tyvars) _n decls _ -> compileDataDecl toplevel tyvars (map convertGADT decls)
+    DataDecl _ (NewType _)  _ _ _ _ -> return []
     -- Just ignore type aliases and signatures.
     TypeDecl {} -> return []
     TypeSig  {} -> return []
@@ -54,31 +59,39 @@ compileDecl toplevel decl =
     DerivDecl{} -> return []
     _ -> throwError (UnsupportedDeclaration decl)
 
+
+mkTyVars :: F.DeclHead -> [F.TyVarBind]
+mkTyVars (DHead _ _ binds) = binds
+mkTyVars (DHInfix _ t1 _ t2) = [t1, t2]
+mkTyVars (DHParen _ dh) = mkTyVars dh
+
 -- | Convenient instance.
-instance CompilesTo Decl [JsStmt] where compileTo = compileDecl True
+instance CompilesTo F.Decl [JsStmt] where compileTo = compileDecl True
 
 -- | Compile a top-level pattern bind.
-compilePatBind :: Bool -> Maybe Type -> Decl -> Compile [JsStmt]
+compilePatBind :: Bool -> Maybe F.Type -> F.Decl -> Compile [JsStmt]
 compilePatBind toplevel sig pat =
   case pat of
-    PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) (BDecls []) ->
+    PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
       case ffiExp rhs of
         Just formatstr -> case sig of
           Just sig -> compileFFI srcloc ident formatstr sig
           Nothing  -> throwError (FfiNeedsTypeSig pat)
         _ -> compileUnguardedRhs srcloc toplevel ident rhs
-    PatBind srcloc (PVar ident) Nothing (UnGuardedRhs rhs) bdecls ->
-      compileUnguardedRhs srcloc toplevel ident (Let bdecls rhs)
-    PatBind srcloc pat Nothing (UnGuardedRhs rhs) _bdecls -> do
+    PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) (Just bdecls) ->
+      compileUnguardedRhs srcloc toplevel ident (Let noI bdecls rhs)
+--    PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
+--      compileUnguardedRhs srcloc toplevel ident (Let noI (BDecls noI []) rhs)
+    PatBind srcloc pat Nothing (UnGuardedRhs _ rhs) _bdecls -> do
       exp <- compileExp rhs
       name <- withScopedTmpJsName return
       [JsIf t b1 []] <- compilePat (JsName name) pat []
-      let err = [throw (prettyPrint srcloc ++ "Irrefutable pattern failed for pattern: " ++ prettyPrint pat) (JsList [])]
+      let err = [throw (printSrcSpanInfo srcloc ++ "Irrefutable pattern failed for pattern: " ++ prettyPrint pat) (JsList [])]
       return [JsVar name exp, JsIf t b1 err]
     _ -> throwError (UnsupportedDeclaration pat)
 
 -- | Compile a normal simple pattern binding.
-compileUnguardedRhs :: SrcLoc -> Bool -> Name -> Exp -> Compile [JsStmt]
+compileUnguardedRhs :: SrcSpanInfo -> Bool -> F.Name -> F.Exp -> Compile [JsStmt]
 compileUnguardedRhs _srcloc toplevel ident rhs = do
   unless toplevel $ bindVar ident
   withScope $ do
@@ -87,22 +100,22 @@ compileUnguardedRhs _srcloc toplevel ident rhs = do
     return [bind]
 
 -- | Compile a data declaration (or a GADT, latter is converted to former).
-compileDataDecl :: Bool -> [TyVarBind] -> [QualConDecl] -> Compile [JsStmt]
+compileDataDecl :: Bool -> [F.TyVarBind] -> [F.QualConDecl] -> Compile [JsStmt]
 compileDataDecl toplevel tyvars constructors =
   fmap concat $
     forM constructors $ \(QualConDecl srcloc _ _ condecl) ->
       case condecl of
-        ConDecl name types  -> do
-          let fields =  map (Ident . ("slot"++) . show . fst) . zip [1 :: Integer ..] $ types
-              fields' = zip (map return fields) types
-          cons <- makeConstructor name fields
-          func <- makeFunc name fields
-          emitFayToJs name tyvars fields'
-          emitJsToFay name tyvars fields'
+        ConDecl _ name types -> do
+          let slots =  map (Ident () . ("slot"++) . show . fst) $ zip [1 :: Int ..] types
+              fields = zip (map return slots) types
+          cons <- makeConstructor name slots
+          func <- makeFunc name slots
+          emitFayToJs name tyvars fields
+          emitJsToFay name tyvars fields
           emitCons cons
           return [func]
-        InfixConDecl t1 name t2 -> do
-          let slots = ["slot1","slot2"]
+        InfixConDecl _ t1 name t2 -> do
+          let slots = [Ident () "slot1",Ident () "slot2"]
               fields = zip (map return slots) [t1, t2]
           cons <- makeConstructor name slots
           func <- makeFunc name slots
@@ -110,13 +123,13 @@ compileDataDecl toplevel tyvars constructors =
           emitJsToFay name tyvars fields
           emitCons cons
           return [func]
-        RecDecl name fields' -> do
-          let fields = concatMap fst fields'
+        RecDecl _ name fields' -> do
+          let fields = concatMap fieldDeclNames fields'
           cons <- makeConstructor name fields
           func <- makeFunc name fields
           funs <- makeAccessors srcloc fields
-          emitFayToJs name tyvars fields'
-          emitJsToFay name tyvars fields'
+          emitFayToJs name tyvars (map convertFieldDecl fields')
+          emitJsToFay name tyvars (map convertFieldDecl fields')
           emitCons cons
           return (func : funs)
 
@@ -124,8 +137,8 @@ compileDataDecl toplevel tyvars constructors =
     emitCons cons = tell (mempty { writerCons = [cons] })
 
     -- Creates a constructor _RecConstr for a Record
-    makeConstructor :: Name -> [Name] -> Compile JsStmt
-    makeConstructor name (map (JsNameVar . UnQual) -> fields) = do
+    makeConstructor :: Name a -> [Name b] -> Compile JsStmt
+    makeConstructor (unAnn -> name) (map (JsNameVar . UnQual () . unAnn) -> fields) = do
       qname <- qualify name
       return $
         JsSetConstructor qname $
@@ -135,8 +148,8 @@ compileDataDecl toplevel tyvars constructors =
                 Nothing
 
     -- Creates a function to initialize the record by regular application
-    makeFunc :: Name -> [Name] -> Compile JsStmt
-    makeFunc name (map (JsNameVar . UnQual) -> fields) = do
+    makeFunc :: Name a -> [Name b] -> Compile JsStmt
+    makeFunc (unAnn -> name) (map (JsNameVar . UnQual () . unAnn) -> fields) = do
       let fieldExps = map JsName fields
       qname <- qualify name
       let mp = mkModulePathFromQName qname
@@ -152,22 +165,24 @@ compileDataDecl toplevel tyvars constructors =
           return $ JsSetQName qname func
 
     -- Creates getters for a RecDecl's values
-    makeAccessors :: SrcLoc -> [Name] -> Compile [JsStmt]
+    makeAccessors :: SrcSpanInfo -> [F.Name] -> Compile [JsStmt]
     makeAccessors _srcloc fields =
-      forM fields $ \name ->
+      forM fields $ \(unAnn -> name) ->
            bindToplevel toplevel
                         name
                         (JsFun Nothing
                                [JsNameVar "x"]
                                []
                                (Just (thunk (JsGetProp (force (JsName (JsNameVar "x")))
-                                                       (JsNameVar (UnQual name))))))
+                                                       (JsNameVar (UnQual () name))))))
 
 
 -- | Compile a function which pattern matches (causing a case analysis).
-compileFunCase :: Bool -> [Match] -> Compile [JsStmt]
+compileFunCase :: Bool -> [F.Match] -> Compile [JsStmt]
 compileFunCase _toplevel [] = return []
-compileFunCase toplevel matches@(Match _ name argslen _ _ _:_) = do
+compileFunCase toplevel (InfixMatch l pat name pats rhs binds : rest) =
+  compileFunCase toplevel (Match l name (pat:pats) rhs binds : rest)
+compileFunCase toplevel matches@(Match _ name argslen _ _:_) = do
   pats <- fmap optimizePatConditions (mapM compileCase matches)
   bindVar name
   bind <- bindToplevel toplevel
@@ -178,10 +193,12 @@ compileFunCase toplevel matches@(Match _ name argslen _ _ _:_) = do
   return [bind]
   where args = zipWith const uniqueNames argslen
 
-        isWildCardMatch (Match _ _ pats _ _ _) = all isWildCardPat pats
+        isWildCardMatch (Match _ _ pats _ _) = all isWildCardPat pats
 
-        compileCase :: Match -> Compile [JsStmt]
-        compileCase match@(Match _ _ pats _ rhs _) =
+        compileCase :: F.Match -> Compile [JsStmt]
+        compileCase (InfixMatch l pat name pats rhs binds) =
+          compileCase $ Match l name (pat:pats) rhs binds
+        compileCase match@(Match _ _ pats rhs _) =
           withScope $ do
             whereDecls' <- whereDecls match
             generateScope $ zipWithM (\arg pat -> compilePat (JsName arg) pat []) args pats
@@ -204,8 +221,9 @@ compileFunCase toplevel matches@(Match _ name argslen _ _ _:_) = do
                   body
                   (zip args pats)
 
-        whereDecls :: Match -> Compile [Decl]
-        whereDecls (Match _ _ _ _ _ (BDecls decls)) = return decls
+        whereDecls :: F.Match -> Compile [F.Decl]
+        whereDecls (Match _ _ _ _ (Just (BDecls _ decls))) = return decls
+        whereDecls (Match _ _ _ _ Nothing) = return []
         whereDecls match = throwError (UnsupportedWhereInMatch match)
 
         basecase :: [JsStmt]
@@ -215,6 +233,6 @@ compileFunCase toplevel matches@(Match _ name argslen _ _ _:_) = do
                                   (JsList (map JsName args))]
 
 -- | Compile a right-hand-side expression.
-compileRhs :: Rhs -> Compile (Either JsStmt JsExp)
-compileRhs (UnGuardedRhs exp) = Right <$> compileExp exp
-compileRhs (GuardedRhss rhss) = Left <$> compileGuards rhss
+compileRhs :: F.Rhs -> Compile (Either JsStmt JsExp)
+compileRhs (UnGuardedRhs _ exp) = Right <$> compileExp exp
+compileRhs (GuardedRhss _ rhss) = Left <$> compileGuards rhss

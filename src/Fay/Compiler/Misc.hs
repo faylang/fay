@@ -70,9 +70,11 @@ uniqueNames = map JsParam [1::Integer ..]
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
 tryResolveName :: Show l => QName (Scoped l) -> Compile (Maybe N.QName)
 tryResolveName special@Special{} = return . Just $ unAnn special
-tryResolveName (Qual (Scoped ni _) _ name) =
+tryResolveName (Qual (Scoped ni _) _ name) = f ni name
+tryResolveName (UnQual (Scoped ni _) name) = f ni name
+f ni name =
  case ni of
-    GlobalValue nx -> return $ Just $ gname2Qname $ origGName $ sv_origName nx
+    GlobalValue nx -> return $ replaceWithBuiltIns $ gname2Qname  $ origGName $ sv_origName nx
     LocalValue _ -> return $ Just $ UnQual () (unAnn name)
     GlobalType _ -> return $ Nothing
     TypeVar _ -> return $ Nothing
@@ -82,36 +84,13 @@ tryResolveName (Qual (Scoped ni _) _ name) =
     Export _ -> return $ Nothing
     None -> return $ Nothing
     ScopeError _ -> return $ Nothing
---  ModuleScope.resolveName q <$> gets stateModuleScope
-tryResolveName (UnQual _ (Ident _ "Fay")) = return $ Just $ UnQual () $ Ident () "Fay"
-tryResolveName u@(UnQual (Scoped ni _) n) = let name = unAnn n in do
-  hname <- case ni of
-    GlobalValue nx -> return $ Just $ gname2Qname $ origGName $ sv_origName nx
-    LocalValue _ -> return $ Just $ UnQual () name
-    GlobalType _ -> return $ Nothing
-    TypeVar _ -> return $ Nothing
-    Binder -> return $ Nothing
-    Import _ -> return $ Nothing
-    ImportPart _ -> return $ Nothing
-    Export _ -> return $ Nothing
-    None -> return $ Nothing
-    ScopeError _ -> do
-      when (name == "print") $ do
-        liftIO . print =<< gets stateModuleName
-        liftIO $ print ni
-      return $ Nothing
-  case hname of
-    Just x -> return $ Just x
-    _ -> do
-      names <- gets stateLocalScope
-      env <- gets stateModuleScope
-      if S.member name names
-        then return $ Just (UnQual () name)
-        else maybe (Just <$> qualify name) (return . Just) $ ModuleScope.resolveName u env
 
 gname2Qname :: GName -> N.QName
 gname2Qname (GName "" s) = UnQual () $ Ident () s
 gname2Qname (GName m s) = Qual () (ModuleName () m) $ Ident () s
+
+replaceWithBuiltIns :: N.QName -> Maybe N.QName
+replaceWithBuiltIns n = ModuleScope.findPrimOp n <|> return n
 
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
 -- Use this when a resolution failure is a bug.

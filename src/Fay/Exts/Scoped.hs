@@ -1,8 +1,11 @@
-module Fay.Exts.NoAnnotation where
+module Fay.Exts.Scoped where
 
 import qualified Language.Haskell.Exts.Annotated as A
+import qualified Fay.Exts as F
+import qualified Language.Haskell.Names as HN
 
-type X = ()
+
+type X = HN.Scoped A.SrcSpanInfo
 
 type Alt = A.Alt X
 type BangType = A.BangType X
@@ -34,11 +37,8 @@ type QualStmt = A.QualStmt X
 type Rhs = A.Rhs X
 type SpecialCon = A.SpecialCon X
 type SrcLoc = A.SrcLoc
-type SrcSpan = A.SrcSpan
-type SrcSpanInfo = A.SrcSpanInfo
 type Stmt = A.Stmt X
 type TyVarBind = A.TyVarBind X
 type Type = A.Type X
 
-unAnn :: Functor f => f a -> f ()
-unAnn = fmap (const ())
+noI = HN.Scoped HN.None F.noI

@@ -147,6 +147,7 @@ showCompileError e = case e of
     "searched in these places: " ++ intercalate ", " places
   UnableResolveQualified qname -> "unable to resolve qualified names " ++ prettyPrint qname
   GHCError s -> "ghc: " ++ s
+--  FayScopeError s -> "scope error: " ++ s
 
 -- | Get the JS runtime source.
 getRuntime :: IO String

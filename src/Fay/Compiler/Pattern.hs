@@ -9,9 +9,8 @@ module Fay.Compiler.Pattern where
 import Fay.Compiler.Misc
 import Fay.Compiler.QName
 import Fay.Types
-import qualified Fay.Exts as F
+import qualified Fay.Exts.Scoped as S
 import Fay.Exts.NoAnnotation (unAnn)
-import Fay.Exts (noI)
 
 import Control.Monad.Error
 import Control.Monad.State
@@ -21,7 +20,7 @@ import Data.Maybe
 import Language.Haskell.Exts.Annotated
 
 -- | Compile the given pattern against the given expression.
-compilePat :: JsExp -> F.Pat -> [JsStmt] -> Compile [JsStmt]
+compilePat :: JsExp -> S.Pat -> [JsStmt] -> Compile [JsStmt]
 compilePat exp pat body =
   case pat of
     PVar _ name       -> compilePVar name exp body
@@ -41,22 +40,22 @@ compilePat exp pat body =
     pat             -> throwError (UnsupportedPattern pat)
 
 -- | Compile a pattern variable e.g. x.
-compilePVar :: F.Name -> JsExp -> [JsStmt] -> Compile [JsStmt]
+compilePVar :: S.Name -> JsExp -> [JsStmt] -> Compile [JsStmt]
 compilePVar (unAnn -> name) exp body = do
   bindVar name
   return $ JsVar (JsNameVar (UnQual () name)) exp : body
 
 -- | Compile a record field pattern.
-compilePatFields :: JsExp -> F.QName -> [F.PatField] -> [JsStmt] -> Compile [JsStmt]
+compilePatFields :: JsExp -> S.QName -> [S.PatField] -> [JsStmt] -> Compile [JsStmt]
 compilePatFields exp name pats body = do
     c <- liftM (++ body) (compilePats' [] pats)
     qname <- unsafeResolveName name
     return [JsIf (force exp `JsInstanceOf` JsConstructor qname) c []]
   where -- compilePats' collects field names that had already been matched so that
         -- wildcard generates code for the rest of the fields.
-        compilePats' :: [F.QName] -> [F.PatField] -> Compile [JsStmt]
-        compilePats' names (PFieldPun _ name:xs) =
-          compilePats' names (PFieldPat noI (UnQual noI name) (PVar noI name):xs)
+        compilePats' :: [S.QName] -> [S.PatField] -> Compile [JsStmt]
+        compilePats' names (PFieldPun ann name:xs) =
+          compilePats' names (PFieldPat ann (UnQual ann name) (PVar ann name):xs)
 
         compilePats' names (PFieldPat _ fieldname (PVar _ (unAnn -> varName)):xs) = do
           r <- compilePats' (fieldname : names) xs
@@ -81,7 +80,7 @@ compilePatFields exp name pats body = do
         compilePats' _ (pat:_) = throwError (UnsupportedFieldPattern pat)
 
 -- | Compile a literal value from a pattern match.
-compilePLit :: JsExp -> F.Literal -> [JsStmt] -> Compile [JsStmt]
+compilePLit :: JsExp -> S.Literal -> [JsStmt] -> Compile [JsStmt]
 compilePLit exp literal body = do
   c <- ask
   lit <- readerCompileLit c literal
@@ -99,19 +98,19 @@ compilePLit exp literal body = do
              JsApp (JsName (JsBuiltIn "equal")) [a,b]
 
 -- | Compile as binding in pattern match
-compilePAsPat :: JsExp -> F.Name -> F.Pat -> [JsStmt] -> Compile [JsStmt]
+compilePAsPat :: JsExp -> S.Name -> S.Pat -> [JsStmt] -> Compile [JsStmt]
 compilePAsPat exp (unAnn -> name) pat body = do
   bindVar name
   p <- compilePat exp pat body
   return $ JsVar (JsNameVar $ UnQual () name) exp : p
 
 -- | Compile a pattern match on a newtype.
-compileNewtypePat :: [F.Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
+compileNewtypePat :: [S.Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
 compileNewtypePat [pat] exp body = compilePat exp pat body
 compileNewtypePat ps _ _ = error $ "compileNewtypePat: Should be impossible (this is a bug). Got: " ++ show ps
 
 -- | Compile a pattern application.
-compilePApp :: F.QName -> [F.Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
+compilePApp :: S.QName -> [S.Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
 compilePApp cons pats exp body = do
   let forcedExp = force exp
   let boolIf b = return [JsIf (JsEq forcedExp (JsLit (JsBool b))) body []]
@@ -138,7 +137,7 @@ compilePApp cons pats exp body = do
                    []]
 
 -- | Compile a pattern list.
-compilePList :: [F.Pat] -> [JsStmt] -> JsExp -> Compile [JsStmt]
+compilePList :: [S.Pat] -> [JsStmt] -> JsExp -> Compile [JsStmt]
 compilePList [] body exp =
   return [JsIf (JsEq (force exp) JsNull) body []]
 compilePList pats body exp = do
@@ -155,7 +154,7 @@ compilePList pats body exp = do
                []]
 
 -- | Compile an infix pattern (e.g. cons and tuples.)
-compileInfixPat :: JsExp -> F.Pat -> [JsStmt] -> Compile [JsStmt]
+compileInfixPat :: JsExp -> S.Pat -> [JsStmt] -> Compile [JsStmt]
 compileInfixPat exp pat@(PInfixApp _ left (Special _ cons) right) body =
   case cons of
     Cons _ ->

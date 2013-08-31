@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE ViewPatterns               #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 -- | All Fay types and instances.
 
@@ -18,6 +19,8 @@ module Fay.Types
   ,JsName(..)
   ,CompileError(..)
   ,Compile(..)
+  ,AllTheState
+  ,Compile2
   ,CompilesTo(..)
   ,Printable(..)
   ,Fay
@@ -43,7 +46,6 @@ module Fay.Types
   ,addModulePath
   ,addedModulePath
   ) where
-
 import           Control.Applicative
 import           Control.Monad.Error    (Error, ErrorT, MonadError)
 import           Control.Monad.Identity (Identity)
@@ -59,10 +61,12 @@ import           Data.Set              (Set)
 import qualified Data.Set              as S
 import           Data.String
 import qualified Fay.Exts as F
+import qualified Fay.Exts.Scoped as S
 import qualified Fay.Exts.NoAnnotation as N
 import Fay.Exts.NoAnnotation (unAnn)
 import Language.Haskell.Exts.Annotated
-
+import Language.Haskell.Names (Symbols)
+import Distribution.HaskellSuite.Modules
 import           Fay.Compiler.ModuleScope (ModuleScope)
 import           Fay.Compiler.QName
 import           Paths_fay
@@ -145,8 +149,8 @@ instance Monoid CompileWriter where
 -- | Configuration and globals for the compiler.
 data CompileReader = CompileReader
   { readerConfig       :: CompileConfig -- ^ The compilation configuration.
-  , readerCompileLit   :: F.Literal -> Compile JsExp
-  , readerCompileDecls :: Bool -> [F.Decl] -> Compile [JsStmt]
+  , readerCompileLit   :: S.Literal -> Compile JsExp
+  , readerCompileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
   }
 
 -- | The data-files source directory.
@@ -195,7 +199,11 @@ getExportsFor (unAnn -> mn) cs = fromMaybe S.empty $ M.lookup mn (_stateExports 
 
 -- | Compile monad.
 newtype Compile a = Compile
-  { unCompile :: RWST CompileReader CompileWriter CompileState (ErrorT CompileError IO) a -- ^ Run the compiler.
+  { unCompile :: (RWST CompileReader
+                      CompileWriter
+                      CompileState
+                      (ErrorT CompileError (ModuleT (ModuleInfo Compile) IO)))
+                   a -- ^ Uns the compiler
   }
   deriving (MonadState CompileState
            ,MonadError CompileError
@@ -204,7 +212,30 @@ newtype Compile a = Compile
            ,MonadIO
            ,Monad
            ,Functor
-           ,Applicative)
+           ,Applicative
+           )
+
+type AllTheState a = Either CompileError (a, CompileState, CompileWriter)
+
+type Compile2 a = ModuleT Symbols
+                          IO
+                          (AllTheState a)
+
+
+--instance MonadReader r m => MonadReader r (ModuleT m) where
+--    ask   = lift ask
+--    local = mapListT . local
+--    reader = lift . reader
+
+instance MonadModule Compile where
+  type ModuleInfo Compile = Symbols
+  lookupInCache        = lifting . lookupInCache
+  insertInCache n m    = lifting $ insertInCache n m
+  getPackages          = lifting $ getPackages
+  readModuleInfo fps n = lifting $ readModuleInfo fps n
+
+lifting :: ModuleT Symbols IO a -> Compile a
+lifting = Compile . lift . lift
 
 -- | Just a convenience class to generalize the parsing/printing of
 -- various types of syntax.
@@ -243,32 +274,33 @@ class Printable a where
 
 -- | Error type.
 data CompileError
-  = ParseError F.SrcLoc String
-  | UnsupportedDeclaration F.Decl
+  = ParseError S.SrcLoc String
+  | UnsupportedDeclaration S.Decl
   | UnsupportedExportSpec N.ExportSpec
-  | UnsupportedExpression F.Exp
-  | UnsupportedFieldPattern F.PatField
+  | UnsupportedExpression S.Exp
+  | UnsupportedFieldPattern S.PatField
   | UnsupportedImport F.ImportDecl
   | UnsupportedLet
-  | UnsupportedLetBinding F.Decl
-  | UnsupportedLiteral F.Literal
+  | UnsupportedLetBinding S.Decl
+  | UnsupportedLiteral S.Literal
   | UnsupportedModuleSyntax String F.Module
-  | UnsupportedPattern F.Pat
-  | UnsupportedQualStmt F.QualStmt
+  | UnsupportedPattern S.Pat
+  | UnsupportedQualStmt S.QualStmt
   | UnsupportedRecursiveDo
-  | UnsupportedRhs F.Rhs
-  | UnsupportedWhereInAlt F.Alt
-  | UnsupportedWhereInMatch F.Match
+  | UnsupportedRhs S.Rhs
+  | UnsupportedWhereInAlt S.Alt
+  | UnsupportedWhereInMatch S.Match
   | EmptyDoBlock
   | InvalidDoBlock
   | Couldn'tFindImport N.ModuleName [FilePath]
-  | FfiNeedsTypeSig F.Decl
+  | FfiNeedsTypeSig S.Decl
   | FfiFormatBadChars SrcSpanInfo String
   | FfiFormatNoSuchArg SrcSpanInfo Int
   | FfiFormatIncompleteArg SrcSpanInfo
   | FfiFormatInvalidJavaScript SrcSpanInfo String String
   | UnableResolveQualified N.QName
   | GHCError String
+--  | FayScopeError String
   deriving (Show)
 instance Error CompileError
 

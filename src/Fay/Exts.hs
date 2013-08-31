@@ -40,10 +40,10 @@ type Stmt = A.Stmt X
 type TyVarBind = A.TyVarBind X
 type Type = A.Type X
 
-moduleName :: A.Module X -> ModuleName
+moduleName :: A.SrcInfo a => A.Module a -> A.ModuleName a
 moduleName (A.Module _ (Just (A.ModuleHead _ n _ _)) _ _ _) = n
-moduleName (A.Module _ Nothing                     _ _ _) = A.ModuleName noI "Main"
-moduleName m = error $ ("moduleName: " ++ A.prettyPrint m)
+moduleName (A.Module a Nothing                     _ _ _) = A.ModuleName a "Main"
+moduleName m = error $ "moduleName: " ++ A.prettyPrint m
 
 moduleExports :: A.Module X -> Maybe (A.ExportSpecList X)
 moduleExports (A.Module _ (Just (A.ModuleHead _ _ _ e)) _ _ _) = e

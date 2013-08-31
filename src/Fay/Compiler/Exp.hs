@@ -15,10 +15,9 @@ import Fay.Compiler.Pattern
 import Fay.Compiler.Print
 import Fay.Compiler.FFI             (compileFFIExp)
 import Fay.Types
-import qualified Fay.Exts as F
-import Fay.Exts (noI)
 import Fay.Exts.NoAnnotation (unAnn)
-
+import Fay.Exts.Scoped (noI)
+import qualified Fay.Exts.Scoped as S
 import Control.Applicative
 import Control.Monad.Error
 import Control.Monad.RWS
@@ -26,7 +25,7 @@ import Data.Maybe
 import Language.Haskell.Exts.Annotated
 
 -- | Compile Haskell expression.
-compileExp :: F.Exp -> Compile JsExp
+compileExp :: S.Exp -> Compile JsExp
 compileExp exp =
   case exp of
     Paren _ exp                     -> compileExp exp
@@ -55,25 +54,25 @@ compileExp exp =
     RecConstr _ name fieldUpdates   -> compileRecConstr name fieldUpdates
     RecUpdate _ rec  fieldUpdates   -> compileRecUpdate rec fieldUpdates
     ListComp _ exp stmts            -> compileExp =<< desugarListComp exp stmts
-    ExpTypeSig srcloc exp sig     ->
+    ExpTypeSig _ exp sig            ->
       case ffiExp exp of
         Nothing -> compileExp exp
-        Just formatstr -> compileFFIExp srcloc Nothing formatstr sig
+        Just formatstr -> compileFFIExp Nothing formatstr sig
 
     exp -> throwError (UnsupportedExpression exp)
 
 -- | Compiling instance.
-instance CompilesTo F.Exp JsExp where compileTo = compileExp
+instance CompilesTo S.Exp JsExp where compileTo = compileExp
 
 -- | Turn a tuple constructor into a normal lambda expression.
-tupleConToFunction :: Boxed -> Int -> F.Exp
+tupleConToFunction :: Boxed -> Int -> S.Exp
 tupleConToFunction b n = Lambda noI params body
   where names  = take n (Ident noI . pure <$> ['a'..])
         params = PVar noI <$> names
         body   = Tuple noI b (Var noI . UnQual noI <$> names)
 
 -- | Compile variable.
-compileVar :: F.QName -> Compile JsExp
+compileVar :: S.QName -> Compile JsExp
 compileVar qname = do
   case qname of
     Special _ (TupleCon _ b n) -> compileExp (tupleConToFunction b n)
@@ -82,7 +81,7 @@ compileVar qname = do
       return (JsName (JsNameVar qname))
 
 -- | Compile Haskell literal.
-compileLit :: F.Literal -> Compile JsExp
+compileLit :: S.Literal -> Compile JsExp
 compileLit lit =
   case lit of
     Char _ ch _      -> return (JsLit (JsChar ch))
@@ -98,7 +97,7 @@ compileLit lit =
     lit           -> throwError (UnsupportedLiteral lit)
 
 -- | Compile simple application.
-compileApp :: F.Exp -> F.Exp -> Compile JsExp
+compileApp :: S.Exp -> S.Exp -> Compile JsExp
 compileApp exp1@(Con _ q) exp2 =
   maybe (compileApp' exp1 exp2) (const $ compileExp exp2) =<< lookupNewtypeConst q
 compileApp exp1@(Var _ q) exp2 =
@@ -107,7 +106,7 @@ compileApp exp1 exp2 =
   compileApp' exp1 exp2
 
 -- | Helper for compileApp.
-compileApp' :: F.Exp -> F.Exp -> Compile JsExp
+compileApp' :: S.Exp -> S.Exp -> Compile JsExp
 compileApp' exp1 exp2 = do
   flattenApps <- config configFlattenApps
   jsexp1 <- compileExp exp1
@@ -117,7 +116,7 @@ compileApp' exp1 exp2 = do
     -- In this approach code ends up looking like this:
     -- a(a(a(a(a(a(a(a(a(a(L)(c))(b))(0))(0))(y))(t))(a(a(F)(3*a(a(d)+a(a(f)/20))))*a(a(f)/2)))(140+a(f)))(y))(t)})
     -- Which might be OK for speed, but increases the JS stack a fair bit.
-    method1 :: JsExp -> F.Exp -> Compile JsExp
+    method1 :: JsExp -> S.Exp -> Compile JsExp
     method1 exp1 exp2 =
       JsApp <$> (forceFlatName <$> return exp1)
             <*> fmap return (compileExp exp2)
@@ -128,7 +127,7 @@ compileApp' exp1 exp2 = do
     -- In this approach code ends up looking like this:
     -- d(O,a,b,0,0,B,w,e(d(I,3*e(e(c)+e(e(g)/20))))*e(e(g)/2),140+e(g),B,w)}),d(K,g,e(c)+0.05))
     -- Which should be much better for the stack and readability, but probably not great for speed.
-    method2 :: JsExp -> F.Exp -> Compile JsExp
+    method2 :: JsExp -> S.Exp -> Compile JsExp
     method2 exp1 exp2 = fmap flatten $
       JsApp <$> return exp1
             <*> fmap return (compileExp exp2)
@@ -140,11 +139,11 @@ compileApp' exp1 exp2 = do
         flatten x = x
 
 -- | Compile a negate application
-compileNegApp :: F.Exp -> Compile JsExp
+compileNegApp :: S.Exp -> Compile JsExp
 compileNegApp e = JsNegApp . force <$> compileExp e
 
 -- | Compile an infix application, optimizing the JS cases.
-compileInfixApp :: F.Exp -> F.QOp -> F.Exp -> Compile JsExp
+compileInfixApp :: S.Exp -> S.QOp -> S.Exp -> Compile JsExp
 compileInfixApp exp1 ap exp2 = compileExp (App noI (App noI (Var noI op) exp1) exp2)
 
   where op = getOp ap
@@ -152,7 +151,7 @@ compileInfixApp exp1 ap exp2 = compileExp (App noI (App noI (Var noI op) exp1) e
         getOp (QConOp _ op) = op
 
 -- | Compile a let expression.
-compileLet :: [F.Decl] -> F.Exp -> Compile JsExp
+compileLet :: [S.Decl] -> S.Exp -> Compile JsExp
 compileLet decls exp =
   withScope $ do
     generateScope $ mapM compileLetDecl decls
@@ -161,7 +160,7 @@ compileLet decls exp =
     return (JsApp (JsFun Nothing [] [] (Just $ stmtsThunk $ concat binds ++ [JsEarlyReturn body])) [])
 
 -- | Compile let declaration.
-compileLetDecl :: F.Decl -> Compile [JsStmt]
+compileLetDecl :: S.Decl -> Compile [JsStmt]
 compileLetDecl decl = do
   compileDecls <- asks readerCompileDecls
   case decl of
@@ -171,20 +170,20 @@ compileLetDecl decl = do
     _              -> throwError (UnsupportedLetBinding decl)
 
 -- | Compile a list expression.
-compileList :: [F.Exp] -> Compile JsExp
+compileList :: [S.Exp] -> Compile JsExp
 compileList xs = do
   exps <- mapM compileExp xs
   return (makeList exps)
 
 -- | Compile an if.
-compileIf :: F.Exp -> F.Exp -> F.Exp -> Compile JsExp
+compileIf :: S.Exp -> S.Exp -> S.Exp -> Compile JsExp
 compileIf cond conseq alt =
   JsTernaryIf <$> fmap force (compileExp cond)
               <*> compileExp conseq
               <*> compileExp alt
 
 -- | Compile case expressions.
-compileCase :: F.Exp -> [F.Alt] -> Compile JsExp
+compileCase :: S.Exp -> [S.Alt] -> Compile JsExp
 compileCase exp alts = do
   exp <- compileExp exp
   withScopedTmpJsName $ \tmpName -> do
@@ -199,7 +198,7 @@ compileCase exp alts = do
             [exp]
 
 -- | Compile the given pattern against the given expression.
-compilePatAlt :: JsExp -> F.Alt -> Compile [JsStmt]
+compilePatAlt :: JsExp -> S.Alt -> Compile [JsStmt]
 compilePatAlt exp alt@(Alt _ pat rhs wheres) = case wheres of
   Just (BDecls _ (_ : _)) -> throwError (UnsupportedWhereInAlt alt)
   Just (IPBinds _ (_ : _)) -> throwError (UnsupportedWhereInAlt alt)
@@ -209,7 +208,7 @@ compilePatAlt exp alt@(Alt _ pat rhs wheres) = case wheres of
     compilePat exp pat [alt]
 
 -- | Compile a guarded alt.
-compileGuardedAlt :: F.GuardedAlts -> Compile JsStmt
+compileGuardedAlt :: S.GuardedAlts -> Compile JsStmt
 compileGuardedAlt alt =
   case alt of
     UnGuardedAlt _ exp -> JsEarlyReturn <$> compileExp exp
@@ -218,7 +217,7 @@ compileGuardedAlt alt =
     altToRhs (GuardedAlt l s e) = GuardedRhs l s e
 
 -- | Compile guards
-compileGuards :: [F.GuardedRhs] -> Compile JsStmt
+compileGuards :: [S.GuardedRhs] -> Compile JsStmt
 compileGuards ((GuardedRhs _ (Qualifier _ (Var _ (UnQual _ (Ident _ "otherwise"))):_) exp):_) =
   (\e -> JsIf (JsLit $ JsBool True) [JsEarlyReturn e] []) <$> compileExp exp
 compileGuards (GuardedRhs _ (Qualifier _ guard:_) exp : rest) =
@@ -232,13 +231,13 @@ compileGuards (GuardedRhs _ (Qualifier _ guard:_) exp : rest) =
 compileGuards rhss = throwError . UnsupportedRhs . GuardedRhss noI $ rhss
 
 -- | Compile a do block.
-compileDoBlock :: [F.Stmt] -> Compile JsExp
+compileDoBlock :: [S.Stmt] -> Compile JsExp
 compileDoBlock stmts = do
   doblock <- foldM compileStmt Nothing (reverse stmts)
   maybe (throwError EmptyDoBlock) compileExp doblock
 
 -- | Compile a lambda.
-compileLambda :: [F.Pat] -> F.Exp -> Compile JsExp
+compileLambda :: [S.Pat] -> S.Exp -> Compile JsExp
 compileLambda pats exp =
   withScope $ do
     generateScope $ generateStatements JsNull
@@ -258,48 +257,48 @@ compileLambda pats exp =
                 (reverse (zip uniqueNames pats))
 
 -- | Desugar left sections to lambdas.
-desugarLeftSection :: F.Exp -> F.QOp -> Compile F.Exp
+desugarLeftSection :: S.Exp -> S.QOp -> Compile S.Exp
 desugarLeftSection e o = withScopedTmpName $ \tmp ->
     return (Lambda noI [PVar noI tmp] (InfixApp noI e o (Var noI (UnQual noI tmp))))
 
 -- | Desugar left sections to lambdas.
-desugarRightSection :: F.QOp -> F.Exp -> Compile F.Exp
+desugarRightSection :: S.QOp -> S.Exp -> Compile S.Exp
 desugarRightSection o e = withScopedTmpName $ \tmp ->
     return (Lambda noI [PVar noI tmp] (InfixApp noI (Var noI (UnQual noI tmp)) o e))
 
 -- | Compile [e1..] arithmetic sequences.
-compileEnumFrom :: F.Exp -> Compile JsExp
+compileEnumFrom :: S.Exp -> Compile JsExp
 compileEnumFrom i = do
   e <- compileExp i
-  name <- unsafeResolveName $ UnQual () $ Ident () "enumFrom"
+  name <- unsafeResolveName $ UnQual noI $ Ident noI "enumFrom"
   return (JsApp (JsName (JsNameVar name)) [e])
 
 -- | Compile [e1..e3] arithmetic sequences.
-compileEnumFromTo :: F.Exp -> F.Exp -> Compile JsExp
+compileEnumFromTo :: S.Exp -> S.Exp -> Compile JsExp
 compileEnumFromTo i i' = do
   f <- compileExp i
   t <- compileExp i'
-  name <- unsafeResolveName $ UnQual () $ Ident () "enumFromTo"
+  name <- unsafeResolveName $ UnQual noI $ Ident noI "enumFromTo"
   cfg <- config id
   return $ case optEnumFromTo cfg f t of
     Just s -> s
     _ -> JsApp (JsApp (JsName (JsNameVar name)) [f]) [t]
 
 -- | Compile [e1,e2..] arithmetic sequences.
-compileEnumFromThen :: F.Exp -> F.Exp -> Compile JsExp
+compileEnumFromThen :: S.Exp -> S.Exp -> Compile JsExp
 compileEnumFromThen a b = do
   fr <- compileExp a
   th <- compileExp b
-  name <- unsafeResolveName $ UnQual () $ Ident () "enumFromThen"
+  name <- unsafeResolveName $ UnQual noI $ Ident noI "enumFromThen"
   return (JsApp (JsApp (JsName (JsNameVar name)) [fr]) [th])
 
 -- | Compile [e1,e2..e3] arithmetic sequences.
-compileEnumFromThenTo :: F.Exp -> F.Exp -> F.Exp -> Compile JsExp
+compileEnumFromThenTo :: S.Exp -> S.Exp -> S.Exp -> Compile JsExp
 compileEnumFromThenTo a b z = do
   fr <- compileExp a
   th <- compileExp b
   to <- compileExp z
-  name <- unsafeResolveName $ UnQual () $ Ident () "enumFromThenTo"
+  name <- unsafeResolveName $ UnQual noI $ Ident noI "enumFromThenTo"
   cfg <- config id
   return $ case optEnumFromThenTo cfg fr th to of
     Just s -> s
@@ -307,14 +306,14 @@ compileEnumFromThenTo a b z = do
 
 -- | Compile a record construction with named fields
 -- | GHC will warn on uninitialized fields, they will be undefined in JS.
-compileRecConstr :: F.QName -> [F.FieldUpdate] -> Compile JsExp
-compileRecConstr (unAnn -> name) fieldUpdates = do
+compileRecConstr :: S.QName -> [S.FieldUpdate] -> Compile JsExp
+compileRecConstr name fieldUpdates = do
     -- var obj = new $_Type()
     qname <- unsafeResolveName name
-    let record = JsVar (JsNameVar name) (JsNew (JsConstructor qname) [])
+    let record = JsVar (JsNameVar (unAnn name)) (JsNew (JsConstructor qname) [])
     setFields <- liftM concat (forM fieldUpdates (updateStmt name))
-    return $ JsApp (JsFun Nothing [] (record:setFields) (Just (JsName (JsNameVar name)))) []
-  where updateStmt :: QName a -> F.FieldUpdate -> Compile [JsStmt]
+    return $ JsApp (JsFun Nothing [] (record:setFields) (Just (JsName (JsNameVar (unAnn name))))) []
+  where updateStmt :: QName a -> S.FieldUpdate -> Compile [JsStmt]
         updateStmt (unAnn -> o) (FieldUpdate _ (unAnn -> field) value) = do
           exp <- compileExp value
           return [JsSetProp (JsNameVar o) (JsNameVar field) exp]
@@ -330,7 +329,7 @@ compileRecConstr (unAnn -> name) fieldUpdates = do
         updateStmt _ u = error ("updateStmt: " ++ show u)
 
 -- | Compile a record update.
-compileRecUpdate :: F.Exp -> [F.FieldUpdate] -> Compile JsExp
+compileRecUpdate :: S.Exp -> [S.FieldUpdate] -> Compile JsExp
 compileRecUpdate rec fieldUpdates = do
     record <- force <$> compileExp rec
     let copyName = UnQual () $ Ident () "$_record_to_update"
@@ -338,7 +337,7 @@ compileRecUpdate rec fieldUpdates = do
                      (JsRawExp ("Object.create(" ++ printJSString record ++ ")"))
     setFields <- forM fieldUpdates (updateExp copyName)
     return $ JsApp (JsFun Nothing [] (copy:setFields) (Just (JsName (JsNameVar copyName)))) []
-  where updateExp :: QName a -> F.FieldUpdate -> Compile JsStmt
+  where updateExp :: QName a -> S.FieldUpdate -> Compile JsStmt
         updateExp (unAnn -> copyName) (FieldUpdate _ (unAnn -> field) value) =
           JsSetProp (JsNameVar copyName) (JsNameVar field) <$> compileExp value
         updateExp (unAnn -> copyName) (FieldPun _ (unAnn -> name)) =
@@ -351,7 +350,7 @@ compileRecUpdate rec fieldUpdates = do
         updateExp _ FieldWildcard{} = error "unsupported update: FieldWildcard"
 
 -- | Desugar list comprehensions.
-desugarListComp :: F.Exp -> [F.QualStmt] -> Compile F.Exp
+desugarListComp :: S.Exp -> [S.QualStmt] -> Compile S.Exp
 desugarListComp e [] =
     return (List noI [ e ])
 desugarListComp e (QualStmt _ (Generator _ p e2) : stmts) = do
@@ -375,7 +374,7 @@ makeList :: [JsExp] -> JsExp
 makeList exps = JsApp (JsName $ JsBuiltIn "list") [JsList exps]
 
 -- | Compile a statement of a do block.
-compileStmt :: Maybe F.Exp -> F.Stmt -> Compile (Maybe F.Exp)
+compileStmt :: Maybe S.Exp -> S.Stmt -> Compile (Maybe S.Exp)
 compileStmt inner stmt =
   case inner of
     Nothing -> initStmt
@@ -397,11 +396,11 @@ compileStmt inner stmt =
             LetStmt _ _ -> throwError UnsupportedLet
             RecStmt{} -> throwError UnsupportedRecursiveDo
 
-        compileGenerator srcloc pat inner exp = do
-          let body = Lambda srcloc [pat] inner
-          return (Just (InfixApp noI
+        compileGenerator s pat inner exp = do
+          let body = Lambda s [pat] inner
+          return (Just (InfixApp s
                                  exp
-                                 (QVarOp noI (UnQual noI (Symbol noI ">>=")))
+                                 (QVarOp s (UnQual s (Symbol s ">>=")))
                                  body))
 
 -- | Optimize short literal [e1..e3] arithmetic sequences.

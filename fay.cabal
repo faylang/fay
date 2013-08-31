@@ -358,6 +358,7 @@ library
                      , Fay.Convert
                      , Fay.Data.List.Extra
                      , Fay.Exts
+                     , Fay.Exts.Scoped
                      , Fay.Exts.NoAnnotation
                      , Fay.FFI
                      , Fay.System.Directory.Extra
@@ -391,6 +392,8 @@ library
                    , directory
                    , filepath
                    , ghc-paths
+                   , haskell-packages
+                   , haskell-names
                    , haskell-src-exts >= 1.14
                    , language-ecmascript >= 0.15 && < 1.0
                    , mtl

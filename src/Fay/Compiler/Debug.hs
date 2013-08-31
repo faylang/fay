@@ -6,7 +6,7 @@ module Fay.Compiler.Debug where
 
 import Fay.Compiler.Defaults
 import Fay.Compiler
-import Fay.Compiler.Misc (parseResult)
+import Fay.Compiler.Misc (parseResult, topRunCompile)
 import Fay.Types
 
 import Control.Monad.Error
@@ -25,7 +25,7 @@ compileTestAst :: (Show from,Show to,CompilesTo from to)
 compileTestAst cfg with from = do
   state <- defaultCompileState
   reader <- defaultCompileReader cfg
-  out <- runCompile reader
+  out <- topRunCompile reader
              state
              (parseResult (throwError . uncurry ParseError)
                           with

@@ -17,10 +17,10 @@ module Fay.Compiler.FFI
 import Fay.Compiler.Misc
 import Fay.Compiler.Print           (printJSString)
 import Fay.Compiler.QName
-import qualified Fay.Exts as F
 import qualified Fay.Exts.NoAnnotation as N
 import Fay.Exts.NoAnnotation (unAnn)
 import Fay.Types
+import qualified Fay.Exts.Scoped as S
 
 import Control.Arrow ((***))
 import Control.Monad.Error
@@ -39,48 +39,48 @@ import Prelude                      hiding (exp, mod)
 import Safe
 
 -- | Compile an FFI call.
-compileFFI :: SrcSpanInfo -- ^ Location of the original FFI decl.
-           -> F.Name  -- ^ Name of the to-be binding.
+compileFFI :: S.Name  -- ^ Name of the to-be binding.
            -> String -- ^ The format string.
-           -> F.Type   -- ^ Type signature.
+           -> S.Type   -- ^ Type signature.
            -> Compile [JsStmt]
-compileFFI srcSpanInfo (unAnn -> name) formatstr (unAnn -> sig) =
+compileFFI (unAnn -> name) formatstr sig =
   -- substitute newtypes with their child types before calling
   -- real compileFFI
-  compileFFI' =<< rmNewtys (unAnn sig)
+  compileFFI' =<< rmNewtys sig
 
-  where rmNewtys :: N.Type -> Compile N.Type
-        rmNewtys (TyForall () b c t) = TyForall () b c <$> rmNewtys t
-        rmNewtys (TyFun () t1 t2)    = TyFun () <$> rmNewtys t1 <*> rmNewtys t2
-        rmNewtys (TyTuple () b tl)   = TyTuple () b <$> mapM rmNewtys tl
-        rmNewtys (TyList () t)       = TyList () <$> rmNewtys t
-        rmNewtys (TyApp () t1 t2)    = TyApp () <$> rmNewtys t1 <*> rmNewtys t2
-        rmNewtys t@TyVar{}          = return t
-        rmNewtys (TyCon () qname)    = do
+  where rmNewtys :: S.Type -> Compile N.Type
+        rmNewtys (TyForall _ b c t) = TyForall () (fmap (map unAnn) b) (fmap unAnn c) <$> rmNewtys t
+        rmNewtys (TyFun _ t1 t2)    = TyFun () <$> rmNewtys t1 <*> rmNewtys t2
+        rmNewtys (TyTuple _ b tl)   = TyTuple () b <$> mapM rmNewtys tl
+        rmNewtys (TyList _ t)       = TyList () <$> rmNewtys t
+        rmNewtys (TyApp _ t1 t2)    = TyApp () <$> rmNewtys t1 <*> rmNewtys t2
+        rmNewtys t@TyVar{}          = return (unAnn t)
+        rmNewtys (TyCon _ qname)    = do
           newty <- lookupNewtypeConst qname
           return $ case newty of
-                     Nothing     -> TyCon () qname
+                     Nothing     -> TyCon () (unAnn qname)
                      Just (_,ty) -> ty
-        rmNewtys (TyParen a t)      = TyParen a <$> rmNewtys t
-        rmNewtys (TyInfix a t1 q t2)= flip (TyInfix a) q <$> rmNewtys t1 <*> rmNewtys t2
-        rmNewtys (TyKind a t k)     = flip (TyKind a) k <$> rmNewtys t
+        rmNewtys (TyParen _ t)      = TyParen () <$> rmNewtys t
+        rmNewtys (TyInfix _ t1 q t2)= flip (TyInfix ()) (unAnn q) <$> rmNewtys t1 <*> rmNewtys t2
+        rmNewtys (TyKind _ t k)     = flip (TyKind ()) (unAnn k) <$> rmNewtys t
 
         compileFFI' :: N.Type -> Compile [JsStmt]
         compileFFI' sig' = do
-          fun <- compileFFIExp srcSpanInfo (Just name) formatstr sig'
+          fun <- compileFFIExp (Just name) formatstr sig'
           stmt <- bindToplevel True name fun
           return [stmt]
 
 -- | Compile an FFI expression (also used when compiling top level definitions).
-compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> (Type a) -> Compile JsExp
-compileFFIExp srcSpanInfo (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
+compileFFIExp :: Maybe (Name a) -> String -> (Type a) -> Compile JsExp
+compileFFIExp (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
   let name = fromMaybe "<exp>" nameopt
-  inner <- formatFFI srcSpanInfo formatstr (zip params funcFundamentalTypes)
+  inner <- formatFFI formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.expression (prettyPrint name) (printJSString (wrapReturn inner)) of
-    Left err -> throwError (FfiFormatInvalidJavaScript srcSpanInfo inner (show err))
+    -- TODO undefined
+    Left err -> throwError (FfiFormatInvalidJavaScript undefined inner (show err))
     Right exp  -> do
       config' <- config id
-      when (configGClosure config') $ warnDotUses srcSpanInfo inner exp
+      when (configGClosure config') $ warnDotUses undefined inner exp
       return (body inner)
 
   where body inner = foldr wrapParam (wrapReturn inner) params
@@ -304,11 +304,10 @@ typeArity t = case t of
   _              -> 0
 
 -- | Format the FFI  format string with the given arguments.
-formatFFI :: SrcSpanInfo                -- ^ Location of the original FFI decl.
-          -> String                     -- ^ The format string.
+formatFFI :: String                     -- ^ The format string.
           -> [(JsName,FundamentalType)] -- ^ Arguments.
           -> Compile String             -- ^ The JS code.
-formatFFI srcSpanInfo formatstr args = go formatstr where
+formatFFI formatstr args = go formatstr where
   go ('%':'*':xs) = do
     these <- mapM inject (zipWith const [1..] args)
     rest <- go xs
@@ -316,10 +315,10 @@ formatFFI srcSpanInfo formatstr args = go formatstr where
   go ('%':'%':xs) = do
     rest <- go xs
     return ('%' : rest)
-  go ['%'] = throwError (FfiFormatIncompleteArg srcSpanInfo)
+  go ['%'] = throwError (FfiFormatIncompleteArg undefined)
   go ('%':(span isDigit -> (op,xs))) =
     case readMay op of
-     Nothing -> throwError (FfiFormatBadChars srcSpanInfo op)
+     Nothing -> throwError (FfiFormatBadChars undefined op)
      Just n -> do
        this <- inject n
        rest <- go xs
@@ -330,7 +329,7 @@ formatFFI srcSpanInfo formatstr args = go formatstr where
 
   inject n =
     case listToMaybe (drop (n-1) args) of
-      Nothing -> throwError (FfiFormatNoSuchArg srcSpanInfo n)
+      Nothing -> throwError (FfiFormatNoSuchArg undefined n)
       Just (arg,typ) ->
         return (printJSString (fayToJs SerializeAnywhere typ (JsName arg)))
 

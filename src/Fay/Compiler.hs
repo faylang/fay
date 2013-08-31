@@ -22,6 +22,7 @@ module Fay.Compiler
   ,parseFay)
   where
 
+import Language.Haskell.Names
 import           Fay.Compiler.Config
 import           Fay.Compiler.Decl
 import           Fay.Compiler.Defaults
@@ -62,7 +63,7 @@ compileViaStr :: (Show from,Show to,CompilesTo from to)
 compileViaStr filepath config with from = do
   cs <- defaultCompileState
   rs <- defaultCompileReader config
-  runCompile rs
+  topRunCompile rs
              cs
              (parseResult (throwError . uncurry ParseError)
                           (fmap (\x -> execState (runPrinter (printJS x)) printConfig) . with)
@@ -77,9 +78,9 @@ compileToAst :: (Show from,Show to,CompilesTo from to)
               -> CompileState
               -> (from -> Compile to)
               -> String
-              -> IO (Either CompileError (to,CompileState,CompileWriter))
+              -> Compile (AllTheState to) -- IO (Either CompileError (to,CompileState,CompileWriter))
 compileToAst filepath reader state with from =
-  runCompile reader
+  Compile . lift . lift $ runCompile reader
              state
              (parseResult (throwError . uncurry ParseError)
                           with
@@ -133,7 +134,7 @@ compileModule :: FilePath -> String -> Compile [JsStmt]
 compileModule filepath contents = do
   state <- get
   reader <- ask
-  result <- io $ compileToAst filepath reader state compileModuleFromAST contents
+  result <- compileToAst filepath reader state compileModuleFromAST contents
   case result of
     Right (stmts,state,writer) -> do
       modify $ \s -> s { stateImported      = stateImported state
@@ -157,7 +158,9 @@ compileModule filepath contents = do
 
 -- | Compile a parse HSE module.
 compileModuleFromAST :: F.Module -> Compile [JsStmt]
-compileModuleFromAST mod@(Module _ _ pragmas imports decls) =
+compileModuleFromAST mod'@(Module _ _ pragmas imports _) = do
+  mod@(Module _ _ _ _ decls) <- annotateModule Haskell2010 [] mod'
+  let modName = unAnn $ F.moduleName mod
   withModuleScope $ do
     imported <- fmap concat (mapM compileImport imports)
     modify $ \s -> s { stateModuleName = modName
@@ -178,8 +181,6 @@ compileModuleFromAST mod@(Module _ _ pragmas imports decls) =
       else if not exportStdlib && anStdlibModule modName
               then []
               else stmts
-  where
-    modName = unAnn $ F.moduleName mod
 compileModuleFromAST mod = throwError (UnsupportedModuleSyntax "compileModuleFromAST" mod)
 
 hasLanguagePragmas :: [String] -> [F.ModulePragma] -> Bool

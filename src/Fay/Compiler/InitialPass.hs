@@ -18,7 +18,8 @@ import           Fay.Types
 import qualified Fay.Exts as F
 import qualified Fay.Exts.NoAnnotation as N
 import Fay.Exts.NoAnnotation (unAnn)
-
+import qualified Language.Haskell.Names as HN
+import Distribution.HaskellSuite.Modules
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
@@ -35,6 +36,9 @@ initialPass mod@(Module _ _ _pragmas imports decls) =
                      , stateModuleScope = findTopLevelNames modName decls
                      }
     forM_ imports compileImport
+--    liftIO $ putStrLn $ "computing interfaces for: " ++ show (unAnn modName)
+    res <- HN.getInterfaces Haskell2010 [] [mod]
+--    liftIO $ print res
     forM_ decls scanRecordDecls
     forM_ decls scanNewtypeDecls
     case modExports of
@@ -65,20 +69,19 @@ compileWith :: (Show from,Parseable from)
             -> CompileState
             -> (from -> Compile ())
             -> String
-            -> Compile (Either CompileError ((),CompileState,CompileWriter))
+            -> Compile (AllTheState ())
 compileWith filepath r st with from =
-  io $ runCompile r
-                  st
-                  (parseResult (throwError . uncurry ParseError)
-                  with
-                  (parseFay filepath from))
+  Compile . lift . lift $ runCompile r
+             st
+             (parseResult (throwError . uncurry ParseError)
+             with
+             (parseFay filepath from))
 
 -- | Don't re-import the same modules.
 unlessImported :: ModuleName a
                -> (N.QName -> Compile Bool)
                -> (FilePath -> String -> Compile ())
                -> Compile ()
-unlessImported (ModuleName _ "Fay.Types") _ _ = return ()
 unlessImported name importFilter importIt = do
   isImported <- lookup (unAnn name) <$> gets stateImported
   case isImported of

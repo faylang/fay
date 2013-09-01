@@ -8,12 +8,14 @@ module Fay.Compiler.ModuleScope
   (ModuleScope
   ,bindAsLocals
   ,findTopLevelNames
-  ,resolveName
   ,moduleLocals
   ,findPrimOp
   ,convertFieldDecl -- TODO temp location
   ,fieldDeclNames -- TODO temp location
+  ,resolvePrimOp
   ) where
+
+import Debug.Trace
 
 import           Fay.Compiler.GADT
 import qualified Fay.Exts as F
@@ -47,24 +49,6 @@ instance Monoid ModuleScope where
 instance Default ModuleScope where
   def = mempty
 
--- | Find the path of a locally bound name
--- Returns special values in the "Fay$" module for primOps
-resolveName :: QName a -> ModuleScope -> Maybe N.QName
-resolveName (unAnn -> q) (ModuleScope binds) = case M.lookup q binds of -- lookup in the module environment.
-
-  -- something pointing to prelude, is it a primop?
-  Just q'@(Qual _ (ModuleName _ "Prelude") n) -> case M.lookup n envPrimOpsMap of
-    Just x  -> Just x  -- A primop which looks like it's imported from prelude.
-    Nothing -> Just q' -- Regular prelude import, leave it as is.
-
-  -- No matches in the current environment, so it may be a primop if it's unqualified.
-  -- If Nothing is returned from either of the branches it means that there is
-  -- no primop and nothing in env scope so GHC would have given an error.
-  Nothing -> case q of
-    UnQual _ n -> M.lookup n envPrimOpsMap
-    _        -> Nothing
-  j -> j -- Non-prelude import that was found in the env
-
 -- | Bind a list of names into the local scope
 -- Right now all bindings are made unqualified
 bindAsLocals :: [N.QName] -> ModuleScope -> ModuleScope
@@ -94,30 +78,39 @@ moduleLocals mod (ModuleScope binds) = filter isLocal . M.elems $ binds
 --
 -- So e.g. will compile to (*) Fay$$mult, which is in runtime.js.
 envPrimOpsMap :: Map N.Name N.QName
+-- TODO These should not be Ident
 envPrimOpsMap = M.fromList
-  [ (Symbol () ">>",     Qual () (ModuleName () "Fay$") (Ident () "then"))
-  , (Symbol () ">>=",    Qual () (ModuleName () "Fay$") (Ident () "bind"))
-  , (Ident  () "return", Qual () (ModuleName () "Fay$") (Ident () "return"))
-  , (Ident  () "force",  Qual () (ModuleName () "Fay$") (Ident () "force"))
-  , (Ident  () "seq",    Qual () (ModuleName () "Fay$") (Ident () "seq"))
-  , (Symbol ()  "*",     Qual () (ModuleName () "Fay$") (Ident () "mult"))
-  , (Symbol ()  "+",     Qual () (ModuleName () "Fay$") (Ident () "add"))
-  , (Symbol ()  "-",     Qual () (ModuleName () "Fay$") (Ident () "sub"))
-  , (Symbol ()  "/",     Qual () (ModuleName () "Fay$") (Ident () "divi"))
-  , (Symbol ()  "==",    Qual () (ModuleName () "Fay$") (Ident () "eq"))
-  , (Symbol ()  "/=",    Qual () (ModuleName () "Fay$") (Ident () "neq"))
-  , (Symbol ()  ">",     Qual () (ModuleName () "Fay$") (Ident () "gt"))
-  , (Symbol ()  "<",     Qual () (ModuleName () "Fay$") (Ident () "lt"))
-  , (Symbol ()  ">=",    Qual () (ModuleName () "Fay$") (Ident () "gte"))
-  , (Symbol ()  "<=",    Qual () (ModuleName () "Fay$") (Ident () "lte"))
-  , (Symbol ()  "&&",    Qual () (ModuleName () "Fay$") (Ident () "and"))
-  , (Symbol ()  "||",    Qual () (ModuleName () "Fay$") (Ident () "or"))
+  [ (Ident () ">>",     Qual () (ModuleName () "Fay$") (Ident () "then"))
+  , (Ident () ">>=",    Qual () (ModuleName () "Fay$") (Ident () "bind"))
+  , (Ident () "return", Qual () (ModuleName () "Fay$") (Ident () "return"))
+  , (Ident () "force",  Qual () (ModuleName () "Fay$") (Ident () "force"))
+  , (Ident () "seq",    Qual () (ModuleName () "Fay$") (Ident () "seq"))
+  , (Ident ()  "*",     Qual () (ModuleName () "Fay$") (Ident () "mult"))
+  , (Ident ()  "+",     Qual () (ModuleName () "Fay$") (Ident () "add"))
+  , (Ident ()  "-",     Qual () (ModuleName () "Fay$") (Ident () "sub"))
+  , (Ident ()  "/",     Qual () (ModuleName () "Fay$") (Ident () "divi"))
+  , (Ident ()  "==",    Qual () (ModuleName () "Fay$") (Ident () "eq"))
+  , (Ident ()  "/=",    Qual () (ModuleName () "Fay$") (Ident () "neq"))
+  , (Ident ()  ">",     Qual () (ModuleName () "Fay$") (Ident () "gt"))
+  , (Ident ()  "<",     Qual () (ModuleName () "Fay$") (Ident () "lt"))
+  , (Ident ()  ">=",    Qual () (ModuleName () "Fay$") (Ident () "gte"))
+  , (Ident ()  "<=",    Qual () (ModuleName () "Fay$") (Ident () "lte"))
+  , (Ident ()  "&&",    Qual () (ModuleName () "Fay$") (Ident () "and"))
+  , (Ident ()  "||",    Qual () (ModuleName () "Fay$") (Ident () "or"))
   ]
 
 -- | Lookup a primop that was resolved to a Prelude definition.
 findPrimOp :: N.QName -> Maybe N.QName
-findPrimOp (Qual _ (ModuleName _ "Prelude") s) = M.lookup s envPrimOpsMap
+findPrimOp q@(Qual _ (ModuleName _ "Prelude") s) = M.lookup s envPrimOpsMap
 findPrimOp _ = Nothing
+
+resolvePrimOp :: QName a -> Maybe N.QName
+resolvePrimOp (unAnn -> q) = case q of
+  (Qual _ (ModuleName _ "Prelude") _) -> findPrimOp q
+  (UnQual _ n) -> findPrimOp $ Qual () (ModuleName () "Prelude") n
+  _ -> Nothing
+
+
 
 --------------------------------------------------------------------------------
 -- AST

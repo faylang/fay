@@ -70,11 +70,20 @@ uniqueNames = map JsParam [1::Integer ..]
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
 tryResolveName :: Show l => QName (Scoped l) -> Compile (Maybe N.QName)
 tryResolveName special@Special{} = return . Just $ unAnn special
-tryResolveName (Qual (Scoped ni _) _ name) = f ni name
-tryResolveName (UnQual (Scoped ni _) name) = f ni name
-f ni name =
- case ni of
-    GlobalValue nx -> return $ replaceWithBuiltIns $ gname2Qname  $ origGName $ sv_origName nx
+tryResolveName q@(Qual _ (ModuleName _ "Fay$") _) = return $ Just $ unAnn q
+tryResolveName q@(Qual (Scoped ni _) _ name) = case ni of
+    GlobalValue nx -> return $ replaceWithBuiltIns $ gname2Qname $ origGName $ sv_origName nx
+    LocalValue _ -> return $ Nothing
+    GlobalType _ -> return $ Nothing
+    TypeVar _ -> return $ Nothing
+    Binder -> return $ Nothing
+    Import _ -> return $ Nothing
+    ImportPart _ -> return $ Nothing
+    Export _ -> return $ Nothing
+    None -> return $ Nothing
+    ScopeError _ -> return $ Nothing
+tryResolveName q@(UnQual (Scoped ni _) name) = case ni of
+    GlobalValue nx -> return $ replaceWithBuiltIns $ gname2Qname $ origGName $ sv_origName nx
     LocalValue _ -> return $ Just $ UnQual () (unAnn name)
     GlobalType _ -> return $ Nothing
     TypeVar _ -> return $ Nothing
@@ -85,9 +94,14 @@ f ni name =
     None -> return $ Nothing
     ScopeError _ -> return $ Nothing
 
+
 gname2Qname :: GName -> N.QName
 gname2Qname (GName "" s) = UnQual () $ Ident () s
 gname2Qname (GName m s) = Qual () (ModuleName () m) $ Ident () s
+
+gname2QnameS :: Scoped l -> GName -> QName (Scoped l)
+gname2QnameS ann (GName "" s) = UnQual ann $ Ident ann s
+gname2QnameS ann (GName m s) = Qual ann (ModuleName ann m) $ Ident ann s
 
 replaceWithBuiltIns :: N.QName -> Maybe N.QName
 replaceWithBuiltIns n = ModuleScope.findPrimOp n <|> return n

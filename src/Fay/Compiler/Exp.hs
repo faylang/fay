@@ -11,6 +11,7 @@
 module Fay.Compiler.Exp where
 
 import Fay.Compiler.Misc
+import Fay.Compiler.ModuleScope
 import Fay.Compiler.Pattern
 import Fay.Compiler.Print
 import Fay.Compiler.FFI             (compileFFIExp)
@@ -390,7 +391,7 @@ compileStmt inner stmt =
           case stmt of
             Generator loc pat exp -> compileGenerator loc pat inner exp
             Qualifier _ exp -> return (Just (InfixApp noI exp
-                                                    (QVarOp noI (UnQual noI (Symbol noI ">>")))
+                                                      (QVarOp noI (Qual noI (ModuleName noI "Fay$") (Ident noI "then")))
                                                     inner))
             LetStmt _ (BDecls _ binds) -> return (Just (Let noI (BDecls noI binds) inner))
             LetStmt _ _ -> throwError UnsupportedLet
@@ -400,7 +401,7 @@ compileStmt inner stmt =
           let body = Lambda s [pat] inner
           return (Just (InfixApp s
                                  exp
-                                 (QVarOp s (UnQual s (Symbol s ">>=")))
+                                 (QVarOp noI (Qual noI (ModuleName noI "Fay$") (Symbol s "bind")))
                                  body))
 
 -- | Optimize short literal [e1..e3] arithmetic sequences.

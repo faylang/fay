@@ -30,6 +30,7 @@ defaultCompileState = do
   types <- getDataFileName "src/Language/Fay/Types.hs"
   return CompileState
     {  _stateExports = M.empty
+    , stateInterfaces = M.empty
     , stateModuleName = "Main"
     , stateRecordTypes = []
     , stateRecords = []

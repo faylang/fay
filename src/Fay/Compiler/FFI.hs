@@ -76,8 +76,8 @@ compileFFIExp (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
   let name = fromMaybe "<exp>" nameopt
   inner <- formatFFI formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.expression (prettyPrint name) (printJSString (wrapReturn inner)) of
-    -- TODO undefined
-    Left err -> throwError (FfiFormatInvalidJavaScript undefined inner (show err))
+    -- TODO undefined/error
+    Left err -> throwError (FfiFormatInvalidJavaScript (error "invalidjavascript") inner (show err))
     Right exp  -> do
       config' <- config id
       when (configGClosure config') $ warnDotUses undefined inner exp

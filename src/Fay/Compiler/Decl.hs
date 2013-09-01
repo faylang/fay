@@ -1,28 +1,29 @@
 {-# OPTIONS -fno-warn-orphans -fno-warn-name-shadowing #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 -- | Compile declarations.
 
 module Fay.Compiler.Decl where
 
-import Fay.Compiler.Exp
-import Fay.Compiler.FFI
-import Fay.Compiler.GADT
-import Fay.Compiler.Misc
-import Fay.Compiler.Pattern
-import Fay.Data.List.Extra
-import Fay.Compiler.ModuleScope (fieldDeclNames, convertFieldDecl)
-import Fay.Types
-import qualified Fay.Exts.Scoped as S
-import Fay.Exts.NoAnnotation (unAnn)
+import           Fay.Compiler.Exp
+import           Fay.Compiler.FFI
+import           Fay.Compiler.GADT
+import           Fay.Compiler.Misc
+import           Fay.Compiler.ModuleScope        (convertFieldDecl,
+                                                  fieldDeclNames)
+import           Fay.Compiler.Pattern
+import           Fay.Data.List.Extra
+import           Fay.Exts.NoAnnotation           (unAnn)
+import qualified Fay.Exts.Scoped                 as S
+import           Fay.Types
 
-import Control.Applicative
-import Control.Monad.Error
-import Control.Monad.RWS
-import Language.Haskell.Exts.Annotated
+import           Control.Applicative
+import           Control.Monad.Error
+import           Control.Monad.RWS
+import           Language.Haskell.Exts.Annotated
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]

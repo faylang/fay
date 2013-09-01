@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections              #-}
+{-# LANGUAGE TupleSections #-}
 
 -- | Dealing with Cabal packages in Fay's own special way.
 

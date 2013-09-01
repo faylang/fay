@@ -4,9 +4,9 @@
 
 module Fay.Compiler.Config where
 
-import Data.Default
-import Data.Maybe
-import Fay.Types
+import           Data.Default
+import           Data.Maybe
+import           Fay.Types
 
 -- | Get all include directories without the package mapping.
 configDirectoryIncludePaths :: CompileConfig -> [FilePath]

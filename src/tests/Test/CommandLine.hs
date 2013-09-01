@@ -2,7 +2,7 @@
 
 module Test.CommandLine (tests) where
 
-import Fay.System.Process.Extra
+import           Fay.System.Process.Extra
 
 import           Control.Applicative
 import           Data.Maybe

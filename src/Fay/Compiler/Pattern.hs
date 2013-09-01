@@ -1,23 +1,23 @@
 {-# OPTIONS -fno-warn-name-shadowing #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 -- | Compile pattern matches.
 
 module Fay.Compiler.Pattern where
 
-import Fay.Compiler.Misc
-import Fay.Compiler.QName
-import Fay.Types
-import qualified Fay.Exts.Scoped as S
-import Fay.Exts.NoAnnotation (unAnn)
+import           Fay.Compiler.Misc
+import           Fay.Compiler.QName
+import           Fay.Exts.NoAnnotation           (unAnn)
+import qualified Fay.Exts.Scoped                 as S
+import           Fay.Types
 
-import Control.Monad.Error
-import Control.Monad.State
-import Control.Monad.Reader
-import Data.List
-import Data.Maybe
-import Language.Haskell.Exts.Annotated
+import           Control.Monad.Error
+import           Control.Monad.Reader
+import           Control.Monad.State
+import           Data.List
+import           Data.Maybe
+import           Language.Haskell.Exts.Annotated
 
 -- | Compile the given pattern against the given expression.
 compilePat :: JsExp -> S.Pat -> [JsStmt] -> Compile [JsStmt]

@@ -1,44 +1,40 @@
 {-# OPTIONS -Wall -fno-warn-orphans  #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 -- | Miscellaneous functions used throughout the compiler.
 
 module Fay.Compiler.Misc where
 
-import Distribution.HaskellSuite.Modules
+import qualified Fay.Compiler.ModuleScope          as ModuleScope
 import           Fay.Control.Monad.IO
-import qualified Fay.Compiler.ModuleScope        as ModuleScope
+import qualified Fay.Exts                          as F
+import           Fay.Exts.NoAnnotation             (unAnn)
+import qualified Fay.Exts.NoAnnotation             as N
+import qualified Fay.Exts.Scoped                   as S
 import           Fay.Types
-import qualified Fay.Exts as F
-import qualified Fay.Exts.NoAnnotation as N
-import qualified Fay.Exts.Scoped as S
-import Fay.Exts.NoAnnotation (unAnn)
-import Data.Char (isAlpha)
+
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
+import           Data.Char                         (isAlpha)
 import           Data.List
+import qualified Data.Map                          as M
 import           Data.Maybe
-import qualified Data.Map                        as M
-import qualified Data.Set                        as S
+import qualified Data.Set                          as S
 import           Data.String
-import           Data.Version                    (parseVersion)
-import           Language.Haskell.Exts.Extension
-import           Language.Haskell.Exts.Fixity
-import           Language.Haskell.Exts.Parser
-import           Language.Haskell.Exts.Pretty
-import Language.Haskell.Exts.SrcLoc
-import           Language.Haskell.Exts.Annotated hiding (name)
-import           Prelude                         hiding (exp, mod)
+import           Data.Version                      (parseVersion)
+import           Distribution.HaskellSuite.Modules
+import           Language.Haskell.Exts.Annotated   hiding (name)
+import           Language.Haskell.Names
+import           Prelude                           hiding (exp, mod)
 import           System.Directory
 import           System.FilePath
 import           System.IO
-import           System.Process                  (readProcess)
-import           Text.ParserCombinators.ReadP    (readP_to_S)
-import Language.Haskell.Names
+import           System.Process                    (readProcess)
+import           Text.ParserCombinators.ReadP      (readP_to_S)
 
 -- | Make an identifier from the built-in HJ module.
 fayBuiltin :: String -> N.QName

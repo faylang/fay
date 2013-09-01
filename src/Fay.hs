@@ -19,14 +19,14 @@ module Fay
    where
 
 import           Fay.Compiler
-import           Fay.Compiler.Misc   (printSrcSpanInfo)
+import           Fay.Compiler.Misc                      (printSrcSpanInfo)
 import           Fay.Compiler.Packages
 import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad
 import           Data.List
-import           Language.Haskell.Exts.Annotated (prettyPrint)
+import           Language.Haskell.Exts.Annotated        (prettyPrint)
 import           Language.Haskell.Exts.Annotated.Syntax
 import           Language.Haskell.Exts.SrcLoc
 import           Paths_fay

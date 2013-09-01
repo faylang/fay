@@ -3,18 +3,19 @@
 
 module Test.Compile (tests) where
 
-import Fay
-import Fay.Compiler.Config
+import           Fay
+import           Fay.Compiler.Config
 
-import Data.Default
-import Data.Maybe
-import Language.Haskell.Exts.Annotated
-import System.Environment
-import Test.Framework
-import Test.Framework.Providers.HUnit
-import Test.Framework.TH
-import Test.HUnit                     (Assertion, assertBool, assertEqual, assertFailure)
-import Test.Util
+import           Data.Default
+import           Data.Maybe
+import           Language.Haskell.Exts.Annotated
+import           System.Environment
+import           Test.Framework
+import           Test.Framework.Providers.HUnit
+import           Test.Framework.TH
+import           Test.HUnit                      (Assertion, assertBool,
+                                                  assertEqual, assertFailure)
+import           Test.Util
 
 tests :: Test
 tests = $testGroupGenerator

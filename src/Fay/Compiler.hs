@@ -22,33 +22,33 @@ module Fay.Compiler
   ,parseFay)
   where
 
-import Language.Haskell.Names
 import           Fay.Compiler.Config
 import           Fay.Compiler.Decl
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Exp
 import           Fay.Compiler.FFI
-import           Fay.Compiler.InitialPass (initialPass)
+import           Fay.Compiler.InitialPass        (initialPass)
 import           Fay.Compiler.Misc
-import           Fay.Compiler.ModuleScope (findPrimOp)
+import           Fay.Compiler.ModuleScope        (findPrimOp)
 import           Fay.Compiler.Optimizer
 import           Fay.Compiler.QName
 import           Fay.Compiler.Typecheck
 import           Fay.Control.Monad.IO
+import qualified Fay.Exts                        as F
+import           Fay.Exts.NoAnnotation           (unAnn)
+import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
-import qualified Fay.Exts as F
-import qualified Fay.Exts.NoAnnotation as N
-import Fay.Exts.NoAnnotation (unAnn)
 
 import           Control.Applicative
 import           Control.Monad.Error
-import           Control.Monad.State
 import           Control.Monad.RWS
+import           Control.Monad.State
 import           Data.Default                    (def)
 import qualified Data.Map                        as M
 import           Data.Maybe
 import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Names
 
 --------------------------------------------------------------------------------
 -- Top level entry points

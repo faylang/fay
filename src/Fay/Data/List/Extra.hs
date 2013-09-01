@@ -2,8 +2,8 @@
 
 module Fay.Data.List.Extra where
 
-import Data.List hiding (map)
-import Prelude hiding (map)
+import           Data.List hiding (map)
+import           Prelude   hiding (map)
 
 -- | Get the union of a list of lists.
 unionOf :: (Eq a) => [[a]] -> [a]

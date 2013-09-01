@@ -1,16 +1,16 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards       #-}
 
 -- | Some useful debug functions.
 
 module Fay.Compiler.Debug where
 
-import Fay.Compiler.Defaults
-import Fay.Compiler
-import Fay.Compiler.Misc (parseResult, topRunCompile)
-import Fay.Types
+import           Fay.Compiler
+import           Fay.Compiler.Defaults
+import           Fay.Compiler.Misc     (parseResult, topRunCompile)
+import           Fay.Types
 
-import Control.Monad.Error
-import Data.Default
+import           Control.Monad.Error
+import           Data.Default
 
 -- | Compile a String of Fay and print it as beautified JavaScript.
 printTestCompile :: String -> IO ()

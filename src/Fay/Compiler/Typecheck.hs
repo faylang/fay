@@ -10,7 +10,7 @@ import           Fay.Types
 import           Control.Monad.Error
 import           Data.List
 import           Data.Maybe
-import qualified GHC.Paths                  as GHCPaths
+import qualified GHC.Paths                as GHCPaths
 
 -- | Call out to GHC to type-check the file.
 typecheck :: Maybe FilePath -> Bool -> String -> Compile ()

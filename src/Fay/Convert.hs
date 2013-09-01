@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE TupleSections      #-}
 {-# LANGUAGE PatternGuards      #-}
+{-# LANGUAGE TupleSections      #-}
 {-# OPTIONS -fno-warn-type-defaults #-}
 
 -- | Convert a Haskell value to a (JSON representation of a) Fay value.

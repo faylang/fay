@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 -- | Preprocessing collecting names, data types, newtypes, imports, and exports
 -- for all modules recursively.
@@ -12,18 +12,19 @@ import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
 import           Fay.Compiler.ModuleScope
 import           Fay.Data.List.Extra
+import qualified Fay.Exts                        as F
+import           Fay.Exts.NoAnnotation           (unAnn)
+import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
-import qualified Fay.Exts as F
-import qualified Fay.Exts.NoAnnotation as N
-import Fay.Exts.NoAnnotation (unAnn)
-import qualified Language.Haskell.Names as HN
+
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
-import qualified Data.Set as S
-import qualified Data.Map as M
+import qualified Data.Map                        as M
+import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated hiding (name, var)
-import           Prelude hiding (mod, read)
+import qualified Language.Haskell.Names          as HN
+import           Prelude                         hiding (mod, read)
 
 -- | Preprocess and collect all information needed during code generation.
 initialPass :: F.Module -> Compile ()

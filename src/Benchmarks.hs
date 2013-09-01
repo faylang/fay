@@ -16,8 +16,8 @@
 
 module Benchmarks where
 
-import FFI
-import Prelude
+import           FFI
+import           Prelude
 
 --------------------------------------------------------------------------------
 -- Main entry point

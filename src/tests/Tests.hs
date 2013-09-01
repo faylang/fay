@@ -19,8 +19,8 @@ import           Data.Maybe
 import           System.Directory
 import           System.Environment
 import           System.FilePath
-import qualified Test.Compile                   as Compile
 import qualified Test.CommandLine               as Cmd
+import qualified Test.Compile                   as Compile
 import qualified Test.Convert                   as C
 import           Test.Framework
 import           Test.Framework.Providers.HUnit

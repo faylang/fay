@@ -16,19 +16,19 @@ module Fay.Compiler.ModuleScope
   ) where
 
 import           Fay.Compiler.GADT
-import qualified Fay.Exts as F
-import qualified Fay.Exts.NoAnnotation as N
-import Fay.Exts.NoAnnotation (unAnn)
-import Fay.Compiler.QName
+import           Fay.Compiler.QName
+import qualified Fay.Exts                        as F
+import           Fay.Exts.NoAnnotation           (unAnn)
+import qualified Fay.Exts.NoAnnotation           as N
 
 import           Control.Arrow
 import           Control.Monad.Reader
 import           Control.Monad.Writer
 import           Data.Default
-import           Data.Map (Map)
-import qualified Data.Map as M
-import           Language.Haskell.Exts.Annotated hiding (name, binds)
-import           Prelude hiding (mod)
+import           Data.Map                        (Map)
+import qualified Data.Map                        as M
+import           Language.Haskell.Exts.Annotated hiding (binds, name)
+import           Prelude                         hiding (mod)
 
 -- | Maps names bound in the module to their real names
 -- The keys are unqualified for locals and imports,

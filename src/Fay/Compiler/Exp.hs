@@ -1,28 +1,28 @@
 {-# OPTIONS -fno-warn-name-shadowing -fno-warn-orphans #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 
 -- | Compile expressions.
 
 module Fay.Compiler.Exp where
 
-import Fay.Compiler.Misc
-import Fay.Compiler.Pattern
-import Fay.Compiler.Print
-import Fay.Compiler.FFI             (compileFFIExp)
-import Fay.Types
-import Fay.Exts.NoAnnotation (unAnn)
-import Fay.Exts.Scoped (noI)
-import qualified Fay.Exts.Scoped as S
-import Control.Applicative
-import Control.Monad.Error
-import Control.Monad.RWS
-import Data.Maybe
-import Language.Haskell.Exts.Annotated
+import           Control.Applicative
+import           Control.Monad.Error
+import           Control.Monad.RWS
+import           Data.Maybe
+import           Fay.Compiler.FFI                (compileFFIExp)
+import           Fay.Compiler.Misc
+import           Fay.Compiler.Pattern
+import           Fay.Compiler.Print
+import           Fay.Exts.NoAnnotation           (unAnn)
+import           Fay.Exts.Scoped                 (noI)
+import qualified Fay.Exts.Scoped                 as S
+import           Fay.Types
+import           Language.Haskell.Exts.Annotated
 
 -- | Compile Haskell expression.
 compileExp :: S.Exp -> Compile JsExp

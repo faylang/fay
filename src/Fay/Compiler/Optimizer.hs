@@ -1,26 +1,26 @@
 {-# OPTIONS -fno-warn-orphans #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternGuards     #-}
+{-# LANGUAGE TupleSections     #-}
 
 -- | Optimizing the outputted JavaScript(-ish) AST.
 
 module Fay.Compiler.Optimizer where
 
-import Fay.Compiler.Misc
+import           Fay.Compiler.Misc
+import           Fay.Types
 
-import Control.Applicative
-import Control.Arrow (first)
-import Control.Monad.Error
-import Control.Monad.Writer
-import Control.Monad.State
-import Data.List
-import Data.Maybe
-import Fay.Types
-import qualified Fay.Exts.NoAnnotation as N
-import Language.Haskell.Exts.Annotated hiding (name, op, app)
+import           Control.Applicative
+import           Control.Arrow                   (first)
+import           Control.Monad.Error
+import           Control.Monad.State
+import           Control.Monad.Writer
+import           Data.List
+import           Data.Maybe
+import qualified Fay.Exts.NoAnnotation           as N
+import           Language.Haskell.Exts.Annotated hiding (app, name, op)
 
-import Prelude hiding (exp)
+import           Prelude                         hiding (exp)
 
 -- | The arity of a function. Arity here is defined to be the number
 -- of arguments that can be directly uncurried from a curried lambda

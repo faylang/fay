@@ -1,9 +1,9 @@
 {-# OPTIONS -fno-warn-orphans        #-}
 {-# OPTIONS -fno-warn-unused-do-bind #-}
-{-# LANGUAGE FlexibleInstances       #-}
-{-# LANGUAGE RecordWildCards         #-}
-{-# LANGUAGE TypeSynonymInstances    #-}
-{-# LANGUAGE ViewPatterns            #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE RecordWildCards      #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE ViewPatterns         #-}
 
 -- | Simple code (non-pretty) printing.
 --
@@ -21,14 +21,13 @@ import           Fay.Types
 import           Control.Monad
 import           Control.Monad.State
 import           Data.Aeson.Encode
-import qualified Data.ByteString.Lazy.UTF8    as UTF8
+import qualified Data.ByteString.Lazy.UTF8              as UTF8
 import           Data.Default
 import           Data.List
 import           Data.String
-import qualified Fay.Exts.NoAnnotation as N
-
+import qualified Fay.Exts.NoAnnotation                  as N
 import           Language.Haskell.Exts.Annotated.Syntax
-import           Prelude                      hiding (exp)
+import           Prelude                                hiding (exp)
 
 --------------------------------------------------------------------------------
 -- Printing

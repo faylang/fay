@@ -1,14 +1,14 @@
 {-# OPTIONS -fno-warn-orphans           #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE ViewPatterns               #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE ViewPatterns               #-}
 
 -- | All Fay types and instances.
 
@@ -47,28 +47,28 @@ module Fay.Types
   ,addedModulePath
   ) where
 import           Control.Applicative
-import           Control.Monad.Error    (Error, ErrorT, MonadError)
-import           Control.Monad.Identity (Identity)
-import           Control.Monad.State
+import           Control.Monad.Error               (Error, ErrorT, MonadError)
+import           Control.Monad.Identity            (Identity)
 import           Control.Monad.RWS
+import           Control.Monad.State
 import           Data.Default
 import           Data.List
 import           Data.List.Split
+import           Data.Map                          (Map)
+import qualified Data.Map                          as M
 import           Data.Maybe
-import           Data.Map              (Map)
-import qualified Data.Map              as M
-import           Data.Set              (Set)
-import qualified Data.Set              as S
+import           Data.Set                          (Set)
+import qualified Data.Set                          as S
 import           Data.String
-import qualified Fay.Exts as F
-import qualified Fay.Exts.Scoped as S
-import qualified Fay.Exts.NoAnnotation as N
-import Fay.Exts.NoAnnotation (unAnn)
-import Language.Haskell.Exts.Annotated
-import Language.Haskell.Names (Symbols)
-import Distribution.HaskellSuite.Modules
-import           Fay.Compiler.ModuleScope (ModuleScope)
+import           Distribution.HaskellSuite.Modules
+import           Fay.Compiler.ModuleScope          (ModuleScope)
 import           Fay.Compiler.QName
+import qualified Fay.Exts                          as F
+import           Fay.Exts.NoAnnotation             (unAnn)
+import qualified Fay.Exts.NoAnnotation             as N
+import qualified Fay.Exts.Scoped                   as S
+import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Names            (Symbols)
 import           Paths_fay
 
 --------------------------------------------------------------------------------
@@ -76,25 +76,25 @@ import           Paths_fay
 
 -- | Configuration of the compiler.
 data CompileConfig = CompileConfig
-  { configOptimize           :: Bool                       -- ^ Run optimizations
-  , configFlattenApps        :: Bool                       -- ^ Flatten function application?
-  , configExportBuiltins     :: Bool                       -- ^ Export built-in functions?
-  , configExportRuntime      :: Bool                       -- ^ Export the runtime?
-  , configExportStdlib       :: Bool                       -- ^ Export the stdlib?
-  , configExportStdlibOnly   :: Bool                       -- ^ Export /only/ the stdlib?
+  { configOptimize          :: Bool                       -- ^ Run optimizations
+  , configFlattenApps       :: Bool                       -- ^ Flatten function application?
+  , configExportBuiltins    :: Bool                       -- ^ Export built-in functions?
+  , configExportRuntime     :: Bool                       -- ^ Export the runtime?
+  , configExportStdlib      :: Bool                       -- ^ Export the stdlib?
+  , configExportStdlibOnly  :: Bool                       -- ^ Export /only/ the stdlib?
   , configDirectoryIncludes :: [(Maybe String, FilePath)]  -- ^ Possibly a fay package name, and a include directory.
-  , configPrettyPrint        :: Bool                       -- ^ Pretty print the JS output?
-  , configHtmlWrapper        :: Bool                       -- ^ Output a HTML file including the produced JS.
-  , configHtmlJSLibs         :: [FilePath]                 -- ^ Any JS files to link to in the HTML.
-  , configLibrary            :: Bool                       -- ^ Don't invoke main in the produced JS.
-  , configWarn               :: Bool                       -- ^ Warn on dubious stuff, not related to typechecking.
-  , configFilePath           :: Maybe FilePath             -- ^ File path to output to.
-  , configTypecheck          :: Bool                       -- ^ Typecheck with GHC.
-  , configWall               :: Bool                       -- ^ Typecheck with -Wall.
-  , configGClosure           :: Bool                       -- ^ Run Google Closure on the produced JS.
-  , configPackageConf        :: Maybe FilePath             -- ^ The package config e.g. packages-6.12.3.
-  , configPackages           :: [String]                   -- ^ Included Fay packages.
-  , configBasePath           :: Maybe FilePath             -- ^ Custom source location for fay-base
+  , configPrettyPrint       :: Bool                       -- ^ Pretty print the JS output?
+  , configHtmlWrapper       :: Bool                       -- ^ Output a HTML file including the produced JS.
+  , configHtmlJSLibs        :: [FilePath]                 -- ^ Any JS files to link to in the HTML.
+  , configLibrary           :: Bool                       -- ^ Don't invoke main in the produced JS.
+  , configWarn              :: Bool                       -- ^ Warn on dubious stuff, not related to typechecking.
+  , configFilePath          :: Maybe FilePath             -- ^ File path to output to.
+  , configTypecheck         :: Bool                       -- ^ Typecheck with GHC.
+  , configWall              :: Bool                       -- ^ Typecheck with -Wall.
+  , configGClosure          :: Bool                       -- ^ Run Google Closure on the produced JS.
+  , configPackageConf       :: Maybe FilePath             -- ^ The package config e.g. packages-6.12.3.
+  , configPackages          :: [String]                   -- ^ Included Fay packages.
+  , configBasePath          :: Maybe FilePath             -- ^ Custom source location for fay-base
   } deriving (Show)
 
 -- | The name of a module split into a list for code generation.
@@ -135,9 +135,9 @@ data CompileState = CompileState
 
 -- | Things written out by the compiler.
 data CompileWriter = CompileWriter
-  { writerCons     :: [JsStmt] -- ^ Constructors.
-  , writerFayToJs  :: [(String,JsExp)] -- ^ Fay to JS dispatchers.
-  , writerJsToFay  :: [(String,JsExp)] -- ^ JS to Fay dispatchers.
+  { writerCons    :: [JsStmt] -- ^ Constructors.
+  , writerFayToJs :: [(String,JsExp)] -- ^ Fay to JS dispatchers.
+  , writerJsToFay :: [(String,JsExp)] -- ^ JS to Fay dispatchers.
   }
   deriving (Show)
 
@@ -252,13 +252,13 @@ data Mapping = Mapping
 
 -- | The state of the pretty printer.
 data PrintState = PrintState
-  { psPretty       :: Bool      -- ^ Are we to pretty print?
-  , psLine         :: Int       -- ^ The current line.
-  , psColumn       :: Int       -- ^ Current column.
-  , psMapping      :: [Mapping] -- ^ Source mappings.
-  , psIndentLevel  :: Int       -- ^ Current indentation level.
-  , psOutput       :: [String]  -- ^ The current output. TODO: Make more efficient.
-  , psNewline      :: Bool      -- ^ Just outputted a newline?
+  { psPretty      :: Bool      -- ^ Are we to pretty print?
+  , psLine        :: Int       -- ^ The current line.
+  , psColumn      :: Int       -- ^ Current column.
+  , psMapping     :: [Mapping] -- ^ Source mappings.
+  , psIndentLevel :: Int       -- ^ Current indentation level.
+  , psOutput      :: [String]  -- ^ The current output. TODO: Make more efficient.
+  , psNewline     :: Bool      -- ^ Just outputted a newline?
   }
 
 -- | Default state.

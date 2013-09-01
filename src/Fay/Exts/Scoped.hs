@@ -1,8 +1,9 @@
 module Fay.Exts.Scoped where
 
+import qualified Fay.Exts                        as F
+
 import qualified Language.Haskell.Exts.Annotated as A
-import qualified Fay.Exts as F
-import qualified Language.Haskell.Names as HN
+import qualified Language.Haskell.Names          as HN
 
 
 type X = HN.Scoped A.SrcSpanInfo

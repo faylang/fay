@@ -80,9 +80,7 @@ compilePatBind toplevel sig pat =
         _ -> compileUnguardedRhs toplevel ident rhs
     PatBind _ (PVar _ ident) Nothing (UnGuardedRhs _ rhs) (Just bdecls) ->
       compileUnguardedRhs toplevel ident (Let S.noI bdecls rhs)
-    PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
-      compileUnguardedRhs toplevel ident (Let S.noI (BDecls S.noI []) rhs)
-    PatBind (Scoped _ srcloc) pat Nothing (UnGuardedRhs _ rhs) _bdecls -> do
+    PatBind _ pat Nothing (UnGuardedRhs _ rhs) _bdecls -> do
       exp <- compileExp rhs
       name <- withScopedTmpJsName return
       [JsIf t b1 []] <- compilePat (JsName name) pat []

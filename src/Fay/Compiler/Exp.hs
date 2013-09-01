@@ -11,7 +11,6 @@
 module Fay.Compiler.Exp where
 
 import Fay.Compiler.Misc
-import Fay.Compiler.ModuleScope
 import Fay.Compiler.Pattern
 import Fay.Compiler.Print
 import Fay.Compiler.FFI             (compileFFIExp)
@@ -68,15 +67,17 @@ instance CompilesTo S.Exp JsExp where compileTo = compileExp
 -- | Turn a tuple constructor into a normal lambda expression.
 tupleConToFunction :: Boxed -> Int -> S.Exp
 tupleConToFunction b n = Lambda noI params body
-  where names  = take n (Ident noI . pure <$> ['a'..])
-        params = PVar noI <$> names
-        body   = Tuple noI b (Var noI . UnQual noI <$> names)
+  where
+    names  = take n $ map (Ident noI . ("$gen" ++) . show) [(1::Int)..]
+    params = PVar noI <$> names
+    body   = Tuple noI b (Var noI . UnQual noI <$> names)
 
 -- | Compile variable.
 compileVar :: S.QName -> Compile JsExp
 compileVar qname = do
   case qname of
-    Special _ (TupleCon _ b n) -> compileExp (tupleConToFunction b n)
+    Special _ (TupleCon _ b n) ->
+      compileExp (tupleConToFunction b n)
     _ -> do
       qname <- unsafeResolveName qname
       return (JsName (JsNameVar qname))

@@ -74,10 +74,13 @@ tryResolveName u = do
   return r
 
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
+-- TODO purify
 tryResolveName' :: Show l => QName (Scoped l) -> Compile (Maybe N.QName)
 tryResolveName' special@Special{} = return . Just $ unAnn special
 tryResolveName' s@(UnQual _ (Ident _ n))
   | "$gen" `isPrefixOf` n = return $ Just $ unAnn s
+tryResolveName' (unAnn -> Qual () (ModuleName () "$Prelude") n) =
+  return $ Just $ Qual () (ModuleName () "Prelude") n
 tryResolveName' q@(Qual _ (ModuleName _ "Fay$") _) = return $ Just $ unAnn q
 tryResolveName' q@(Qual (Scoped ni _) _ name) = case ni of
     GlobalValue nx -> return $ replaceWithBuiltIns $ gname2Qname $ origGName $ sv_origName nx

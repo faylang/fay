@@ -318,6 +318,7 @@ compileRecConstr name fieldUpdates = do
         updateStmt (unAnn -> name) (FieldWildcard _) = do
           records <- liftM stateRecords get
           let fields = fromJust (lookup name records)
+          liftIO $ print fields
           return (map (\fieldName -> JsSetProp (JsNameVar name)
                                                (JsNameVar fieldName)
                                                (JsName (JsNameVar fieldName)))
@@ -357,7 +358,7 @@ desugarListComp e (QualStmt _ (Generator _ p e2) : stmts) = do
       return (Let noI (BDecls noI [ FunBind noI [
           Match noI f [ p             ] (UnGuardedRhs noI nested) Nothing
         , Match noI f [ PWildCard noI ] (UnGuardedRhs noI (List noI [])) Nothing
-        ]]) (App noI (App noI (Var noI (UnQual noI (Ident noI "concatMap"))) (Var noI (UnQual noI f))) e2))
+        ]]) (App noI (App noI (Var noI (Qual noI (ModuleName noI "$Prelude") (Ident noI "concatMap"))) (Var noI (UnQual noI f))) e2))
 desugarListComp e (QualStmt _ (Qualifier _ e2)       : stmts) = do
     nested <- desugarListComp e stmts
     return (If noI e2 nested (List noI []))

@@ -15,8 +15,6 @@ module Fay.Compiler.ModuleScope
   ,resolvePrimOp
   ) where
 
-import Debug.Trace
-
 import           Fay.Compiler.GADT
 import qualified Fay.Exts as F
 import qualified Fay.Exts.NoAnnotation as N
@@ -102,7 +100,7 @@ envPrimOpsMap = M.fromList
 
 -- | Lookup a primop that was resolved to a Prelude definition.
 findPrimOp :: N.QName -> Maybe N.QName
-findPrimOp q@(Qual _ (ModuleName _ "Prelude") s) = M.lookup s envPrimOpsMap
+findPrimOp (Qual _ (ModuleName _ "Prelude") s) = M.lookup s envPrimOpsMap
 findPrimOp _ = Nothing
 
 resolvePrimOp :: QName a -> Maybe N.QName

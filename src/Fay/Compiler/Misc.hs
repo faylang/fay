@@ -17,7 +17,6 @@ import qualified Fay.Exts.NoAnnotation as N
 import qualified Fay.Exts.Scoped as S
 import Fay.Exts.NoAnnotation (unAnn)
 import Data.Char (isAlpha)
-import Distribution.HaskellSuite.Modules (runModuleT)
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
@@ -82,7 +81,7 @@ tryResolveName' s@(UnQual _ (Ident _ n))
 tryResolveName' (unAnn -> Qual () (ModuleName () "$Prelude") n) =
   return $ Just $ Qual () (ModuleName () "Prelude") n
 tryResolveName' q@(Qual _ (ModuleName _ "Fay$") _) = return $ Just $ unAnn q
-tryResolveName' q@(Qual (Scoped ni _) _ name) = case ni of
+tryResolveName' (Qual (Scoped ni _) _ _) = case ni of
     GlobalValue nx -> return $ replaceWithBuiltIns $ gname2Qname $ origGName $ sv_origName nx
     LocalValue _ -> return $ Nothing
     GlobalType _ -> return $ Nothing
@@ -105,19 +104,15 @@ tryResolveName' q@(UnQual (Scoped ni _) name) = case ni of
     None -> return $ Nothing
     ScopeError _ -> return $ ModuleScope.resolvePrimOp q
 
-
 gname2Qname :: GName -> N.QName
-gname2Qname (GName "" s) = UnQual () $ mkName s
-gname2Qname (GName m s) = Qual () (ModuleName () m) $ mkName s
-
-mkName s@(x:_)
-  | isAlpha x || x == '_' = Ident () s
-  | otherwise = Symbol () s
-mkName "" = error "mkName \"\""
-
-gname2QnameS :: Scoped l -> GName -> QName (Scoped l)
-gname2QnameS ann (GName "" s) = UnQual ann $ Ident ann s
-gname2QnameS ann (GName m s) = Qual ann (ModuleName ann m) $ Ident ann s
+gname2Qname g = case g of
+  GName "" s -> UnQual () $ mkName s
+  GName m  s -> Qual () (ModuleName () m) $ mkName s
+  where
+    mkName s@(x:_)
+      | isAlpha x || x == '_' = Ident () s
+      | otherwise = Symbol () s
+    mkName "" = error "mkName \"\""
 
 replaceWithBuiltIns :: N.QName -> Maybe N.QName
 replaceWithBuiltIns n = ModuleScope.findPrimOp n <|> return n

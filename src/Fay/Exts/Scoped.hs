@@ -41,4 +41,5 @@ type Stmt = A.Stmt X
 type TyVarBind = A.TyVarBind X
 type Type = A.Type X
 
+noI :: HN.Scoped A.SrcSpanInfo
 noI = HN.Scoped HN.None F.noI

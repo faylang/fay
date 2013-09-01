@@ -11,15 +11,12 @@ import           Fay.Compiler.Config
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
 import           Fay.Compiler.ModuleScope
-import           Fay.Control.Monad.Extra
-import           Fay.Control.Monad.IO
 import           Fay.Data.List.Extra
 import           Fay.Types
 import qualified Fay.Exts as F
 import qualified Fay.Exts.NoAnnotation as N
 import Fay.Exts.NoAnnotation (unAnn)
 import qualified Language.Haskell.Names as HN
-import Distribution.HaskellSuite.Modules
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS

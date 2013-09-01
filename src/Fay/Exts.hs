@@ -3,8 +3,6 @@ module Fay.Exts where
 import qualified Language.Haskell.Exts.Annotated as A
 
 type X = A.SrcSpanInfo
-noI :: A.SrcSpanInfo
-noI = A.noInfoSpan (A.mkSrcSpan A.noLoc A.noLoc)
 
 type Alt = A.Alt X
 type BangType = A.BangType X
@@ -50,11 +48,11 @@ moduleExports (A.Module _ (Just (A.ModuleHead _ _ _ e)) _ _ _) = e
 moduleExports (A.Module _ Nothing                     _ _ _) = Nothing
 moduleExports m = error $ ("moduleExports: " ++ A.prettyPrint m)
 
+moduleNameString :: A.ModuleName t -> String
 moduleNameString (A.ModuleName _ n) = n
 
+mkIdent :: String -> A.Name A.SrcSpanInfo
 mkIdent = A.Ident noI
-mkSymbol = A.Symbol noI
-mkUnQual = A.UnQual noI
-mkQual = A.Qual noI
-mkUnQualIdent = A.UnQual noI . mkIdent
-mkModuleName = A.ModuleName noI
+
+noI :: A.SrcSpanInfo
+noI = A.noInfoSpan (A.mkSrcSpan A.noLoc A.noLoc)

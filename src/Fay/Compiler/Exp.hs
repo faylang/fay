@@ -272,27 +272,24 @@ desugarRightSection o e = withScopedTmpName $ \tmp ->
 compileEnumFrom :: S.Exp -> Compile JsExp
 compileEnumFrom i = do
   e <- compileExp i
-  name <- unsafeResolveName $ UnQual noI $ Ident noI "enumFrom"
-  return (JsApp (JsName (JsNameVar name)) [e])
+  return (JsApp (JsName (JsNameVar (Qual () "Prelude" "enumFrom"))) [e])
 
 -- | Compile [e1..e3] arithmetic sequences.
 compileEnumFromTo :: S.Exp -> S.Exp -> Compile JsExp
 compileEnumFromTo i i' = do
   f <- compileExp i
   t <- compileExp i'
-  name <- unsafeResolveName $ UnQual noI $ Ident noI "enumFromTo"
   cfg <- config id
   return $ case optEnumFromTo cfg f t of
     Just s -> s
-    _ -> JsApp (JsApp (JsName (JsNameVar name)) [f]) [t]
+    _ -> JsApp (JsApp (JsName (JsNameVar (Qual () "Prelude" "enumFromTo"))) [f]) [t]
 
 -- | Compile [e1,e2..] arithmetic sequences.
 compileEnumFromThen :: S.Exp -> S.Exp -> Compile JsExp
 compileEnumFromThen a b = do
   fr <- compileExp a
   th <- compileExp b
-  name <- unsafeResolveName $ UnQual noI $ Ident noI "enumFromThen"
-  return (JsApp (JsApp (JsName (JsNameVar name)) [fr]) [th])
+  return (JsApp (JsApp (JsName (JsNameVar (Qual () "Prelude" "enumFromThen"))) [fr]) [th])
 
 -- | Compile [e1,e2..e3] arithmetic sequences.
 compileEnumFromThenTo :: S.Exp -> S.Exp -> S.Exp -> Compile JsExp
@@ -300,11 +297,10 @@ compileEnumFromThenTo a b z = do
   fr <- compileExp a
   th <- compileExp b
   to <- compileExp z
-  name <- unsafeResolveName $ UnQual noI $ Ident noI "enumFromThenTo"
   cfg <- config id
   return $ case optEnumFromThenTo cfg fr th to of
     Just s -> s
-    _ -> JsApp (JsApp (JsApp (JsName (JsNameVar name)) [fr]) [th]) [to]
+    _ -> JsApp (JsApp (JsApp (JsName (JsNameVar (Qual () "Prelude" "enumFromThenTo"))) [fr]) [th]) [to]
 
 -- | Compile a record construction with named fields
 -- | GHC will warn on uninitialized fields, they will be undefined in JS.

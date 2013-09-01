@@ -17,7 +17,6 @@ import Fay.Data.List.Extra
 import Fay.Compiler.ModuleScope (fieldDeclNames, convertFieldDecl)
 import Fay.Types
 import qualified Fay.Exts.Scoped as S
-import Language.Haskell.Names.Annotated (Scoped (Scoped))
 import Fay.Exts.NoAnnotation (unAnn)
 
 import Control.Applicative

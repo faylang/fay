@@ -119,6 +119,7 @@ mkModulePathFromQName _ = error "mkModulePathFromQName: Not a qualified name"
 -- | State of the compiler.
 data CompileState = CompileState
   { _stateExports      :: Map N.ModuleName (Set N.QName) -- ^ Collects exports from modules
+  , stateInterfaces    :: Map N.ModuleName Symbols
   , stateRecordTypes   :: [(N.QName,[N.QName])]          -- ^ Map types to constructors
   , stateRecords       :: [(N.QName,[N.QName])]          -- ^ Map constructors to fields
   , stateNewtypes      :: [(N.QName, Maybe N.QName, N.Type)] -- ^ Newtype constructor, destructor, wrapped type tuple

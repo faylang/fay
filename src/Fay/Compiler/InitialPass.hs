@@ -36,9 +36,8 @@ initialPass mod@(Module _ _ _pragmas imports decls) =
                      , stateModuleScope = findTopLevelNames modName decls
                      }
     forM_ imports compileImport
---    liftIO $ putStrLn $ "computing interfaces for: " ++ show (unAnn modName)
-    res <- HN.getInterfaces Haskell2010 [] [mod]
---    liftIO $ print res
+    ([exports],_) <- HN.getInterfaces Haskell2010 [] [mod]
+    modify $ \s -> s { stateInterfaces = M.insert (stateModuleName s) exports $ stateInterfaces s }
     forM_ decls scanRecordDecls
     forM_ decls scanNewtypeDecls
     case modExports of

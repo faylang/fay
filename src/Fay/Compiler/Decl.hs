@@ -17,6 +17,7 @@ import Fay.Data.List.Extra
 import Fay.Compiler.ModuleScope (fieldDeclNames, convertFieldDecl)
 import Fay.Types
 import qualified Fay.Exts.Scoped as S
+import Language.Haskell.Names.Annotated (Scoped (Scoped))
 import Fay.Exts.NoAnnotation (unAnn)
 
 import Control.Applicative
@@ -81,11 +82,11 @@ compilePatBind toplevel sig pat =
       compileUnguardedRhs toplevel ident (Let S.noI bdecls rhs)
     PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
       compileUnguardedRhs toplevel ident (Let S.noI (BDecls S.noI []) rhs)
-    PatBind _ pat Nothing (UnGuardedRhs _ rhs) _bdecls -> do
+    PatBind (Scoped _ srcloc) pat Nothing (UnGuardedRhs _ rhs) _bdecls -> do
       exp <- compileExp rhs
       name <- withScopedTmpJsName return
       [JsIf t b1 []] <- compilePat (JsName name) pat []
-      let err = [throw (printSrcSpanInfo (error $ "irrefutable: " ++ prettyPrint pat ++ ", " ++ show t ++ ", " ++ show b1) ++ "Irrefutable pattern failed for pattern: " ++ prettyPrint pat) (JsList [])]
+      let err = [throw ("Irrefutable pattern failed for pattern: " ++ prettyPrint pat) (JsList [])]
       return [JsVar name exp, JsIf t b1 err]
     _ -> throwError (UnsupportedDeclaration pat)
 

@@ -7,7 +7,6 @@
 module Fay.Compiler.ModuleScope
   (ModuleScope
   ,bindAsLocals
-  ,findTopLevelNames
   ,moduleLocals
   ,findPrimOp
   ,convertFieldDecl -- TODO temp location
@@ -15,14 +14,11 @@ module Fay.Compiler.ModuleScope
   ,resolvePrimOp
   ) where
 
-import           Fay.Compiler.GADT
 import           Fay.Compiler.QName
-import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.NoAnnotation           as N
 
 import           Control.Arrow
-import           Control.Monad.Reader
 import           Control.Monad.Writer
 import           Data.Default
 import           Data.Map                        (Map)
@@ -113,37 +109,6 @@ resolvePrimOp (unAnn -> q) = case q of
 
 --------------------------------------------------------------------------------
 -- AST
-
-type ModuleScopeSt = ReaderT F.ModuleName (Writer ModuleScope) ()
-
--- | Get module level names from a haskell module AST.
-findTopLevelNames :: F.ModuleName -> [F.Decl] -> ModuleScope
-findTopLevelNames mod decls = snd . runWriter $ runReaderT (mapM_ d_decl decls) mod
-
-bindName :: F.Name -> ModuleScopeSt
-bindName (unAnn -> k) = ask >>= \(unAnn -> mod) -> tell (ModuleScope $ M.singleton (UnQual () k) (Qual () mod k))
-
-d_decl :: F.Decl -> ModuleScopeSt
-d_decl d = case d of
-  DataDecl _ _ _ _ dd _               -> mapM_ d_qualCon dd
-  GDataDecl _ (DataType _) _ _ _ ds _ -> mapM_ (d_qualCon . convertGADT) ds
-  PatBind _ (PVar _ n) _ _ _          -> bindName n
-  FunBind _ (Match _ n _ _ _ : _)     -> bindName n
-  ClassDecl _ _ _ _ (Just cds)        -> mapM_ d_classDecl cds
-  ClassDecl _ _ _ _ Nothing           -> return ()
-  TypeSig _ ns _                      -> mapM_ bindName ns
-  _                                   -> return ()
-
-d_classDecl :: F.ClassDecl -> ModuleScopeSt
-d_classDecl cd = case cd of
-  ClsDecl _ d -> d_decl d
-  _         -> return ()
-
-d_qualCon :: F.QualConDecl -> ModuleScopeSt
-d_qualCon (QualConDecl _ _ _ cd) = case cd of
-  ConDecl _ n _        -> bindName n
-  InfixConDecl _ _ n _ -> bindName n
-  RecDecl _ n ns       -> bindName n >> mapM_ bindName (concatMap fieldDeclNames ns)
 
 -- TODO move
 convertFieldDecl :: FieldDecl a -> ([Name a], BangType a)

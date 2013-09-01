@@ -61,7 +61,6 @@ import           Data.Set                          (Set)
 import qualified Data.Set                          as S
 import           Data.String
 import           Distribution.HaskellSuite.Modules
-import           Fay.Compiler.ModuleScope          (ModuleScope)
 import           Fay.Compiler.QName
 import qualified Fay.Exts                          as F
 import           Fay.Exts.NoAnnotation             (unAnn)
@@ -126,8 +125,6 @@ data CompileState = CompileState
   , stateImported      :: [(N.ModuleName,FilePath)]    -- ^ Map of all imported modules and their source locations.
   , stateNameDepth     :: Integer                    -- ^ Depth of the current lexical scope.
   , stateLocalScope    :: Set N.Name                   -- ^ Names in the current lexical scope.
-  , stateModuleScope   :: ModuleScope                -- ^ Names in the module scope.
-  , stateModuleScopes  :: Map N.ModuleName ModuleScope
   , stateModuleName    :: N.ModuleName                 -- ^ Name of the module currently being compiled.
   , stateJsModulePaths :: Set ModulePath
   , stateUseFromString :: Bool

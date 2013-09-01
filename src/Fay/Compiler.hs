@@ -44,7 +44,6 @@ import           Control.Monad.Error
 import           Control.Monad.RWS
 import           Control.Monad.State
 import           Data.Default                    (def)
-import qualified Data.Map                        as M
 import           Data.Maybe
 import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated
@@ -164,7 +163,6 @@ compileModuleFromAST mod'@(Module _ _ pragmas imports _) = do
   withModuleScope $ do
     imported <- fmap concat (mapM compileImport imports)
     modify $ \s -> s { stateModuleName = modName
-                     , stateModuleScope = fromMaybe (error $ "Could not find stateModuleScope for " ++ show modName) $ M.lookup modName $ stateModuleScopes s
                      , stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
                      }
     current <- compileDecls True decls

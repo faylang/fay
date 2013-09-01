@@ -31,7 +31,6 @@ initialPass :: F.Module -> Compile ()
 initialPass mod@(Module _ _ _pragmas imports decls) =
   withModuleScope $ do
     modify $ \s -> s { stateModuleName = (unAnn modName)
-                     , stateModuleScope = findTopLevelNames modName decls
                      }
     forM_ imports compileImport
     ([exports],_) <- HN.getInterfaces Haskell2010 [] [mod]

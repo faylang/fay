@@ -164,12 +164,9 @@ bindToplevel toplevel (unAnn -> name) expr =
 
 
 -- | Create a temporary environment and discard it after the given computation.
+-- TODO remove
 withModuleScope :: Compile a -> Compile a
-withModuleScope m = do
-  scope <- gets stateModuleScope
-  value <- m
-  modify $ \s -> s { stateModuleScope = scope }
-  return value
+withModuleScope m = m
 
 -- | Create a temporary scope and discard it after the given computation.
 withScope :: Compile a -> Compile a

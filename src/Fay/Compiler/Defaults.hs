@@ -9,7 +9,6 @@ import           Fay.Compiler.Decl   (compileDecls)
 import           Fay.Compiler.Exp    (compileLit)
 import           Fay.Types
 
-import           Data.Default
 import           Data.Map            as M
 import           Data.Set            as S
 
@@ -37,8 +36,6 @@ defaultCompileState = do
     , stateImported = []
     , stateNameDepth = 1
     , stateLocalScope = S.empty
-    , stateModuleScope = def
-    , stateModuleScopes = M.empty
     , stateJsModulePaths = S.empty
     , stateUseFromString = False
     }

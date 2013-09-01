@@ -43,7 +43,7 @@ prefixed f (break f -> (x,y)) = (listToMaybe (drop 1 y),x ++ drop 2 y)
 -- | Make the case-by-case unit tests.
 makeCompilerTests :: Maybe FilePath -> Maybe FilePath -> IO Test
 makeCompilerTests packageConf basePath = do
-  files <- sort . filter (not . isInfixOf "/Compile/") . filter (isSuffixOf ".hs") <$> getRecursiveContents "tests"
+  files <- sort . filter (\v -> not (isInfixOf "/Compile/" v) && not (isInfixOf "/regressions/" v)) . filter (isSuffixOf ".hs") <$> getRecursiveContents "tests"
   return $ testGroup "Tests" $ flip map files $ \file -> testCase file $ do
     testFile packageConf basePath False file
     testFile packageConf basePath True file

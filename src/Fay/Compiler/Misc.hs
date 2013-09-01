@@ -16,7 +16,7 @@ import qualified Fay.Exts as F
 import qualified Fay.Exts.NoAnnotation as N
 import qualified Fay.Exts.Scoped as S
 import Fay.Exts.NoAnnotation (unAnn)
-
+import Data.Char (isAlpha)
 import Distribution.HaskellSuite.Modules (runModuleT)
 import           Control.Applicative
 import           Control.Monad.Error
@@ -102,8 +102,13 @@ tryResolveName' q@(UnQual (Scoped ni _) name) = case ni of
 
 
 gname2Qname :: GName -> N.QName
-gname2Qname (GName "" s) = UnQual () $ Ident () s
-gname2Qname (GName m s) = Qual () (ModuleName () m) $ Ident () s
+gname2Qname (GName "" s) = UnQual () $ mkName s
+gname2Qname (GName m s) = Qual () (ModuleName () m) $ mkName s
+
+mkName s@(x:_)
+  | isAlpha x || x == '_' = Ident () s
+  | otherwise = Symbol () s
+mkName "" = error "mkName \"\""
 
 gname2QnameS :: Scoped l -> GName -> QName (Scoped l)
 gname2QnameS ann (GName "" s) = UnQual ann $ Ident ann s

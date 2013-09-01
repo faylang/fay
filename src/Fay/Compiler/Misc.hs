@@ -67,11 +67,17 @@ stmtsThunk stmts = JsNew JsThunk [JsFun Nothing [] stmts Nothing]
 uniqueNames :: [JsName]
 uniqueNames = map JsParam [1::Integer ..]
 
--- | Resolve a given maybe-qualified name to a fully qualifed name.
 tryResolveName :: Show l => QName (Scoped l) -> Compile (Maybe N.QName)
-tryResolveName special@Special{} = return . Just $ unAnn special
-tryResolveName q@(Qual _ (ModuleName _ "Fay$") _) = return $ Just $ unAnn q
-tryResolveName q@(Qual (Scoped ni _) _ name) = case ni of
+tryResolveName u = do
+  r <- tryResolveName' u
+  -- io $ print ("tryResolveName"::String,unAnn u ,fmap unAnn r)
+  return r
+
+-- | Resolve a given maybe-qualified name to a fully qualifed name.
+tryResolveName' :: Show l => QName (Scoped l) -> Compile (Maybe N.QName)
+tryResolveName' special@Special{} = return . Just $ unAnn special
+tryResolveName' q@(Qual _ (ModuleName _ "Fay$") _) = return $ Just $ unAnn q
+tryResolveName' q@(Qual (Scoped ni _) _ name) = case ni of
     GlobalValue nx -> return $ replaceWithBuiltIns $ gname2Qname $ origGName $ sv_origName nx
     LocalValue _ -> return $ Nothing
     GlobalType _ -> return $ Nothing
@@ -82,7 +88,7 @@ tryResolveName q@(Qual (Scoped ni _) _ name) = case ni of
     Export _ -> return $ Nothing
     None -> return $ Nothing
     ScopeError _ -> return $ Nothing
-tryResolveName q@(UnQual (Scoped ni _) name) = case ni of
+tryResolveName' q@(UnQual (Scoped ni _) name) = case ni of
     GlobalValue nx -> return $ replaceWithBuiltIns $ gname2Qname $ origGName $ sv_origName nx
     LocalValue _ -> return $ Just $ UnQual () (unAnn name)
     GlobalType _ -> return $ Nothing
@@ -92,7 +98,7 @@ tryResolveName q@(UnQual (Scoped ni _) name) = case ni of
     ImportPart _ -> return $ Nothing
     Export _ -> return $ Nothing
     None -> return $ Nothing
-    ScopeError _ -> return $ Nothing
+    ScopeError _ -> return $ ModuleScope.resolvePrimOp q
 
 
 gname2Qname :: GName -> N.QName

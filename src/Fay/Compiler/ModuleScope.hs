@@ -79,24 +79,25 @@ moduleLocals mod (ModuleScope binds) = filter isLocal . M.elems $ binds
 -- So e.g. will compile to (*) Fay$$mult, which is in runtime.js.
 envPrimOpsMap :: Map N.Name N.QName
 -- TODO These should not be Ident
+-- TODO for now add Symbol for the symbols ALSO, or just dont create the incorrect one. Fixes Eq.hs test
 envPrimOpsMap = M.fromList
-  [ (Ident () ">>",     Qual () (ModuleName () "Fay$") (Ident () "then"))
-  , (Ident () ">>=",    Qual () (ModuleName () "Fay$") (Ident () "bind"))
-  , (Ident () "return", Qual () (ModuleName () "Fay$") (Ident () "return"))
-  , (Ident () "force",  Qual () (ModuleName () "Fay$") (Ident () "force"))
-  , (Ident () "seq",    Qual () (ModuleName () "Fay$") (Ident () "seq"))
-  , (Ident ()  "*",     Qual () (ModuleName () "Fay$") (Ident () "mult"))
-  , (Ident ()  "+",     Qual () (ModuleName () "Fay$") (Ident () "add"))
-  , (Ident ()  "-",     Qual () (ModuleName () "Fay$") (Ident () "sub"))
-  , (Ident ()  "/",     Qual () (ModuleName () "Fay$") (Ident () "divi"))
-  , (Ident ()  "==",    Qual () (ModuleName () "Fay$") (Ident () "eq"))
-  , (Ident ()  "/=",    Qual () (ModuleName () "Fay$") (Ident () "neq"))
-  , (Ident ()  ">",     Qual () (ModuleName () "Fay$") (Ident () "gt"))
-  , (Ident ()  "<",     Qual () (ModuleName () "Fay$") (Ident () "lt"))
-  , (Ident ()  ">=",    Qual () (ModuleName () "Fay$") (Ident () "gte"))
-  , (Ident ()  "<=",    Qual () (ModuleName () "Fay$") (Ident () "lte"))
-  , (Ident ()  "&&",    Qual () (ModuleName () "Fay$") (Ident () "and"))
-  , (Ident ()  "||",    Qual () (ModuleName () "Fay$") (Ident () "or"))
+  [ (Symbol () ">>",     Qual () (ModuleName () "Fay$") (Ident () "then"))
+  , (Symbol () ">>=",    Qual () (ModuleName () "Fay$") (Ident () "bind"))
+  , (Ident  () "return", Qual () (ModuleName () "Fay$") (Ident () "return"))
+  , (Ident  () "force",  Qual () (ModuleName () "Fay$") (Ident () "force"))
+  , (Ident  () "seq",    Qual () (ModuleName () "Fay$") (Ident () "seq"))
+  , (Symbol ()  "*",     Qual () (ModuleName () "Fay$") (Ident () "mult"))
+  , (Symbol ()  "+",     Qual () (ModuleName () "Fay$") (Ident () "add"))
+  , (Symbol ()  "-",     Qual () (ModuleName () "Fay$") (Ident () "sub"))
+  , (Symbol ()  "/",     Qual () (ModuleName () "Fay$") (Ident () "divi"))
+  , (Symbol ()  "==",    Qual () (ModuleName () "Fay$") (Ident () "eq"))
+  , (Symbol ()  "/=",    Qual () (ModuleName () "Fay$") (Ident () "neq"))
+  , (Symbol ()  ">",     Qual () (ModuleName () "Fay$") (Ident () "gt"))
+  , (Symbol ()  "<",     Qual () (ModuleName () "Fay$") (Ident () "lt"))
+  , (Symbol ()  ">=",    Qual () (ModuleName () "Fay$") (Ident () "gte"))
+  , (Symbol ()  "<=",    Qual () (ModuleName () "Fay$") (Ident () "lte"))
+  , (Symbol ()  "&&",    Qual () (ModuleName () "Fay$") (Ident () "and"))
+  , (Symbol ()  "||",    Qual () (ModuleName () "Fay$") (Ident () "or"))
   ]
 
 -- | Lookup a primop that was resolved to a Prelude definition.

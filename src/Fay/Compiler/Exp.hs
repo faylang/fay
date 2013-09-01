@@ -401,7 +401,7 @@ compileStmt inner stmt =
           let body = Lambda s [pat] inner
           return (Just (InfixApp s
                                  exp
-                                 (QVarOp noI (Qual noI (ModuleName noI "Fay$") (Symbol s "bind")))
+                                 (QVarOp noI (Qual noI (ModuleName noI "Fay$") (Ident noI "bind")))
                                  body))
 
 -- | Optimize short literal [e1..e3] arithmetic sequences.

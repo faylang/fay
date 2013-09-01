@@ -318,7 +318,6 @@ compileRecConstr name fieldUpdates = do
         updateStmt (unAnn -> name) (FieldWildcard _) = do
           records <- liftM stateRecords get
           let fields = fromJust (lookup name records)
-          liftIO $ print fields
           return (map (\fieldName -> JsSetProp (JsNameVar name)
                                                (JsNameVar fieldName)
                                                (JsName (JsNameVar fieldName)))

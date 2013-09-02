@@ -26,6 +26,7 @@ import           Fay.Compiler.Config
 import           Fay.Compiler.Decl
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Exp
+import           Fay.Compiler.Export
 import           Fay.Compiler.FFI
 import           Fay.Compiler.InitialPass        (initialPass)
 import           Fay.Compiler.Misc
@@ -217,12 +218,12 @@ createModulePath (unAnn -> m) =
 -- | Generate exports for non local names, local exports have already been added to the module.
 generateExports :: Compile [JsStmt]
 generateExports = do
-  m <- gets stateModuleName
-  map (exportExp m) . S.toList <$> gets getNonLocalExports
+  modName <- gets stateModuleName
+  maybe [] (map (exportExp modName) . S.toList) <$> gets (getNonLocalExportsWithoutNewtypes modName)
   where
     exportExp :: N.ModuleName -> N.QName -> JsStmt
     exportExp m v = JsSetQName (changeModule m v) $ case findPrimOp v of
-      Just p  -> JsName $ JsNameVar p
+      Just p  -> JsName $ JsNameVar p -- TODO add test case for this case, is it needed at all?
       Nothing -> JsName $ JsNameVar v
 
 -- | Is the module a standard module, i.e., one that we'd rather not

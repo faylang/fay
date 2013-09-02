@@ -8,7 +8,6 @@
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
-{-# LANGUAGE ViewPatterns               #-}
 
 -- | All Fay types and instances.
 
@@ -28,11 +27,6 @@ module Fay.Types
   ,CompileWriter(..)
   ,CompileConfig(..)
   ,CompileState(..)
-  ,addCurrentExport
-  ,getCurrentExports
-  ,getNonLocalExports
-  ,getCurrentExportsWithoutNewtypes
-  ,getExportsFor
   ,faySourceDir
   ,FundamentalType(..)
   ,PrintState(..)
@@ -55,15 +49,12 @@ import           Data.Default
 import           Data.List
 import           Data.List.Split
 import           Data.Map                          (Map)
-import qualified Data.Map                          as M
-import           Data.Maybe
 import           Data.Set                          (Set)
 import qualified Data.Set                          as S
 import           Data.String
 import           Distribution.HaskellSuite.Modules
 import           Fay.Compiler.QName
 import qualified Fay.Exts                          as F
-import           Fay.Exts.NoAnnotation             (unAnn)
 import qualified Fay.Exts.NoAnnotation             as N
 import qualified Fay.Exts.Scoped                   as S
 import           Language.Haskell.Exts.Annotated
@@ -117,8 +108,7 @@ mkModulePathFromQName _ = error "mkModulePathFromQName: Not a qualified name"
 
 -- | State of the compiler.
 data CompileState = CompileState
-  { _stateExports      :: Map N.ModuleName (Set N.QName) -- ^ Collects exports from modules
-  , stateInterfaces    :: Map N.ModuleName Symbols
+  { stateInterfaces    :: Map N.ModuleName Symbols
   , stateRecordTypes   :: [(N.QName,[N.QName])]          -- ^ Map types to constructors
   , stateRecords       :: [(N.QName,[N.QName])]          -- ^ Map constructors to fields
   , stateNewtypes      :: [(N.QName, Maybe N.QName, N.Type)] -- ^ Newtype constructor, destructor, wrapped type tuple
@@ -163,38 +153,6 @@ addModulePath mp cs = cs { stateJsModulePaths = mp `S.insert` stateJsModulePaths
 addedModulePath :: ModulePath -> CompileState -> Bool
 addedModulePath mp CompileState{..} = mp `S.member` stateJsModulePaths
 
--- | Adds a new export to '_stateExports' for the module specified by
--- 'stateModuleName'.
-addCurrentExport :: QName a -> CompileState -> CompileState
-addCurrentExport (N.unAnn -> q) cs =
-    cs { _stateExports = M.insert (stateModuleName cs) qnames $ _stateExports cs }
-  where
-    qnames = maybe (S.singleton q) (S.insert q)
-           $ M.lookup (stateModuleName cs) (_stateExports cs)
-
--- | Get all exports for the current module.
-getCurrentExports :: CompileState -> Set N.QName
-getCurrentExports cs = getExportsFor (stateModuleName cs) cs
-
--- | Get exports from the current module originating from other modules.
-getNonLocalExports :: CompileState -> Set N.QName
-getNonLocalExports st = S.filter ((/= Just (stateModuleName st)) . qModName) . getCurrentExportsWithoutNewtypes $ st
-
--- | Get all exports from the current module except newtypes.
-getCurrentExportsWithoutNewtypes :: CompileState -> Set N.QName
-getCurrentExportsWithoutNewtypes cs = excludeNewtypes cs $ getCurrentExports cs
-  where
-    excludeNewtypes :: CompileState -> Set N.QName -> Set N.QName
-    excludeNewtypes cs' names =
-      let newtypes = stateNewtypes cs'
-          constrs = map (\(c, _, _) -> c) newtypes
-          destrs  = map (\(_, d, _) -> fromJust d) . filter (\(_, d, _) -> isJust d) $ newtypes
-       in names `S.difference` (S.fromList constrs `S.union` S.fromList destrs)
-
--- | Get all of the exported identifiers for the given module.
-getExportsFor :: ModuleName a -> CompileState -> Set N.QName
-getExportsFor (unAnn -> mn) cs = fromMaybe S.empty $ M.lookup mn (_stateExports cs)
-
 -- | Compile monad.
 newtype Compile a = Compile
   { unCompile :: (RWST CompileReader
@@ -219,11 +177,6 @@ type Compile2 a = ModuleT Symbols
                           IO
                           (AllTheState a)
 
-
---instance MonadReader r m => MonadReader r (ModuleT m) where
---    ask   = lift ask
---    local = mapListT . local
---    reader = lift . reader
 
 instance MonadModule Compile where
   type ModuleInfo Compile = Symbols

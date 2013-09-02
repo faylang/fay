@@ -169,6 +169,6 @@ compileImport' name =
                          , stateRecordTypes  = stateRecordTypes st
                          , stateImported     = stateImported st
                          , stateNewtypes     = stateNewtypes st
-                         , _stateExports     = _stateExports st
+                         , stateInterfaces   = stateInterfaces st
                          }
       Left err -> throwError err

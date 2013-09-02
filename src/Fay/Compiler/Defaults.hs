@@ -27,8 +27,7 @@ defaultCompileReader config = do
 defaultCompileState :: IO CompileState
 defaultCompileState = do
   return CompileState
-    {  _stateExports = M.empty
-    , stateInterfaces = M.empty
+    { stateInterfaces = M.empty
     , stateModuleName = "Main"
     , stateRecordTypes = []
     , stateRecords = []

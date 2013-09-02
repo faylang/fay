@@ -46,8 +46,7 @@ compileDecl toplevel decl =
   case decl of
     pat@PatBind{} -> compilePatBind toplevel Nothing pat
     FunBind _ matches -> compileFunCase toplevel matches
---  DataDecl l (DataOrNew l) (Maybe (Context l)) (DeclHead l        ) [QualConDecl l] (Maybe (Deriving l))
-    DataDecl _ (DataType _ ) _                   head' constructors    _                     -> compileDataDecl toplevel (mkTyVars head') constructors
+    DataDecl _ (DataType _ ) _ head' constructors _ -> compileDataDecl toplevel (mkTyVars head') constructors
     GDataDecl _ (DataType _) _l (mkTyVars -> tyvars) _n decls _ -> compileDataDecl toplevel tyvars (map convertGADT decls)
     DataDecl _ (NewType _)  _ _ _ _ -> return []
     -- Just ignore type aliases and signatures.

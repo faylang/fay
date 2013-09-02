@@ -367,6 +367,7 @@ library
   other-modules:       Fay.Compiler.Decl
                      , Fay.Compiler.Defaults
                      , Fay.Compiler.Exp
+                     , Fay.Compiler.Export
                      , Fay.Compiler.FFI
                      , Fay.Compiler.GADT
                      , Fay.Compiler.InitialPass

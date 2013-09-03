@@ -58,45 +58,22 @@ stmtsThunk stmts = JsNew JsThunk [JsFun Nothing [] stmts Nothing]
 uniqueNames :: [JsName]
 uniqueNames = map JsParam [1::Integer ..]
 
-tryResolveName :: Show l => QName (Scoped l) -> Compile (Maybe N.QName)
-tryResolveName u = do
-  r <- tryResolveName' u
-  -- io $ print ("tryResolveName"::String,unAnn u ,fmap unAnn r)
-  return r
-
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
--- TODO purify
-tryResolveName' :: Show l => QName (Scoped l) -> Compile (Maybe N.QName)
-tryResolveName' special@Special{} = return . Just $ unAnn special
-tryResolveName' s@(UnQual _ (Ident _ n))
-  | "$gen" `isPrefixOf` n = return $ Just $ unAnn s
-tryResolveName' (unAnn -> Qual () (ModuleName () "$Prelude") n) =
-  return $ Just $ Qual () (ModuleName () "Prelude") n
-tryResolveName' q@(Qual _ (ModuleName _ "Fay$") _) = return $ Just $ unAnn q
-tryResolveName' (Qual (Scoped ni _) _ _) = case ni of
-    GlobalValue nx -> return $ replaceWithBuiltIns $ gname2Qname $ origGName $ sv_origName nx
-    LocalValue _ -> return $ Nothing
-    GlobalType _ -> return $ Nothing
-    TypeVar _ -> return $ Nothing
-    ValueBinder -> return $ Nothing
-    TypeBinder -> return $ Nothing
-    Import _ -> return $ Nothing
-    ImportPart _ -> return $ Nothing
-    Export _ -> return $ Nothing
-    None -> return $ Nothing
-    ScopeError _ -> return $ Nothing
-tryResolveName' q@(UnQual (Scoped ni _) name) = case ni of
-    GlobalValue nx -> return $ replaceWithBuiltIns $ gname2Qname $ origGName $ sv_origName nx
-    LocalValue _ -> return $ Just $ UnQual () (unAnn name)
-    GlobalType _ -> return $ Nothing
-    TypeVar _ -> return $ Nothing
-    ValueBinder -> return $ Nothing
-    TypeBinder -> return $ Nothing
-    Import _ -> return $ Nothing
-    ImportPart _ -> return $ Nothing
-    Export _ -> return $ Nothing
-    None -> return $ Nothing
-    ScopeError _ -> return $ resolvePrimOp q
+tryResolveName :: Show l => QName (Scoped l) -> Maybe N.QName
+tryResolveName s@Special{}                                      = Just $ unAnn s
+tryResolveName s@(UnQual _ (Ident _ n)) | "$gen" `isPrefixOf` n = Just $ unAnn s
+tryResolveName (unAnn -> Qual () (ModuleName () "$Prelude") n)  = Just $ Qual () (ModuleName () "Prelude") n
+tryResolveName q@(Qual _ (ModuleName _ "Fay$") _)               = Just $ unAnn q
+-- TODO abstract
+tryResolveName (Qual (Scoped ni _) _ _)                         = case ni of
+    GlobalValue n -> replaceWithBuiltIns $ gname2Qname $ origGName $ origName n
+    _             -> Nothing
+    -- TODO should LocalValue just return the name for qualified imports?
+tryResolveName q@(UnQual (Scoped ni _) name)                    = case ni of
+    GlobalValue n -> replaceWithBuiltIns $ gname2Qname $ origGName $ origName n
+    LocalValue _  -> Just $ UnQual () (unAnn name)
+    ScopeError _  -> resolvePrimOp q
+    _             -> Nothing
 
 gname2Qname :: GName -> N.QName
 gname2Qname g = case g of
@@ -114,12 +91,12 @@ replaceWithBuiltIns n = findPrimOp n <|> return n
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
 -- Use this when a resolution failure is a bug.
 unsafeResolveName :: S.QName -> Compile N.QName
-unsafeResolveName q = maybe (throwError $ UnableResolveQualified (unAnn q)) return =<< tryResolveName q
+unsafeResolveName q = maybe (throwError $ UnableResolveQualified (unAnn q)) return $ tryResolveName q
 
 -- | Resolve a newtype constructor.
 lookupNewtypeConst :: S.QName -> Compile (Maybe (Maybe N.QName,N.Type))
 lookupNewtypeConst n = do
-  mName <- tryResolveName n
+  let mName = tryResolveName n
   case mName of
     Nothing -> return Nothing
     Just name -> do
@@ -131,7 +108,7 @@ lookupNewtypeConst n = do
 -- | Resolve a newtype destructor.
 lookupNewtypeDest :: S.QName -> Compile (Maybe (N.QName,N.Type))
 lookupNewtypeDest n = do
-  mName <- tryResolveName n
+  let mName = tryResolveName n
   newtypes <- gets stateNewtypes
   case find (\(_,dname,_) -> dname == mName) newtypes of
     Nothing -> return Nothing

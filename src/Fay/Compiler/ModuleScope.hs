@@ -6,19 +6,15 @@
 
 module Fay.Compiler.ModuleScope
   (ModuleScope
-  ,bindAsLocals
-  ,moduleLocals
   ,findPrimOp
   ,convertFieldDecl -- TODO temp location
   ,fieldDeclNames -- TODO temp location
   ,resolvePrimOp
   ) where
 
-import           Fay.Compiler.QName
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.NoAnnotation           as N
 
-import           Control.Arrow
 import           Control.Monad.Writer
 import           Data.Default
 import           Data.Map                        (Map)
@@ -43,20 +39,6 @@ instance Monoid ModuleScope where
 instance Default ModuleScope where
   def = mempty
 
--- | Bind a list of names into the local scope
--- Right now all bindings are made unqualified
-bindAsLocals :: [N.QName] -> ModuleScope -> ModuleScope
-bindAsLocals qs (ModuleScope binds) =
-  -- This needs to be changed to not use unqual to support qualified imports.
-  ModuleScope $ binds `M.union` M.fromList (map (unQualify &&& id) qs)
-
--- | Find all names that are bound locally in this module, which excludes imports.
-moduleLocals :: N.ModuleName -> ModuleScope -> [N.QName]
-moduleLocals mod (ModuleScope binds) = filter isLocal . M.elems $ binds
-  where
-    isLocal (Qual _ m _) = mod == m
-    isLocal _ = False
-
 --------------------------------------------------------------------------------
 -- Primitive Operations
 
@@ -72,8 +54,6 @@ moduleLocals mod (ModuleScope binds) = filter isLocal . M.elems $ binds
 --
 -- So e.g. will compile to (*) Fay$$mult, which is in runtime.js.
 envPrimOpsMap :: Map N.Name N.QName
--- TODO These should not be Ident
--- TODO for now add Symbol for the symbols ALSO, or just dont create the incorrect one. Fixes Eq.hs test
 envPrimOpsMap = M.fromList
   [ (Symbol () ">>",     Qual () (ModuleName () "Fay$") (Ident () "then"))
   , (Symbol () ">>=",    Qual () (ModuleName () "Fay$") (Ident () "bind"))
@@ -99,12 +79,13 @@ findPrimOp :: N.QName -> Maybe N.QName
 findPrimOp (Qual _ (ModuleName _ "Prelude") s) = M.lookup s envPrimOpsMap
 findPrimOp _ = Nothing
 
+-- | If this is resolved to a Prelude identifier or if it's unqualified,
+-- check if it's a primop
 resolvePrimOp :: QName a -> Maybe N.QName
 resolvePrimOp (unAnn -> q) = case q of
   (Qual _ (ModuleName _ "Prelude") _) -> findPrimOp q
   (UnQual _ n) -> findPrimOp $ Qual () (ModuleName () "Prelude") n
   _ -> Nothing
-
 
 
 --------------------------------------------------------------------------------

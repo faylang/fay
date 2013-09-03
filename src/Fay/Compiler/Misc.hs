@@ -251,7 +251,7 @@ printSrcSpanInfo :: SrcSpanInfo -> String
 printSrcSpanInfo (SrcSpanInfo a b) = concat $ printSrcSpan a : map printSrcSpan b
 
 printSrcSpan :: SrcSpan -> String
-printSrcSpan SrcSpan{..} = srcSpanFilename ++ ": (" ++ show srcSpanStartLine ++ "," ++ show srcSpanStartColumn ++ ")-(" ++ show srcSpanEndLine ++ "," ++ show srcSpanEndColumn
+printSrcSpan SrcSpan{..} = srcSpanFilename ++ ": (" ++ show srcSpanStartLine ++ "," ++ show srcSpanStartColumn ++ ")-(" ++ show srcSpanEndLine ++ "," ++ show srcSpanEndColumn ++ ")"
 
 
 -- | Lookup the record for a given type name.

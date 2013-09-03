@@ -44,3 +44,6 @@ type Type = A.Type X
 
 noI :: HN.Scoped A.SrcSpanInfo
 noI = HN.Scoped HN.None F.noI
+
+srcSpanInfo :: HN.Scoped A.SrcSpanInfo -> A.SrcSpanInfo
+srcSpanInfo (HN.Scoped _ l) = l

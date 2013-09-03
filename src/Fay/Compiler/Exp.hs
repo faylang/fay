@@ -58,7 +58,7 @@ compileExp exp =
     ExpTypeSig _ exp sig               ->
       case ffiExp exp of
         Nothing -> compileExp exp
-        Just formatstr -> compileFFIExp Nothing formatstr sig
+        Just formatstr -> compileFFIExp (S.srcSpanInfo $ ann exp) Nothing formatstr sig
 
     exp -> throwError (UnsupportedExpression exp)
 

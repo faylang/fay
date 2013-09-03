@@ -140,8 +140,7 @@ showCompileError e = case e of
   FfiFormatIncompleteArg srcloc    -> printSrcSpanInfo srcloc ++ ": incomplete `%' syntax in FFI format string"
   FfiFormatInvalidJavaScript srcloc code err ->
     printSrcSpanInfo srcloc ++ ":" ++
-    "\ninvalid JavaScript code in FFI format string:\n"
-                                         ++ err ++ "\nin " ++ code
+    "\ninvalid JavaScript code in FFI format string:\n" ++ err ++ "\nin " ++ code
   Couldn'tFindImport i places ->
     "could not find an import in the path: " ++ prettyPrint i ++ ", \n" ++
     "searched in these places: " ++ intercalate ", " places

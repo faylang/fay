@@ -44,7 +44,7 @@ compileFFI :: S.Name  -- ^ Name of the to-be binding.
            -> String -- ^ The format string.
            -> S.Type   -- ^ Type signature.
            -> Compile [JsStmt]
-compileFFI (unAnn -> name) formatstr sig =
+compileFFI name' formatstr sig =
   -- substitute newtypes with their child types before calling
   -- real compileFFI
   compileFFI' =<< rmNewtys sig
@@ -67,21 +67,23 @@ compileFFI (unAnn -> name) formatstr sig =
 
         compileFFI' :: N.Type -> Compile [JsStmt]
         compileFFI' sig' = do
-          fun <- compileFFIExp (Just name) formatstr sig'
+          fun <- compileFFIExp loc (Just name) formatstr sig'
           stmt <- bindToplevel True name fun
           return [stmt]
 
+        name = unAnn name'
+        loc = S.srcSpanInfo $ ann name'
+
 -- | Compile an FFI expression (also used when compiling top level definitions).
-compileFFIExp :: Maybe (Name a) -> String -> (Type a) -> Compile JsExp
-compileFFIExp (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
+compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> (Type a) -> Compile JsExp
+compileFFIExp loc (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
   let name = fromMaybe "<exp>" nameopt
-  inner <- formatFFI formatstr (zip params funcFundamentalTypes)
+  inner <- formatFFI loc formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.expression (prettyPrint name) (printJSString (wrapReturn inner)) of
-    -- TODO undefined/error
-    Left err -> throwError (FfiFormatInvalidJavaScript (error "invalidjavascript") inner (show err))
+    Left err -> throwError (FfiFormatInvalidJavaScript loc inner (show err))
     Right exp  -> do
       config' <- config id
-      when (configGClosure config') $ warnDotUses undefined inner exp
+      when (configGClosure config') $ warnDotUses loc inner exp
       return (body inner)
 
   where body inner = foldr wrapParam (wrapReturn inner) params
@@ -305,10 +307,11 @@ typeArity t = case t of
   _              -> 0
 
 -- | Format the FFI  format string with the given arguments.
-formatFFI :: String                     -- ^ The format string.
+formatFFI :: SrcSpanInfo                -- ^ Source Location.
+          -> String                     -- ^ The format string.
           -> [(JsName,FundamentalType)] -- ^ Arguments.
           -> Compile String             -- ^ The JS code.
-formatFFI formatstr args = go formatstr where
+formatFFI loc formatstr args = go formatstr where
   go ('%':'*':xs) = do
     these <- mapM inject (zipWith const [1..] args)
     rest <- go xs
@@ -316,10 +319,10 @@ formatFFI formatstr args = go formatstr where
   go ('%':'%':xs) = do
     rest <- go xs
     return ('%' : rest)
-  go ['%'] = throwError (FfiFormatIncompleteArg undefined)
+  go ['%'] = throwError (FfiFormatIncompleteArg loc)
   go ('%':(span isDigit -> (op,xs))) =
     case readMay op of
-     Nothing -> throwError (FfiFormatBadChars undefined op)
+     Nothing -> throwError (FfiFormatBadChars loc op)
      Just n -> do
        this <- inject n
        rest <- go xs
@@ -330,7 +333,7 @@ formatFFI formatstr args = go formatstr where
 
   inject n =
     case listToMaybe (drop (n-1) args) of
-      Nothing -> throwError (FfiFormatNoSuchArg undefined n)
+      Nothing -> throwError (FfiFormatNoSuchArg loc n)
       Just (arg,typ) ->
         return (printJSString (fayToJs SerializeAnywhere typ (JsName arg)))
 

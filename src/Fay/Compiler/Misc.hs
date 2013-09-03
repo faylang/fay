@@ -82,7 +82,8 @@ tryResolveName' (Qual (Scoped ni _) _ _) = case ni of
     LocalValue _ -> return $ Nothing
     GlobalType _ -> return $ Nothing
     TypeVar _ -> return $ Nothing
-    Binder -> return $ Nothing
+    ValueBinder -> return $ Nothing
+    TypeBinder -> return $ Nothing
     Import _ -> return $ Nothing
     ImportPart _ -> return $ Nothing
     Export _ -> return $ Nothing
@@ -93,7 +94,8 @@ tryResolveName' q@(UnQual (Scoped ni _) name) = case ni of
     LocalValue _ -> return $ Just $ UnQual () (unAnn name)
     GlobalType _ -> return $ Nothing
     TypeVar _ -> return $ Nothing
-    Binder -> return $ Nothing
+    ValueBinder -> return $ Nothing
+    TypeBinder -> return $ Nothing
     Import _ -> return $ Nothing
     ImportPart _ -> return $ Nothing
     Export _ -> return $ Nothing

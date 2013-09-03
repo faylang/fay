@@ -16,8 +16,9 @@
 -- So e.g. will compile to (*) Fay$$mult, which is in runtime.js.
 
 module Fay.Compiler.PrimOp
-  (findPrimOp
-  ,resolvePrimOp
+  ( fayBuiltin
+  , findPrimOp
+  , resolvePrimOp
   ) where
 
 import           Fay.Exts.NoAnnotation           (unAnn)
@@ -28,26 +29,30 @@ import qualified Data.Map                        as M
 import           Language.Haskell.Exts.Annotated hiding (binds, name)
 import           Prelude                         hiding (mod)
 
+-- | Make an identifier from the built-in HJ module.
+fayBuiltin :: a -> String -> QName a
+fayBuiltin a = Qual a (ModuleName a "Fay$") . Ident a
+
 -- | Mapping from unqualified names to qualified primitive names.
 primOpsMap :: Map N.Name N.QName
 primOpsMap = M.fromList
-  [ (Symbol () ">>",     Qual () (ModuleName () "Fay$") (Ident () "then"))
-  , (Symbol () ">>=",    Qual () (ModuleName () "Fay$") (Ident () "bind"))
-  , (Ident  () "return", Qual () (ModuleName () "Fay$") (Ident () "return"))
-  , (Ident  () "force",  Qual () (ModuleName () "Fay$") (Ident () "force"))
-  , (Ident  () "seq",    Qual () (ModuleName () "Fay$") (Ident () "seq"))
-  , (Symbol ()  "*",     Qual () (ModuleName () "Fay$") (Ident () "mult"))
-  , (Symbol ()  "+",     Qual () (ModuleName () "Fay$") (Ident () "add"))
-  , (Symbol ()  "-",     Qual () (ModuleName () "Fay$") (Ident () "sub"))
-  , (Symbol ()  "/",     Qual () (ModuleName () "Fay$") (Ident () "divi"))
-  , (Symbol ()  "==",    Qual () (ModuleName () "Fay$") (Ident () "eq"))
-  , (Symbol ()  "/=",    Qual () (ModuleName () "Fay$") (Ident () "neq"))
-  , (Symbol ()  ">",     Qual () (ModuleName () "Fay$") (Ident () "gt"))
-  , (Symbol ()  "<",     Qual () (ModuleName () "Fay$") (Ident () "lt"))
-  , (Symbol ()  ">=",    Qual () (ModuleName () "Fay$") (Ident () "gte"))
-  , (Symbol ()  "<=",    Qual () (ModuleName () "Fay$") (Ident () "lte"))
-  , (Symbol ()  "&&",    Qual () (ModuleName () "Fay$") (Ident () "and"))
-  , (Symbol ()  "||",    Qual () (ModuleName () "Fay$") (Ident () "or"))
+  [ (Symbol () ">>",     fayBuiltin () "then")
+  , (Symbol () ">>=",    fayBuiltin () "bind")
+  , (Ident  () "return", fayBuiltin () "return")
+  , (Ident  () "force",  fayBuiltin () "force")
+  , (Ident  () "seq",    fayBuiltin () "seq")
+  , (Symbol ()  "*",     fayBuiltin () "mult")
+  , (Symbol ()  "+",     fayBuiltin () "add")
+  , (Symbol ()  "-",     fayBuiltin () "sub")
+  , (Symbol ()  "/",     fayBuiltin () "divi")
+  , (Symbol ()  "==",    fayBuiltin () "eq")
+  , (Symbol ()  "/=",    fayBuiltin () "neq")
+  , (Symbol ()  ">",     fayBuiltin () "gt")
+  , (Symbol ()  "<",     fayBuiltin () "lt")
+  , (Symbol ()  ">=",    fayBuiltin () "gte")
+  , (Symbol ()  "<=",    fayBuiltin () "lte")
+  , (Symbol ()  "&&",    fayBuiltin () "and")
+  , (Symbol ()  "||",    fayBuiltin () "or")
   ]
 
 -- | Lookup a primop that was resolved to a Prelude definition.

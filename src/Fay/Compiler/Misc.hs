@@ -36,10 +36,6 @@ import           System.IO
 import           System.Process                    (readProcess)
 import           Text.ParserCombinators.ReadP      (readP_to_S)
 
--- | Make an identifier from the built-in HJ module.
-fayBuiltin :: String -> N.QName
-fayBuiltin = Qual () (ModuleName () "Fay$") . Ident ()
-
 -- | Wrap an expression in a thunk.
 thunk :: JsExp -> JsExp
 -- thunk exp = JsNew (fayBuiltin "Thunk") [JsFun [] [] (Just exp)]

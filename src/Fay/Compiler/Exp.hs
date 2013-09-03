@@ -9,18 +9,20 @@
 
 module Fay.Compiler.Exp where
 
-import           Control.Applicative
-import           Control.Monad.Error
-import           Control.Monad.RWS
-import           Data.Maybe
 import           Fay.Compiler.FFI                (compileFFIExp)
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Pattern
+import           Fay.Compiler.PrimOp
 import           Fay.Compiler.Print
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Exts.Scoped                 (noI)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
+
+import           Control.Applicative
+import           Control.Monad.Error
+import           Control.Monad.RWS
+import           Data.Maybe
 import           Language.Haskell.Exts.Annotated
 
 -- | Compile Haskell expression.
@@ -387,7 +389,7 @@ compileStmt inner stmt =
           case stmt of
             Generator loc pat exp -> compileGenerator loc pat inner exp
             Qualifier _ exp -> return (Just (InfixApp noI exp
-                                                      (QVarOp noI (Qual noI (ModuleName noI "Fay$") (Ident noI "then")))
+                                                      (QVarOp noI $ fayBuiltin noI "then")
                                                     inner))
             LetStmt _ (BDecls _ binds) -> return (Just (Let noI (BDecls noI binds) inner))
             LetStmt _ _ -> throwError UnsupportedLet
@@ -397,7 +399,7 @@ compileStmt inner stmt =
           let body = Lambda s [pat] inner
           return (Just (InfixApp s
                                  exp
-                                 (QVarOp noI (Qual noI (ModuleName noI "Fay$") (Ident noI "bind")))
+                                 (QVarOp noI $ fayBuiltin noI "bind")
                                  body))
 
 -- | Optimize short literal [e1..e3] arithmetic sequences.

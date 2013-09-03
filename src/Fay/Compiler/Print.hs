@@ -16,6 +16,8 @@
 
 module Fay.Compiler.Print where
 
+import           Fay.Compiler.PrimOp
+import qualified Fay.Exts.NoAnnotation                  as N
 import           Fay.Types
 
 import           Control.Monad
@@ -25,7 +27,6 @@ import qualified Data.ByteString.Lazy.UTF8              as UTF8
 import           Data.Default
 import           Data.List
 import           Data.String
-import qualified Fay.Exts.NoAnnotation                  as N
 import           Language.Haskell.Exts.Annotated.Syntax
 import           Prelude                                hiding (exp)
 
@@ -74,7 +75,7 @@ instance Printable N.ModuleName where
 -- | Print special constructors (tuples, list, etc.)
 instance Printable N.SpecialCon where
   printJS specialCon =
-    printJS $ (Qual () (ModuleName () "Fay$") . Ident ()) $
+    printJS $ fayBuiltin () $
       case specialCon of
         UnitCon _ -> "unit"
         Cons    _ -> "cons"

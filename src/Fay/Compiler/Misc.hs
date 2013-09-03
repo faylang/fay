@@ -8,7 +8,7 @@
 
 module Fay.Compiler.Misc where
 
-import qualified Fay.Compiler.ModuleScope          as ModuleScope
+import           Fay.Compiler.PrimOp
 import           Fay.Control.Monad.IO
 import qualified Fay.Exts                          as F
 import           Fay.Exts.NoAnnotation             (unAnn)
@@ -100,7 +100,7 @@ tryResolveName' q@(UnQual (Scoped ni _) name) = case ni of
     ImportPart _ -> return $ Nothing
     Export _ -> return $ Nothing
     None -> return $ Nothing
-    ScopeError _ -> return $ ModuleScope.resolvePrimOp q
+    ScopeError _ -> return $ resolvePrimOp q
 
 gname2Qname :: GName -> N.QName
 gname2Qname g = case g of
@@ -113,7 +113,7 @@ gname2Qname g = case g of
     mkName "" = error "mkName \"\""
 
 replaceWithBuiltIns :: N.QName -> Maybe N.QName
-replaceWithBuiltIns n = ModuleScope.findPrimOp n <|> return n
+replaceWithBuiltIns n = findPrimOp n <|> return n
 
 -- | Resolve a given maybe-qualified name to a fully qualifed name.
 -- Use this when a resolution failure is a bug.

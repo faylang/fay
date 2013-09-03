@@ -56,3 +56,9 @@ mkIdent = A.Ident noI
 
 noI :: A.SrcSpanInfo
 noI = A.noInfoSpan (A.mkSrcSpan A.noLoc A.noLoc)
+
+convertFieldDecl :: A.FieldDecl a -> ([A.Name a], A.BangType a)
+convertFieldDecl (A.FieldDecl _ ns b) = (ns, b)
+
+fieldDeclNames :: A.FieldDecl a -> [A.Name a]
+fieldDeclNames (A.FieldDecl _ ns _) = ns

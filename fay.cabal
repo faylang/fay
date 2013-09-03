@@ -372,10 +372,10 @@ library
                      , Fay.Compiler.GADT
                      , Fay.Compiler.InitialPass
                      , Fay.Compiler.Misc
-                     , Fay.Compiler.ModuleScope
                      , Fay.Compiler.Optimizer
                      , Fay.Compiler.Packages
                      , Fay.Compiler.Pattern
+                     , Fay.Compiler.PrimOp
                      , Fay.Compiler.Print
                      , Fay.Compiler.QName
                      , Fay.Compiler.Typecheck

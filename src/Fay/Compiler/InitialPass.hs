@@ -10,7 +10,6 @@ module Fay.Compiler.InitialPass
 import           Fay.Compiler.Config
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
-import           Fay.Compiler.ModuleScope
 import           Fay.Data.List.Extra
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
@@ -142,7 +141,7 @@ scanRecordDecls decl = do
           InfixConDecl _ _t1 name _t2 ->
             addRecordState name [F.mkIdent "slot1", F.mkIdent "slot2"]
           RecDecl _ name fields' -> do
-            let fields = concatMap fieldDeclNames fields'
+            let fields = concatMap F.fieldDeclNames fields'
             addRecordState name fields
 
       where

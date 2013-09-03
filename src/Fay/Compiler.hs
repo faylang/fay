@@ -30,8 +30,8 @@ import           Fay.Compiler.Export
 import           Fay.Compiler.FFI
 import           Fay.Compiler.InitialPass        (initialPass)
 import           Fay.Compiler.Misc
-import           Fay.Compiler.ModuleScope        (findPrimOp)
 import           Fay.Compiler.Optimizer
+import           Fay.Compiler.PrimOp             (findPrimOp)
 import           Fay.Compiler.QName
 import           Fay.Compiler.Typecheck
 import           Fay.Control.Monad.IO

@@ -12,10 +12,10 @@ import           Fay.Compiler.Exp
 import           Fay.Compiler.FFI
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
-import           Fay.Compiler.ModuleScope        (convertFieldDecl,
-                                                  fieldDeclNames)
 import           Fay.Compiler.Pattern
 import           Fay.Data.List.Extra
+import           Fay.Exts                        (convertFieldDecl,
+                                                  fieldDeclNames)
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types

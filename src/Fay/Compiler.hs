@@ -26,13 +26,13 @@ import           Fay.Compiler.Config
 import           Fay.Compiler.Decl
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Exp
-import           Fay.Compiler.Export
 import           Fay.Compiler.FFI
 import           Fay.Compiler.InitialPass        (initialPass)
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Optimizer
 import           Fay.Compiler.PrimOp             (findPrimOp)
 import           Fay.Compiler.QName
+import           Fay.Compiler.State
 import           Fay.Compiler.Typecheck
 import           Fay.Control.Monad.IO
 import qualified Fay.Exts                        as F

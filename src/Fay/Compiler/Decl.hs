@@ -13,6 +13,7 @@ import           Fay.Compiler.FFI
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Pattern
+import           Fay.Compiler.State
 import           Fay.Data.List.Extra
 import           Fay.Exts                        (convertFieldDecl,
                                                   fieldDeclNames)

@@ -8,9 +8,14 @@ import           Fay.Compiler.Config
 import           Fay.Compiler.Decl   (compileDecls)
 import           Fay.Compiler.Exp    (compileLit)
 import           Fay.Types
+import           Paths_fay
 
 import           Data.Map            as M
 import           Data.Set            as S
+
+-- | The data-files source directory.
+faySourceDir :: IO FilePath
+faySourceDir = getDataFileName "src/"
 
 -- | The default compiler reader value.
 defaultCompileReader :: CompileConfig -> IO CompileReader

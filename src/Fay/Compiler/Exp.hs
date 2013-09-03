@@ -5,7 +5,6 @@
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE ViewPatterns          #-}
 
-
 -- | Compile expressions.
 
 module Fay.Compiler.Exp where
@@ -28,33 +27,33 @@ import           Language.Haskell.Exts.Annotated
 compileExp :: S.Exp -> Compile JsExp
 compileExp exp =
   case exp of
-    Paren _ exp                     -> compileExp exp
-    Var _ qname                     -> compileVar qname
-    Lit _ lit                       -> compileLit lit
-    App _ exp1 exp2                 -> compileApp exp1 exp2
-    NegApp _ exp                    -> compileNegApp exp
-    InfixApp _ exp1 op exp2         -> compileInfixApp exp1 op exp2
-    Let _ (BDecls _ decls) exp      -> compileLet decls exp
-    List _ []                       -> return JsNull
-    List _ xs                       -> compileList xs
-    Tuple _ _boxed xs               -> compileList xs
-    If _ cond conseq alt            -> compileIf cond conseq alt
-    Case _ exp alts                 -> compileCase exp alts
+    Paren _ exp                        -> compileExp exp
+    Var _ qname                        -> compileVar qname
+    Lit _ lit                          -> compileLit lit
+    App _ exp1 exp2                    -> compileApp exp1 exp2
+    NegApp _ exp                       -> compileNegApp exp
+    InfixApp _ exp1 op exp2            -> compileInfixApp exp1 op exp2
+    Let _ (BDecls _ decls) exp         -> compileLet decls exp
+    List _ []                          -> return JsNull
+    List _ xs                          -> compileList xs
+    Tuple _ _boxed xs                  -> compileList xs
+    If _ cond conseq alt               -> compileIf cond conseq alt
+    Case _ exp alts                    -> compileCase exp alts
     Con _ (UnQual _ (Ident _ "True"))  -> return (JsLit (JsBool True))
     Con _ (UnQual _ (Ident _ "False")) -> return (JsLit (JsBool False))
-    Con _ qname                     -> compileVar qname
-    Do _ stmts                      -> compileDoBlock stmts
-    Lambda _ pats exp               -> compileLambda pats exp
-    LeftSection _ e o               -> compileExp =<< desugarLeftSection e o
-    RightSection _ o e              -> compileExp =<< desugarRightSection o e
-    EnumFrom _ i                    -> compileEnumFrom i
-    EnumFromTo _ i i'               -> compileEnumFromTo i i'
-    EnumFromThen _ a b              -> compileEnumFromThen a b
-    EnumFromThenTo _ a b z          -> compileEnumFromThenTo a b z
-    RecConstr _ name fieldUpdates   -> compileRecConstr name fieldUpdates
-    RecUpdate _ rec  fieldUpdates   -> compileRecUpdate rec fieldUpdates
-    ListComp _ exp stmts            -> compileExp =<< desugarListComp exp stmts
-    ExpTypeSig _ exp sig            ->
+    Con _ qname                        -> compileVar qname
+    Do _ stmts                         -> compileDoBlock stmts
+    Lambda _ pats exp                  -> compileLambda pats exp
+    LeftSection _ e o                  -> compileExp =<< desugarLeftSection e o
+    RightSection _ o e                 -> compileExp =<< desugarRightSection o e
+    EnumFrom _ i                       -> compileEnumFrom i
+    EnumFromTo _ i i'                  -> compileEnumFromTo i i'
+    EnumFromThen _ a b                 -> compileEnumFromThen a b
+    EnumFromThenTo _ a b z             -> compileEnumFromThenTo a b z
+    RecConstr _ name fieldUpdates      -> compileRecConstr name fieldUpdates
+    RecUpdate _ rec  fieldUpdates      -> compileRecUpdate rec fieldUpdates
+    ListComp _ exp stmts               -> compileExp =<< desugarListComp exp stmts
+    ExpTypeSig _ exp sig               ->
       case ffiExp exp of
         Nothing -> compileExp exp
         Just formatstr -> compileFFIExp Nothing formatstr sig
@@ -68,6 +67,8 @@ instance CompilesTo S.Exp JsExp where compileTo = compileExp
 tupleConToFunction :: Boxed -> Int -> S.Exp
 tupleConToFunction b n = Lambda noI params body
   where
+    -- It doesn't matter if these variable names shadow anything since
+    -- this lambda won't have inner scopes.
     names  = take n $ map (Ident noI . ("$gen" ++) . show) [(1::Int)..]
     params = PVar noI <$> names
     body   = Tuple noI b (Var noI . UnQual noI <$> names)
@@ -89,8 +90,6 @@ compileLit lit =
     Char _ ch _      -> return (JsLit (JsChar ch))
     Int _ integer _   -> return (JsLit (JsInt (fromIntegral integer))) -- FIXME:
     Frac _ rational _ -> return (JsLit (JsFloating (fromRational rational)))
-    -- TODO: Use real JS strings instead of array, probably it will
-    -- lead to the same result.
     String _ string _ -> do
       fromString <- gets stateUseFromString
       if fromString

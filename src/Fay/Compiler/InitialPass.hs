@@ -25,6 +25,8 @@ import           Language.Haskell.Exts.Annotated hiding (name, var)
 import qualified Language.Haskell.Names          as HN
 import           Prelude                         hiding (mod, read)
 
+-- TODO Import logic should be abstracted and reused for InitialPass and Compiler.
+
 -- | Preprocess and collect all information needed during code generation.
 initialPass :: F.Module -> Compile ()
 initialPass mod@(Module _ _ _pragmas imports decls) = do
@@ -101,17 +103,11 @@ compileNewtypeDecl [QualConDecl _ _ _ condecl] =
                cs{stateNewtypes=(qcname,qdname,getBangTy ty):nts})
 compileNewtypeDecl q = error $ "compileNewtypeDecl: Should be impossible (this is a bug). Got: " ++ show q
 
-declHeadName :: F.DeclHead -> F.Name
-declHeadName d = case d of
-  DHead _ n _ -> n
-  DHInfix _ _ n _ -> n
-  DHParen _ h -> declHeadName h
-
 -- | Add record declarations to the state
 scanRecordDecls :: F.Decl -> Compile ()
 scanRecordDecls decl = do
   case decl of
-    DataDecl _loc DataType{} _ctx (declHeadName -> name) qualcondecls _deriv -> do
+    DataDecl _loc DataType{} _ctx (F.declHeadName -> name) qualcondecls _deriv -> do
       let ns = for qualcondecls (\(QualConDecl _loc' _tyvarbinds _ctx' condecl) -> conDeclName condecl)
       addRecordTypeState name ns
     _ -> return ()

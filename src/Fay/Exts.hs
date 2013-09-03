@@ -62,3 +62,9 @@ convertFieldDecl (A.FieldDecl _ ns b) = (ns, b)
 
 fieldDeclNames :: A.FieldDecl a -> [A.Name a]
 fieldDeclNames (A.FieldDecl _ ns _) = ns
+
+declHeadName :: A.DeclHead a -> A.Name a
+declHeadName d = case d of
+  A.DHead _ n _ -> n
+  A.DHInfix _ _ n _ -> n
+  A.DHParen _ h -> declHeadName h

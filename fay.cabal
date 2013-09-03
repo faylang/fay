@@ -367,7 +367,6 @@ library
   other-modules:       Fay.Compiler.Decl
                      , Fay.Compiler.Defaults
                      , Fay.Compiler.Exp
-                     , Fay.Compiler.Export
                      , Fay.Compiler.FFI
                      , Fay.Compiler.GADT
                      , Fay.Compiler.InitialPass
@@ -378,6 +377,7 @@ library
                      , Fay.Compiler.PrimOp
                      , Fay.Compiler.Print
                      , Fay.Compiler.QName
+                     , Fay.Compiler.State
                      , Fay.Compiler.Typecheck
                      , Paths_fay
   ghc-options:       -O2 -Wall -fno-warn-name-shadowing

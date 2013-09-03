@@ -27,7 +27,6 @@ module Fay.Types
   ,CompileWriter(..)
   ,CompileConfig(..)
   ,CompileState(..)
-  ,faySourceDir
   ,FundamentalType(..)
   ,PrintState(..)
   ,Printer(..)
@@ -37,9 +36,13 @@ module Fay.Types
   ,mkModulePath
   ,mkModulePaths
   ,mkModulePathFromQName
-  ,addModulePath
-  ,addedModulePath
   ) where
+
+import           Fay.Compiler.QName
+import qualified Fay.Exts                          as F
+import qualified Fay.Exts.NoAnnotation             as N
+import qualified Fay.Exts.Scoped                   as S
+
 import           Control.Applicative
 import           Control.Monad.Error               (Error, ErrorT, MonadError)
 import           Control.Monad.Identity            (Identity)
@@ -50,16 +53,13 @@ import           Data.List
 import           Data.List.Split
 import           Data.Map                          (Map)
 import           Data.Set                          (Set)
-import qualified Data.Set                          as S
 import           Data.String
 import           Distribution.HaskellSuite.Modules
-import           Fay.Compiler.QName
-import qualified Fay.Exts                          as F
-import qualified Fay.Exts.NoAnnotation             as N
-import qualified Fay.Exts.Scoped                   as S
 import           Language.Haskell.Exts.Annotated
 import           Language.Haskell.Names            (Symbols)
-import           Paths_fay
+
+
+
 
 --------------------------------------------------------------------------------
 -- Compiler types
@@ -108,6 +108,7 @@ mkModulePathFromQName _ = error "mkModulePathFromQName: Not a qualified name"
 
 -- | State of the compiler.
 data CompileState = CompileState
+  -- TODO Change N.QName to GName? They can never be special so it would simplify.
   { stateInterfaces    :: Map N.ModuleName Symbols           -- ^ Exported identifiers for all modules
   , stateRecordTypes   :: [(N.QName,[N.QName])]              -- ^ Map types to constructors
   , stateRecords       :: [(N.QName,[N.QName])]              -- ^ Map constructors to fields
@@ -141,18 +142,6 @@ data CompileReader = CompileReader
   , readerCompileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
   }
 
--- | The data-files source directory.
-faySourceDir :: IO FilePath
-faySourceDir = getDataFileName "src/"
-
--- | Add a ModulePath to CompileState, meaning it has been printed.
-addModulePath :: ModulePath -> CompileState -> CompileState
-addModulePath mp cs = cs { stateJsModulePaths = mp `S.insert` stateJsModulePaths cs }
-
--- | Has this ModulePath been added/printed?
-addedModulePath :: ModulePath -> CompileState -> Bool
-addedModulePath mp CompileState{..} = mp `S.member` stateJsModulePaths
-
 -- | Compile monad.
 newtype Compile a = Compile
   { unCompile :: (RWST CompileReader
@@ -177,16 +166,15 @@ type Compile2 a = ModuleT Symbols
                           IO
                           (AllTheState a)
 
-
 instance MonadModule Compile where
   type ModuleInfo Compile = Symbols
-  lookupInCache        = lifting . lookupInCache
-  insertInCache n m    = lifting $ insertInCache n m
-  getPackages          = lifting $ getPackages
-  readModuleInfo fps n = lifting $ readModuleInfo fps n
+  lookupInCache        = liftModuleT . lookupInCache
+  insertInCache n m    = liftModuleT $ insertInCache n m
+  getPackages          = liftModuleT $ getPackages
+  readModuleInfo fps n = liftModuleT $ readModuleInfo fps n
 
-lifting :: ModuleT Symbols IO a -> Compile a
-lifting = Compile . lift . lift
+liftModuleT :: ModuleT Symbols IO a -> Compile a
+liftModuleT = Compile . lift . lift
 
 -- | Just a convenience class to generalize the parsing/printing of
 -- various types of syntax.

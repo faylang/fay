@@ -54,10 +54,9 @@ import           Language.Haskell.Names
 -- Top level entry points
 
 -- | Compile a Haskell source string to a JavaScript source string.
-compileViaStr :: (Show from,Show to,CompilesTo from to)
-              => FilePath
+compileViaStr :: FilePath
               -> CompileConfig
-              -> (from -> Compile to)
+              -> (F.Module -> Compile [JsStmt])
               -> String
               -> IO (Either CompileError (PrintState,CompileState,CompileWriter))
 compileViaStr filepath config with from = do
@@ -71,13 +70,12 @@ compileViaStr filepath config with from = do
   where printConfig = def { psPretty = configPrettyPrint config }
 
 -- | Compile a Haskell source string to a JavaScript source string.
-compileToAst :: (Show from,Show to,CompilesTo from to)
-              => FilePath
+compileToAst :: FilePath
               -> CompileReader
               -> CompileState
-              -> (from -> Compile to)
+              -> (F.Module -> Compile [JsStmt])
               -> String
-              -> Compile (AllTheState to) -- IO (Either CompileError (to,CompileState,CompileWriter))
+              -> Compile (AllTheState [JsStmt])
 compileToAst filepath reader state with from =
   Compile . lift . lift $ runCompile reader
              state
@@ -187,10 +185,6 @@ hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter
     flattenPragmas ps = concat $ map pragmaName ps
     pragmaName (LanguagePragma _ q) = map unname q
     pragmaName _ = []
-
-
-instance CompilesTo F.Module [JsStmt] where compileTo = compileModuleFromAST
-
 
 -- | For a module A.B, generate
 -- | var A = {};

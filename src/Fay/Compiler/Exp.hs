@@ -62,9 +62,6 @@ compileExp exp =
 
     exp -> throwError (UnsupportedExpression exp)
 
--- | Compiling instance.
-instance CompilesTo S.Exp JsExp where compileTo = compileExp
-
 -- | Turn a tuple constructor into a normal lambda expression.
 tupleConToFunction :: Boxed -> Int -> S.Exp
 tupleConToFunction b n = Lambda noI params body

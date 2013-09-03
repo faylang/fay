@@ -352,7 +352,6 @@ library
   exposed-modules:     Fay
                      , Fay.Compiler
                      , Fay.Compiler.Config
-                     , Fay.Compiler.Debug
                      , Fay.Control.Monad.Extra
                      , Fay.Control.Monad.IO
                      , Fay.Convert

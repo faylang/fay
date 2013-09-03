@@ -21,6 +21,7 @@ module Fay
 import           Fay.Compiler
 import           Fay.Compiler.Misc                      (printSrcSpanInfo)
 import           Fay.Compiler.Packages
+import qualified Fay.Exts                               as F
 import           Fay.Types
 
 import           Control.Applicative
@@ -82,9 +83,8 @@ compileFileWithState config filein = do
   compileToModule filein config' raw (compileToplevelModule filein) hscode
 
 -- | Compile the given module to a runnable module.
-compileToModule :: (Show from,Show to,CompilesTo from to)
-                => FilePath
-                -> CompileConfig -> String -> (from -> Compile to) -> String
+compileToModule :: FilePath
+                -> CompileConfig -> String -> (F.Module -> Compile [JsStmt]) -> String
                 -> IO (Either CompileError (String,CompileState))
 compileToModule filepath config raw with hscode = do
   result <- compileViaStr filepath config with hscode

@@ -65,9 +65,6 @@ mkTyVars (DHead _ _ binds) = binds
 mkTyVars (DHInfix _ t1 _ t2) = [t1, t2]
 mkTyVars (DHParen _ dh) = mkTyVars dh
 
--- | Convenient instance.
-instance CompilesTo S.Decl [JsStmt] where compileTo = compileDecl True
-
 -- | Compile a top-level pattern bind.
 compilePatBind :: Bool -> Maybe S.Type -> S.Decl -> Compile [JsStmt]
 compilePatBind toplevel sig pat =

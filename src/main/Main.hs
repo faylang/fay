@@ -6,20 +6,16 @@
 module Main where
 
 import           Fay
-import           Fay.Compiler
 import           Fay.Compiler.Config
-import           Fay.Compiler.Debug
-import           Fay.Control.Monad.IO
 
-import qualified Control.Exception        as E
+import qualified Control.Exception   as E
 import           Control.Monad
 import           Data.Default
-import           Data.List.Split          (wordsBy)
+import           Data.List.Split     (wordsBy)
 import           Data.Maybe
-import           Data.Version             (showVersion)
+import           Data.Version        (showVersion)
 import           Options.Applicative
-import           Paths_fay                (version)
-import           System.Console.Haskeline
+import           Paths_fay           (version)
 import           System.Environment
 
 -- | Options and help.
@@ -78,10 +74,9 @@ main = do
                 }
         void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
         case optFiles opts of
-             ["-"] -> getContents >>= printCompile config compileModuleFromAST
-             []    -> runInteractive
-             files -> forM_ files $ \file ->
-               compileFromTo config file (if optStdout opts then Nothing else Just (outPutFile opts file))
+          []    -> putStrLn $ helpTxt ++ "\n  More information: fay --help"
+          files -> forM_ files $ \file ->
+            compileFromTo config file (if optStdout opts then Nothing else Just (outPutFile opts file))
 
   where
     parser = info (helper <*> options) (fullDesc <> header helpTxt)
@@ -107,7 +102,7 @@ options = FayCompilerOptions
   <*> switch (long "version" <> help "Output version number")
   <*> optional (strOption (long "output" <> short 'o' <> metavar "file" <> help "Output to specified file"))
   <*> switch (long "pretty" <> short 'p' <> help "Pretty print the output")
-  <*> arguments Just (metavar "- | <hs-file>...")
+  <*> arguments Just (metavar "<hs-file>...")
   <*> switch (long "optimize" <> short 'O' <> help "Apply optimizations to generated code")
   <*> switch (long "closure" <> help "Provide help with Google Closure")
   <*> optional (strOption (long "package-conf" <> help "Specify the Cabal package config file"))
@@ -134,9 +129,6 @@ incompatible test opts message = if test opts
 helpTxt :: String
 helpTxt = concat
   ["fay -- The fay compiler from (a proper subset of) Haskell to Javascript\n\n"
-  ,"SYNOPSIS\n"
-  ,"  fay [OPTIONS] [- | <hs-file>...]\n"
-  ,"  fay - takes input on stdin and prints to stdout. Pretty prints\n"
   ,"  fay <hs-file>... processes each .hs file"
   ]
 
@@ -147,27 +139,3 @@ runCommandVersion = putStrLn $ "fay " ++ showVersion version
 -- | Incompatible options.
 htmlAndStdout :: FayCompilerOptions -> Bool
 htmlAndStdout opts = optHTMLWrapper opts && optStdout opts
-
--- | Run interactively.
-runInteractive :: IO ()
-runInteractive = runInputT defaultSettings loop where
-  loop = do
-    minput <- getInputLine "> "
-    case minput of
-      Nothing -> return ()
-      Just "" -> loop
-      Just input -> do
-        result <- io $ compileViaStr "<interactive>" config compileExp input
-        case result of
-          Left err -> do
-            -- an error occured, maybe input was not an expression,
-            -- but a declaration, try compiling the input as a declaration
-            outputStrLn $ "can't parse input as expression: " ++ show err
-            result' <- io $ compileViaStr "<interactive>" config (compileDecl True) input
-            case result' of
-              Right (PrintState{..},_,_) -> outputStr (concat (reverse psOutput))
-              Left err' ->
-                outputStrLn $ "can't parse input as declaration: " ++ show err'
-          Right (PrintState{..},_,_) -> outputStr (concat (reverse psOutput))
-        loop
-  config = def { configPrettyPrint = True }

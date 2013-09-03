@@ -20,7 +20,6 @@ module Fay.Types
   ,Compile(..)
   ,AllTheState
   ,Compile2
-  ,CompilesTo(..)
   ,Printable(..)
   ,Fay
   ,CompileReader(..)
@@ -175,11 +174,6 @@ instance MonadModule Compile where
 
 liftModuleT :: ModuleT Symbols IO a -> Compile a
 liftModuleT = Compile . lift . lift
-
--- | Just a convenience class to generalize the parsing/printing of
--- various types of syntax.
-class (Parseable from,Printable to) => CompilesTo from to | from -> to where
-  compileTo :: from -> Compile to
 
 -- | A source mapping.
 data Mapping = Mapping

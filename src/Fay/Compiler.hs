@@ -161,25 +161,24 @@ compileModuleFromAST :: F.Module -> Compile [JsStmt]
 compileModuleFromAST mod'@(Module _ _ pragmas imports _) = do
   mod@(Module _ _ _ _ decls) <- annotateModule Haskell2010 [] mod'
   let modName = unAnn $ F.moduleName mod
-  withModuleScope $ do
-    imported <- fmap concat (mapM compileImport imports)
-    modify $ \s -> s { stateModuleName = modName
-                     , stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
-                     }
-    current <- compileDecls True decls
+  imported <- fmap concat (mapM compileImport imports)
+  modify $ \s -> s { stateModuleName = modName
+                   , stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
+                   }
+  current <- compileDecls True decls
 
-    exportStdlib     <- config configExportStdlib
-    exportStdlibOnly <- config configExportStdlibOnly
-    modulePaths      <- createModulePath modName
-    extExports       <- generateExports
-    let stmts = imported ++ modulePaths ++ current ++ extExports
-    return $ if exportStdlibOnly
-      then if anStdlibModule modName
-              then stmts
-              else []
-      else if not exportStdlib && anStdlibModule modName
-              then []
-              else stmts
+  exportStdlib     <- config configExportStdlib
+  exportStdlibOnly <- config configExportStdlibOnly
+  modulePaths      <- createModulePath modName
+  extExports       <- generateExports
+  let stmts = imported ++ modulePaths ++ current ++ extExports
+  return $ if exportStdlibOnly
+    then if anStdlibModule modName
+            then stmts
+            else []
+    else if not exportStdlib && anStdlibModule modName
+            then []
+            else stmts
 compileModuleFromAST mod = throwError (UnsupportedModuleSyntax "compileModuleFromAST" mod)
 
 hasLanguagePragmas :: [String] -> [F.ModulePragma] -> Bool

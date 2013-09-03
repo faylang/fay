@@ -28,17 +28,15 @@ import           Prelude                         hiding (mod, read)
 
 -- | Preprocess and collect all information needed during code generation.
 initialPass :: F.Module -> Compile ()
-initialPass mod@(Module _ _ _pragmas imports decls) =
-  withModuleScope $ do
-    modify $ \s -> s { stateModuleName = (unAnn modName)
-                     }
-    forM_ imports compileImport
-    ([exports],_) <- HN.getInterfaces Haskell2010 [] [mod]
-    modify $ \s -> s { stateInterfaces = M.insert (stateModuleName s) exports $ stateInterfaces s }
-    forM_ decls scanRecordDecls
-    forM_ decls scanNewtypeDecls
-  where
-    modName = F.moduleName mod
+initialPass mod@(Module _ _ _pragmas imports decls) = do
+  modify $ \s -> s { stateModuleName = unAnn (F.moduleName mod)
+                   }
+  forM_ imports compileImport
+  -- This can only return one element since we only compile one module.
+  ([exports],_) <- HN.getInterfaces Haskell2010 [] [mod]
+  modify $ \s -> s { stateInterfaces = M.insert (stateModuleName s) exports $ stateInterfaces s }
+  forM_ decls scanRecordDecls
+  forM_ decls scanNewtypeDecls
 initialPass m = throwError (UnsupportedModuleSyntax "initialPass" m)
 
 compileImport :: F.ImportDecl -> Compile ()

@@ -164,12 +164,6 @@ bindToplevel toplevel (unAnn -> name) expr =
       return $ JsSetQName (Qual () mod name) expr
     else return $ JsVar (JsNameVar $ UnQual () name) expr
 
-
--- | Create a temporary environment and discard it after the given computation.
--- TODO remove
-withModuleScope :: Compile a -> Compile a
-withModuleScope m = m
-
 -- | Create a temporary scope and discard it after the given computation.
 withScope :: Compile a -> Compile a
 withScope m = do

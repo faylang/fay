@@ -23,10 +23,9 @@ compileTestAst :: (Show from,Show to,CompilesTo from to)
              -> String
              -> IO ()
 compileTestAst cfg with from = do
-  state <- defaultCompileState
   reader <- defaultCompileReader cfg
   out <- topRunCompile reader
-             state
+             defaultCompileState
              (parseResult (throwError . uncurry ParseError)
                           with
                           (parseFay "<interactive>" from))

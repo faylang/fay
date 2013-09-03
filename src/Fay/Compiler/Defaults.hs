@@ -28,18 +28,16 @@ defaultCompileReader config = do
     }
 
 -- | The default compiler state.
--- TODO purify
-defaultCompileState :: IO CompileState
-defaultCompileState = do
-  return CompileState
-    { stateInterfaces = M.empty
-    , stateModuleName = "Main"
-    , stateRecordTypes = []
-    , stateRecords = []
-    , stateNewtypes = []
-    , stateImported = []
-    , stateNameDepth = 1
-    , stateLocalScope = S.empty
-    , stateJsModulePaths = S.empty
-    , stateUseFromString = False
-    }
+defaultCompileState :: CompileState
+defaultCompileState = CompileState
+  { stateInterfaces    = M.empty
+  , stateModuleName    = "Main"
+  , stateRecordTypes   = []
+  , stateRecords       = []
+  , stateNewtypes      = []
+  , stateImported      = []
+  , stateNameDepth     = 1
+  , stateLocalScope    = S.empty
+  , stateJsModulePaths = S.empty
+  , stateUseFromString = False
+  }

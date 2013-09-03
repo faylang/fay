@@ -61,10 +61,9 @@ compileViaStr :: (Show from,Show to,CompilesTo from to)
               -> String
               -> IO (Either CompileError (PrintState,CompileState,CompileWriter))
 compileViaStr filepath config with from = do
-  cs <- defaultCompileState
   rs <- defaultCompileReader config
   topRunCompile rs
-             cs
+             defaultCompileState
              (parseResult (throwError . uncurry ParseError)
                           (fmap (\x -> execState (runPrinter (printJS x)) printConfig) . with)
                           (parseFay filepath from))
@@ -94,8 +93,8 @@ compileToplevelModule filein mod@Module{}  = do
     typecheck (configPackageConf cfg) (configWall cfg) $
       fromMaybe (F.moduleNameString (F.moduleName mod)) $ configFilePath cfg
   initialPass mod
-  cs <- io defaultCompileState
-  modify $ \s -> s { stateImported = stateImported cs }
+  -- Reset imports after initialPass so the modules can be imported during code generation.
+  modify $ \s -> s { stateImported = [] }
   fmap fst . listen $ compileModuleFromFile filein
 compileToplevelModule _ m = throwError $ UnsupportedModuleSyntax "compileToplevelModule" m
 

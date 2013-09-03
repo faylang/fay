@@ -323,7 +323,6 @@ compileRecConstr name fieldUpdates = do
                                                (JsNameVar fieldName)
                                                (JsName (JsNameVar fieldName)))
                       fields)
-        -- TODO: FieldPun
         -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
         updateStmt _ u = error ("updateStmt: " ++ show u)
 
@@ -344,7 +343,6 @@ compileRecUpdate rec fieldUpdates = do
           return $ JsSetProp (JsNameVar copyName)
                              (JsNameVar (UnQual () name))
                              (JsName (JsNameVar (UnQual () name)))
-        -- TODO: FieldWildcard
         -- I also couldn't find a code that generates (FieldUpdate FieldWildCard)
         updateExp _ FieldWildcard{} = error "unsupported update: FieldWildcard"
 

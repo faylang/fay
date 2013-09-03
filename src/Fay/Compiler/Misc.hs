@@ -64,7 +64,6 @@ tryResolveName s@Special{}                                      = Just $ unAnn s
 tryResolveName s@(UnQual _ (Ident _ n)) | "$gen" `isPrefixOf` n = Just $ unAnn s
 tryResolveName (unAnn -> Qual () (ModuleName () "$Prelude") n)  = Just $ Qual () (ModuleName () "Prelude") n
 tryResolveName q@(Qual _ (ModuleName _ "Fay$") _)               = Just $ unAnn q
--- TODO abstract
 tryResolveName (Qual (Scoped ni _) _ _)                         = case ni of
     GlobalValue n -> replaceWithBuiltIns $ gname2Qname $ origGName $ origName n
     _             -> Nothing

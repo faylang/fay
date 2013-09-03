@@ -5,8 +5,7 @@
 -- primitive operations that we want to treat specially.
 
 module Fay.Compiler.ModuleScope
-  (ModuleScope
-  ,findPrimOp
+  (findPrimOp
   ,convertFieldDecl -- TODO temp location
   ,fieldDeclNames -- TODO temp location
   ,resolvePrimOp
@@ -15,29 +14,10 @@ module Fay.Compiler.ModuleScope
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.NoAnnotation           as N
 
-import           Control.Monad.Writer
-import           Data.Default
 import           Data.Map                        (Map)
 import qualified Data.Map                        as M
 import           Language.Haskell.Exts.Annotated hiding (binds, name)
 import           Prelude                         hiding (mod)
-
--- | Maps names bound in the module to their real names
--- The keys are unqualified for locals and imports,
--- the values are always fully qualified
--- Example contents:
---   [ (UnQUal     "main"      , Qual "Main"     "main")
---   , (UnQual     "take"      , Qual "Prelude"  "take")
---   , (  Qual "M" "insertWith", Qual "Data.Map" "insertWith") ]
-newtype ModuleScope = ModuleScope (Map N.QName N.QName)
-  deriving Show
-
-instance Monoid ModuleScope where
-  mempty                                  = ModuleScope M.empty
-  mappend (ModuleScope a) (ModuleScope b) = ModuleScope $ a `M.union` b
-
-instance Default ModuleScope where
-  def = mempty
 
 --------------------------------------------------------------------------------
 -- Primitive Operations

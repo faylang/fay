@@ -2,8 +2,8 @@
 
 module Maybe where
 
-import FFI
-import Prelude
+import           FFI
+import           Prelude
 
 data Munge a b = Fudge a b
 
@@ -19,7 +19,7 @@ main = do
   case munge (Foo (Fudge ["a","b"] [1,2])) of
     Foo (Fudge xs is) -> do printS xs
                             printI is
-  case sponge Fudge ["a","b"] [1,2] of
+  case sponge (Fudge ["a","b"] [1,2]) of
     Fudge xs is -> do printS xs
                       printI is
 

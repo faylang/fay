@@ -37,7 +37,6 @@ defaultCompileState = CompileState
   , stateNewtypes      = []
   , stateImported      = []
   , stateNameDepth     = 1
-  , stateLocalScope    = S.empty
   , stateJsModulePaths = S.empty
   , stateUseFromString = False
   }

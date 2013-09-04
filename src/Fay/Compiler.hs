@@ -135,7 +135,6 @@ compileModule filepath contents = do
   case result of
     Right (stmts,state,writer) -> do
       modify $ \s -> s { stateImported      = stateImported state
-                       , stateLocalScope    = S.empty
                        , stateJsModulePaths = stateJsModulePaths state
                        }
       maybeOptimize $ stmts ++ writerCons writer ++ makeTranscoding writer

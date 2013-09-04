@@ -152,12 +152,10 @@ compileInfixApp exp1 ap exp2 = compileExp (App noI (App noI (Var noI op) exp1) e
 
 -- | Compile a let expression.
 compileLet :: [S.Decl] -> S.Exp -> Compile JsExp
-compileLet decls exp =
-  withScope $ do
-    generateScope $ mapM compileLetDecl decls
-    binds <- mapM compileLetDecl decls
-    body <- compileExp exp
-    return (JsApp (JsFun Nothing [] [] (Just $ stmtsThunk $ concat binds ++ [JsEarlyReturn body])) [])
+compileLet decls exp = do
+  binds <- mapM compileLetDecl decls
+  body <- compileExp exp
+  return (JsApp (JsFun Nothing [] [] (Just $ stmtsThunk $ concat binds ++ [JsEarlyReturn body])) [])
 
 -- | Compile let declaration.
 compileLetDecl :: S.Decl -> Compile [JsStmt]
@@ -202,8 +200,7 @@ compilePatAlt :: JsExp -> S.Alt -> Compile [JsStmt]
 compilePatAlt exp alt@(Alt _ pat rhs wheres) = case wheres of
   Just (BDecls _ (_ : _)) -> throwError (UnsupportedWhereInAlt alt)
   Just (IPBinds _ (_ : _)) -> throwError (UnsupportedWhereInAlt alt)
-  _ -> withScope $ do
-    generateScope $ compilePat exp pat []
+  _ -> do
     alt <- compileGuardedAlt rhs
     compilePat exp pat [alt]
 
@@ -238,14 +235,12 @@ compileDoBlock stmts = do
 
 -- | Compile a lambda.
 compileLambda :: [S.Pat] -> S.Exp -> Compile JsExp
-compileLambda pats exp =
-  withScope $ do
-    generateScope $ generateStatements JsNull
-    exp   <- compileExp exp
-    stmts <- generateStatements exp
-    case stmts of
-      [JsEarlyReturn fun@JsFun{}] -> return fun
-      _ -> error "Unexpected statements in compileLambda"
+compileLambda pats exp = do
+  exp   <- compileExp exp
+  stmts <- generateStatements exp
+  case stmts of
+    [JsEarlyReturn fun@JsFun{}] -> return fun
+    _ -> error "Unexpected statements in compileLambda"
 
   where unhandledcase = throw "unhandled case" . JsName
         allfree = all isWildCardPat pats

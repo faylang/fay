@@ -113,8 +113,7 @@ data CompileState = CompileState
   , stateRecords       :: [(N.QName,[N.QName])]              -- ^ Map constructors to fields
   , stateNewtypes      :: [(N.QName, Maybe N.QName, N.Type)] -- ^ Newtype constructor, destructor, wrapped type tuple
   , stateImported      :: [(N.ModuleName,FilePath)]          -- ^ Map of all imported modules and their source locations.
-  , stateNameDepth     :: Integer                            -- ^ Depth of the current lexical scope.
-  , stateLocalScope    :: Set N.Name                         -- ^ Names in the current lexical scope.
+  , stateNameDepth     :: Integer                            -- ^ Depth of the current lexical scope, used for creating unshadowing variables.
   , stateModuleName    :: N.ModuleName                       -- ^ Name of the module currently being compiled.
   , stateJsModulePaths :: Set ModulePath                     -- ^ Module paths that have code generated for them.
   , stateUseFromString :: Bool                               -- ^ Use JS Strings instead of [Char] for string literals?

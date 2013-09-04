@@ -7,7 +7,6 @@
 module Fay.Compiler.Pattern where
 
 import           Fay.Compiler.Misc
-import           Fay.Compiler.QName
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
@@ -42,7 +41,6 @@ compilePat exp pat body =
 -- | Compile a pattern variable e.g. x.
 compilePVar :: S.Name -> JsExp -> [JsStmt] -> Compile [JsStmt]
 compilePVar (unAnn -> name) exp body = do
-  bindVar name
   return $ JsVar (JsNameVar (UnQual () name)) exp : body
 
 -- | Compile a record field pattern.
@@ -59,7 +57,6 @@ compilePatFields exp name pats body = do
 
         compilePats' names (PFieldPat _ fieldname (PVar _ (unAnn -> varName)):xs) = do
           r <- compilePats' (fieldname : names) xs
-          bindVar varName
           return $ JsVar (JsNameVar (UnQual () varName))
                          (JsGetProp (force exp) (JsNameVar (unAnn fieldname)))
                    : r -- TODO: think about this force call
@@ -68,9 +65,8 @@ compilePatFields exp name pats body = do
           records <- liftM stateRecords get
           let fields = fromJust (lookup (unAnn name) records)
               fields' = fields \\ map unAnn names
-          f <- mapM (\fieldName -> do bindVar (unQual fieldName)
-                                      return (JsVar (JsNameVar fieldName)
-                                             (JsGetProp (force exp) (JsNameVar fieldName))))
+          f <- mapM (\fieldName -> return $ JsVar (JsNameVar fieldName)
+                                                  (JsGetProp (force exp) (JsNameVar fieldName)))
                    fields'
           r <- compilePats' names xs
           return $ f ++ r
@@ -100,7 +96,6 @@ compilePLit exp literal body = do
 -- | Compile as binding in pattern match
 compilePAsPat :: JsExp -> S.Name -> S.Pat -> [JsStmt] -> Compile [JsStmt]
 compilePAsPat exp (unAnn -> name) pat body = do
-  bindVar name
   p <- compilePat exp pat body
   return $ JsVar (JsNameVar $ UnQual () name) exp : p
 

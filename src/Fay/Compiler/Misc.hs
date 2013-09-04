@@ -23,7 +23,6 @@ import           Data.Char                         (isAlpha)
 import           Data.List
 import qualified Data.Map                          as M
 import           Data.Maybe
-import qualified Data.Set                          as S
 import           Data.String
 import           Data.Version                      (parseVersion)
 import           Distribution.HaskellSuite.Modules
@@ -135,31 +134,6 @@ bindToplevel toplevel (unAnn -> name) expr =
       mod <- gets stateModuleName
       return $ JsSetQName (Qual () mod name) expr
     else return $ JsVar (JsNameVar $ UnQual () name) expr
-
--- | Create a temporary scope and discard it after the given computation.
-withScope :: Compile a -> Compile a
-withScope m = do
-  scope <- gets stateLocalScope
-  value <- m
-  modify $ \s -> s { stateLocalScope = scope }
-  return value
-
--- | Run a compiler and just get the scope information.
-generateScope :: Compile a -> Compile ()
-generateScope m = do
-  st <- get
-  _ <- m
-  scope <- gets stateLocalScope
-  put st { stateLocalScope = scope }
-
--- | Bind a variable in the current scope.
-bindVar :: Name a -> Compile ()
-bindVar (unAnn -> name) =
-  modify $ \s -> s { stateLocalScope = S.insert name (stateLocalScope s) }
-
--- | Emit exported names.
-emitExport :: ExportSpec a -> Compile ()
-emitExport _ = return ()
 
 -- | Force an expression in a thunk.
 force :: JsExp -> JsExp

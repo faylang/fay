@@ -31,15 +31,14 @@ compileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
 compileDecls toplevel decls =
   case decls of
     [] -> return []
-    (TypeSig _ _ sig:bind@PatBind{}:decls) -> appendM (scoped (compilePatBind toplevel (Just sig) bind))
+    (TypeSig _ _ sig:bind@PatBind{}:decls) -> appendM (compilePatBind toplevel (Just sig) bind)
                                                       (compileDecls toplevel decls)
-    (decl:decls) -> appendM (scoped (compileDecl toplevel decl))
+    (decl:decls) -> appendM (compileDecl toplevel decl)
                             (compileDecls toplevel decls)
 
   where appendM m n = do x <- m
                          xs <- n
                          return (x ++ xs)
-        scoped = if toplevel then withScope else id
 
 -- | Compile a declaration.
 compileDecl :: Bool -> S.Decl -> Compile [JsStmt]
@@ -88,11 +87,9 @@ compilePatBind toplevel sig pat =
 -- | Compile a normal simple pattern binding.
 compileUnguardedRhs :: Bool -> S.Name -> S.Exp -> Compile [JsStmt]
 compileUnguardedRhs toplevel ident rhs = do
-  unless toplevel $ bindVar ident
-  withScope $ do
-    body <- compileExp rhs
-    bind <- bindToplevel toplevel ident (thunk body)
-    return [bind]
+  body <- compileExp rhs
+  bind <- bindToplevel toplevel ident (thunk body)
+  return [bind]
 
 -- | Compile a data declaration (or a GADT, latter is converted to former).
 compileDataDecl :: Bool -> [S.TyVarBind] -> [S.QualConDecl] -> Compile [JsStmt]
@@ -179,7 +176,6 @@ compileFunCase toplevel (InfixMatch l pat name pats rhs binds : rest) =
   compileFunCase toplevel (Match l name (pat:pats) rhs binds : rest)
 compileFunCase toplevel matches@(Match _ name argslen _ _:_) = do
   pats <- fmap optimizePatConditions (mapM compileCase matches)
-  bindVar name
   bind <- bindToplevel toplevel
                        name
                        (foldr (\arg inner -> JsFun Nothing [arg] [] (Just inner))
@@ -193,28 +189,25 @@ compileFunCase toplevel matches@(Match _ name argslen _ _:_) = do
         compileCase :: S.Match -> Compile [JsStmt]
         compileCase (InfixMatch l pat name pats rhs binds) =
           compileCase $ Match l name (pat:pats) rhs binds
-        compileCase match@(Match _ _ pats rhs _) =
-          withScope $ do
-            whereDecls' <- whereDecls match
-            generateScope $ zipWithM (\arg pat -> compilePat (JsName arg) pat []) args pats
-            generateScope $ mapM compileLetDecl whereDecls'
-            rhsform <- compileRhs rhs
-            body <- if null whereDecls'
-                      then return [either id JsEarlyReturn rhsform]
-                      else do
-                          binds <- mapM compileLetDecl whereDecls'
-                          case rhsform of
-                            Right exp ->
-                              return [JsEarlyReturn $ JsApp (JsFun Nothing [] (concat binds) (Just exp)) []]
-                            Left stmt ->
-                              withScopedTmpJsName $ \n -> return
-                                [ JsVar n (JsApp (JsFun Nothing [] (concat binds ++ [stmt]) Nothing) [])
-                                , JsIf (JsNeq JsUndefined (JsName n)) [JsEarlyReturn (JsName n)] []
-                                ]
-            foldM (\inner (arg,pat) ->
-                    compilePat (JsName arg) pat inner)
-                  body
-                  (zip args pats)
+        compileCase match@(Match _ _ pats rhs _) = do
+          whereDecls' <- whereDecls match
+          rhsform <- compileRhs rhs
+          body <- if null whereDecls'
+                    then return [either id JsEarlyReturn rhsform]
+                    else do
+                        binds <- mapM compileLetDecl whereDecls'
+                        case rhsform of
+                          Right exp ->
+                            return [JsEarlyReturn $ JsApp (JsFun Nothing [] (concat binds) (Just exp)) []]
+                          Left stmt ->
+                            withScopedTmpJsName $ \n -> return
+                              [ JsVar n (JsApp (JsFun Nothing [] (concat binds ++ [stmt]) Nothing) [])
+                              , JsIf (JsNeq JsUndefined (JsName n)) [JsEarlyReturn (JsName n)] []
+                              ]
+          foldM (\inner (arg,pat) ->
+                  compilePat (JsName arg) pat inner)
+                body
+                (zip args pats)
 
         whereDecls :: S.Match -> Compile [S.Decl]
         whereDecls (Match _ _ _ _ (Just (BDecls _ decls))) = return decls

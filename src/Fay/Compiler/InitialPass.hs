@@ -20,7 +20,6 @@ import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
 import qualified Data.Map                        as M
-import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated hiding (name, var)
 import qualified Language.Haskell.Names          as HN
 import           Prelude                         hiding (mod, read)
@@ -158,7 +157,6 @@ compileImport' name =
         -- module with the current state. We can assume no duplicate
         -- records exist since GHC would pick that up.
         modify $ \s -> s { stateRecords      = stateRecords st
-                         , stateLocalScope   = S.empty
                          , stateRecordTypes  = stateRecordTypes st
                          , stateImported     = stateImported st
                          , stateNewtypes     = stateNewtypes st

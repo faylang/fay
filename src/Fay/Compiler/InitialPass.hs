@@ -52,9 +52,9 @@ compileWith :: (Show from,Parseable from)
             -> CompileState
             -> (from -> Compile ())
             -> String
-            -> Compile (AllTheState ())
+            -> Compile (CompileResult ())
 compileWith filepath r st with from =
-  Compile . lift . lift $ runCompile r
+  Compile . lift . lift $ runCompileModule r
              st
              (parseResult (throwError . uncurry ParseError)
              with

@@ -272,16 +272,17 @@ findImport alldirs (unAnn -> mname) = go alldirs mname where
     ModuleName _ "Fay.FFI" -> const "module Fay.FFI where\n\ndata Nullable a = Nullable a | Null\n\ndata Defined a = Defined a | Undefined"
     _ -> id
 
--- | Run the compiler.
-topRunCompile :: CompileReader -> CompileState
-           -> Compile a
-           -> IO (Either CompileError (a,CompileState,CompileWriter))
-topRunCompile reader' state' m = fst <$> runModuleT (runErrorT (runRWST (unCompile m) reader' state')) [] "fay" (\_fp -> return undefined) M.empty
+-- | Run the top level compilation for all modules.
+runTopCompile
+  :: CompileReader
+  -> CompileState
+  -> Compile a
+  -> IO (Either CompileError (a,CompileState,CompileWriter))
+runTopCompile reader' state' m = fst <$> runModuleT (runErrorT (runRWST (unCompile m) reader' state')) [] "fay" (\_fp -> return undefined) M.empty
 
-
-runCompile :: CompileReader -> CompileState -> Compile a
-           -> Compile2 a
-runCompile reader' state' m = runErrorT (runRWST (unCompile m) reader' state')
+-- | Runs compilation for a single module.
+runCompileModule :: CompileReader -> CompileState -> Compile a -> CompileModule a
+runCompileModule reader' state' m = runErrorT (runRWST (unCompile m) reader' state')
 
 -- | Parse some Fay code.
 parseFay :: Parseable ast => FilePath -> String -> ParseResult ast

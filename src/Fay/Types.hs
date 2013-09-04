@@ -18,8 +18,8 @@ module Fay.Types
   ,JsName(..)
   ,CompileError(..)
   ,Compile(..)
-  ,AllTheState
-  ,Compile2
+  ,CompileResult
+  ,CompileModule
   ,Printable(..)
   ,Fay
   ,CompileReader(..)
@@ -56,9 +56,6 @@ import           Data.String
 import           Distribution.HaskellSuite.Modules
 import           Language.Haskell.Exts.Annotated
 import           Language.Haskell.Names            (Symbols)
-
-
-
 
 --------------------------------------------------------------------------------
 -- Compiler types
@@ -158,11 +155,14 @@ newtype Compile a = Compile
            ,Applicative
            )
 
-type AllTheState a = Either CompileError (a, CompileState, CompileWriter)
+type CompileResult a
+  = Either CompileError
+           (a, CompileState, CompileWriter)
 
-type Compile2 a = ModuleT Symbols
-                          IO
-                          (AllTheState a)
+type CompileModule a
+  = ModuleT Symbols
+            IO
+            (CompileResult a)
 
 instance MonadModule Compile where
   type ModuleInfo Compile = Symbols

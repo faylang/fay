@@ -8,7 +8,7 @@
 -- | The Haskell→Javascript compiler.
 
 module Fay.Compiler
-  (runCompile
+  (runCompileModule
   ,compileViaStr
   ,compileToAst
   ,compileExp
@@ -61,7 +61,7 @@ compileViaStr :: FilePath
               -> IO (Either CompileError (PrintState,CompileState,CompileWriter))
 compileViaStr filepath config with from = do
   rs <- defaultCompileReader config
-  topRunCompile rs
+  runTopCompile rs
              defaultCompileState
              (parseResult (throwError . uncurry ParseError)
                           (fmap (\x -> execState (runPrinter (printJS x)) printConfig) . with)
@@ -75,9 +75,9 @@ compileToAst :: FilePath
               -> CompileState
               -> (F.Module -> Compile [JsStmt])
               -> String
-              -> Compile (AllTheState [JsStmt])
+              -> Compile (CompileResult [JsStmt])
 compileToAst filepath reader state with from =
-  Compile . lift . lift $ runCompile reader
+  Compile . lift . lift $ runCompileModule reader
              state
              (parseResult (throwError . uncurry ParseError)
                           with

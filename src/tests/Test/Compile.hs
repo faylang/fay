@@ -89,7 +89,8 @@ case_strictWrapper = do
     writeFile "tests/Compile/StrictWrapper.js" js
     (err, out) <- either id id <$> readAllFromProcess "node" ["tests/Compile/StrictWrapper.js"] ""
     when (err /= "") $ assertFailure err
-    assertEqual "strictWrapper node stdout" "3\n" out
+    expected <- readFile "tests/Compile/StrictWrapper.res"
+    assertEqual "strictWrapper node stdout" expected out
 
 defConf :: CompileConfig
 defConf = addConfigDirectoryIncludePaths ["tests/"]

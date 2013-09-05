@@ -252,14 +252,16 @@ generateStrictExports = do
         Just _ -> Just $
           JsSetQName (changeModule' ("Strict." ++) name) $
             JsFun Nothing (map JsParam paramNames) [] $ Just $
-              foldl (\(f::JsExp) a -> forcedApp $ JsApp f [automatize $ JsName $ JsParam a]) (ini name) paramNames
+              serialize $ foldl (\(f::JsExp) a -> forcedApp $ JsApp f [deserialize $ JsName $ JsParam a]) (ini name) paramNames
 
     ini :: N.QName -> JsExp
     ini name = (forcedApp (JsName $ JsNameVar name))
     forcedApp :: JsExp -> JsExp
     forcedApp exp = JsApp (JsName JsForce) [exp]
-    automatize :: JsExp -> JsExp
-    automatize n = JsApp (JsRawExp "Fay$$jsToFay") [JsRawExp "['automatic']", n]
+    deserialize :: JsExp -> JsExp
+    deserialize n = JsApp (JsRawExp "Fay$$jsToFay") [JsRawExp "['automatic']", n]
+    serialize :: JsExp -> JsExp
+    serialize n = JsApp (JsRawExp "Fay$$fayToJs") [JsRawExp "['automatic']", n]
 
 -- | Is the module a standard module, i.e., one that we'd rather not
 -- output code for if we're compiling separate files.

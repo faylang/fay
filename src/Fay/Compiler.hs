@@ -193,9 +193,12 @@ hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter
 -- | A.B = {};
 createModulePath :: ModuleName a -> Compile [JsStmt]
 createModulePath (unAnn -> m) = do
+  cfg <- config id
   reg <- liftM concat . mapM modPath . mkModulePaths $ m
-  -- TODO only generate if --strict.
-  strict <- liftM concat . mapM modPath . mkModulePaths $ (\(ModuleName i n) -> ModuleName i ("Strict." ++ n)) m
+  strict <-
+    if shouldExportStrictWrapper m cfg
+      then liftM concat . mapM modPath . mkModulePaths $ (\(ModuleName i n) -> ModuleName i ("Strict." ++ n)) m
+       else return []
   return $ reg ++ strict
   where
     modPath :: ModulePath -> Compile [JsStmt]
@@ -226,9 +229,9 @@ generateExports = do
 generateStrictExports :: Compile [JsStmt]
 generateStrictExports = do
   cs <- gets id
-  shouldExport <- config configStrict
+  cfg <- config id
   modName <- gets stateModuleName
-  if shouldExport
+  if shouldExportStrictWrapper modName cfg
     then do
       local <- gets (getLocalExportsWithoutNewtypes modName)
       nonLocal <- gets (getNonLocalExportsWithoutNewtypes modName)

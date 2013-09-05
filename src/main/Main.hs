@@ -7,15 +7,17 @@ module Main where
 
 import           Fay
 import           Fay.Compiler.Config
+import           Paths_fay                       (version)
 
-import qualified Control.Exception   as E
+import qualified Control.Exception               as E
 import           Control.Monad
 import           Data.Default
-import           Data.List.Split     (wordsBy)
+import           Data.List.Split                 (wordsBy)
 import           Data.Maybe
-import           Data.Version        (showVersion)
+import qualified Data.Set                        as S
+import           Data.Version                    (showVersion)
+import           Language.Haskell.Exts.Annotated (ModuleName (ModuleName))
 import           Options.Applicative
-import           Paths_fay           (version)
 import           System.Environment
 
 -- | Options and help.
@@ -42,7 +44,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optStdlibOnly   :: Bool
   , optNoBuiltins   :: Bool
   , optBasePath     :: Maybe FilePath
-  , optStrict       :: Bool
+  , optStrict       :: [String]
   }
 
 -- | Main entry point.
@@ -72,7 +74,7 @@ main = do
                 , configExportStdlib     = not (optNoStdlib opts)
                 , configExportStdlibOnly = optStdlibOnly opts
                 , configBasePath         = optBasePath opts
-                , configStrict           = optStrict opts
+                , configStrict           = S.fromList . map (ModuleName ()) $ optStrict opts
                 }
         void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
         case optFiles opts of
@@ -114,7 +116,8 @@ options = FayCompilerOptions
   <*> switch (long "stdlib" <> help "Only output the stdlib")
   <*> switch (long "no-builtins" <> help "Don't export no-builtins")
   <*> optional (strOption (long "base-path" <> help "If fay can't find the sources of fay-base you can use this to provide the path. Use --base-path ~/example instead of --base-path=~/example to make sure ~ is expanded properly"))
-  <*> switch (long "strict" <> help "Generate strict and uncurried exports for modules to call functions from JavaScript easier")
+  <*> strsOption (long "strict" <> metavar "modulename[, ..]"
+      <> help "Generate strict and uncurried exports for the supplied modules. Simplifies calling Fay from JS")
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

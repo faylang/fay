@@ -7,16 +7,14 @@ module Main where
 
 import           Fay
 import           Fay.Compiler.Config
-import           Paths_fay                       (version)
+import           Paths_fay           (version)
 
-import qualified Control.Exception               as E
+import qualified Control.Exception   as E
 import           Control.Monad
 import           Data.Default
-import           Data.List.Split                 (wordsBy)
+import           Data.List.Split     (wordsBy)
 import           Data.Maybe
-import qualified Data.Set                        as S
-import           Data.Version                    (showVersion)
-import           Language.Haskell.Exts.Annotated (ModuleName (ModuleName))
+import           Data.Version        (showVersion)
 import           Options.Applicative
 import           System.Environment
 
@@ -74,7 +72,7 @@ main = do
                 , configExportStdlib     = not (optNoStdlib opts)
                 , configExportStdlibOnly = optStdlibOnly opts
                 , configBasePath         = optBasePath opts
-                , configStrict           = S.fromList . map (ModuleName ()) $ optStrict opts
+                , configStrict           = optStrict opts
                 }
         void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
         case optFiles opts of

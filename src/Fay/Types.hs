@@ -81,7 +81,7 @@ data CompileConfig = CompileConfig
   , configPackageConf       :: Maybe FilePath             -- ^ The package config e.g. packages-6.12.3.
   , configPackages          :: [String]                   -- ^ Included Fay packages.
   , configBasePath          :: Maybe FilePath             -- ^ Custom source location for fay-base
-  , configStrict            :: Set N.ModuleName
+  , configStrict            :: [String]
   } deriving (Show)
 
 -- | The name of a module split into a list for code generation.

@@ -4,12 +4,11 @@
 
 module Fay.Compiler.Config where
 
-import           Fay.Exts.NoAnnotation (ModuleName)
 import           Fay.Types
 
 import           Data.Default
 import           Data.Maybe
-import qualified Data.Set              as S
+import           Language.Haskell.Exts.Annotated (ModuleName (..))
 
 -- | Get all include directories without the package mapping.
 configDirectoryIncludePaths :: CompileConfig -> [FilePath]
@@ -39,8 +38,8 @@ addConfigPackage pkg cfg = cfg { configPackages = pkg : configPackages cfg }
 addConfigPackages :: [String] -> CompileConfig -> CompileConfig
 addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 
-shouldExportStrictWrapper :: ModuleName -> CompileConfig -> Bool
-shouldExportStrictWrapper m cs = m `S.member` configStrict cs
+shouldExportStrictWrapper :: ModuleName a -> CompileConfig -> Bool
+shouldExportStrictWrapper (ModuleName _ m) cs = m `elem` configStrict cs
 
 -- | Default configuration.
 instance Default CompileConfig where
@@ -65,5 +64,5 @@ instance Default CompileConfig where
     , configPackageConf        = Nothing
     , configPackages           = []
     , configBasePath           = Nothing
-    , configStrict             = S.empty
+    , configStrict             = []
     }

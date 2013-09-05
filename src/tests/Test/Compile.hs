@@ -11,7 +11,6 @@ import           Control.Applicative
 import           Control.Monad
 import           Data.Default
 import           Data.Maybe
-import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated
 import           System.Environment
 import           Test.Framework
@@ -85,7 +84,7 @@ case_cppMultiLineStrings = do
 case_strictWrapper :: Assertion
 case_strictWrapper = do
   whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
-  res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Compile/StrictWrapper.hs", configStrict = S.fromList [ModuleName () "StrictWrapper"] } "tests/Compile/StrictWrapper.hs"
+  res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Compile/StrictWrapper.hs", configStrict = ["StrictWrapper"] } "tests/Compile/StrictWrapper.hs"
   (\a b -> either a b res) (assertFailure . show) $ \js -> do
     writeFile "tests/Compile/StrictWrapper.js" js
     (err, out) <- either id id <$> readAllFromProcess "node" ["tests/Compile/StrictWrapper.js"] ""

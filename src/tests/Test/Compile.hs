@@ -5,9 +5,13 @@ module Test.Compile (tests) where
 
 import           Fay
 import           Fay.Compiler.Config
+import           Fay.System.Process.Extra
 
+import           Control.Applicative
+import           Control.Monad
 import           Data.Default
 import           Data.Maybe
+import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated
 import           System.Environment
 import           Test.Framework
@@ -77,6 +81,16 @@ case_cppMultiLineStrings = do
   whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
   res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Compile/CPPMultiLineStrings.hs" } "tests/Compile/CPPMultiLineStrings.hs"
   either (assertFailure . show) (const $ return ()) res
+
+case_strictWrapper :: Assertion
+case_strictWrapper = do
+  whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
+  res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Compile/StrictWrapper.hs", configStrict = S.fromList [ModuleName () "StrictWrapper"] } "tests/Compile/StrictWrapper.hs"
+  (\a b -> either a b res) (assertFailure . show) $ \js -> do
+    writeFile "tests/Compile/StrictWrapper.js" js
+    (err, out) <- either id id <$> readAllFromProcess "node" ["tests/Compile/StrictWrapper.js"] ""
+    when (err /= "") $ assertFailure err
+    assertEqual "strictWrapper node stdout" "3\n" out
 
 defConf :: CompileConfig
 defConf = addConfigDirectoryIncludePaths ["tests/"]

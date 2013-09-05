@@ -5,6 +5,8 @@
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ViewPatterns          #-}
 
+{-# LANGUAGE ScopedTypeVariables   #-}
+
 -- | The Haskell→Javascript compiler.
 
 module Fay.Compiler
@@ -167,7 +169,8 @@ compileModuleFromAST mod'@(Module _ _ pragmas imports _) = do
   exportStdlibOnly <- config configExportStdlibOnly
   modulePaths      <- createModulePath modName
   extExports       <- generateExports
-  let stmts = imported ++ modulePaths ++ current ++ extExports
+  strictExports    <- generateStrictExports
+  let stmts = imported ++ modulePaths ++ current ++ extExports ++ strictExports
   return $ if exportStdlibOnly
     then if anStdlibModule modName
             then stmts
@@ -189,8 +192,11 @@ hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter
 -- | var A = {};
 -- | A.B = {};
 createModulePath :: ModuleName a -> Compile [JsStmt]
-createModulePath (unAnn -> m) =
-  liftM concat . mapM modPath . mkModulePaths $ m
+createModulePath (unAnn -> m) = do
+  reg <- liftM concat . mapM modPath . mkModulePaths $ m
+  -- TODO only generate if --strict.
+  strict <- liftM concat . mapM modPath . mkModulePaths $ (\(ModuleName i n) -> ModuleName i ("Strict." ++ n)) m
+  return $ reg ++ strict
   where
     modPath :: ModulePath -> Compile [JsStmt]
     modPath mp = whenImportNotGenerated mp $ \(unModulePath -> l) -> case l of
@@ -216,6 +222,41 @@ generateExports = do
     exportExp m v = JsSetQName (changeModule m v) $ case findPrimOp v of
       Just p  -> JsName $ JsNameVar p -- TODO add test case for this case, is it needed at all?
       Nothing -> JsName $ JsNameVar v
+
+generateStrictExports :: Compile [JsStmt]
+generateStrictExports = do
+  cs <- gets id
+  shouldExport <- config configStrict
+  modName <- gets stateModuleName
+  if shouldExport
+    then do
+      local <- gets (getLocalExportsWithoutNewtypes modName)
+      nonLocal <- gets (getNonLocalExportsWithoutNewtypes modName)
+      let int = maybe [] (mapMaybe (exportExp' cs) . S.toList) local
+      let ext = maybe [] (map (exportExp modName)  . S.toList) nonLocal
+      return $ int ++ ext
+    else return []
+  where
+    exportExp :: N.ModuleName -> N.QName -> JsStmt
+    exportExp m v = JsSetQName (changeModule' ("Strict." ++) $ changeModule m v) $ JsName $ JsNameVar $ changeModule' ("Strict." ++) v
+
+    exportExp' :: CompileState -> N.QName -> Maybe JsStmt
+    exportExp' cs name =
+      let margc      = typeArity <$> findTypeSig name cs
+          paramNames = take (fromMaybe 0 margc) [1..]
+      in case margc of
+        Nothing -> Nothing
+        Just _ -> Just $
+          JsSetQName (changeModule' ("Strict." ++) name) $
+            JsFun Nothing (map JsParam paramNames) [] $ Just $
+              foldl (\(f::JsExp) a -> forcedApp $ JsApp f [automatize $ JsName $ JsParam a]) (ini name) paramNames
+
+    ini :: N.QName -> JsExp
+    ini name = (forcedApp (JsName $ JsNameVar name))
+    forcedApp :: JsExp -> JsExp
+    forcedApp exp = JsApp (JsName JsForce) [exp]
+    automatize :: JsExp -> JsExp
+    automatize n = JsApp (JsRawExp "Fay$$jsToFay") [JsRawExp "['automatic']", n]
 
 -- | Is the module a standard module, i.e., one that we'd rather not
 -- output code for if we're compiling separate files.

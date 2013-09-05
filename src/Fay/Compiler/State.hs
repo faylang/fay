@@ -26,6 +26,17 @@ getNonLocalExportsWithoutNewtypes modName cs =
   where
    isLocal = (Just modName ==) . qModName
 
+getLocalExportsWithoutNewtypes :: N.ModuleName -> CompileState -> Maybe (Set N.QName)
+getLocalExportsWithoutNewtypes modName cs =
+  fmap ( S.filter isLocal
+       . S.map (gname2Qname . origGName . sv_origName)
+       . S.filter (not . (`isNewtype` cs))
+       . (\(Symbols exports _) -> exports)
+       )
+       . M.lookup modName . stateInterfaces $ cs
+  where
+   isLocal = (Just modName ==) . qModName
+
 -- | Is this *resolved* name a new type constructor or destructor?
 isNewtype :: SymValueInfo OrigName -> CompileState -> Bool
 isNewtype s cs = case s of
@@ -49,3 +60,7 @@ addModulePath mp cs = cs { stateJsModulePaths = mp `S.insert` stateJsModulePaths
 -- | Has this ModulePath been added/printed?
 addedModulePath :: ModulePath -> CompileState -> Bool
 addedModulePath mp CompileState { stateJsModulePaths } = mp `S.member` stateJsModulePaths
+
+
+findTypeSig :: N.QName -> CompileState -> Maybe N.Type
+findTypeSig n  = M.lookup n . stateTypeSigs

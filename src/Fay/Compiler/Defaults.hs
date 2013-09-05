@@ -39,4 +39,5 @@ defaultCompileState = CompileState
   , stateNameDepth     = 1
   , stateJsModulePaths = S.empty
   , stateUseFromString = False
+  , stateTypeSigs      = M.empty
   }

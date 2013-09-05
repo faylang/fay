@@ -12,6 +12,7 @@ module Fay.Compiler.FFI
   ,compileFFIExp
   ,jsToFayHash
   ,fayToJsHash
+  ,typeArity
   ) where
 
 import           Fay.Compiler.Misc

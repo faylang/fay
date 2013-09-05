@@ -59,4 +59,5 @@ instance Default CompileConfig where
     , configPackageConf        = Nothing
     , configPackages           = []
     , configBasePath           = Nothing
+    , configStrict             = False
     }

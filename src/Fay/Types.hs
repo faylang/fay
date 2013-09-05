@@ -81,6 +81,7 @@ data CompileConfig = CompileConfig
   , configPackageConf       :: Maybe FilePath             -- ^ The package config e.g. packages-6.12.3.
   , configPackages          :: [String]                   -- ^ Included Fay packages.
   , configBasePath          :: Maybe FilePath             -- ^ Custom source location for fay-base
+  , configStrict            :: Bool
   } deriving (Show)
 
 -- | The name of a module split into a list for code generation.
@@ -114,6 +115,7 @@ data CompileState = CompileState
   , stateModuleName    :: N.ModuleName                       -- ^ Name of the module currently being compiled.
   , stateJsModulePaths :: Set ModulePath                     -- ^ Module paths that have code generated for them.
   , stateUseFromString :: Bool                               -- ^ Use JS Strings instead of [Char] for string literals?
+  , stateTypeSigs      :: Map N.QName N.Type
   } deriving (Show)
 
 -- | Things written out by the compiler.

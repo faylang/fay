@@ -26,6 +26,10 @@ changeModule m (Qual a _ n) = Qual a m n
 changeModule m (UnQual a n) = Qual a m n
 changeModule _ Special{}  = error "changeModule Special{}"
 
+changeModule' :: (String -> String) -> QName a -> QName a
+changeModule' f (Qual l (ModuleName ml mn) n) = Qual l (ModuleName ml $ f mn) n
+changeModule' _ x = x
+
 -- | Extract the string from a Name.
 unname :: Name a -> String
 unname (Ident _ s) = s

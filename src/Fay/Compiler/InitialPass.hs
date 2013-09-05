@@ -35,6 +35,7 @@ initialPass mod@(Module _ _ _pragmas imports decls) = do
   -- This can only return one element since we only compile one module.
   ([exports],_) <- HN.getInterfaces Haskell2010 [] [mod]
   modify $ \s -> s { stateInterfaces = M.insert (stateModuleName s) exports $ stateInterfaces s }
+  forM_ decls scanTypeSigs
   forM_ decls scanRecordDecls
   forM_ decls scanNewtypeDecls
 initialPass m = throwError (UnsupportedModuleSyntax "initialPass" m)
@@ -144,6 +145,16 @@ scanRecordDecls decl = do
         addRecordState (unAnn -> name) (map unAnn -> fields) = modify $ \s -> s
           { stateRecords = (UnQual () name,map (UnQual ()) fields) : stateRecords s }
 
+scanTypeSigs :: F.Decl -> Compile ()
+scanTypeSigs decl = case decl of
+  TypeSig _ names typ -> mapM_ (`addTypeSig` typ) names
+  _ -> return ()
+  where
+    addTypeSig :: F.Name -> F.Type -> Compile ()
+    addTypeSig (unAnn -> n') (unAnn -> t) = do
+      n <- qualify n'
+      modify $ \s -> s { stateTypeSigs = M.insert n t (stateTypeSigs s) }
+
 -- | Compile an import filtering the exports based on the current module's imports
 compileImport' :: F.ModuleName -> Compile ()
 compileImport' name =
@@ -156,10 +167,11 @@ compileImport' name =
         -- Merges the state gotten from passing through an imported
         -- module with the current state. We can assume no duplicate
         -- records exist since GHC would pick that up.
-        modify $ \s -> s { stateRecords      = stateRecords st
+        modify $ \s -> s { stateRecords      = stateRecords     st
                          , stateRecordTypes  = stateRecordTypes st
-                         , stateImported     = stateImported st
-                         , stateNewtypes     = stateNewtypes st
-                         , stateInterfaces   = stateInterfaces st
+                         , stateImported     = stateImported    st
+                         , stateNewtypes     = stateNewtypes    st
+                         , stateInterfaces   = stateInterfaces  st
+                         , stateTypeSigs     = stateTypeSigs    st
                          }
       Left err -> throwError err

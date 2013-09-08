@@ -62,26 +62,26 @@ import           Language.Haskell.Names            (Symbols)
 
 -- | Configuration of the compiler.
 data CompileConfig = CompileConfig
-  { configOptimize          :: Bool                       -- ^ Run optimizations
-  , configFlattenApps       :: Bool                       -- ^ Flatten function application?
-  , configExportBuiltins    :: Bool                       -- ^ Export built-in functions?
-  , configExportRuntime     :: Bool                       -- ^ Export the runtime?
-  , configExportStdlib      :: Bool                       -- ^ Export the stdlib?
-  , configExportStdlibOnly  :: Bool                       -- ^ Export /only/ the stdlib?
+  { configOptimize          :: Bool                        -- ^ Run optimizations
+  , configFlattenApps       :: Bool                        -- ^ Flatten function application?
+  , configExportBuiltins    :: Bool                        -- ^ Export built-in functions?
+  , configExportRuntime     :: Bool                        -- ^ Export the runtime?
+  , configExportStdlib      :: Bool                        -- ^ Export the stdlib?
+  , configExportStdlibOnly  :: Bool                        -- ^ Export /only/ the stdlib?
   , configDirectoryIncludes :: [(Maybe String, FilePath)]  -- ^ Possibly a fay package name, and a include directory.
-  , configPrettyPrint       :: Bool                       -- ^ Pretty print the JS output?
-  , configHtmlWrapper       :: Bool                       -- ^ Output a HTML file including the produced JS.
-  , configHtmlJSLibs        :: [FilePath]                 -- ^ Any JS files to link to in the HTML.
-  , configLibrary           :: Bool                       -- ^ Don't invoke main in the produced JS.
-  , configWarn              :: Bool                       -- ^ Warn on dubious stuff, not related to typechecking.
-  , configFilePath          :: Maybe FilePath             -- ^ File path to output to.
-  , configTypecheck         :: Bool                       -- ^ Typecheck with GHC.
-  , configWall              :: Bool                       -- ^ Typecheck with -Wall.
-  , configGClosure          :: Bool                       -- ^ Run Google Closure on the produced JS.
-  , configPackageConf       :: Maybe FilePath             -- ^ The package config e.g. packages-6.12.3.
-  , configPackages          :: [String]                   -- ^ Included Fay packages.
-  , configBasePath          :: Maybe FilePath             -- ^ Custom source location for fay-base
-  , configStrict            :: [String]
+  , configPrettyPrint       :: Bool                        -- ^ Pretty print the JS output?
+  , configHtmlWrapper       :: Bool                        -- ^ Output a HTML file including the produced JS.
+  , configHtmlJSLibs        :: [FilePath]                  -- ^ Any JS files to link to in the HTML.
+  , configLibrary           :: Bool                        -- ^ Don't invoke main in the produced JS.
+  , configWarn              :: Bool                        -- ^ Warn on dubious stuff, not related to typechecking.
+  , configFilePath          :: Maybe FilePath              -- ^ File path to output to.
+  , configTypecheck         :: Bool                        -- ^ Typecheck with GHC.
+  , configWall              :: Bool                        -- ^ Typecheck with -Wall.
+  , configGClosure          :: Bool                        -- ^ Run Google Closure on the produced JS.
+  , configPackageConf       :: Maybe FilePath              -- ^ The package config e.g. packages-6.12.3.
+  , configPackages          :: [String]                    -- ^ Included Fay packages.
+  , configBasePath          :: Maybe FilePath              -- ^ Custom source location for fay-base
+  , configStrict            :: [String]                    -- ^ Produce strict and uncurried wrappers for all functions with type signatures in the given module
   } deriving (Show)
 
 -- | The name of a module split into a list for code generation.

@@ -19,8 +19,10 @@ module Fay
    where
 
 import           Fay.Compiler
-import           Fay.Compiler.Misc                      (printSrcSpanInfo)
+import           Fay.Compiler.Misc                      (ioWarn,
+                                                         printSrcSpanInfo)
 import           Fay.Compiler.Packages
+import           Fay.Compiler.Typecheck
 import qualified Fay.Exts                               as F
 import           Fay.Types
 
@@ -36,13 +38,19 @@ import           System.FilePath
 -- | Compile the given file and write the output to the given path, or
 -- if nothing given, stdout.
 compileFromTo :: CompileConfig -> FilePath -> Maybe FilePath -> IO ()
-compileFromTo config filein fileout = do
-  result <- maybe (compileFile config filein)
-                  (compileFromToAndGenerateHtml config filein)
-                  fileout
-  case result of
-    Right out -> maybe (putStrLn out) (`writeFile` out) fileout
-    Left err -> error $ showCompileError err
+compileFromTo cfg filein fileout =
+  if configTypecheckOnly cfg
+  then do
+    cfg' <- resolvePackages cfg
+    res <- typecheck cfg' filein
+    either (error . showCompileError) (ioWarn cfg') res
+  else do
+    result <- maybe (compileFile cfg filein)
+                      (compileFromToAndGenerateHtml cfg filein)
+                      fileout
+    case result of
+      Right out -> maybe (putStrLn out) (`writeFile` out) fileout
+      Left err -> error $ showCompileError err
 
 -- | Compile the given file and write to the output, also generate any HTML.
 compileFromToAndGenerateHtml :: CompileConfig -> FilePath -> FilePath -> IO (Either CompileError String)

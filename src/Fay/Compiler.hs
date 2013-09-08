@@ -89,9 +89,11 @@ compileToAst filepath reader state with from =
 compileToplevelModule :: FilePath -> F.Module -> Compile [JsStmt]
 compileToplevelModule filein mod@Module{}  = do
   cfg <- config id
-  when (configTypecheck cfg) $
-    typecheck (configPackageConf cfg) (configWall cfg) $
-      fromMaybe (F.moduleNameString (F.moduleName mod)) $ configFilePath cfg
+  when (configTypecheck cfg) $ do
+    res <- io $ typecheck cfg $
+             fromMaybe (F.moduleNameString (F.moduleName mod)) $
+               configFilePath cfg
+    either throwError warn res
   initialPass mod
   -- Reset imports after initialPass so the modules can be imported during code generation.
   modify $ \s -> s { stateImported = [] }

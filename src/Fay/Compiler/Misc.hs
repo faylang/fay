@@ -213,9 +213,13 @@ withScopedTmpName withName = do
 -- | Print out a compiler warning.
 warn :: String -> Compile ()
 warn "" = return ()
-warn w = do
-  shouldWarn <- config configWarn
-  when shouldWarn . io . hPutStrLn stderr $ "Warning: " ++ w
+warn w = config id >>= io . (`ioWarn` w)
+
+ioWarn :: CompileConfig -> String -> IO ()
+ioWarn _ "" = return ()
+ioWarn cfg w =
+  when (configWall cfg) $
+    hPutStrLn stderr $ "Warning: " ++ w
 
 -- | Pretty print a source location.
 printSrcLoc :: S.SrcLoc -> String

@@ -20,29 +20,30 @@ import           System.Environment
 
 -- | Options and help.
 data FayCompilerOptions = FayCompilerOptions
-  { optLibrary      :: Bool
-  , optFlattenApps  :: Bool
-  , optHTMLWrapper  :: Bool
-  , optHTMLJSLibs   :: [String]
-  , optInclude      :: [String]
-  , optPackages     :: [String]
-  , optWall         :: Bool
-  , optNoGHC        :: Bool
-  , optStdout       :: Bool
-  , optVersion      :: Bool
-  , optOutput       :: Maybe String
-  , optPretty       :: Bool
-  , optFiles        :: [String]
-  , optOptimize     :: Bool
-  , optGClosure     :: Bool
-  , optPackageConf  :: Maybe String
-  , optNoRTS        :: Bool
-  , optNoStdlib     :: Bool
-  , optPrintRuntime :: Bool
-  , optStdlibOnly   :: Bool
-  , optNoBuiltins   :: Bool
-  , optBasePath     :: Maybe FilePath
-  , optStrict       :: [String]
+  { optLibrary       :: Bool
+  , optFlattenApps   :: Bool
+  , optHTMLWrapper   :: Bool
+  , optHTMLJSLibs    :: [String]
+  , optInclude       :: [String]
+  , optPackages      :: [String]
+  , optWall          :: Bool
+  , optNoGHC         :: Bool
+  , optStdout        :: Bool
+  , optVersion       :: Bool
+  , optOutput        :: Maybe String
+  , optPretty        :: Bool
+  , optFiles         :: [String]
+  , optOptimize      :: Bool
+  , optGClosure      :: Bool
+  , optPackageConf   :: Maybe String
+  , optNoRTS         :: Bool
+  , optNoStdlib      :: Bool
+  , optPrintRuntime  :: Bool
+  , optStdlibOnly    :: Bool
+  , optNoBuiltins    :: Bool
+  , optBasePath      :: Maybe FilePath
+  , optStrict        :: [String]
+  , optTypecheckOnly :: Bool
   }
 
 -- | Main entry point.
@@ -73,6 +74,7 @@ main = do
                 , configExportStdlibOnly = optStdlibOnly opts
                 , configBasePath         = optBasePath opts
                 , configStrict           = optStrict opts
+                , configTypecheckOnly    = optTypecheckOnly opts
                 }
         void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
         case optFiles opts of
@@ -116,6 +118,7 @@ options = FayCompilerOptions
   <*> optional (strOption (long "base-path" <> help "If fay can't find the sources of fay-base you can use this to provide the path. Use --base-path ~/example instead of --base-path=~/example to make sure ~ is expanded properly"))
   <*> strsOption (long "strict" <> metavar "modulename[, ..]"
       <> help "Generate strict and uncurried exports for the supplied modules. Simplifies calling Fay from JS")
+  <*> switch (long "typecheck-only" <> help "Only invoke GHC for typechecking, don't produce any output")
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

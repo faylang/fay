@@ -4,20 +4,17 @@ module Fay.Compiler.Typecheck where
 
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Misc
-import           Fay.Control.Monad.IO
 import           Fay.System.Process.Extra
 import           Fay.Types
 
-import           Control.Monad.Error
 import           Data.List
 import           Data.Maybe
 import qualified GHC.Paths                as GHCPaths
 
 -- | Call out to GHC to type-check the file.
-typecheck :: Maybe FilePath -> Bool -> String -> Compile ()
-typecheck packageConf wall fp = do
-  cfg <- config id
-  faydir <- io faySourceDir
+typecheck :: CompileConfig -> FilePath -> IO (Either CompileError String)
+typecheck cfg fp = do
+  faydir <- faySourceDir
   let includes = configDirectoryIncludes cfg
 
   -- Remove the fay source dir from includeDirs to prevent errors on FFI instance declarations.
@@ -25,10 +22,10 @@ typecheck packageConf wall fp = do
   let packages = nub . map (fromJust . fst) . filter (isJust . fst) $ includes
 
   ghcPackageDbArgs <-
-    case packageConf of
+    case configPackageConf cfg of
       Nothing -> return []
       Just pk -> do
-        flag <- io getGhcPackageDbFlag
+        flag <- getGhcPackageDbFlag
         return [flag ++ '=' : pk]
   let flags =
           [ "-fno-code"
@@ -39,8 +36,8 @@ typecheck packageConf wall fp = do
           , "Language.Fay.DummyMain"
           , "-i" ++ intercalate ":" includeDirs
           , fp ] ++ ghcPackageDbArgs ++ wallF ++ map ("-package " ++) packages
-  res <- io $ readAllFromProcess GHCPaths.ghc flags ""
-  either (throwError . GHCError . fst) (warn . fst) res
+  res <- readAllFromProcess GHCPaths.ghc flags ""
+  either (return . Left . GHCError . fst) (return . Right . fst) res
    where
-    wallF | wall = ["-Wall"]
+    wallF | configWall cfg = ["-Wall"]
           | otherwise = []

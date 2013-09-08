@@ -1,4 +1,4 @@
 import           Prelude
 
 main :: Fay ()
-main = putStrLn $ show $ fromInteger 5
+main = putStrLn $ show $ fromIntegral 5

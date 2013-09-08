@@ -7,7 +7,7 @@ main :: Fay ()
 main = do
   printD $ Nullable (1 :: Double)
   printNS $ Nullable "Hello, World!"
-  printSS $ Nullable ["Hello,","World!"]
+  printSS $ Defined ["Hello,","World!"]
   printD $ (Null :: Nullable Double)
   print' $ R (Nullable 1)
   print' $ R Null

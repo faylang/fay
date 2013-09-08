@@ -3,7 +3,7 @@
 -- | Module to be shared between server and client.
 --
 -- This module must be valid for both GHC and Fay.
-module FayText where
+module FromString.FayText where
 
 import           Prelude
 #ifdef FAY
@@ -40,4 +40,3 @@ unpack = T.unpack
 
 fromString :: String -> Text
 fromString = pack
-

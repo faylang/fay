@@ -2,21 +2,24 @@
 
 -- | As pattern matches
 
-import           Prelude
 import           FFI
+import           Prelude
 
 isPositive :: Double -> Bool
 isPositive x | x > 0 = True
              | x <= 0 = False
 
+threeConds :: Double -> Double
 threeConds x | x > 1 = 2
              | x == 1 = 1
              | x < 1 = 0
 
+withOtherwise :: Double -> Bool
 withOtherwise x | x > 1 = True
                 | otherwise = False
 
 -- Not called, throws "non-exhaustive guard"
+nonExhaustive :: Double -> Bool
 nonExhaustive x | x > 1 = True
 
 main :: Fay ()

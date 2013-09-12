@@ -230,14 +230,13 @@ generateExports = do
 
 generateStrictExports :: Compile [JsStmt]
 generateStrictExports = do
-  cs <- gets id
   cfg <- config id
   modName <- gets stateModuleName
   if shouldExportStrictWrapper modName cfg
     then do
       local <- gets (getLocalExportsWithoutNewtypes modName)
       nonLocal <- gets (getNonLocalExportsWithoutNewtypes modName)
-      let int = maybe [] (mapMaybe (exportExp' cs) . S.toList) local
+      let int = maybe [] (map exportExp' . S.toList) local
       let ext = maybe [] (map (exportExp modName)  . S.toList) nonLocal
       return $ int ++ ext
     else return []
@@ -245,23 +244,9 @@ generateStrictExports = do
     exportExp :: N.ModuleName -> N.QName -> JsStmt
     exportExp m v = JsSetQName (changeModule' ("Strict." ++) $ changeModule m v) $ JsName $ JsNameVar $ changeModule' ("Strict." ++) v
 
-    exportExp' :: CompileState -> N.QName -> Maybe JsStmt
-    exportExp' cs name =
-      let margc      = typeArity <$> findTypeSig name cs
-          paramNames = take (fromMaybe 0 margc) [1..]
-      in case margc of
-        Nothing -> Nothing
-        Just _ -> Just $
-          JsSetQName (changeModule' ("Strict." ++) name) $
-            JsFun Nothing (map JsParam paramNames) [] $ Just $
-              serialize $ foldl (\(f::JsExp) a -> forcedApp $ JsApp f [deserialize $ JsName $ JsParam a]) (ini name) paramNames
+    exportExp' :: N.QName -> JsStmt
+    exportExp' name = JsSetQName (changeModule' ("Strict." ++) name) $ serialize (JsName (JsNameVar name))
 
-    ini :: N.QName -> JsExp
-    ini name = (forcedApp (JsName $ JsNameVar name))
-    forcedApp :: JsExp -> JsExp
-    forcedApp exp = JsApp (JsName JsForce) [exp]
-    deserialize :: JsExp -> JsExp
-    deserialize n = JsApp (JsRawExp "Fay$$jsToFay") [JsRawExp "['automatic']", n]
     serialize :: JsExp -> JsExp
     serialize n = JsApp (JsRawExp "Fay$$fayToJs") [JsRawExp "['automatic']", n]
 

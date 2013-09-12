@@ -169,10 +169,10 @@ function Fay$$fayToJs(type,fayObj){
         // Unserialize the JS values to Fay for the Fay callback.
         if (args == "automatic_function")
         {
-          for (var i = 0; fayFunc instanceof Function; i++) {
-            fayFunc = Fay$$_(fayFunc(Fay$$jsToFay(["automatic"],arguments[i])),true);
+          for (var i = 0; i < arguments.length; i++) {
+            fayFunc = Fay$$fayToJs(["automatic"], Fay$$_(fayFunc(Fay$$jsToFay(["automatic"],arguments[i])),true));
           }
-          return Fay$$fayToJs(["automatic"],fayFunc);
+          return fayFunc;
         }
 
         for (var i = 0, len = len; i < len - 1 && fayFunc instanceof Function; i++) {
@@ -324,21 +324,33 @@ function Fay$$jsToFay(type,jsObj){
     //    }}}}};
     var returnType = args[args.length-1];
     var funArgs = args.slice(0,-1);
-    var makePartial = function(args){
-      return function(arg){
-        var i = args.length;
-        var fayArg = Fay$$fayToJs(funArgs[i],arg);
-        var newArgs = args.concat(fayArg);
-        if(newArgs.length == funArgs.length) {
-          return new Fay$$$(function(){
-            return Fay$$jsToFay(returnType,jsObj.apply(this,newArgs));
-          });
-        } else {
-          return makePartial(newArgs);
-        }
+
+    if (jsObj.length > 0)
+    {
+      var makePartial = function(args){
+        return function(arg){
+          var i = args.length;
+          var fayArg = Fay$$fayToJs(funArgs[i],arg);
+          var newArgs = args.concat(fayArg);
+          if(newArgs.length == funArgs.length) {
+            return new Fay$$$(function(){
+              return Fay$$jsToFay(returnType,jsObj.apply(this,newArgs));
+            });
+          } else {
+            return makePartial(newArgs);
+          }
+        };
       };
-    };
-    return makePartial([]);
+      fayObj = makePartial([]);
+    }
+    else
+    {
+      fayObj =
+        function (arg)
+        {
+           return Fay$$jsToFay(["automatic"], jsObj(Fay$$fayToJs(["automatic"], arg)));
+        };
+    }
   }
   else if(base == "string") {
     // Unserialize a JS string into Fay list (String).

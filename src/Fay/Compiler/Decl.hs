@@ -104,8 +104,7 @@ compileDataDecl toplevel tyvars constructors =
           func <- makeFunc name slots
           emitFayToJs name tyvars fields
           emitJsToFay name tyvars fields
-          emitCons cons
-          return [func]
+          return [cons, func]
         InfixConDecl _ t1 name t2 -> do
           let slots = [Ident () "slot1",Ident () "slot2"]
               fields = zip (map return slots) [t1, t2]
@@ -113,8 +112,7 @@ compileDataDecl toplevel tyvars constructors =
           func <- makeFunc name slots
           emitFayToJs name tyvars fields
           emitJsToFay name tyvars fields
-          emitCons cons
-          return [func]
+          return [cons, func]
         RecDecl _ name fields' -> do
           let fields = concatMap fieldDeclNames fields'
           cons <- makeConstructor name fields
@@ -122,11 +120,9 @@ compileDataDecl toplevel tyvars constructors =
           funs <- makeAccessors fields
           emitFayToJs name tyvars (map convertFieldDecl fields')
           emitJsToFay name tyvars (map convertFieldDecl fields')
-          emitCons cons
-          return (func : funs)
+          return (cons : func : funs)
 
   where
-    emitCons cons = tell (mempty { writerCons = [cons] })
 
     -- Creates a constructor _RecConstr for a Record
     makeConstructor :: Name a -> [Name b] -> Compile JsStmt

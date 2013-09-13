@@ -325,8 +325,7 @@ function Fay$$jsToFay(type,jsObj){
     var returnType = args[args.length-1];
     var funArgs = args.slice(0,-1);
 
-    if (jsObj.length > 0)
-    {
+    if (jsObj.length > 0) {
       var makePartial = function(args){
         return function(arg){
           var i = args.length;
@@ -343,8 +342,7 @@ function Fay$$jsToFay(type,jsObj){
       };
       fayObj = makePartial([]);
     }
-    else
-    {
+    else {
       fayObj =
         function (arg)
         {
@@ -419,6 +417,12 @@ function Fay$$jsToFay(type,jsObj){
         list = new Fay$$Cons(Fay$$jsToFay([base], jsObj[i]), list);
       }
       fayObj = list;
+    }
+    else if (jsObj instanceof Function) {
+      var type = [["automatic"]];
+      for (var i = 0; i < jsObj.length; i++)
+        type.push(["automatic"]);
+      return Fay$$jsToFay(["function", type], jsObj);
     }
     else
       fayObj = jsObj;

@@ -331,7 +331,7 @@ function Fay$$jsToFay(type,jsObj){
         return function(arg){
           var i = args.length;
           var fayArg = Fay$$fayToJs(funArgs[i],arg);
-          var newArgs = args.concat(fayArg);
+          var newArgs = args.concat([fayArg]);
           if(newArgs.length == funArgs.length) {
             return new Fay$$$(function(){
               return Fay$$jsToFay(returnType,jsObj.apply(this,newArgs));

@@ -44,6 +44,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optBasePath      :: Maybe FilePath
   , optStrict        :: [String]
   , optTypecheckOnly :: Bool
+  , optRuntimePath   :: Maybe FilePath
   }
 
 -- | Main entry point.
@@ -51,31 +52,32 @@ main :: IO ()
 main = do
   packageConf <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
   opts <- execParser parser
+  let config = addConfigDirectoryIncludePaths ("." : optInclude opts) $
+        addConfigPackages (optPackages opts) $ def
+          { configOptimize         = optOptimize opts
+          , configFlattenApps      = optFlattenApps opts
+          , configExportBuiltins   = not (optNoBuiltins opts)
+          , configPrettyPrint      = optPretty opts
+          , configLibrary          = optLibrary opts
+          , configHtmlWrapper      = optHTMLWrapper opts
+          , configHtmlJSLibs       = optHTMLJSLibs opts
+          , configTypecheck        = not $ optNoGHC opts
+          , configWall             = optWall opts
+          , configGClosure         = optGClosure opts
+          , configPackageConf      = optPackageConf opts <|> packageConf
+          , configExportRuntime    = not (optNoRTS opts)
+          , configExportStdlib     = not (optNoStdlib opts)
+          , configExportStdlibOnly = optStdlibOnly opts
+          , configBasePath         = optBasePath opts
+          , configStrict           = optStrict opts
+          , configTypecheckOnly    = optTypecheckOnly opts
+          , configRuntimePath      = optRuntimePath opts
+          }
   if optVersion opts
     then runCommandVersion
     else if optPrintRuntime opts
-      then getRuntime >>= readFile >>= putStr
+      then getRuntime config >>= readFile >>= putStr
       else do
-        let config = addConfigDirectoryIncludePaths ("." : optInclude opts) $
-              addConfigPackages (optPackages opts) $ def
-                { configOptimize         = optOptimize opts
-                , configFlattenApps      = optFlattenApps opts
-                , configExportBuiltins   = not (optNoBuiltins opts)
-                , configPrettyPrint      = optPretty opts
-                , configLibrary          = optLibrary opts
-                , configHtmlWrapper      = optHTMLWrapper opts
-                , configHtmlJSLibs       = optHTMLJSLibs opts
-                , configTypecheck        = not $ optNoGHC opts
-                , configWall             = optWall opts
-                , configGClosure         = optGClosure opts
-                , configPackageConf      = optPackageConf opts <|> packageConf
-                , configExportRuntime    = not (optNoRTS opts)
-                , configExportStdlib     = not (optNoStdlib opts)
-                , configExportStdlibOnly = optStdlibOnly opts
-                , configBasePath         = optBasePath opts
-                , configStrict           = optStrict opts
-                , configTypecheckOnly    = optTypecheckOnly opts
-                }
         void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
         case optFiles opts of
           []    -> putStrLn $ helpTxt ++ "\n  More information: fay --help"
@@ -115,10 +117,11 @@ options = FayCompilerOptions
   <*> switch (long "print-runtime" <> help "Print the runtime JS source to stdout")
   <*> switch (long "stdlib" <> help "Only output the stdlib")
   <*> switch (long "no-builtins" <> help "Don't export no-builtins")
-  <*> optional (strOption (long "base-path" <> help "If fay can't find the sources of fay-base you can use this to provide the path. Use --base-path ~/example instead of --base-path=~/example to make sure ~ is expanded properly"))
+  <*> optional (strOption $ long "base-path" <> help "If fay can't find the sources of fay-base you can use this to provide the path. Use --base-path ~/example instead of --base-path=~/example to make sure ~ is expanded properly")
   <*> strsOption (long "strict" <> metavar "modulename[, ..]"
       <> help "Generate strict and uncurried exports for the supplied modules. Simplifies calling Fay from JS")
   <*> switch (long "typecheck-only" <> help "Only invoke GHC for typechecking, don't produce any output")
+  <*> optional (strOption $ long "runtime-path" <> help "Custom path to the runtime so you don't have to reinstall fay when modifying it")
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

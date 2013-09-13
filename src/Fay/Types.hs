@@ -83,6 +83,7 @@ data CompileConfig = CompileConfig
   , configBasePath          :: Maybe FilePath              -- ^ Custom source location for fay-base
   , configStrict            :: [String]                    -- ^ Produce strict and uncurried wrappers for all functions with type signatures in the given module
   , configTypecheckOnly     :: Bool                        -- ^ Only invoke GHC for typechecking, don't produce any output
+  , configRuntimePath       :: Maybe FilePath
   } deriving (Show)
 
 -- | The name of a module split into a list for code generation.

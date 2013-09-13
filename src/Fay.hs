@@ -84,7 +84,7 @@ compileFile config filein = either Left (Right . fst) <$> compileFileWithState c
 -- | Compile a file returning the state.
 compileFileWithState :: CompileConfig -> FilePath -> IO (Either CompileError (String,CompileState))
 compileFileWithState config filein = do
-  runtime <- getRuntime
+  runtime <- getRuntime config
   hscode <- readFile filein
   raw <- readFile runtime
   config' <- resolvePackages config
@@ -157,5 +157,7 @@ showCompileError e = case e of
 --  FayScopeError s -> "scope error: " ++ s
 
 -- | Get the JS runtime source.
-getRuntime :: IO String
-getRuntime = getDataFileName "js/runtime.js"
+getRuntime :: CompileConfig -> IO String
+getRuntime cfg = case configRuntimePath cfg of
+  Just fp -> return fp
+  Nothing -> getDataFileName "js/runtime.js"

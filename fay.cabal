@@ -386,6 +386,7 @@ library
                      , Fay.Compiler.Exp
                      , Fay.Compiler.FFI
                      , Fay.Compiler.GADT
+                     , Fay.Compiler.Import
                      , Fay.Compiler.InitialPass
                      , Fay.Compiler.Misc
                      , Fay.Compiler.Optimizer

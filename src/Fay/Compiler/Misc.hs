@@ -1,7 +1,6 @@
 {-# OPTIONS -Wall -fno-warn-orphans  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE ViewPatterns      #-}
 
 -- | Miscellaneous functions used throughout the compiler.
@@ -29,8 +28,6 @@ import           Distribution.HaskellSuite.Modules
 import           Language.Haskell.Exts.Annotated   hiding (name)
 import           Language.Haskell.Names
 import           Prelude                           hiding (exp, mod)
-import           System.Directory
-import           System.FilePath
 import           System.IO
 import           System.Process                    (readProcess)
 import           Text.ParserCombinators.ReadP      (readP_to_S)
@@ -261,26 +258,6 @@ getGhcPackageDbFlag = do
           _ -> "-package-conf"
   where
     readVersion = listToMaybe . filter (null . snd) . readP_to_S parseVersion
-
--- | Find an import's filepath and contents from its module name.
-findImport :: [FilePath] -> ModuleName a -> Compile (FilePath,String)
-findImport alldirs (unAnn -> mname) = go alldirs mname where
-  go :: [FilePath] -> ModuleName a -> Compile (FilePath,String)
-  go _ (ModuleName _ "Fay.Types") = return ("Fay/Types.hs", "newtype Fay a = Fay (Identity a)\n\nnewtype Identity a = Identity a")
-  go (dir:dirs) name = do
-    exists <- io (doesFileExist path)
-    if exists
-      then (path,) . stdlibHack <$> io (readFile path)
-      else go dirs name
-    where
-      path = dir </> replace '.' '/' (prettyPrint name) ++ ".hs"
-      replace c r = map (\x -> if x == c then r else x)
-  go [] name =
-    throwError $ Couldn'tFindImport (unAnn name) alldirs
-
-  stdlibHack = case mname of
-    ModuleName _ "Fay.FFI" -> const "module Fay.FFI where\n\ndata Nullable a = Nullable a | Null\n\ndata Defined a = Defined a | Undefined"
-    _ -> id
 
 -- | Run the top level compilation for all modules.
 runTopCompile

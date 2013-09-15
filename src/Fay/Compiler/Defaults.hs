@@ -31,7 +31,7 @@ defaultCompileReader config = do
 defaultCompileState :: CompileState
 defaultCompileState = CompileState
   { stateInterfaces    = M.empty
-  , stateModuleName    = "Main2"
+  , stateModuleName    = "Main"
   , stateRecordTypes   = []
   , stateRecords       = []
   , stateNewtypes      = []

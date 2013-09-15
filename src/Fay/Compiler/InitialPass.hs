@@ -7,10 +7,9 @@ module Fay.Compiler.InitialPass
   (initialPass
   ) where
 
-import           Fay.Compiler.Config
 import           Fay.Compiler.GADT
+import           Fay.Compiler.Import
 import           Fay.Compiler.Misc
-import           Fay.Control.Monad.IO
 import           Fay.Data.List.Extra
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
@@ -25,80 +24,38 @@ import           Language.Haskell.Exts.Annotated hiding (name, var)
 import qualified Language.Haskell.Names          as HN
 import           Prelude                         hiding (mod, read)
 
--- TODO Import logic should be abstracted and reused for InitialPass and Compiler.
-
 -- | Preprocess and collect all information needed during code generation.
 initialPass :: FilePath -> Compile ()
-initialPass filein = fmap fst . listen $ compileModuleFromFile filein
+initialPass = startCompile preprocessFileWithSource
 
-compileModuleFromFile :: FilePath -> Compile ()
-compileModuleFromFile fp = io (readFile fp) >>= compileModule fp
+-- | Preprocess a module given its filepath and content.
+preprocessFileWithSource :: FilePath -> String -> Compile ()
+preprocessFileWithSource filepath contents = do
+  (_,st,_) <- compileWith filepath preprocessAST preprocessFileWithSource contents
+  -- This is the state we want to keep
+  modify $ \s -> s { stateRecords     = stateRecords     st
+                   , stateRecordTypes = stateRecordTypes st
+                   , stateImported    = stateImported    st
+                   , stateNewtypes    = stateNewtypes    st
+                   , stateInterfaces  = stateInterfaces  st
+                   , stateTypeSigs    = stateTypeSigs    st
+                     -- TODO This needs to be added otherwise the
+                     -- "executable" generation in Fay.hs gets the
+                     -- wrong name. Not sure why it works to do it
+                     -- here!
+                   , stateModuleName  = stateModuleName  st
+                   }
 
-compileModule :: FilePath -> String -> Compile ()
-compileModule filepath contents = do
-  state  <- get
-  reader <- ask
-  result <- compileToAst filepath reader state compileModuleFromAST contents
-  case result of
-    Right ((),st,_) -> do
-      modify $ \s -> s { stateRecords     = stateRecords     st
-                       , stateRecordTypes = stateRecordTypes st
-                       , stateImported    = stateImported    st
-                       , stateNewtypes    = stateNewtypes    st
-                       , stateInterfaces  = stateInterfaces  st
-                       , stateTypeSigs    = stateTypeSigs    st
-                       }
-    Left err -> throwError err
-
--- | Compile a Haskell source string to a JavaScript source string.
-compileToAst :: FilePath
-             -> CompileReader
-             -> CompileState
-             -> (F.Module -> Compile ())
-             -> String
-             -> Compile (CompileResult ())
-compileToAst filepath reader state with from =
-  Compile . lift . lift $ runCompileModule reader
-             state
-             (parseResult (throwError . uncurry ParseError)
-                          with
-                          (parseFay filepath from))
-
-compileModuleFromAST :: F.Module -> Compile ()
-compileModuleFromAST mod@(Module _ _ _ imports decls) = do
-  modify $ \s -> s { stateModuleName = unAnn (F.moduleName mod) }
-  forM_ imports compileImport
+-- | Preprocess from an AST
+preprocessAST :: () -> F.Module -> Compile ()
+preprocessAST () mod@(Module _ _ _ _ decls) = do
   -- This can only return one element since we only compile one module.
   ([exports],_) <- HN.getInterfaces Haskell2010 [] [mod]
   modify $ \s -> s { stateInterfaces = M.insert (stateModuleName s) exports $ stateInterfaces s }
   forM_ decls scanTypeSigs
   forM_ decls scanRecordDecls
   forM_ decls scanNewtypeDecls
-compileModuleFromAST mod = throwError $ UnsupportedModuleSyntax "compileModuleFromAST" mod
-
-compileImport :: F.ImportDecl -> Compile ()
-compileImport (ImportDecl _ _    _ _ Just{}  _ _) = return ()
-compileImport (ImportDecl _ name _ _ Nothing _ _) = compileModuleFromName name
-
--- | Lookup a module from include directories and compile.
-compileModuleFromName :: F.ModuleName -> Compile ()
-compileModuleFromName name =
-  unlessImported name compileModule
-  where
-    unlessImported :: ModuleName a
-                   -> (FilePath -> String -> Compile ())
-                   -> Compile ()
-    unlessImported (ModuleName _ "Fay.Types") _ = return ()
-    unlessImported (unAnn -> name) importIt = do
-      imported <- gets stateImported
-      case lookup name imported of
-        Just _  -> return ()
-        Nothing -> do
-          dirs <- configDirectoryIncludePaths <$> config id
-          (filepath,contents) <- findImport dirs name
-          modify $ \s -> s { stateImported = (name,filepath) : imported }
-          importIt filepath contents
-
+preprocessAST () mod = throwError $ UnsupportedModuleSyntax "preprocessAST" mod
 
 --------------------------------------------------------------------------------
 -- | Preprocessing

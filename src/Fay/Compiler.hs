@@ -1,25 +1,20 @@
-{-# OPTIONS -Wall -fno-warn-name-shadowing -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
-{-# LANGUAGE ViewPatterns          #-}
-
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 -- | The Haskell→Javascript compiler.
 
 module Fay.Compiler
   (runCompileModule
   ,compileViaStr
-  ,compileToAst
+  ,compileWith
   ,compileExp
   ,compileDecl
   ,compileToplevelModule
-  ,compileModuleFromFile
   ,compileModuleFromContents
-  ,compileModuleFromName
-  ,compileModule
   ,compileModuleFromAST
   ,parseFay)
   where
@@ -29,6 +24,7 @@ import           Fay.Compiler.Decl
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Exp
 import           Fay.Compiler.FFI
+import           Fay.Compiler.Import
 import           Fay.Compiler.InitialPass        (initialPass)
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Optimizer
@@ -49,41 +45,29 @@ import           Control.Monad.State
 import           Data.Default                    (def)
 import           Data.Maybe
 import qualified Data.Set                        as S
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts.Annotated hiding (name)
 import           Language.Haskell.Names
+import           Prelude                         hiding (mod)
 
 --------------------------------------------------------------------------------
 -- Top level entry points
 
 -- | Compile a Haskell source string to a JavaScript source string.
-compileViaStr :: FilePath
-              -> CompileConfig
-              -> (F.Module -> Compile [JsStmt])
-              -> String
-              -> IO (Either CompileError (PrintState,CompileState,CompileWriter))
-compileViaStr filepath config with from = do
-  rs <- defaultCompileReader config
+compileViaStr
+  :: FilePath
+  -> CompileConfig
+  -> (F.Module -> Compile [JsStmt])
+  -> String
+  -> IO (Either CompileError (PrintState,CompileState,CompileWriter))
+compileViaStr filepath cfg with from = do
+  rs <- defaultCompileReader cfg
   runTopCompile rs
              defaultCompileState
              (parseResult (throwError . uncurry ParseError)
                           (fmap (\x -> execState (runPrinter (printJS x)) printConfig) . with)
                           (parseFay filepath from))
 
-  where printConfig = def { psPretty = configPrettyPrint config }
-
--- | Compile a Haskell source string to a JavaScript source string.
-compileToAst :: FilePath
-              -> CompileReader
-              -> CompileState
-              -> (F.Module -> Compile [JsStmt])
-              -> String
-              -> Compile (CompileResult [JsStmt])
-compileToAst filepath reader state with from =
-  Compile . lift . lift $ runCompileModule reader
-             state
-             (parseResult (throwError . uncurry ParseError)
-                          with
-                          (parseFay filepath from))
+  where printConfig = def { psPretty = configPrettyPrint cfg }
 
 -- | Compile the top-level Fay module.
 compileToplevelModule :: FilePath -> F.Module -> Compile [JsStmt]
@@ -96,54 +80,24 @@ compileToplevelModule filein mod@Module{}  = do
     either throwError warn res
   initialPass filein
   -- Reset imports after initialPass so the modules can be imported during code generation.
-  modify $ \s -> s { stateImported = [] }
-  fmap fst . listen $ compileModuleFromFile filein
+  startCompile compileFileWithSource filein
 compileToplevelModule _ m = throwError $ UnsupportedModuleSyntax "compileToplevelModule" m
 
 --------------------------------------------------------------------------------
 -- Compilers
 
--- | Read a file and compile.
-compileModuleFromFile :: FilePath -> Compile [JsStmt]
-compileModuleFromFile fp = io (readFile fp) >>= compileModule fp
-
 -- | Compile a source string.
 compileModuleFromContents :: String -> Compile [JsStmt]
-compileModuleFromContents = compileModule "<interactive>"
-
--- | Lookup a module from include directories and compile.
-compileModuleFromName :: F.ModuleName -> Compile [JsStmt]
-compileModuleFromName name =
-  unlessImported name compileModule
-    where
-      unlessImported :: ModuleName a
-                     -> (FilePath -> String -> Compile [JsStmt])
-                     -> Compile [JsStmt]
-      unlessImported (ModuleName _ "Fay.Types") _ = return []
-      unlessImported (unAnn -> name) importIt = do
-        imported <- gets stateImported
-        case lookup name imported of
-          Just _  -> return []
-          Nothing -> do
-            dirs <- configDirectoryIncludePaths <$> config id
-            (filepath,contents) <- findImport dirs name
-            modify $ \s -> s { stateImported = (name,filepath) : imported }
-            importIt filepath contents
+compileModuleFromContents = compileFileWithSource "<interactive>"
 
 -- | Compile given the location and source string.
-compileModule :: FilePath -> String -> Compile [JsStmt]
-compileModule filepath contents = do
-  state <- get
-  reader <- ask
-  result <- compileToAst filepath reader state compileModuleFromAST contents
-  case result of
-    Right (stmts,state,writer) -> do
-      modify $ \s -> s { stateImported      = stateImported      state
-                       , stateJsModulePaths = stateJsModulePaths state
-                       , stateModuleName    = stateModuleName    state
-                       }
-      maybeOptimize $ stmts ++ writerCons writer ++ makeTranscoding writer
-    Left err -> throwError err
+compileFileWithSource :: FilePath -> String -> Compile [JsStmt]
+compileFileWithSource filepath contents = do
+  (stmts,st,wr) <- compileWith filepath compileModuleFromAST compileFileWithSource contents
+  modify $ \s -> s { stateImported      = stateImported      st
+                   , stateJsModulePaths = stateJsModulePaths st
+                   }
+  maybeOptimize $ stmts ++ writerCons wr ++ makeTranscoding wr
   where
     makeTranscoding :: CompileWriter -> [JsStmt]
     makeTranscoding CompileWriter{..} =
@@ -158,13 +112,11 @@ compileModule filepath contents = do
         else stmts
 
 -- | Compile a parse HSE module.
-compileModuleFromAST :: F.Module -> Compile [JsStmt]
-compileModuleFromAST mod'@(Module _ _ pragmas imports _) = do
+compileModuleFromAST :: [JsStmt] -> F.Module -> Compile [JsStmt]
+compileModuleFromAST imported mod'@(Module _ _ pragmas _ _) = do
   mod@(Module _ _ _ _ decls) <- annotateModule Haskell2010 [] mod'
   let modName = unAnn $ F.moduleName mod
-  imported <- fmap concat (mapM compileImport imports)
-  modify $ \s -> s { stateModuleName = modName
-                   , stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
+  modify $ \s -> s { stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
                    }
   current <- compileDecls True decls
 
@@ -181,8 +133,13 @@ compileModuleFromAST mod'@(Module _ _ pragmas imports _) = do
     else if not exportStdlib && anStdlibModule modName
             then []
             else stmts
-compileModuleFromAST mod = throwError $ UnsupportedModuleSyntax "compileModuleFromAST" mod
+compileModuleFromAST _ mod = throwError $ UnsupportedModuleSyntax "compileModuleFromAST" mod
 
+
+--------------------------------------------------------------------------------
+-- Misc compilation
+
+-- | Check if the given language pragmas are all present.
 hasLanguagePragmas :: [String] -> [F.ModulePragma] -> Bool
 hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter (`elem` pragmas) $ flattenPragmas modulePragmas
   where
@@ -229,16 +186,17 @@ generateExports = do
       Just p  -> JsName $ JsNameVar p -- TODO add test case for this case, is it needed at all?
       Nothing -> JsName $ JsNameVar v
 
+-- | Generate strict wrappers for the exports of the module.
 generateStrictExports :: Compile [JsStmt]
 generateStrictExports = do
   cfg <- config id
   modName <- gets stateModuleName
   if shouldExportStrictWrapper modName cfg
     then do
-      local <- gets (getLocalExportsWithoutNewtypes modName)
-      nonLocal <- gets (getNonLocalExportsWithoutNewtypes modName)
-      let int = maybe [] (map exportExp' . S.toList) local
-      let ext = maybe [] (map (exportExp modName)  . S.toList) nonLocal
+      locals <- gets (getLocalExportsWithoutNewtypes modName)
+      nonLocals <- gets (getNonLocalExportsWithoutNewtypes modName)
+      let int = maybe [] (map exportExp' . S.toList) locals
+      let ext = maybe [] (map (exportExp modName)  . S.toList) nonLocals
       return $ int ++ ext
     else return []
   where
@@ -255,9 +213,3 @@ generateStrictExports = do
 -- output code for if we're compiling separate files.
 anStdlibModule :: ModuleName a -> Bool
 anStdlibModule (ModuleName _ name) = name `elem` ["Prelude","FFI","Fay.FFI","Data.Data"]
-
--- | Compile the given import.
-compileImport :: F.ImportDecl -> Compile [JsStmt]
--- Package imports are ignored since they are used for some trickery in fay-base.
-compileImport (ImportDecl _ _    _ _ Just{}  _ _) = return []
-compileImport (ImportDecl _ name _ _ Nothing _ _) = compileModuleFromName name

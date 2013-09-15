@@ -1,13 +1,16 @@
-module Main where
+-- | Compile with `fay examples/FayFromJs.hs --strict FayFromJs`
 
-import Prelude
-import FFI
+module FayFromJs where
 
-fibs :: [Int]
-fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
+import           Prelude
 
-fibN :: Int -> Int
-fibN n = fibs !! n
+data Vector = Vector { x :: Double , y :: Double }
 
-main :: Fay ()
-main = return ()
+aVector :: Vector
+aVector = Vector 1 2
+
+len :: Vector -> Double
+len (Vector a b) = sqrt (a^^2 + b^^2)
+
+add :: Vector -> Vector -> Vector
+add (Vector a b) (Vector c d) = Vector (a+c) (b+d)

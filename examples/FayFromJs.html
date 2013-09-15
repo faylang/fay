@@ -1,15 +1,36 @@
+<!doctype html>
 <html>
   <head>
-    <title></title>
-    <script src="FayFromJs.js"></script>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+
+    <script type="text/javascript" src="FayFromJs.js"></script>
+    </script>
     <script>
+      function print(label, v)
+      {
+        var div = document.createElement("div");
+        div.innerHTML = label + JSON.stringify(v);
+        document.body.appendChild(div);
+      }
+
       window.onload = function () {
-        var m = new Main();
-        document.body.innerHTML = "The 10th fibonacci number is : " + m._(m.Main$fibN(9));
+        var V = Strict.FayFromJs;
+        // Constant
+        print("aVector = ", V.aVector);
+        // Simple function calls
+        print("|aVector| = ", V.len(V.aVector));
+        // Arguments are deserialized from JSON using Automatic.
+        print("|[10, 20]| = ", V.len({ instance : "Vector", x : 10, y : 20 }));
+        // Call with uncurried arguments
+        // Return values are serialized to the JSON format using Automatic.
+        print( "aVector + [10, 20] = "
+             , V.add(V.aVector, { instance : "Vector", x : 10, y : 20 }));
+        // Curried call is also fine
+        print( "aVector + [10, 20] = "
+             , V.add(V.aVector)({ instance : "Vector", x : 10, y : 20 }));
       };
     </script>
   </head>
   <body>
-
   </body>
 </html>

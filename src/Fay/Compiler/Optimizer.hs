@@ -1,4 +1,3 @@
-{-# OPTIONS -fno-warn-orphans #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternGuards     #-}
 {-# LANGUAGE TupleSections     #-}

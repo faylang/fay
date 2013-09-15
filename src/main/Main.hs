@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards  #-}
-{-# OPTIONS -fno-warn-orphans #-}
 -- | Main compiler executable.
 
 module Main where

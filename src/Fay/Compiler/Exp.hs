@@ -1,4 +1,4 @@
-{-# OPTIONS -fno-warn-name-shadowing -fno-warn-orphans #-}
+{-# OPTIONS -fno-warn-name-shadowing #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}

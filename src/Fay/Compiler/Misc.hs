@@ -1,4 +1,3 @@
-{-# OPTIONS -Wall -fno-warn-orphans  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE ViewPatterns      #-}

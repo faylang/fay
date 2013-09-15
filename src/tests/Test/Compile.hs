@@ -1,11 +1,13 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module Test.Compile (tests) where
 
 import           Fay
 import           Fay.Compiler.Config
 import           Fay.System.Process.Extra
+import           Fay.Types                       ()
 
 import           Control.Applicative
 import           Control.Monad
@@ -50,8 +52,8 @@ case_stateRecordTypes = do
     Right (_,r) ->
       -- TODO order should not matter
       assertEqual "stateRecordTypes mismatch"
-        [ (UnQual () (Ident () "T"),[UnQual () (Symbol () ":+")])
-        , (UnQual () (Ident () "R"),[UnQual () (Ident () "R"), UnQual () (Ident () "S")])
+        [ ("Compile.Records.T", ["Compile.Records.:+"])
+        , ("Compile.Records.R", ["Compile.Records.R","Compile.Records.S"])
         ]
         (stateRecordTypes r)
 
@@ -64,8 +66,8 @@ case_importStateRecordTypes = do
     Right (_,r) ->
       -- TODO order should not matter
       assertEqual "stateRecordTypes mismatch"
-        [ (UnQual () (Ident () "T"),[UnQual () (Symbol () ":+")])
-        , (UnQual () (Ident () "R"),[UnQual () (Ident () "R"), UnQual () (Ident () "S")])
+        [ ("Compile.Records.T",["Compile.Records.:+"])
+        , ("Compile.Records.R",["Compile.Records.R", "Compile.Records.S"])
         ]
         (stateRecordTypes r)
 

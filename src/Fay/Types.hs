@@ -47,6 +47,7 @@ import           Control.Monad.Error               (Error, ErrorT, MonadError)
 import           Control.Monad.Identity            (Identity)
 import           Control.Monad.RWS
 import           Control.Monad.State
+import           Data.Char                         (isAlpha)
 import           Data.Default
 import           Data.List
 import           Data.List.Split
@@ -354,11 +355,17 @@ data FundamentalType
 
 -- | Helpful for some things.
 instance IsString N.Name where
-  fromString = Ident ()
+  fromString n@(c:_)
+    | isAlpha c || c == '_' = Ident () n
+    | otherwise             = Symbol () n
+  fromString [] = error "Name fromString: empty string"
 
 -- | Helpful for some things.
 instance IsString N.QName where
-  fromString = UnQual () . Ident ()
+  fromString s = case splitOn "." s of
+    []  -> error "QName fromString: empty string"
+    [x] -> UnQual () $ fromString x
+    xs  -> Qual () (fromString $ intercalate "." $ init xs) $ fromString (last xs)
 
 -- | Helpful for writing qualified symbols (Fay.*).
 instance IsString N.ModuleName where

@@ -7,10 +7,12 @@
 module Fay.Compiler.Pattern where
 
 import           Fay.Compiler.Misc
+import           Fay.Compiler.QName
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
+import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Reader
 import           Control.Monad.State
@@ -115,21 +117,20 @@ compilePApp cons pats exp body = do
     UnQual _ (Ident _ "True")   -> boolIf True
     UnQual _ (Ident _ "False")  -> boolIf False
     -- Everything else, generic:
-    _ -> do
-      rf <- fmap (lookup (unAnn cons)) (gets stateRecords)
-      let recordFields =
-            fromMaybe
-              (error $ "Constructor '" ++ prettyPrint cons ++
-                       "' was not found in stateRecords, did you try running this through GHC first?")
-              rf
-      substmts <- foldM (\body (field,pat) ->
-                             compilePat (JsGetProp forcedExp (JsNameVar field)) pat body)
-                  body
-                  (reverse (zip recordFields pats))
-      qcons <- unsafeResolveName cons
-      return [JsIf (forcedExp `JsInstanceOf` JsConstructor qcons)
-                   substmts
-                   []]
+    n -> do
+      let n' = tryResolveName n
+      case n' of
+        Nothing -> error $ "Constructor '" ++ prettyPrint n ++ "' could not be resolved"
+        Just _ -> do
+          recordFields <- map unQualify <$> recToFields n
+          substmts <- foldM (\body (field,pat) ->
+                                 compilePat (JsGetProp forcedExp (JsNameVar field)) pat body)
+                      body
+                      (reverse (zip recordFields pats))
+          qcons <- unsafeResolveName cons
+          return [JsIf (forcedExp `JsInstanceOf` JsConstructor qcons)
+                       substmts
+                       []]
 
 -- | Compile a pattern list.
 compilePList :: [S.Pat] -> [JsStmt] -> JsExp -> Compile [JsStmt]

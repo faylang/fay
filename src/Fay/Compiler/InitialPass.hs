@@ -118,8 +118,10 @@ scanRecordDecls decl = do
     _ -> return ()
 
   where
-    addRecordTypeState (unAnn -> name) (map unAnn -> cons) = modify $ \s -> s
-      { stateRecordTypes = (UnQual () name, map (UnQual ()) cons) : stateRecordTypes s }
+    addRecordTypeState (unAnn -> name') (map unAnn -> cons') = do
+      name <- qualify name'
+      cons <- mapM qualify cons'
+      modify $ \s -> s { stateRecordTypes = (name, cons) : stateRecordTypes s }
 
     conDeclName (ConDecl _ n _) = n
     conDeclName (InfixConDecl _ _ n _) = n
@@ -142,8 +144,11 @@ scanRecordDecls decl = do
 
       where
         addRecordState :: Name a -> [Name b] -> Compile ()
-        addRecordState (unAnn -> name) (map unAnn -> fields) = modify $ \s -> s
-          { stateRecords = (UnQual () name,map (UnQual ()) fields) : stateRecords s }
+        addRecordState name' fields' = do
+          name <- qualify name'
+          fields <- mapM qualify fields'
+          modify $ \s -> s
+            { stateRecords = (name,fields) : stateRecords s }
 
 scanTypeSigs :: F.Decl -> Compile ()
 scanTypeSigs decl = case decl of

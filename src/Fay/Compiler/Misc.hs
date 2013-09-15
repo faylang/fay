@@ -236,6 +236,12 @@ printSrcSpan SrcSpan{..} = srcSpanFilename ++ ": (" ++ show srcSpanStartLine ++ 
 typeToRecs :: QName a -> Compile [N.QName]
 typeToRecs (unAnn -> typ) = fromMaybe [] . lookup typ <$> gets stateRecordTypes
 
+recToFields :: S.QName -> Compile [N.QName]
+recToFields con = do
+  case tryResolveName con of
+    Nothing -> return []
+    Just c -> fromMaybe [] . lookup c <$> gets stateRecords
+
 -- | Get the fields for a given type.
 typeToFields :: QName a -> Compile [N.QName]
 typeToFields (unAnn -> typ) = do

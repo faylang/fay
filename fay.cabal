@@ -138,6 +138,8 @@ extra-source-files:
   tests/fix.res
   tests/Floating.hs
   tests/Floating.res
+  tests/fromInteger.hs
+  tests/fromInteger.res
   tests/fromIntegral.hs
   tests/fromIntegral.res
   tests/FromString/Dep.hs

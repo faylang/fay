@@ -44,6 +44,8 @@ extra-source-files:
   -- Test cases
   tests/asPatternMatch.hs
   tests/asPatternMatch.res
+  tests/automatic.hs
+  tests/automatic.res
   tests/AutomaticList.hs
   tests/AutomaticList.res
   tests/baseFixities.hs
@@ -67,6 +69,8 @@ extra-source-files:
   tests/Compile/CPPTypecheck.hs
   tests/Compile/ImportRecords.hs
   tests/Compile/Records.hs
+  tests/Compile/StrictWrapper.hs
+  tests/Compile/StrictWrapper.res
   tests/CPP.hs
   tests/CPP.res
   tests/curry.hs
@@ -134,8 +138,8 @@ extra-source-files:
   tests/fix.res
   tests/Floating.hs
   tests/Floating.res
-  tests/fromInteger.hs
-  tests/fromInteger.res
+  tests/fromIntegral.hs
+  tests/fromIntegral.res
   tests/FromString/Dep.hs
   tests/FromString/Dep.res
   tests/FromString/DepDep.hs
@@ -212,12 +216,8 @@ extra-source-files:
   tests/ModuleRecordClash.res
   tests/Monad.hs
   tests/Monad.res
-  tests/Monad2.hs
-  tests/Monad2.res
   tests/mutableReference.hs
   tests/mutableReference.res
-  tests/namedFieldPuns.hs
-  tests/namedFieldPuns.res
   tests/nameGen.hs
   tests/nameGen.res
   tests/negation.hs
@@ -253,6 +253,12 @@ extra-source-files:
   tests/patternMatchFail.hs
   tests/patternMatchingTuples.hs
   tests/patternMatchingTuples.res
+  tests/QualifiedImport/X.hs
+  tests/QualifiedImport/X.res
+  tests/QualifiedImport/Y.hs
+  tests/QualifiedImport/Y.res
+  tests/QualifiedImport.hs
+  tests/QualifiedImport.res
   tests/Ratio.hs
   tests/Ratio.res
   tests/RealFrac.hs
@@ -281,8 +287,6 @@ extra-source-files:
   tests/records.res
   tests/recordUseBeforeDefine.hs
   tests/recordUseBeforeDefine.res
-  tests/recordWildCards.hs
-  tests/recordWildCards_partial.res
   tests/recursive.hs
   tests/recursive.res
   tests/ReExport1.hs
@@ -291,6 +295,18 @@ extra-source-files:
   tests/ReExport2.res
   tests/ReExport3.hs
   tests/ReExport3.res
+  tests/ReExportGlobally/A.hs
+  tests/ReExportGlobally/A.res
+  tests/ReExportGlobally.hs
+  tests/ReExportGlobally.res
+  tests/ReExportGloballyExplicit.hs
+  tests/ReExportGloballyExplicit.res
+  tests/regressions/Monad2.hs
+  tests/regressions/Monad2.res
+  tests/regressions/namedFieldPuns.hs
+  tests/regressions/namedFieldPuns.res
+  tests/regressions/recordWildCards.hs
+  tests/regressions/recordWildCards_partial.res
   tests/reservedWords.hs
   tests/reservedWords.res
   tests/sections.hs

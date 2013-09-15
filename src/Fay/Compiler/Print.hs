@@ -212,7 +212,7 @@ instance Printable JsExp where
 ident :: JsName -> JsName
 ident n = case n of
   JsConstructor (Qual _ _ s) -> JsNameVar $ UnQual () s
-  a -> a
+  a                          -> a
 
 -- | Print one of the kinds of names.
 instance Printable JsName where
@@ -289,6 +289,7 @@ normalizeName name =
     allowed = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
     escapeChar c = "$" ++ charId c ++ "$"
     charId c = show (fromEnum c)
+
 
 --------------------------------------------------------------------------------
 -- Printing

@@ -15,9 +15,7 @@ import           Fay.Types
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Reader
-import           Control.Monad.State
 import           Data.List
-import           Data.Maybe
 import           Language.Haskell.Exts.Annotated
 
 -- | Compile the given pattern against the given expression.
@@ -60,16 +58,15 @@ compilePatFields exp name pats body = do
         compilePats' names (PFieldPat _ fieldname (PVar _ (unAnn -> varName)):xs) = do
           r <- compilePats' (fieldname : names) xs
           return $ JsVar (JsNameVar (UnQual () varName))
-                         (JsGetProp (force exp) (JsNameVar (unAnn fieldname)))
+                         (JsGetProp (force exp) (JsNameVar (unQualify $ unAnn fieldname)))
                    : r -- TODO: think about this force call
 
         compilePats' names (PFieldWildcard _:xs) = do
-          records <- liftM stateRecords get
-          let fields = fromJust (lookup (unAnn name) records)
-              fields' = fields \\ map unAnn names
-          f <- mapM (\fieldName -> return $ JsVar (JsNameVar fieldName)
-                                                  (JsGetProp (force exp) (JsNameVar fieldName)))
-                   fields'
+          fields <- recToFields name
+          let fields' = fields \\ map (unQual . unAnn) names
+          f <- forM fields' $ \fieldName ->
+            return $ JsVar (JsNameVar $ UnQual () fieldName)
+                           (JsGetProp (force exp) (JsNameVar $ UnQual () fieldName))
           r <- compilePats' names xs
           return $ f ++ r
 
@@ -122,7 +119,7 @@ compilePApp cons pats exp body = do
       case n' of
         Nothing -> error $ "Constructor '" ++ prettyPrint n ++ "' could not be resolved"
         Just _ -> do
-          recordFields <- map unQualify <$> recToFields n
+          recordFields <- map (UnQual ()) <$> recToFields n
           substmts <- foldM (\body (field,pat) ->
                                  compilePat (JsGetProp forcedExp (JsNameVar field)) pat body)
                       body

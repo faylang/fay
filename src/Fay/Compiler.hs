@@ -258,6 +258,5 @@ anStdlibModule (ModuleName _ name) = name `elem` ["Prelude","FFI","Fay.FFI","Dat
 -- | Compile the given import.
 compileImport :: F.ImportDecl -> Compile [JsStmt]
 -- Package imports are ignored since they are used for some trickery in fay-base.
-compileImport (ImportDecl _ _    _     _ Just{}  _       _) = return []
-compileImport (ImportDecl _ name False _ Nothing Nothing _) = compileModuleFromName name
-compileImport i = throwError $ UnsupportedImport i
+compileImport (ImportDecl _ _    _ _ Just{}  _ _) = return []
+compileImport (ImportDecl _ name _ _ Nothing _ _) = compileModuleFromName name

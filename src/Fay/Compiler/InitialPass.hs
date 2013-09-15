@@ -41,11 +41,8 @@ initialPass mod@(Module _ _ _pragmas imports decls) = do
 initialPass m = throwError (UnsupportedModuleSyntax "initialPass" m)
 
 compileImport :: F.ImportDecl -> Compile ()
-compileImport (ImportDecl _ _ _ _ Just{} _ _) = return ()
-compileImport (ImportDecl _ name False _ Nothing Nothing _) =
-  compileImport' name
-compileImport i =
-  throwError $ UnsupportedImport i
+compileImport (ImportDecl _ _    _ _ Just{}  _ _) = return ()
+compileImport (ImportDecl _ name _ _ Nothing _ _) = compileImport' name
 
 compileWith :: (Show from,Parseable from)
             => FilePath
@@ -144,11 +141,10 @@ scanRecordDecls decl = do
 
       where
         addRecordState :: Name a -> [Name b] -> Compile ()
-        addRecordState name' fields' = do
+        addRecordState name' fields = do
           name <- qualify name'
-          fields <- mapM qualify fields'
           modify $ \s -> s
-            { stateRecords = (name,fields) : stateRecords s }
+            { stateRecords = (name,map unAnn fields) : stateRecords s }
 
 scanTypeSigs :: F.Decl -> Compile ()
 scanTypeSigs decl = case decl of

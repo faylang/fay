@@ -14,6 +14,8 @@ import           Fay.Compiler.Misc
 import           Fay.Compiler.Pattern
 import           Fay.Compiler.PrimOp
 import           Fay.Compiler.Print
+import           Fay.Compiler.QName
+import           Fay.Data.List.Extra
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Exts.Scoped                 (noI)
 import qualified Fay.Exts.Scoped                 as S
@@ -22,7 +24,6 @@ import           Fay.Types
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
-import           Data.Maybe
 import           Language.Haskell.Exts.Annotated
 
 -- | Compile Haskell expression.
@@ -300,21 +301,20 @@ compileEnumFromThenTo a b z = do
 compileRecConstr :: S.QName -> [S.FieldUpdate] -> Compile JsExp
 compileRecConstr name fieldUpdates = do
     -- var obj = new $_Type()
+    let unQualName = unQualify $ unAnn name
     qname <- unsafeResolveName name
-    let record = JsVar (JsNameVar (unAnn name)) (JsNew (JsConstructor qname) [])
+    let record = JsVar (JsNameVar unQualName) (JsNew (JsConstructor qname) [])
     setFields <- liftM concat (forM fieldUpdates (updateStmt name))
-    return $ JsApp (JsFun Nothing [] (record:setFields) (Just (JsName (JsNameVar (unAnn name))))) []
-  where updateStmt :: QName a -> S.FieldUpdate -> Compile [JsStmt]
+    return $ JsApp (JsFun Nothing [] (record:setFields) (Just $ JsName $ JsNameVar $ unQualify $ unAnn name)) []
+  where -- updateStmt :: QName a -> S.FieldUpdate -> Compile [JsStmt]
         updateStmt (unAnn -> o) (FieldUpdate _ (unAnn -> field) value) = do
           exp <- compileExp value
-          return [JsSetProp (JsNameVar o) (JsNameVar field) exp]
-        updateStmt (unAnn -> name) (FieldWildcard _) = do
-          records <- liftM stateRecords get
-          let fields = fromJust (lookup name records)
-          return (map (\fieldName -> JsSetProp (JsNameVar name)
-                                               (JsNameVar fieldName)
-                                               (JsName (JsNameVar fieldName)))
-                      fields)
+          return [JsSetProp (JsNameVar $ unQualify o) (JsNameVar $ unQualify field) exp]
+        updateStmt name (FieldWildcard _) = do
+          fields <- map (UnQual ()) <$> recToFields name
+          return $ for fields $ \fieldName -> JsSetProp (JsNameVar $ unAnn name)
+                                                        (JsNameVar fieldName)
+                                                        (JsName $ JsNameVar fieldName)
         -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
         updateStmt _ u = error ("updateStmt: " ++ show u)
 
@@ -326,9 +326,9 @@ compileRecUpdate rec fieldUpdates = do
         copy = JsVar (JsNameVar copyName)
                      (JsRawExp ("Object.create(" ++ printJSString record ++ ")"))
     setFields <- forM fieldUpdates (updateExp copyName)
-    return $ JsApp (JsFun Nothing [] (copy:setFields) (Just (JsName (JsNameVar copyName)))) []
+    return $ JsApp (JsFun Nothing [] (copy:setFields) (Just $ JsName $ JsNameVar copyName)) []
   where updateExp :: QName a -> S.FieldUpdate -> Compile JsStmt
-        updateExp (unAnn -> copyName) (FieldUpdate _ (unAnn -> field) value) =
+        updateExp (unAnn -> copyName) (FieldUpdate _ (unQualify . unAnn -> field) value) =
           JsSetProp (JsNameVar copyName) (JsNameVar field) <$> compileExp value
         updateExp (unAnn -> copyName) (FieldPun _ (unAnn -> name)) =
           -- let a = 1 in C {a}

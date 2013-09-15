@@ -111,7 +111,7 @@ data CompileState = CompileState
   -- TODO Change N.QName to GName? They can never be special so it would simplify.
   { stateInterfaces    :: Map N.ModuleName Symbols           -- ^ Exported identifiers for all modules
   , stateRecordTypes   :: [(N.QName,[N.QName])]              -- ^ Map types to constructors
-  , stateRecords       :: [(N.QName,[N.QName])]              -- ^ Map constructors to fields
+  , stateRecords       :: [(N.QName,[N.Name])]               -- ^ Map constructors to fields
   , stateNewtypes      :: [(N.QName, Maybe N.QName, N.Type)] -- ^ Newtype constructor, destructor, wrapped type tuple
   , stateImported      :: [(N.ModuleName,FilePath)]          -- ^ Map of all imported modules and their source locations.
   , stateNameDepth     :: Integer                            -- ^ Depth of the current lexical scope, used for creating unshadowing variables.

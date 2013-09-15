@@ -94,7 +94,7 @@ compileToplevelModule filein mod@Module{}  = do
              fromMaybe (F.moduleNameString (F.moduleName mod)) $
                configFilePath cfg
     either throwError warn res
-  initialPass mod
+  initialPass filein
   -- Reset imports after initialPass so the modules can be imported during code generation.
   modify $ \s -> s { stateImported = [] }
   fmap fst . listen $ compileModuleFromFile filein
@@ -138,8 +138,9 @@ compileModule filepath contents = do
   result <- compileToAst filepath reader state compileModuleFromAST contents
   case result of
     Right (stmts,state,writer) -> do
-      modify $ \s -> s { stateImported      = stateImported state
+      modify $ \s -> s { stateImported      = stateImported      state
                        , stateJsModulePaths = stateJsModulePaths state
+                       , stateModuleName    = stateModuleName    state
                        }
       maybeOptimize $ stmts ++ writerCons writer ++ makeTranscoding writer
     Left err -> throwError err
@@ -180,7 +181,7 @@ compileModuleFromAST mod'@(Module _ _ pragmas imports _) = do
     else if not exportStdlib && anStdlibModule modName
             then []
             else stmts
-compileModuleFromAST mod = throwError (UnsupportedModuleSyntax "compileModuleFromAST" mod)
+compileModuleFromAST mod = throwError $ UnsupportedModuleSyntax "compileModuleFromAST" mod
 
 hasLanguagePragmas :: [String] -> [F.ModulePragma] -> Bool
 hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter (`elem` pragmas) $ flattenPragmas modulePragmas

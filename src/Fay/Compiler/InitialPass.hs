@@ -10,6 +10,7 @@ module Fay.Compiler.InitialPass
 import           Fay.Compiler.Config
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
+import           Fay.Control.Monad.IO
 import           Fay.Data.List.Extra
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
@@ -27,10 +28,45 @@ import           Prelude                         hiding (mod, read)
 -- TODO Import logic should be abstracted and reused for InitialPass and Compiler.
 
 -- | Preprocess and collect all information needed during code generation.
-initialPass :: F.Module -> Compile ()
-initialPass mod@(Module _ _ _pragmas imports decls) = do
-  modify $ \s -> s { stateModuleName = unAnn (F.moduleName mod)
-                   }
+initialPass :: FilePath -> Compile ()
+initialPass filein = fmap fst . listen $ compileModuleFromFile filein
+
+compileModuleFromFile :: FilePath -> Compile ()
+compileModuleFromFile fp = io (readFile fp) >>= compileModule fp
+
+compileModule :: FilePath -> String -> Compile ()
+compileModule filepath contents = do
+  state  <- get
+  reader <- ask
+  result <- compileToAst filepath reader state compileModuleFromAST contents
+  case result of
+    Right ((),st,_) -> do
+      modify $ \s -> s { stateRecords     = stateRecords     st
+                       , stateRecordTypes = stateRecordTypes st
+                       , stateImported    = stateImported    st
+                       , stateNewtypes    = stateNewtypes    st
+                       , stateInterfaces  = stateInterfaces  st
+                       , stateTypeSigs    = stateTypeSigs    st
+                       }
+    Left err -> throwError err
+
+-- | Compile a Haskell source string to a JavaScript source string.
+compileToAst :: FilePath
+             -> CompileReader
+             -> CompileState
+             -> (F.Module -> Compile ())
+             -> String
+             -> Compile (CompileResult ())
+compileToAst filepath reader state with from =
+  Compile . lift . lift $ runCompileModule reader
+             state
+             (parseResult (throwError . uncurry ParseError)
+                          with
+                          (parseFay filepath from))
+
+compileModuleFromAST :: F.Module -> Compile ()
+compileModuleFromAST mod@(Module _ _ _ imports decls) = do
+  modify $ \s -> s { stateModuleName = unAnn (F.moduleName mod) }
   forM_ imports compileImport
   -- This can only return one element since we only compile one module.
   ([exports],_) <- HN.getInterfaces Haskell2010 [] [mod]
@@ -38,39 +74,34 @@ initialPass mod@(Module _ _ _pragmas imports decls) = do
   forM_ decls scanTypeSigs
   forM_ decls scanRecordDecls
   forM_ decls scanNewtypeDecls
-initialPass m = throwError (UnsupportedModuleSyntax "initialPass" m)
+compileModuleFromAST mod = throwError $ UnsupportedModuleSyntax "compileModuleFromAST" mod
 
 compileImport :: F.ImportDecl -> Compile ()
 compileImport (ImportDecl _ _    _ _ Just{}  _ _) = return ()
-compileImport (ImportDecl _ name _ _ Nothing _ _) = compileImport' name
+compileImport (ImportDecl _ name _ _ Nothing _ _) = compileModuleFromName name
 
-compileWith :: (Show from,Parseable from)
-            => FilePath
-            -> CompileReader
-            -> CompileState
-            -> (from -> Compile ())
-            -> String
-            -> Compile (CompileResult ())
-compileWith filepath r st with from =
-  Compile . lift . lift $ runCompileModule r
-             st
-             (parseResult (throwError . uncurry ParseError)
-             with
-             (parseFay filepath from))
+-- | Lookup a module from include directories and compile.
+compileModuleFromName :: F.ModuleName -> Compile ()
+compileModuleFromName name =
+  unlessImported name compileModule
+  where
+    unlessImported :: ModuleName a
+                   -> (FilePath -> String -> Compile ())
+                   -> Compile ()
+    unlessImported (ModuleName _ "Fay.Types") _ = return ()
+    unlessImported (unAnn -> name) importIt = do
+      imported <- gets stateImported
+      case lookup name imported of
+        Just _  -> return ()
+        Nothing -> do
+          dirs <- configDirectoryIncludePaths <$> config id
+          (filepath,contents) <- findImport dirs name
+          modify $ \s -> s { stateImported = (name,filepath) : imported }
+          importIt filepath contents
 
--- | Don't re-import the same modules.
-unlessImported :: ModuleName a
-               -> (FilePath -> String -> Compile ())
-               -> Compile ()
-unlessImported name importIt = do
-  isImported <- lookup (unAnn name) <$> gets stateImported
-  case isImported of
-    Just _ -> return ()
-    Nothing -> do
-      dirs <- configDirectoryIncludePaths <$> config id
-      (filepath,contents) <- findImport dirs (unAnn name)
-      modify $ \s -> s { stateImported = ((unAnn name),filepath) : stateImported s }
-      importIt filepath contents
+
+--------------------------------------------------------------------------------
+-- | Preprocessing
 
 -- | Find newtype declarations
 scanNewtypeDecls :: F.Decl -> Compile ()
@@ -155,24 +186,3 @@ scanTypeSigs decl = case decl of
     addTypeSig (unAnn -> n') (unAnn -> t) = do
       n <- qualify n'
       modify $ \s -> s { stateTypeSigs = M.insert n t (stateTypeSigs s) }
-
--- | Compile an import filtering the exports based on the current module's imports
-compileImport' :: F.ModuleName -> Compile ()
-compileImport' name =
-  unlessImported name $ \filepath contents -> do
-    read <- ask
-    stat <- get
-    result <- compileWith filepath read stat initialPass contents
-    case result of
-      Right ((),st,_) -> do
-        -- Merges the state gotten from passing through an imported
-        -- module with the current state. We can assume no duplicate
-        -- records exist since GHC would pick that up.
-        modify $ \s -> s { stateRecords      = stateRecords     st
-                         , stateRecordTypes  = stateRecordTypes st
-                         , stateImported     = stateImported    st
-                         , stateNewtypes     = stateNewtypes    st
-                         , stateInterfaces   = stateInterfaces  st
-                         , stateTypeSigs     = stateTypeSigs    st
-                         }
-      Left err -> throwError err

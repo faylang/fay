@@ -1,44 +1,67 @@
+{-# OPTIONS -fno-warn-orphans  #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Fay.Exts.NoAnnotation where
 
+
+import           Data.Char                       (isAlpha)
+import           Data.List                       (intercalate)
+import           Data.List.Split                 (splitOn)
+import           Data.String
 import qualified Language.Haskell.Exts.Annotated as A
 
-type X = ()
-
-type Alt = A.Alt X
-type BangType = A.BangType X
-type ClassDecl = A.ClassDecl X
-type Decl = A.Decl X
-type DeclHead = A.DeclHead X
-type Ex = A.Exp X
-type Exp = A.Exp X
-type ExportSpec = A.ExportSpec X
-type FieldDecl = A.FieldDecl X
-type FieldUpdate = A.FieldUpdate X
-type GadtDecl = A.GadtDecl X
-type GuardedAlts = A.GuardedAlts X
-type GuardedRhs = A.GuardedRhs X
-type ImportDecl = A.ImportDecl X
-type ImportSpec = A.ImportSpec X
-type Literal = A.Literal X
-type Match = A.Match X
-type Module = A.Module X
-type ModuleName = A.ModuleName X
-type ModulePragma = A.ModulePragma X
-type Name = A.Name X
-type Pat = A.Pat X
-type PatField = A.PatField X
-type QName = A.QName X
-type QOp = A.QOp X
-type QualConDecl = A.QualConDecl X
-type QualStmt = A.QualStmt X
-type Rhs = A.Rhs X
-type SpecialCon = A.SpecialCon X
+type Alt = A.Alt ()
+type BangType = A.BangType ()
+type ClassDecl = A.ClassDecl ()
+type Decl = A.Decl ()
+type DeclHead = A.DeclHead ()
+type Ex = A.Exp ()
+type Exp = A.Exp ()
+type ExportSpec = A.ExportSpec ()
+type FieldDecl = A.FieldDecl ()
+type FieldUpdate = A.FieldUpdate ()
+type GadtDecl = A.GadtDecl ()
+type GuardedAlts = A.GuardedAlts ()
+type GuardedRhs = A.GuardedRhs ()
+type ImportDecl = A.ImportDecl ()
+type ImportSpec = A.ImportSpec ()
+type Literal = A.Literal ()
+type Match = A.Match ()
+type Module = A.Module ()
+type ModuleName = A.ModuleName ()
+type ModulePragma = A.ModulePragma ()
+type Name = A.Name ()
+type Pat = A.Pat ()
+type PatField = A.PatField ()
+type QName = A.QName ()
+type QOp = A.QOp ()
+type QualConDecl = A.QualConDecl ()
+type QualStmt = A.QualStmt ()
+type Rhs = A.Rhs ()
+type SpecialCon = A.SpecialCon ()
 type SrcLoc = A.SrcLoc
 type SrcSpan = A.SrcSpan
 type SrcSpanInfo = A.SrcSpanInfo
-type Stmt = A.Stmt X
-type TyVarBind = A.TyVarBind X
-type Type = A.Type X
+type Stmt = A.Stmt ()
+type TyVarBind = A.TyVarBind ()
+type Type = A.Type ()
 
 unAnn :: Functor f => f a -> f ()
 unAnn = fmap (const ())
+
+-- | Helpful for some things.
+instance IsString (A.Name ()) where
+  fromString n@(c:_)
+    | isAlpha c || c == '_' = A.Ident () n
+    | otherwise             = A.Symbol () n
+  fromString [] = error "Name fromString: empty string"
+
+-- | Helpful for some things.
+instance IsString (A.QName ()) where
+  fromString s = case splitOn "." s of
+    []  -> error "QName fromString: empty string"
+    [x] -> A.UnQual () $ fromString x
+    xs  -> A.Qual () (fromString $ intercalate "." $ init xs) $ fromString (last xs)
+
+-- | Helpful for writing qualified symbols (Fay.*).
+instance IsString (A.ModuleName ()) where
+   fromString = A.ModuleName ()

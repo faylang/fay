@@ -180,7 +180,8 @@ compileFunCase toplevel matches@(Match _ name argslen _ _:_) = do
   return [bind]
   where args = zipWith const uniqueNames argslen
 
-        isWildCardMatch (Match _ _ pats _ _) = all isWildCardPat pats
+        isWildCardMatch (Match _ _ pats          _ _) = all isWildCardPat pats
+        isWildCardMatch (InfixMatch _ pat _ pats _ _) = all isWildCardPat (pat:pats)
 
         compileCase :: S.Match -> Compile [JsStmt]
         compileCase (InfixMatch l pat name pats rhs binds) =

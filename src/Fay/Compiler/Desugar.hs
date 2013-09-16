@@ -1,23 +1,66 @@
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies               #-}
+
 module Fay.Compiler.Desugar
-  (desugarModule
+  (desugar
   ) where
 
+import           Fay.Types                       (CompileError (..))
+
 import           Control.Applicative
+import           Control.Monad.Error
+import           Control.Monad.State
 import           Data.Maybe
 import           Language.Haskell.Exts.Annotated hiding (binds, loc)
 import           Prelude                         hiding (exp)
 
-desugarModule :: Module l -> Module l
+
+-- Types
+
+data DesugarState = DesugarState { stateNameDepth :: Int }
+
+newtype Desugar a = Desugar
+  { unDesugar :: (StateT DesugarState
+                       (ErrorT CompileError IO))
+                       a
+  } deriving ( MonadState DesugarState
+             , MonadError CompileError
+             , MonadIO
+             , Monad
+             , Functor
+             , Applicative
+             )
+
+runDesugar :: Desugar a -> IO (Either CompileError (a, DesugarState))
+runDesugar m = runErrorT (runStateT (unDesugar m) (DesugarState 0))
+
+-- | Generate a temporary, SCOPED name for testing conditions and
+-- such. We don't have name tracking yet, so instead we use this.
+withScopedTmpName :: (Name l -> Desugar a) -> Desugar a
+withScopedTmpName withName = do
+  depth <- gets stateNameDepth
+  modify $ \s -> s { stateNameDepth = depth + 1 }
+  ret <- withName $ Ident undefined $ "$gen" ++ show depth
+  modify $ \s -> s { stateNameDepth = depth }
+  return ret
+
+-- Desugaring
+
+desugar ::  Module l -> IO (Either CompileError (Module l))
+desugar md =
+  either Left (Right . fst) <$> runDesugar (desugarModule md)
+
+desugarModule :: Module l -> Desugar (Module l)
 desugarModule m = case m of
-  Module l h ps is decls -> Module l h ps is (map desugarDecl decls)
-  _ -> m
+  Module l h ps is decls -> return $ Module l h ps is (map desugarDecl decls)
+  _ -> return $ m
 
 desugarDecl :: Decl l -> Decl l
 desugarDecl d = case d of
   FunBind l ms -> FunBind l (map desugarMatch ms)
   PatBind l p mt rhs mbs -> PatBind l (desugarPat p) (desugarType <$> mt) (desugarRhs rhs) (desugarBinds <$> mbs)
   _ -> d
-  -- TODO
 
 desugarBinds :: Binds l -> Binds l
 desugarBinds bs = case bs of

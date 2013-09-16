@@ -37,9 +37,11 @@ runDesugar m = runErrorT (runReaderT (unDesugar m) (DesugarReader 0))
 
 -- | Generate a temporary, SCOPED name for testing conditions and
 -- such. We don't have name tracking yet, so instead we use this.
-withScopedTmpName :: Desugar a -> Desugar a
-withScopedTmpName =
-  local (\r -> DesugarReader $ readerNameDepth r + 1)
+withScopedTmpName :: l -> (Name l -> Desugar a) -> Desugar a
+withScopedTmpName l f = do
+  n <- asks readerNameDepth
+  local (\r -> DesugarReader $ readerNameDepth r + 1) $
+   f $ Ident l $ "$gen" ++ show n
 
 desugar ::  Module l -> IO (Either CompileError (Module l))
 desugar md = runDesugar (desugarModule md)
@@ -80,6 +82,13 @@ desugarGuardedRhs g = case g of
 
 desugarExp :: Exp l -> Desugar (Exp l)
 desugarExp ex = case ex of
+  LeftSection l e q -> desugarExp =<<
+    (withScopedTmpName l $ \v ->
+      return $ Lambda l [PVar l v] (InfixApp l e q (Var l (UnQual l v))))
+  RightSection l q e -> desugarExp =<<
+    (withScopedTmpName l $ \tmp ->
+      return (Lambda l [PVar l tmp] (InfixApp l (Var l (UnQual l tmp)) q e)))
+
   Var{} -> return ex
   IPVar{} -> return ex
   Con{} -> return ex
@@ -97,8 +106,6 @@ desugarExp ex = case ex of
   TupleSection l b mes -> TupleSection l b <$> mapM (mmap desugarExp) mes
   List l es -> List l <$> mapM desugarExp es
   Paren l e -> Paren l <$> desugarExp e
-  LeftSection l e q -> LeftSection l <$> desugarExp e <*> return (desugarQOp q)
-  RightSection l q e -> RightSection l (desugarQOp q) <$> desugarExp e
   RecConstr l q f -> RecConstr l (desugarQName q) <$> mapM desugarFieldUpdate f
   RecUpdate l e f -> RecUpdate l <$> desugarExp e <*> mapM desugarFieldUpdate f
   EnumFrom l e -> EnumFrom l <$> desugarExp e

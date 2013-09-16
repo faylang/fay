@@ -50,8 +50,6 @@ compileExp exp =
     Con _ (UnQual _ (Ident _ "False")) -> return (JsLit (JsBool False))
     Con _ qname                        -> compileVar qname
     Lambda _ pats exp                  -> compileLambda pats exp
-    LeftSection _ e o                  -> compileExp =<< desugarLeftSection e o
-    RightSection _ o e                 -> compileExp =<< desugarRightSection o e
     EnumFrom _ i                       -> compileEnumFrom i
     EnumFromTo _ i i'                  -> compileEnumFromTo i i'
     EnumFromThen _ a b                 -> compileEnumFromThen a b
@@ -59,14 +57,16 @@ compileExp exp =
     RecConstr _ name fieldUpdates      -> compileRecConstr name fieldUpdates
     RecUpdate _ rec  fieldUpdates      -> compileRecUpdate rec fieldUpdates
     ListComp _ exp stmts               -> compileExp =<< desugarListComp exp stmts
-    d@Do {}                            -> throwError . ShouldBeDesugared . show $ unAnn d
+    Do {}                              -> notDesugared
+    LeftSection {}                     -> notDesugared
+    RightSection {}                    -> notDesugared
     ExpTypeSig _ exp sig               ->
       case ffiExp exp of
         Nothing -> compileExp exp
         Just formatstr -> compileFFIExp (S.srcSpanInfo $ ann exp) Nothing formatstr sig
 
     exp -> throwError (UnsupportedExpression exp)
-
+  where notDesugared = throwError . ShouldBeDesugared . show $ unAnn exp
 -- | Turn a tuple constructor into a normal lambda expression.
 tupleConToFunction :: Boxed -> Int -> S.Exp
 tupleConToFunction b n = Lambda noI params body
@@ -249,16 +249,6 @@ compileLambda pats exp = do
                   return [JsEarlyReturn (JsFun Nothing [param] (stmts ++ [unhandledcase param | not allfree]) Nothing)])
                 [JsEarlyReturn exp]
                 (reverse (zip uniqueNames pats))
-
--- | Desugar left sections to lambdas.
-desugarLeftSection :: S.Exp -> S.QOp -> Compile S.Exp
-desugarLeftSection e o = withScopedTmpName $ \tmp ->
-    return (Lambda noI [PVar noI tmp] (InfixApp noI e o (Var noI (UnQual noI tmp))))
-
--- | Desugar left sections to lambdas.
-desugarRightSection :: S.QOp -> S.Exp -> Compile S.Exp
-desugarRightSection o e = withScopedTmpName $ \tmp ->
-    return (Lambda noI [PVar noI tmp] (InfixApp noI (Var noI (UnQual noI tmp)) o e))
 
 -- | Compile [e1..] arithmetic sequences.
 compileEnumFrom :: S.Exp -> Compile JsExp

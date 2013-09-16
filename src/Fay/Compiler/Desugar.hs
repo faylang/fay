@@ -89,9 +89,10 @@ desugarExp ex = case ex of
     (withScopedTmpName l $ \tmp ->
       return (Lambda l [PVar l tmp] (InfixApp l (Var l (UnQual l tmp)) q e)))
 
-  Var{} -> return ex
+  Var _ q -> return $ desugarVar ex q
+  Con _ q -> return $ desugarVar ex q
+
   IPVar{} -> return ex
-  Con{} -> return ex
   Lit{} -> return ex
   InfixApp l e1 qop e2 -> InfixApp l <$> desugarExp e1 <*> return (desugarQOp qop) <*> desugarExp e2
   App l e1 e2 -> App l <$> desugarExp e1 <*> desugarExp e2
@@ -239,3 +240,20 @@ desugarStmt s = case s of
 
 desugarName :: Name a -> Name a
 desugarName = id
+
+desugarVar :: Exp l -> QName l -> Exp l
+desugarVar e q = case q of
+  Special _ t@TupleCon{} -> fromMaybe e $ desugarTupleCon t
+  _ -> e
+
+-- | Turn a tuple constructor into a normal lambda expression.
+desugarTupleCon :: SpecialCon l -> Maybe (Exp l)
+desugarTupleCon s = case s of
+  TupleCon l b n -> Just $ Lambda l params body
+    where
+      -- It doesn't matter if these variable names shadow anything since
+      -- this lambda won't have inner scopes.
+      names  = take n $ map (Ident l . ("$gen" ++) . show) [(1::Int)..]
+      params = PVar l <$> names
+      body   = Tuple l b (Var l . UnQual l <$> names)
+  _ -> Nothing

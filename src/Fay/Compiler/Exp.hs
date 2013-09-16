@@ -57,32 +57,21 @@ compileExp exp =
     RecConstr _ name fieldUpdates      -> compileRecConstr name fieldUpdates
     RecUpdate _ rec  fieldUpdates      -> compileRecUpdate rec fieldUpdates
     ListComp _ exp stmts               -> compileExp =<< desugarListComp exp stmts
-    Do {}                              -> notDesugared
-    LeftSection {}                     -> notDesugared
-    RightSection {}                    -> notDesugared
+    Do {}                              -> shouldBeDesugared exp
+    LeftSection {}                     -> shouldBeDesugared exp
+    RightSection {}                    -> shouldBeDesugared exp
     ExpTypeSig _ exp sig               ->
       case ffiExp exp of
         Nothing -> compileExp exp
         Just formatstr -> compileFFIExp (S.srcSpanInfo $ ann exp) Nothing formatstr sig
 
     exp -> throwError (UnsupportedExpression exp)
-  where notDesugared = throwError . ShouldBeDesugared . show $ unAnn exp
--- | Turn a tuple constructor into a normal lambda expression.
-tupleConToFunction :: Boxed -> Int -> S.Exp
-tupleConToFunction b n = Lambda noI params body
-  where
-    -- It doesn't matter if these variable names shadow anything since
-    -- this lambda won't have inner scopes.
-    names  = take n $ map (Ident noI . ("$gen" ++) . show) [(1::Int)..]
-    params = PVar noI <$> names
-    body   = Tuple noI b (Var noI . UnQual noI <$> names)
 
 -- | Compile variable.
 compileVar :: S.QName -> Compile JsExp
 compileVar qname = do
   case qname of
-    Special _ (TupleCon _ b n) ->
-      compileExp (tupleConToFunction b n)
+    Special _ t@TupleCon{} -> shouldBeDesugared t
     _ -> do
       qname <- unsafeResolveName qname
       return (JsName (JsNameVar qname))
@@ -318,7 +307,7 @@ compileRecUpdate rec fieldUpdates = do
   where updateExp :: QName a -> S.FieldUpdate -> Compile JsStmt
         updateExp (unAnn -> copyName) (FieldUpdate _ (unQualify . unAnn -> field) value) =
           JsSetProp (JsNameVar copyName) (JsNameVar field) <$> compileExp value
-        updateExp _ f@FieldPun{} = throwError $ ShouldBeDesugared $ show f
+        updateExp _ f@FieldPun{} = shouldBeDesugared f
         -- I also couldn't find a code that generates (FieldUpdate FieldWildCard)
         updateExp _ FieldWildcard{} = error "unsupported update: FieldWildcard"
 

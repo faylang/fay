@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE ViewPatterns      #-}
@@ -323,3 +324,6 @@ parseMode = defaultParseMode
                    ,KindSignatures]
   , fixities = Just (preludeFixities ++ baseFixities)
   }
+
+shouldBeDesugared :: (Functor f, Show (f ())) => f l -> Compile a
+shouldBeDesugared = throwError . ShouldBeDesugared . show . unAnn

@@ -29,14 +29,14 @@ compilePat exp pat body =
         Nothing -> compilePApp cons pats exp body
         Just _  -> compileNewtypePat pats exp body
     PLit _ literal    -> compilePLit exp literal body
-    PParen{}          -> throwError . ShouldBeDesugared . show $ unAnn pat
+    PParen{}          -> shouldBeDesugared pat
     PWildCard _       -> return body
-    pat@PInfixApp{} -> compileInfixPat exp pat body
+    pat@PInfixApp{}   -> compileInfixPat exp pat body
     PList _ pats      -> compilePList pats body exp
     PTuple _ _bx pats -> compilePList pats body exp
     PAsPat _ name pat -> compilePAsPat exp name pat body
     PRec _ name pats  -> compilePatFields exp name pats body
-    pat             -> throwError (UnsupportedPattern pat)
+    pat               -> throwError (UnsupportedPattern pat)
 
 -- | Compile a pattern variable e.g. x.
 compilePVar :: S.Name -> JsExp -> [JsStmt] -> Compile [JsStmt]
@@ -52,7 +52,7 @@ compilePatFields exp name pats body = do
   where -- compilePats' collects field names that had already been matched so that
         -- wildcard generates code for the rest of the fields.
         compilePats' :: [S.QName] -> [S.PatField] -> Compile [JsStmt]
-        compilePats' _ (p@PFieldPun{}:_) = throwError . ShouldBeDesugared $ show p
+        compilePats' _ (p@PFieldPun{}:_) = shouldBeDesugared p
         compilePats' names (PFieldPat _ fieldname (PVar _ (unAnn -> varName)):xs) = do
           r <- compilePats' (fieldname : names) xs
           return $ JsVar (JsNameVar (UnQual () varName))

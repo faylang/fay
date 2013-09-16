@@ -11,7 +11,6 @@ import           Fay.Compiler.Desugar
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Import
 import           Fay.Compiler.Misc
-import           Fay.Control.Monad.IO
 import           Fay.Data.List.Extra
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
@@ -52,7 +51,6 @@ preprocessFileWithSource filepath contents = do
 preprocessAST :: () -> F.Module -> Compile ()
 preprocessAST () mod'@Module{} = do
   let mod@(Module _ _ _ _ decls) = desugarModule mod'
-  mn <- gets stateModuleName
   -- This can only return one element since we only compile one module.
   ([exports],_) <- HN.getInterfaces Haskell2010 [] [desugarModule mod]
   modify $ \s -> s { stateInterfaces = M.insert (stateModuleName s) exports $ stateInterfaces s }

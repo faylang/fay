@@ -124,37 +124,40 @@ toJsName x = case reverse x of
 -- | Print a compile error for human consumption.
 showCompileError :: CompileError -> String
 showCompileError e = case e of
-  ParseError pos err -> err ++ " at line: " ++ show (srcLine pos) ++ " column: " ++ show (srcColumn pos)
-  UnsupportedDeclaration d -> "unsupported declaration: " ++ prettyPrint d
-  UnsupportedExportSpec es -> "unsupported export specification: " ++ prettyPrint es
-  UnsupportedExpression expr -> "unsupported expression syntax: " ++ prettyPrint expr
-  UnsupportedFieldPattern p -> "unsupported field pattern: " ++ prettyPrint p
-  UnsupportedImport i -> "unsupported import syntax, we're too lazy: " ++ prettyPrint i
-  UnsupportedLet -> "let not supported here"
-  UnsupportedLetBinding d -> "unsupported let binding: " ++ prettyPrint d
-  UnsupportedLiteral lit -> "unsupported literal syntax: " ++ prettyPrint lit
-  UnsupportedModuleSyntax s m -> "unsupported module syntax in " ++ s ++ ": " ++ prettyPrint m
-  UnsupportedPattern pat -> "unsupported pattern syntax: " ++ prettyPrint pat
-  UnsupportedQualStmt stmt -> "unsupported list qualifier: " ++ prettyPrint stmt
-  UnsupportedRecursiveDo -> "recursive `do' isn't supported"
-  UnsupportedRhs rhs -> "unsupported right-hand side syntax: " ++ prettyPrint rhs
-  UnsupportedWhereInAlt alt -> "`where' not supported here: " ++ prettyPrint alt
-  UnsupportedWhereInMatch m -> "unsupported `where' syntax: " ++ prettyPrint m
-  EmptyDoBlock -> "empty `do' block"
-  InvalidDoBlock -> "invalid `do' block"
-  FfiNeedsTypeSig d -> "your FFI declaration needs a type signature: " ++ prettyPrint d
-  FfiFormatBadChars      srcloc cs -> printSrcSpanInfo srcloc ++ ": invalid characters for FFI format string: " ++ show cs
-  FfiFormatNoSuchArg     srcloc i  -> printSrcSpanInfo srcloc ++ ": no such argument in FFI format string: " ++ show i
-  FfiFormatIncompleteArg srcloc    -> printSrcSpanInfo srcloc ++ ": incomplete `%' syntax in FFI format string"
-  FfiFormatInvalidJavaScript srcloc code err ->
-    printSrcSpanInfo srcloc ++ ":" ++
-    "\ninvalid JavaScript code in FFI format string:\n" ++ err ++ "\nin " ++ code
-  Couldn'tFindImport i places ->
+  Couldn'tFindImport i places      ->
     "could not find an import in the path: " ++ prettyPrint i ++ ", \n" ++
     "searched in these places: " ++ intercalate ", " places
-  UnableResolveQualified qname -> "unable to resolve qualified names " ++ prettyPrint qname
-  GHCError s -> "ghc: " ++ s
---  FayScopeError s -> "scope error: " ++ s
+  EmptyDoBlock -> "empty `do' block"
+  FfiFormatBadChars srcloc cs      -> printSrcSpanInfo srcloc ++ ": invalid characters for FFI format string: " ++ show cs
+  FfiFormatIncompleteArg srcloc    -> printSrcSpanInfo srcloc ++ ": incomplete `%' syntax in FFI format string"
+  FfiFormatInvalidJavaScript l c e ->
+    printSrcSpanInfo l ++ ":" ++
+    "\ninvalid JavaScript code in FFI format string:\n" ++ e ++ "\nin " ++ c
+  FfiFormatNoSuchArg srcloc i      ->
+    printSrcSpanInfo srcloc ++ ":" ++
+    "\nno such argument in FFI format string: " ++ show i
+  FfiNeedsTypeSig d                -> "your FFI declaration needs a type signature: " ++ prettyPrint d
+  GHCError s                       -> "ghc: " ++ s
+  InvalidDoBlock                   -> "invalid `do' block"
+  ParseError pos err               ->
+    err ++ " at line: " ++ show (srcLine pos) ++ " column:" ++
+    "\n" ++ show (srcColumn pos)
+  UnableResolveQualified qname     -> "unable to resolve qualified names " ++ prettyPrint qname
+  UnsupportedDeclaration d         -> "unsupported declaration: " ++ prettyPrint d
+  UnsupportedExportSpec es         -> "unsupported export specification: " ++ prettyPrint es
+  UnsupportedExpression expr       -> "unsupported expression syntax: " ++ prettyPrint expr
+  UnsupportedFieldPattern p        -> "unsupported field pattern: " ++ prettyPrint p
+  UnsupportedImport i              -> "unsupported import syntax, we're too lazy: " ++ prettyPrint i
+  UnsupportedLet                   -> "let not supported here"
+  UnsupportedLetBinding d          -> "unsupported let binding: " ++ prettyPrint d
+  UnsupportedLiteral lit           -> "unsupported literal syntax: " ++ prettyPrint lit
+  UnsupportedModuleSyntax s m      -> "unsupported module syntax in " ++ s ++ ": " ++ prettyPrint m
+  UnsupportedPattern pat           -> "unsupported pattern syntax: " ++ prettyPrint pat
+  UnsupportedQualStmt stmt         -> "unsupported list qualifier: " ++ prettyPrint stmt
+  UnsupportedRecursiveDo           -> "recursive `do' isn't supported"
+  UnsupportedRhs rhs               -> "unsupported right-hand side syntax: " ++ prettyPrint rhs
+  UnsupportedWhereInAlt alt        -> "`where' not supported here: " ++ prettyPrint alt
+  UnsupportedWhereInMatch m        -> "unsupported `where' syntax: " ++ prettyPrint m
 
 -- | Get the JS runtime source.
 getRuntime :: CompileConfig -> IO String

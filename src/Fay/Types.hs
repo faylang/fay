@@ -202,7 +202,17 @@ class Printable a where
 
 -- | Error type.
 data CompileError
-  = ParseError S.SrcLoc String
+  = Couldn'tFindImport N.ModuleName [FilePath]
+  | EmptyDoBlock
+  | FfiFormatBadChars SrcSpanInfo String
+  | FfiFormatIncompleteArg SrcSpanInfo
+  | FfiFormatInvalidJavaScript SrcSpanInfo String String
+  | FfiFormatNoSuchArg SrcSpanInfo Int
+  | FfiNeedsTypeSig S.Decl
+  | GHCError String
+  | InvalidDoBlock
+  | ParseError S.SrcLoc String
+  | UnableResolveQualified N.QName
   | UnsupportedDeclaration S.Decl
   | UnsupportedExportSpec N.ExportSpec
   | UnsupportedExpression S.Exp
@@ -218,17 +228,6 @@ data CompileError
   | UnsupportedRhs S.Rhs
   | UnsupportedWhereInAlt S.Alt
   | UnsupportedWhereInMatch S.Match
-  | EmptyDoBlock
-  | InvalidDoBlock
-  | Couldn'tFindImport N.ModuleName [FilePath]
-  | FfiNeedsTypeSig S.Decl
-  | FfiFormatBadChars SrcSpanInfo String
-  | FfiFormatNoSuchArg SrcSpanInfo Int
-  | FfiFormatIncompleteArg SrcSpanInfo
-  | FfiFormatInvalidJavaScript SrcSpanInfo String String
-  | UnableResolveQualified N.QName
-  | GHCError String
---  | FayScopeError String
   deriving (Show)
 instance Error CompileError
 

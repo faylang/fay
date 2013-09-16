@@ -15,8 +15,8 @@ desugarModule m = case m of
 
 desugarDecl :: Decl l -> Decl l
 desugarDecl d = case d of
-  FunBind l matches -> FunBind l $ map desugarMatch matches
-  PatBind l pats mty rhs mbs -> PatBind l pats mty (desugarRhs rhs) (desugarBinds <$> mbs)
+  FunBind l ms -> FunBind l (map desugarMatch ms)
+  PatBind l p mt rhs mbs -> PatBind l (desugarPat p) (desugarType <$> mt) (desugarRhs rhs) (desugarBinds <$> mbs)
   _ -> d
   -- TODO
 
@@ -27,7 +27,7 @@ desugarBinds bs = case bs of
 
 desugarMatch :: Match l -> Match l
 desugarMatch m = case m of
-  Match l n ps rhs bs -> Match l n ps (desugarRhs rhs) bs
+  Match l n ps rhs mb -> Match l n ps (desugarRhs rhs) (desugarBinds <$> mb)
   _ -> m
 
 desugarRhs :: Rhs l -> Rhs l
@@ -94,25 +94,25 @@ desugarStmt' inner stmt =
   maybe initStmt subsequentStmt inner
   where
     initStmt = case stmt of
-      Qualifier _ exp -> Just exp
+      Qualifier _ exp -> Just (desugarExp exp)
       LetStmt{}     -> error "UnsupportedLet"
       _             -> error "InvalidDoBlock"
 
     subsequentStmt inner' = case stmt of
-      Generator loc pat exp -> compileGenerator loc pat inner' exp
-      Qualifier s exp -> Just $ InfixApp s exp
-                                         (QVarOp s $ UnQual s $ Symbol s ">>")
-                                         inner'
-      LetStmt _ (BDecls s binds) -> Just $ Let s (BDecls s binds) inner'
+      Generator loc pat exp -> desugarGenerator loc pat inner' exp
+      Qualifier s exp -> Just $ desugarExp $ InfixApp s exp
+                                               (QVarOp s $ UnQual s $ Symbol s ">>")
+                                               inner'
+      LetStmt _ (BDecls s binds) -> Just $ desugarExp $ Let s (BDecls s binds) inner'
       LetStmt _ _ -> error "UnsupportedLet"
       RecStmt{} -> error "UnsupportedRecursiveDo"
 
-    compileGenerator :: l -> Pat l -> Exp l -> Exp l -> Maybe (Exp l)
-    compileGenerator s pat inner' exp =
-      Just $ InfixApp s
+    desugarGenerator :: l -> Pat l -> Exp l -> Exp l -> Maybe (Exp l)
+    desugarGenerator s pat inner' exp =
+      Just $ desugarExp $ InfixApp s
                       exp
                       (QVarOp s $ UnQual s $ Symbol s ">>=")
-                      (Lambda s [desugarPat pat] (desugarExp inner'))
+                      (Lambda s [pat] (inner'))
 
 desugarPat :: Pat l -> Pat l
 desugarPat = id

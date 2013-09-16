@@ -212,6 +212,7 @@ data CompileError
   | GHCError String
   | InvalidDoBlock
   | ParseError S.SrcLoc String
+  | ShouldBeDesugared String
   | UnableResolveQualified N.QName
   | UnsupportedDeclaration S.Decl
   | UnsupportedExportSpec N.ExportSpec

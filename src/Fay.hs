@@ -130,9 +130,9 @@ showCompileError e = case e of
   EmptyDoBlock -> "empty `do' block"
   FfiFormatBadChars srcloc cs      -> printSrcSpanInfo srcloc ++ ": invalid characters for FFI format string: " ++ show cs
   FfiFormatIncompleteArg srcloc    -> printSrcSpanInfo srcloc ++ ": incomplete `%' syntax in FFI format string"
-  FfiFormatInvalidJavaScript l c e ->
+  FfiFormatInvalidJavaScript l c m ->
     printSrcSpanInfo l ++ ":" ++
-    "\ninvalid JavaScript code in FFI format string:\n" ++ e ++ "\nin " ++ c
+    "\ninvalid JavaScript code in FFI format string:\n" ++ m ++ "\nin " ++ c
   FfiFormatNoSuchArg srcloc i      ->
     printSrcSpanInfo srcloc ++ ":" ++
     "\nno such argument in FFI format string: " ++ show i
@@ -142,6 +142,7 @@ showCompileError e = case e of
   ParseError pos err               ->
     err ++ " at line: " ++ show (srcLine pos) ++ " column:" ++
     "\n" ++ show (srcColumn pos)
+  ShouldBeDesugared s              -> "Expected this to be desugared (this is a bug): " ++ s
   UnableResolveQualified qname     -> "unable to resolve qualified names " ++ prettyPrint qname
   UnsupportedDeclaration d         -> "unsupported declaration: " ++ prettyPrint d
   UnsupportedExportSpec es         -> "unsupported export specification: " ++ prettyPrint es

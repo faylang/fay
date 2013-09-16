@@ -7,12 +7,16 @@
 
 -- | Compile expressions.
 
-module Fay.Compiler.Exp where
+module Fay.Compiler.Exp
+  (compileExp
+  ,compileGuards
+  ,compileLetDecl
+  ,compileLit
+  ) where
 
 import           Fay.Compiler.FFI                (compileFFIExp)
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Pattern
-import           Fay.Compiler.PrimOp
 import           Fay.Compiler.Print
 import           Fay.Compiler.QName
 import           Fay.Data.List.Extra
@@ -45,7 +49,6 @@ compileExp exp =
     Con _ (UnQual _ (Ident _ "True"))  -> return (JsLit (JsBool True))
     Con _ (UnQual _ (Ident _ "False")) -> return (JsLit (JsBool False))
     Con _ qname                        -> compileVar qname
-    Do _ stmts                         -> compileDoBlock stmts
     Lambda _ pats exp                  -> compileLambda pats exp
     LeftSection _ e o                  -> compileExp =<< desugarLeftSection e o
     RightSection _ o e                 -> compileExp =<< desugarRightSection o e
@@ -56,6 +59,7 @@ compileExp exp =
     RecConstr _ name fieldUpdates      -> compileRecConstr name fieldUpdates
     RecUpdate _ rec  fieldUpdates      -> compileRecUpdate rec fieldUpdates
     ListComp _ exp stmts               -> compileExp =<< desugarListComp exp stmts
+    d@Do {}                            -> throwError $ ShouldBeDesugared $ show d
     ExpTypeSig _ exp sig               ->
       case ffiExp exp of
         Nothing -> compileExp exp
@@ -228,12 +232,6 @@ compileGuards (GuardedRhs _ (Qualifier _ guard:_) exp : rest) =
 
 compileGuards rhss = throwError . UnsupportedRhs . GuardedRhss noI $ rhss
 
--- | Compile a do block.
-compileDoBlock :: [S.Stmt] -> Compile JsExp
-compileDoBlock stmts = do
-  doblock <- foldM compileStmt Nothing (reverse stmts)
-  maybe (throwError EmptyDoBlock) compileExp doblock
-
 -- | Compile a lambda.
 compileLambda :: [S.Pat] -> S.Exp -> Compile JsExp
 compileLambda pats exp = do
@@ -361,36 +359,6 @@ desugarListComp _ (s                             : _    ) =
 -- | Make a Fay list.
 makeList :: [JsExp] -> JsExp
 makeList exps = JsApp (JsName $ JsBuiltIn "list") [JsList exps]
-
--- | Compile a statement of a do block.
-compileStmt :: Maybe S.Exp -> S.Stmt -> Compile (Maybe S.Exp)
-compileStmt inner stmt =
-  case inner of
-    Nothing -> initStmt
-    Just inner -> subsequentStmt inner
-
-  where initStmt =
-          case stmt of
-            Qualifier _ exp -> return (Just exp)
-            LetStmt{}     -> throwError UnsupportedLet
-            _             -> throwError InvalidDoBlock
-
-        subsequentStmt inner =
-          case stmt of
-            Generator loc pat exp -> compileGenerator loc pat inner exp
-            Qualifier _ exp -> return (Just (InfixApp noI exp
-                                                      (QVarOp noI $ fayBuiltin noI "then")
-                                                    inner))
-            LetStmt _ (BDecls _ binds) -> return (Just (Let noI (BDecls noI binds) inner))
-            LetStmt _ _ -> throwError UnsupportedLet
-            RecStmt{} -> throwError UnsupportedRecursiveDo
-
-        compileGenerator s pat inner exp = do
-          let body = Lambda s [pat] inner
-          return (Just (InfixApp s
-                                 exp
-                                 (QVarOp noI $ fayBuiltin noI "bind")
-                                 body))
 
 -- | Optimize short literal [e1..e3] arithmetic sequences.
 optEnumFromTo :: CompileConfig -> JsExp -> JsExp -> Maybe JsExp

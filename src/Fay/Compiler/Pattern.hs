@@ -52,9 +52,7 @@ compilePatFields exp name pats body = do
   where -- compilePats' collects field names that had already been matched so that
         -- wildcard generates code for the rest of the fields.
         compilePats' :: [S.QName] -> [S.PatField] -> Compile [JsStmt]
-        compilePats' names (PFieldPun ann name:xs) =
-          compilePats' names (PFieldPat ann (UnQual ann name) (PVar ann name):xs)
-
+        compilePats' _ (p@PFieldPun{}:_) = throwError . ShouldBeDesugared $ show p
         compilePats' names (PFieldPat _ fieldname (PVar _ (unAnn -> varName)):xs) = do
           r <- compilePats' (fieldname : names) xs
           return $ JsVar (JsNameVar (UnQual () varName))

@@ -328,11 +328,7 @@ compileRecUpdate rec fieldUpdates = do
   where updateExp :: QName a -> S.FieldUpdate -> Compile JsStmt
         updateExp (unAnn -> copyName) (FieldUpdate _ (unQualify . unAnn -> field) value) =
           JsSetProp (JsNameVar copyName) (JsNameVar field) <$> compileExp value
-        updateExp (unAnn -> copyName) (FieldPun _ (unAnn -> name)) =
-          -- let a = 1 in C {a}
-          return $ JsSetProp (JsNameVar copyName)
-                             (JsNameVar (UnQual () name))
-                             (JsName (JsNameVar (UnQual () name)))
+        updateExp _ f@FieldPun{} = throwError $ ShouldBeDesugared $ show f
         -- I also couldn't find a code that generates (FieldUpdate FieldWildCard)
         updateExp _ FieldWildcard{} = error "unsupported update: FieldWildcard"
 

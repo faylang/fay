@@ -222,6 +222,8 @@ extra-source-files:
   tests/Monad2.res
   tests/mutableReference.hs
   tests/mutableReference.res
+  tests/namedFieldPuns.hs
+  tests/namedFieldPuns.res
   tests/nameGen.hs
   tests/nameGen.res
   tests/negation.hs
@@ -305,8 +307,6 @@ extra-source-files:
   tests/ReExportGlobally.res
   tests/ReExportGloballyExplicit.hs
   tests/ReExportGloballyExplicit.res
-  tests/regressions/namedFieldPuns.hs
-  tests/regressions/namedFieldPuns.res
   tests/regressions/recordWildCards.hs
   tests/regressions/recordWildCards_partial.res
   tests/reservedWords.hs

@@ -27,7 +27,7 @@ desugarBinds bs = case bs of
 
 desugarMatch :: Match l -> Match l
 desugarMatch m = case m of
-  Match l n ps rhs mb -> Match l n ps (desugarRhs rhs) (desugarBinds <$> mb)
+  Match l n ps rhs mb -> Match l (desugarName n) (map desugarPat ps) (desugarRhs rhs) (desugarBinds <$> mb)
   _ -> m
 
 desugarRhs :: Rhs l -> Rhs l
@@ -115,7 +115,30 @@ desugarStmt' inner stmt =
                       (Lambda s [pat] (inner'))
 
 desugarPat :: Pat l -> Pat l
-desugarPat = id
+desugarPat pt = case pt of
+  PVar l n -> PVar l (desugarName n)
+  PLit {} -> pt
+  PNeg l p -> PNeg l (desugarPat p)
+  PNPlusK{} -> pt
+  PInfixApp l p1 n p2 -> PInfixApp l (desugarPat p1) n (desugarPat p2)
+  PApp l q ps -> PApp l (desugarQName q) (map desugarPat ps)
+  PTuple l b ps -> PTuple l b (map desugarPat ps)
+  PList l ps -> PList l (map desugarPat ps)
+  PParen l p -> PParen l (desugarPat p)
+  PRec l q pfs -> PRec l (desugarQName q) (map desugarPatField pfs)
+  PAsPat l n p -> PAsPat l (desugarName n) (desugarPat p)
+  PWildCard{} -> pt
+  PIrrPat l p -> PIrrPat l (desugarPat p)
+  PatTypeSig l p t -> PatTypeSig l (desugarPat p) (desugarType t)
+  PViewPat l e p -> PViewPat l (desugarExp e) (desugarPat p)
+  PBangPat l p -> PBangPat l (desugarPat p)
+  _ -> pt
+
+desugarPatField :: PatField l -> PatField l
+desugarPatField pf = case pf of
+  PFieldPat l q p -> PFieldPat l (desugarQName q) (desugarPat p)
+  PFieldPun l n -> let dn = desugarName n in PFieldPat l (UnQual l dn) (PVar l dn)
+  PFieldWildcard l -> PFieldWildcard l
 
 desugarGuardedAlts :: GuardedAlts l -> GuardedAlts l
 desugarGuardedAlts g = case g of
@@ -146,7 +169,7 @@ desugarAlt (Alt l p ga mb) = Alt l (desugarPat p) (desugarGuardedAlts ga) (desug
 desugarFieldUpdate :: FieldUpdate l -> FieldUpdate l
 desugarFieldUpdate f = case f of
   FieldUpdate l q e -> FieldUpdate l (desugarQName q) (desugarExp e)
-  FieldPun l n -> FieldPun l (desugarName n)
+  FieldPun l n -> let dn = UnQual l (desugarName n) in FieldUpdate l dn (Var l dn)
   FieldWildcard{} -> f
 
 desugarBracket :: Bracket l -> Bracket l

@@ -7,7 +7,6 @@ import           Data.Maybe
 import           Language.Haskell.Exts.Annotated hiding (binds, loc)
 import           Prelude                         hiding (exp)
 
-
 desugarModule :: Module l -> Module l
 desugarModule m = case m of
   Module l h ps is decls -> Module l h ps is (map desugarDecl decls)
@@ -28,7 +27,7 @@ desugarBinds bs = case bs of
 desugarMatch :: Match l -> Match l
 desugarMatch m = case m of
   Match l n ps rhs mb -> Match l (desugarName n) (map desugarPat ps) (desugarRhs rhs) (desugarBinds <$> mb)
-  _ -> m
+  InfixMatch l p n ps r mb -> InfixMatch l (desugarPat p) (desugarName n) (map desugarPat ps) (desugarRhs r) (desugarBinds <$> mb)
 
 desugarRhs :: Rhs l -> Rhs l
 desugarRhs r = case r of
@@ -116,6 +115,9 @@ desugarStmt' inner stmt =
 
 desugarPat :: Pat l -> Pat l
 desugarPat pt = case pt of
+  -- Remove parens
+  PParen _ p -> desugarPat p
+
   PVar l n -> PVar l (desugarName n)
   PLit {} -> pt
   PNeg l p -> PNeg l (desugarPat p)
@@ -124,7 +126,6 @@ desugarPat pt = case pt of
   PApp l q ps -> PApp l (desugarQName q) (map desugarPat ps)
   PTuple l b ps -> PTuple l b (map desugarPat ps)
   PList l ps -> PList l (map desugarPat ps)
-  PParen l p -> PParen l (desugarPat p)
   PRec l q pfs -> PRec l (desugarQName q) (map desugarPatField pfs)
   PAsPat l n p -> PAsPat l (desugarName n) (desugarPat p)
   PWildCard{} -> pt

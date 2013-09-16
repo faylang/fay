@@ -29,7 +29,7 @@ compilePat exp pat body =
         Nothing -> compilePApp cons pats exp body
         Just _  -> compileNewtypePat pats exp body
     PLit _ literal    -> compilePLit exp literal body
-    PParen _ pat      -> compilePat exp pat body
+    PParen{}          -> throwError . ShouldBeDesugared . show $ unAnn pat
     PWildCard _       -> return body
     pat@PInfixApp{} -> compileInfixPat exp pat body
     PList _ pats      -> compilePList pats body exp

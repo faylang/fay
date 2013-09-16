@@ -59,7 +59,7 @@ compileExp exp =
     RecConstr _ name fieldUpdates      -> compileRecConstr name fieldUpdates
     RecUpdate _ rec  fieldUpdates      -> compileRecUpdate rec fieldUpdates
     ListComp _ exp stmts               -> compileExp =<< desugarListComp exp stmts
-    d@Do {}                            -> throwError $ ShouldBeDesugared $ show d
+    d@Do {}                            -> throwError . ShouldBeDesugared . show $ unAnn d
     ExpTypeSig _ exp sig               ->
       case ffiExp exp of
         Nothing -> compileExp exp

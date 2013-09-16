@@ -218,6 +218,8 @@ extra-source-files:
   tests/ModuleRecordClash.res
   tests/Monad.hs
   tests/Monad.res
+  tests/Monad2.hs
+  tests/Monad2.res
   tests/mutableReference.hs
   tests/mutableReference.res
   tests/nameGen.hs
@@ -303,8 +305,6 @@ extra-source-files:
   tests/ReExportGlobally.res
   tests/ReExportGloballyExplicit.hs
   tests/ReExportGloballyExplicit.res
-  tests/regressions/Monad2.hs
-  tests/regressions/Monad2.res
   tests/regressions/namedFieldPuns.hs
   tests/regressions/namedFieldPuns.res
   tests/regressions/recordWildCards.hs
@@ -383,6 +383,7 @@ library
                      , Fay.Types
   other-modules:       Fay.Compiler.Decl
                      , Fay.Compiler.Defaults
+                     , Fay.Compiler.Desugar
                      , Fay.Compiler.Exp
                      , Fay.Compiler.FFI
                      , Fay.Compiler.GADT

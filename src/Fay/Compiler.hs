@@ -22,6 +22,7 @@ module Fay.Compiler
 import           Fay.Compiler.Config
 import           Fay.Compiler.Decl
 import           Fay.Compiler.Defaults
+import           Fay.Compiler.Desugar
 import           Fay.Compiler.Exp
 import           Fay.Compiler.FFI
 import           Fay.Compiler.Import
@@ -114,7 +115,7 @@ compileFileWithSource filepath contents = do
 -- | Compile a parse HSE module.
 compileModuleFromAST :: [JsStmt] -> F.Module -> Compile [JsStmt]
 compileModuleFromAST imported mod'@(Module _ _ pragmas _ _) = do
-  mod@(Module _ _ _ _ decls) <- annotateModule Haskell2010 [] mod'
+  mod@(Module _ _ _ _ decls) <- annotateModule Haskell2010 [] $ desugarModule mod'
   let modName = unAnn $ F.moduleName mod
   modify $ \s -> s { stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
                    }

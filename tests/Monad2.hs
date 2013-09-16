@@ -1,6 +1,6 @@
-{-# LANGUAGE EmptyDataDecls    #-}
+{-# LANGUAGE EmptyDataDecls #-}
 
-{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE RankNTypes     #-}
 
 -- | Monads test.
 

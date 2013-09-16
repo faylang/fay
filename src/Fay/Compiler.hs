@@ -114,26 +114,30 @@ compileFileWithSource filepath contents = do
 
 -- | Compile a parse HSE module.
 compileModuleFromAST :: [JsStmt] -> F.Module -> Compile [JsStmt]
-compileModuleFromAST imported mod'@(Module _ _ pragmas _ _) = do
-  mod@(Module _ _ _ _ decls) <- annotateModule Haskell2010 [] $ desugarModule mod'
-  let modName = unAnn $ F.moduleName mod
-  modify $ \s -> s { stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
-                   }
-  current <- compileDecls True decls
+compileModuleFromAST imported mod''@(Module _ _ pragmas _ _) = do
+  res <- io $ desugar mod''
+  case res of
+    Left err -> throwError err
+    Right mod' -> do
+      mod@(Module _ _ _ _ decls) <- annotateModule Haskell2010 [] $ mod'
+      let modName = unAnn $ F.moduleName mod
+      modify $ \s -> s { stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
+                       }
+      current <- compileDecls True decls
 
-  exportStdlib     <- config configExportStdlib
-  exportStdlibOnly <- config configExportStdlibOnly
-  modulePaths      <- createModulePath modName
-  extExports       <- generateExports
-  strictExports    <- generateStrictExports
-  let stmts = imported ++ modulePaths ++ current ++ extExports ++ strictExports
-  return $ if exportStdlibOnly
-    then if anStdlibModule modName
-            then stmts
-            else []
-    else if not exportStdlib && anStdlibModule modName
-            then []
-            else stmts
+      exportStdlib     <- config configExportStdlib
+      exportStdlibOnly <- config configExportStdlibOnly
+      modulePaths      <- createModulePath modName
+      extExports       <- generateExports
+      strictExports    <- generateStrictExports
+      let stmts = imported ++ modulePaths ++ current ++ extExports ++ strictExports
+      return $ if exportStdlibOnly
+        then if anStdlibModule modName
+                then stmts
+                else []
+        else if not exportStdlib && anStdlibModule modName
+                then []
+                else stmts
 compileModuleFromAST _ mod = throwError $ UnsupportedModuleSyntax "compileModuleFromAST" mod
 
 

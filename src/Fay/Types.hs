@@ -109,7 +109,7 @@ data CompileState = CompileState
   , stateModuleName    :: N.ModuleName                       -- ^ Name of the module currently being compiled.
   , stateJsModulePaths :: Set ModulePath                     -- ^ Module paths that have code generated for them.
   , stateUseFromString :: Bool                               -- ^ Use JS Strings instead of [Char] for string literals?
-  , stateTypeSigs      :: Map N.QName N.Type
+  , stateTypeSigs      :: Map N.QName N.Type                 -- ^ Module level declarations having explicit type signatures
   } deriving (Show)
 
 -- | Things written out by the compiler.

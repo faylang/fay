@@ -43,8 +43,12 @@ withScopedTmpName l f = do
   local (\r -> DesugarReader $ readerNameDepth r + 1) $
    f $ Ident l $ "$gen" ++ show n
 
-desugar ::  Module l -> IO (Either CompileError (Module l))
+
+-- | Top level, desugar a whole module possibly returning errors
+desugar :: Module l -> IO (Either CompileError (Module l))
 desugar md = runDesugar (desugarModule md)
+
+-- | Desugaring
 
 desugarModule :: Module l -> Desugar (Module l)
 desugarModule m = case m of
@@ -82,13 +86,16 @@ desugarGuardedRhs g = case g of
 
 desugarExp :: Exp l -> Desugar (Exp l)
 desugarExp ex = case ex of
+  -- (a `f`) => (\b -> f a b)
   LeftSection l e q -> desugarExp =<<
     (withScopedTmpName l $ \v ->
       return $ Lambda l [PVar l v] (InfixApp l e q (Var l (UnQual l v))))
+  -- (`f` b) => (\a -> f a b)
   RightSection l q e -> desugarExp =<<
     (withScopedTmpName l $ \tmp ->
       return (Lambda l [PVar l tmp] (InfixApp l (Var l (UnQual l tmp)) q e)))
 
+  -- Check for TupleCon
   Var _ q -> return $ desugarVar ex q
   Con _ q -> return $ desugarVar ex q
 
@@ -135,6 +142,7 @@ desugarExp ex = case ex of
   CorePragma{} -> return ex
   SCCPragma{} -> return ex
 
+-- | Convert do notation into binds and thens.
 desugarStmt' :: Maybe (Exp l) -> (Stmt l) -> Maybe (Exp l)
 desugarStmt' inner stmt =
   maybe initStmt subsequentStmt inner
@@ -163,7 +171,7 @@ desugarStmt' inner stmt =
 
 desugarPat :: Pat l -> Desugar (Pat l)
 desugarPat pt = case pt of
-  -- Remove parens
+  -- (p) => p
   PParen _ p -> desugarPat p
 
   PVar l n -> return $ PVar l (desugarName n)
@@ -185,8 +193,10 @@ desugarPat pt = case pt of
 
 desugarPatField :: PatField l -> Desugar (PatField l)
 desugarPatField pf = case pf of
-  PFieldPat l q p -> PFieldPat l (desugarQName q) <$> desugarPat p
+  -- {a} => {a=a} for R{a}
   PFieldPun l n -> let dn = desugarName n in desugarPatField $ PFieldPat l (UnQual l dn) (PVar l dn)
+
+  PFieldPat l q p -> PFieldPat l (desugarQName q) <$> desugarPat p
   PFieldWildcard l -> return $ PFieldWildcard l
 
 desugarGuardedAlts :: GuardedAlts l -> Desugar (GuardedAlts l)
@@ -246,7 +256,7 @@ desugarVar e q = case q of
   Special _ t@TupleCon{} -> fromMaybe e $ desugarTupleCon t
   _ -> e
 
--- | Turn a tuple constructor into a normal lambda expression.
+-- | (,) => \x y -> (x,y)
 desugarTupleCon :: SpecialCon l -> Maybe (Exp l)
 desugarTupleCon s = case s of
   TupleCon l b n -> Just $ Lambda l params body

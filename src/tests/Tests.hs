@@ -61,7 +61,7 @@ testFile packageConf basePath opt file = do
               , configBasePath = basePath
               }
   resExists <- doesFileExist resf
-  let partialName = root ++ "_partial"
+  let partialName = root ++ "_partial.res"
   partialExists <- doesFileExist partialName
   compileFromTo config file (Just out)
   result <- runJavaScriptFile out

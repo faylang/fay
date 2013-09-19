@@ -29,6 +29,7 @@ import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
 import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Names
 
 -- | Compile Haskell expression.
 compileExp :: S.Exp -> Compile JsExp
@@ -287,13 +288,17 @@ compileRecConstr name fieldUpdates = do
         updateStmt (unAnn -> o) (FieldUpdate _ (unAnn -> field) value) = do
           exp <- compileExp value
           return [JsSetProp (JsNameVar $ unQualify o) (JsNameVar $ unQualify field) exp]
-        updateStmt name (FieldWildcard _) = do
-          fields <- map (UnQual ()) <$> recToFields name
+        updateStmt name (FieldWildcard (wildcardFields -> fields)) = do
           return $ for fields $ \fieldName -> JsSetProp (JsNameVar $ unAnn name)
                                                         (JsNameVar fieldName)
                                                         (JsName $ JsNameVar fieldName)
         -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
         updateStmt _ u = error ("updateStmt: " ++ show u)
+
+        wildcardFields l = case l of
+          Scoped (RecExpWildcard es) _ -> map (\(OrigName _ o) -> unQualify $ gname2Qname o) . map fst $ es
+          _ -> []
+
 
 -- | Compile a record update.
 compileRecUpdate :: S.Exp -> [S.FieldUpdate] -> Compile JsExp

@@ -413,7 +413,7 @@ library
                    , filepath
                    , ghc-paths
                    , haskell-packages
-                   , haskell-names >= 0.2.1 && < 0.3
+                   , haskell-names >= 0.3 && < 0.4
                    , haskell-src-exts >= 1.14
                    , language-ecmascript >= 0.15 && < 1.0
                    , mtl

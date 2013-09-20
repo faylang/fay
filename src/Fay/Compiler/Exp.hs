@@ -33,63 +33,60 @@ import           Language.Haskell.Names
 
 -- | Compile Haskell expression.
 compileExp :: S.Exp -> Compile JsExp
-compileExp exp =
-  case exp of
-    Paren _ exp                        -> compileExp exp
-    Var _ qname                        -> compileVar qname
-    Lit _ lit                          -> compileLit lit
-    App _ exp1 exp2                    -> compileApp exp1 exp2
-    NegApp _ exp                       -> compileNegApp exp
-    InfixApp _ exp1 op exp2            -> compileInfixApp exp1 op exp2
-    Let _ (BDecls _ decls) exp         -> compileLet decls exp
-    List _ []                          -> return JsNull
-    List _ xs                          -> compileList xs
-    Tuple _ _boxed xs                  -> compileList xs
-    If _ cond conseq alt               -> compileIf cond conseq alt
-    Case _ exp alts                    -> compileCase exp alts
-    Con _ (UnQual _ (Ident _ "True"))  -> return (JsLit (JsBool True))
-    Con _ (UnQual _ (Ident _ "False")) -> return (JsLit (JsBool False))
-    Con _ qname                        -> compileVar qname
-    Lambda _ pats exp                  -> compileLambda pats exp
-    EnumFrom _ i                       -> compileEnumFrom i
-    EnumFromTo _ i i'                  -> compileEnumFromTo i i'
-    EnumFromThen _ a b                 -> compileEnumFromThen a b
-    EnumFromThenTo _ a b z             -> compileEnumFromThenTo a b z
-    RecConstr _ name fieldUpdates      -> compileRecConstr name fieldUpdates
-    RecUpdate _ rec  fieldUpdates      -> compileRecUpdate rec fieldUpdates
-    ListComp _ exp stmts               -> compileExp =<< desugarListComp exp stmts
-    Do {}                              -> shouldBeDesugared exp
-    LeftSection {}                     -> shouldBeDesugared exp
-    RightSection {}                    -> shouldBeDesugared exp
-    ExpTypeSig _ exp sig               ->
-      case ffiExp exp of
-        Nothing -> compileExp exp
-        Just formatstr -> compileFFIExp (S.srcSpanInfo $ ann exp) Nothing formatstr sig
+compileExp exp = case exp of
+  Paren _ exp                        -> compileExp exp
+  Var _ qname                        -> compileVar qname
+  Lit _ lit                          -> compileLit lit
+  App _ exp1 exp2                    -> compileApp exp1 exp2
+  NegApp _ exp                       -> compileNegApp exp
+  InfixApp _ exp1 op exp2            -> compileInfixApp exp1 op exp2
+  Let _ (BDecls _ decls) exp         -> compileLet decls exp
+  List _ []                          -> return JsNull
+  List _ xs                          -> compileList xs
+  Tuple _ _boxed xs                  -> compileList xs
+  If _ cond conseq alt               -> compileIf cond conseq alt
+  Case _ exp alts                    -> compileCase exp alts
+  Con _ (UnQual _ (Ident _ "True"))  -> return (JsLit (JsBool True))
+  Con _ (UnQual _ (Ident _ "False")) -> return (JsLit (JsBool False))
+  Con _ qname                        -> compileVar qname
+  Lambda _ pats exp                  -> compileLambda pats exp
+  EnumFrom _ i                       -> compileEnumFrom i
+  EnumFromTo _ i i'                  -> compileEnumFromTo i i'
+  EnumFromThen _ a b                 -> compileEnumFromThen a b
+  EnumFromThenTo _ a b z             -> compileEnumFromThenTo a b z
+  RecConstr _ name fieldUpdates      -> compileRecConstr name fieldUpdates
+  RecUpdate _ rec  fieldUpdates      -> compileRecUpdate rec fieldUpdates
+  ListComp _ exp stmts               -> compileExp =<< desugarListComp exp stmts
+  Do {}                              -> shouldBeDesugared exp
+  LeftSection {}                     -> shouldBeDesugared exp
+  RightSection {}                    -> shouldBeDesugared exp
+  ExpTypeSig _ exp sig               ->
+    case ffiExp exp of
+      Nothing -> compileExp exp
+      Just formatstr -> compileFFIExp (S.srcSpanInfo $ ann exp) Nothing formatstr sig
 
-    exp -> throwError (UnsupportedExpression exp)
+  exp -> throwError (UnsupportedExpression exp)
 
 -- | Compile variable.
 compileVar :: S.QName -> Compile JsExp
-compileVar qname = do
-  case qname of
-    Special _ t@TupleCon{} -> shouldBeDesugared t
-    _ -> do
-      qname <- unsafeResolveName qname
-      return (JsName (JsNameVar qname))
+compileVar qname = case qname of
+  Special _ t@TupleCon{} -> shouldBeDesugared t
+  _ -> do
+    qname <- unsafeResolveName qname
+    return (JsName (JsNameVar qname))
 
 -- | Compile Haskell literal.
 compileLit :: S.Literal -> Compile JsExp
-compileLit lit =
-  case lit of
-    Char _ ch _      -> return (JsLit (JsChar ch))
-    Int _ integer _   -> return (JsLit (JsInt (fromIntegral integer))) -- FIXME:
-    Frac _ rational _ -> return (JsLit (JsFloating (fromRational rational)))
-    String _ string _ -> do
-      fromString <- gets stateUseFromString
-      if fromString
-        then return (JsLit (JsStr string))
-        else return (JsApp (JsName (JsBuiltIn "list")) [JsLit (JsStr string)])
-    lit           -> throwError (UnsupportedLiteral lit)
+compileLit lit = case lit of
+  Char _ ch _      -> return (JsLit (JsChar ch))
+  Int _ integer _   -> return (JsLit (JsInt (fromIntegral integer))) -- FIXME:
+  Frac _ rational _ -> return (JsLit (JsFloating (fromRational rational)))
+  String _ string _ -> do
+    fromString <- gets stateUseFromString
+    if fromString
+      then return (JsLit (JsStr string))
+      else return (JsApp (JsName (JsBuiltIn "list")) [JsLit (JsStr string)])
+  lit           -> throwError (UnsupportedLiteral lit)
 
 -- | Compile simple application.
 compileApp :: S.Exp -> S.Exp -> Compile JsExp
@@ -140,7 +137,6 @@ compileNegApp e = JsNegApp . force <$> compileExp e
 -- | Compile an infix application, optimizing the JS cases.
 compileInfixApp :: S.Exp -> S.QOp -> S.Exp -> Compile JsExp
 compileInfixApp exp1 ap exp2 = compileExp (App noI (App noI (Var noI op) exp1) exp2)
-
   where op = getOp ap
         getOp (QVarOp _ op) = op
         getOp (QConOp _ op) = op
@@ -278,63 +274,64 @@ compileEnumFromThenTo a b z = do
 -- | GHC will warn on uninitialized fields, they will be undefined in JS.
 compileRecConstr :: S.QName -> [S.FieldUpdate] -> Compile JsExp
 compileRecConstr name fieldUpdates = do
-    -- var obj = new $_Type()
-    let unQualName = unQualify $ unAnn name
-    qname <- unsafeResolveName name
-    let record = JsVar (JsNameVar unQualName) (JsNew (JsConstructor qname) [])
-    setFields <- liftM concat (forM fieldUpdates (updateStmt name))
-    return $ JsApp (JsFun Nothing [] (record:setFields) (Just $ JsName $ JsNameVar $ unQualify $ unAnn name)) []
-  where -- updateStmt :: QName a -> S.FieldUpdate -> Compile [JsStmt]
-        updateStmt (unAnn -> o) (FieldUpdate _ (unAnn -> field) value) = do
-          exp <- compileExp value
-          return [JsSetProp (JsNameVar $ unQualify o) (JsNameVar $ unQualify field) exp]
-        updateStmt name (FieldWildcard (wildcardFields -> fields)) = do
-          return $ for fields $ \fieldName -> JsSetProp (JsNameVar $ unAnn name)
-                                                        (JsNameVar fieldName)
-                                                        (JsName $ JsNameVar fieldName)
-        -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
-        updateStmt _ u = error ("updateStmt: " ++ show u)
+  -- var obj = new $_Type()
+  let unQualName = unQualify $ unAnn name
+  qname <- unsafeResolveName name
+  let record = JsVar (JsNameVar unQualName) (JsNew (JsConstructor qname) [])
+  setFields <- liftM concat (forM fieldUpdates (updateStmt name))
+  return $ JsApp (JsFun Nothing [] (record:setFields) (Just $ JsName $ JsNameVar $ unQualify $ unAnn name)) []
+  where
+    -- updateStmt :: QName a -> S.FieldUpdate -> Compile [JsStmt]
+    updateStmt (unAnn -> o) (FieldUpdate _ (unAnn -> field) value) = do
+      exp <- compileExp value
+      return [JsSetProp (JsNameVar $ unQualify o) (JsNameVar $ unQualify field) exp]
+    updateStmt name (FieldWildcard (wildcardFields -> fields)) = do
+      return $ for fields $ \fieldName -> JsSetProp (JsNameVar $ unAnn name)
+                                                    (JsNameVar fieldName)
+                                                    (JsName $ JsNameVar fieldName)
+    -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
+    updateStmt _ u = error ("updateStmt: " ++ show u)
 
-        wildcardFields l = case l of
-          Scoped (RecExpWildcard es) _ -> map (\(OrigName _ o) -> unQualify $ gname2Qname o) . map fst $ es
-          _ -> []
+    wildcardFields l = case l of
+      Scoped (RecExpWildcard es) _ -> map (unQualify . gname2Qname . origGName) . map fst $ es
+      _ -> []
 
 
 -- | Compile a record update.
 compileRecUpdate :: S.Exp -> [S.FieldUpdate] -> Compile JsExp
 compileRecUpdate rec fieldUpdates = do
-    record <- force <$> compileExp rec
-    let copyName = UnQual () $ Ident () "$_record_to_update"
-        copy = JsVar (JsNameVar copyName)
-                     (JsRawExp ("Object.create(" ++ printJSString record ++ ")"))
-    setFields <- forM fieldUpdates (updateExp copyName)
-    return $ JsApp (JsFun Nothing [] (copy:setFields) (Just $ JsName $ JsNameVar copyName)) []
-  where updateExp :: QName a -> S.FieldUpdate -> Compile JsStmt
-        updateExp (unAnn -> copyName) (FieldUpdate _ (unQualify . unAnn -> field) value) =
-          JsSetProp (JsNameVar copyName) (JsNameVar field) <$> compileExp value
-        updateExp _ f@FieldPun{} = shouldBeDesugared f
-        -- I also couldn't find a code that generates (FieldUpdate FieldWildCard)
-        updateExp _ FieldWildcard{} = error "unsupported update: FieldWildcard"
+  record <- force <$> compileExp rec
+  let copyName = UnQual () $ Ident () "$_record_to_update"
+      copy = JsVar (JsNameVar copyName)
+                   (JsRawExp ("Object.create(" ++ printJSString record ++ ")"))
+  setFields <- forM fieldUpdates (updateExp copyName)
+  return $ JsApp (JsFun Nothing [] (copy:setFields) (Just $ JsName $ JsNameVar copyName)) []
+  where
+    updateExp :: QName a -> S.FieldUpdate -> Compile JsStmt
+    updateExp (unAnn -> copyName) (FieldUpdate _ (unQualify . unAnn -> field) value) =
+      JsSetProp (JsNameVar copyName) (JsNameVar field) <$> compileExp value
+    updateExp _ f@FieldPun{} = shouldBeDesugared f
+    -- I also couldn't find a code that generates (FieldUpdate FieldWildCard)
+    updateExp _ FieldWildcard{} = error "unsupported update: FieldWildcard"
 
 -- | Desugar list comprehensions.
 desugarListComp :: S.Exp -> [S.QualStmt] -> Compile S.Exp
-desugarListComp e [] =
-    return (List noI [ e ])
+desugarListComp e [] = return (List noI [ e ])
 desugarListComp e (QualStmt _ (Generator _ p e2) : stmts) = do
-    nested <- desugarListComp e stmts
-    withScopedTmpName $ \f ->
-      return (Let noI (BDecls noI [ FunBind noI [
-          Match noI f [ p             ] (UnGuardedRhs noI nested) Nothing
-        , Match noI f [ PWildCard noI ] (UnGuardedRhs noI (List noI [])) Nothing
-        ]]) (App noI (App noI (Var noI (Qual noI (ModuleName noI "$Prelude") (Ident noI "concatMap"))) (Var noI (UnQual noI f))) e2))
-desugarListComp e (QualStmt _ (Qualifier _ e2)       : stmts) = do
-    nested <- desugarListComp e stmts
-    return (If noI e2 nested (List noI []))
-desugarListComp e (QualStmt _ (LetStmt _ bs)         : stmts) = do
-    nested <- desugarListComp e stmts
-    return (Let noI bs nested)
-desugarListComp _ (s                             : _    ) =
-    throwError (UnsupportedQualStmt s)
+  nested <- desugarListComp e stmts
+  withScopedTmpName $ \f ->
+    return (Let noI (BDecls noI [ FunBind noI [
+        Match noI f [ p             ] (UnGuardedRhs noI nested) Nothing
+      , Match noI f [ PWildCard noI ] (UnGuardedRhs noI (List noI [])) Nothing
+      ]]) (App noI (App noI (Var noI (Qual noI (ModuleName noI "$Prelude") (Ident noI "concatMap"))) (Var noI (UnQual noI f))) e2))
+desugarListComp e (QualStmt _ (Qualifier _ e2) : stmts) = do
+  nested <- desugarListComp e stmts
+  return (If noI e2 nested (List noI []))
+desugarListComp e (QualStmt _ (LetStmt _ bs) : stmts) = do
+  nested <- desugarListComp e stmts
+  return (Let noI bs nested)
+desugarListComp _ (s : _ ) =
+  throwError (UnsupportedQualStmt s)
 
 -- | Make a Fay list.
 makeList :: [JsExp] -> JsExp

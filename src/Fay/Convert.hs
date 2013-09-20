@@ -184,49 +184,42 @@ parseInt value = do
 
 -- | Parse a number.
 parseNumber :: Value -> Maybe Number
-parseNumber value =
-  case value of
-    Number n -> return n
-    _ -> mzero
+parseNumber value = case value of
+  Number n -> return n
+  _ -> mzero
 
 -- | Parse a bool.
 parseBool :: Value -> Maybe Bool
-parseBool value =
-  case value of
-    Bool n -> return n
-    _ -> mzero
+parseBool value = case value of
+  Bool n -> return n
+  _ -> mzero
 
 -- | Parse a string.
 parseString :: Value -> Maybe String
-parseString value =
-  case value of
-    String s -> return (Text.unpack s)
-    _ -> mzero
+parseString value = case value of
+  String s -> return (Text.unpack s)
+  _ -> mzero
 
 -- | Parse a char.
 parseChar :: Value -> Maybe Char
-parseChar value =
-  case value of
-    String s | Just (c,_) <- Text.uncons s -> return c
-    _ -> mzero
+parseChar value = case value of
+  String s | Just (c,_) <- Text.uncons s -> return c
+  _ -> mzero
 
 -- | Parse a Text.
 parseText :: Value -> Maybe Text
-parseText value =
-  case value of
-    String s -> return s
-    _ -> mzero
+parseText value = case value of
+  String s -> return s
+  _ -> mzero
 
 -- | Parse an array.
 parseArray :: Data a => Value -> Maybe [a]
-parseArray value =
-  case value of
-    Array xs -> mapM readFromFay (Vector.toList xs)
-    _ -> mzero
+parseArray value = case value of
+  Array xs -> mapM readFromFay (Vector.toList xs)
+  _ -> mzero
 
 -- | Parse unit.
 parseUnit :: Value -> Maybe ()
-parseUnit value =
-  case value of
-    Null -> return ()
-    _ -> mzero
+parseUnit value = case value of
+  Null -> return ()
+  _ -> mzero

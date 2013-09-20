@@ -61,12 +61,12 @@ tryResolveName s@(UnQual _ (Ident _ n)) | "$gen" `isPrefixOf` n = Just $ unAnn s
 tryResolveName (unAnn -> Qual () (ModuleName () "$Prelude") n)  = Just $ Qual () (ModuleName () "Prelude") n
 tryResolveName q@(Qual _ (ModuleName _ "Fay$") _)               = Just $ unAnn q
 tryResolveName (Qual (Scoped ni _) _ _)                         = case ni of
-    GlobalValue n -> replaceWithBuiltIns $ gname2Qname $ origGName $ origName n
+    GlobalValue n -> replaceWithBuiltIns . gname2Qname . origGName $ origName n
     _             -> Nothing
     -- TODO should LocalValue just return the name for qualified imports?
-tryResolveName q@(UnQual (Scoped ni _) name)                    = case ni of
-    GlobalValue n -> replaceWithBuiltIns $ gname2Qname $ origGName $ origName n
-    LocalValue _  -> Just $ UnQual () (unAnn name)
+tryResolveName q@(UnQual (Scoped ni _) (unAnn -> name))         = case ni of
+    GlobalValue n -> replaceWithBuiltIns . gname2Qname . origGName $ origName n
+    LocalValue _  -> Just $ UnQual () name
     ScopeError _  -> resolvePrimOp q
     _             -> Nothing
 

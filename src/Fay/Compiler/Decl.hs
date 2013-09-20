@@ -28,35 +28,34 @@ import           Language.Haskell.Exts.Annotated
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
-compileDecls toplevel decls =
-  case decls of
-    [] -> return []
-    (TypeSig _ _ sig:bind@PatBind{}:decls) -> appendM (compilePatBind toplevel (Just sig) bind)
-                                                      (compileDecls toplevel decls)
-    (decl:decls) -> appendM (compileDecl toplevel decl)
-                            (compileDecls toplevel decls)
+compileDecls toplevel decls = case decls of
+  [] -> return []
+  (TypeSig _ _ sig:bind@PatBind{}:decls) -> appendM (compilePatBind toplevel (Just sig) bind)
+                                                    (compileDecls toplevel decls)
+  (decl:decls) -> appendM (compileDecl toplevel decl)
+                          (compileDecls toplevel decls)
 
-  where appendM m n = do x <- m
-                         xs <- n
-                         return (x ++ xs)
+  where
+    appendM m n = do x <- m
+                     xs <- n
+                     return (x ++ xs)
 
 -- | Compile a declaration.
 compileDecl :: Bool -> S.Decl -> Compile [JsStmt]
-compileDecl toplevel decl =
-  case decl of
-    pat@PatBind{} -> compilePatBind toplevel Nothing pat
-    FunBind _ matches -> compileFunCase toplevel matches
-    DataDecl _ (DataType _ ) _ head' constructors _ -> compileDataDecl toplevel (mkTyVars head') constructors
-    GDataDecl _ (DataType _) _l (mkTyVars -> tyvars) _n decls _ -> compileDataDecl toplevel tyvars (map convertGADT decls)
-    DataDecl _ (NewType _)  _ _ _ _ -> return []
-    -- Just ignore type aliases and signatures.
-    TypeDecl {} -> return []
-    TypeSig  {} -> return []
-    InfixDecl{} -> return []
-    ClassDecl{} -> return []
-    InstDecl {} -> return [] -- FIXME: Ignore.
-    DerivDecl{} -> return []
-    _ -> throwError (UnsupportedDeclaration decl)
+compileDecl toplevel decl = case decl of
+  pat@PatBind{} -> compilePatBind toplevel Nothing pat
+  FunBind _ matches -> compileFunCase toplevel matches
+  DataDecl _ (DataType _ ) _ head' constructors _ -> compileDataDecl toplevel (mkTyVars head') constructors
+  GDataDecl _ (DataType _) _l (mkTyVars -> tyvars) _n decls _ -> compileDataDecl toplevel tyvars (map convertGADT decls)
+  DataDecl _ (NewType _)  _ _ _ _ -> return []
+  -- Just ignore type aliases and signatures.
+  TypeDecl {} -> return []
+  TypeSig  {} -> return []
+  InfixDecl{} -> return []
+  ClassDecl{} -> return []
+  InstDecl {} -> return [] -- FIXME: Ignore.
+  DerivDecl{} -> return []
+  _ -> throwError (UnsupportedDeclaration decl)
 
 
 mkTyVars :: S.DeclHead -> [S.TyVarBind]
@@ -66,23 +65,22 @@ mkTyVars (DHParen _ dh) = mkTyVars dh
 
 -- | Compile a top-level pattern bind.
 compilePatBind :: Bool -> Maybe S.Type -> S.Decl -> Compile [JsStmt]
-compilePatBind toplevel sig pat =
-  case pat of
-    PatBind _ (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
-      case ffiExp rhs of
-        Just formatstr -> case sig of
-          Just sig -> compileFFI ident formatstr sig
-          Nothing  -> throwError (FfiNeedsTypeSig pat)
-        _ -> compileUnguardedRhs toplevel ident rhs
-    PatBind _ (PVar _ ident) Nothing (UnGuardedRhs _ rhs) (Just bdecls) ->
-      compileUnguardedRhs toplevel ident (Let S.noI bdecls rhs)
-    PatBind _ pat Nothing (UnGuardedRhs _ rhs) _bdecls -> do
-      exp <- compileExp rhs
-      name <- withScopedTmpJsName return
-      [JsIf t b1 []] <- compilePat (JsName name) pat []
-      let err = [throw ("Irrefutable pattern failed for pattern: " ++ prettyPrint pat) (JsList [])]
-      return [JsVar name exp, JsIf t b1 err]
-    _ -> throwError (UnsupportedDeclaration pat)
+compilePatBind toplevel sig pat = case pat of
+  PatBind _ (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
+    case ffiExp rhs of
+      Just formatstr -> case sig of
+        Just sig -> compileFFI ident formatstr sig
+        Nothing  -> throwError (FfiNeedsTypeSig pat)
+      _ -> compileUnguardedRhs toplevel ident rhs
+  PatBind _ (PVar _ ident) Nothing (UnGuardedRhs _ rhs) (Just bdecls) ->
+    compileUnguardedRhs toplevel ident (Let S.noI bdecls rhs)
+  PatBind _ pat Nothing (UnGuardedRhs _ rhs) _bdecls -> do
+    exp <- compileExp rhs
+    name <- withScopedTmpJsName return
+    [JsIf t b1 []] <- compilePat (JsName name) pat []
+    let err = [throw ("Irrefutable pattern failed for pattern: " ++ prettyPrint pat) (JsList [])]
+    return [JsVar name exp, JsIf t b1 err]
+  _ -> throwError (UnsupportedDeclaration pat)
 
 -- | Compile a normal simple pattern binding.
 compileUnguardedRhs :: Bool -> S.Name -> S.Exp -> Compile [JsStmt]
@@ -123,7 +121,6 @@ compileDataDecl toplevel tyvars constructors =
           return (cons : func : funs)
 
   where
-
     -- Creates a constructor _RecConstr for a Record
     makeConstructor :: Name a -> [Name b] -> Compile JsStmt
     makeConstructor (unAnn -> name) (map (JsNameVar . UnQual () . unAnn) -> fields) = do
@@ -178,44 +175,45 @@ compileFunCase toplevel matches@(Match _ name argslen _ _:_) = do
                               (stmtsThunk (concat pats ++ basecase))
                               args)
   return [bind]
-  where args = zipWith const uniqueNames argslen
+  where
+    args = zipWith const uniqueNames argslen
 
-        isWildCardMatch (Match _ _ pats          _ _) = all isWildCardPat pats
-        isWildCardMatch (InfixMatch _ pat _ pats _ _) = all isWildCardPat (pat:pats)
+    isWildCardMatch (Match _ _ pats          _ _) = all isWildCardPat pats
+    isWildCardMatch (InfixMatch _ pat _ pats _ _) = all isWildCardPat (pat:pats)
 
-        compileCase :: S.Match -> Compile [JsStmt]
-        compileCase (InfixMatch l pat name pats rhs binds) =
-          compileCase $ Match l name (pat:pats) rhs binds
-        compileCase match@(Match _ _ pats rhs _) = do
-          whereDecls' <- whereDecls match
-          rhsform <- compileRhs rhs
-          body <- if null whereDecls'
-                    then return [either id JsEarlyReturn rhsform]
-                    else do
-                        binds <- mapM compileLetDecl whereDecls'
-                        case rhsform of
-                          Right exp ->
-                            return [JsEarlyReturn $ JsApp (JsFun Nothing [] (concat binds) (Just exp)) []]
-                          Left stmt ->
-                            withScopedTmpJsName $ \n -> return
-                              [ JsVar n (JsApp (JsFun Nothing [] (concat binds ++ [stmt]) Nothing) [])
-                              , JsIf (JsNeq JsUndefined (JsName n)) [JsEarlyReturn (JsName n)] []
-                              ]
-          foldM (\inner (arg,pat) ->
-                  compilePat (JsName arg) pat inner)
-                body
-                (zip args pats)
+    compileCase :: S.Match -> Compile [JsStmt]
+    compileCase (InfixMatch l pat name pats rhs binds) =
+      compileCase $ Match l name (pat:pats) rhs binds
+    compileCase match@(Match _ _ pats rhs _) = do
+      whereDecls' <- whereDecls match
+      rhsform <- compileRhs rhs
+      body <- if null whereDecls'
+                then return [either id JsEarlyReturn rhsform]
+                else do
+                    binds <- mapM compileLetDecl whereDecls'
+                    case rhsform of
+                      Right exp ->
+                        return [JsEarlyReturn $ JsApp (JsFun Nothing [] (concat binds) (Just exp)) []]
+                      Left stmt ->
+                        withScopedTmpJsName $ \n -> return
+                          [ JsVar n (JsApp (JsFun Nothing [] (concat binds ++ [stmt]) Nothing) [])
+                          , JsIf (JsNeq JsUndefined (JsName n)) [JsEarlyReturn (JsName n)] []
+                          ]
+      foldM (\inner (arg,pat) ->
+              compilePat (JsName arg) pat inner)
+            body
+            (zip args pats)
 
-        whereDecls :: S.Match -> Compile [S.Decl]
-        whereDecls (Match _ _ _ _ (Just (BDecls _ decls))) = return decls
-        whereDecls (Match _ _ _ _ Nothing) = return []
-        whereDecls match = throwError (UnsupportedWhereInMatch match)
+    whereDecls :: S.Match -> Compile [S.Decl]
+    whereDecls (Match _ _ _ _ (Just (BDecls _ decls))) = return decls
+    whereDecls (Match _ _ _ _ Nothing) = return []
+    whereDecls match = throwError (UnsupportedWhereInMatch match)
 
-        basecase :: [JsStmt]
-        basecase = if any isWildCardMatch matches
-                      then []
-                      else [throw ("unhandled case in " ++ prettyPrint name)
-                                  (JsList (map JsName args))]
+    basecase :: [JsStmt]
+    basecase = if any isWildCardMatch matches
+                  then []
+                  else [throw ("unhandled case in " ++ prettyPrint name)
+                              (JsList (map JsName args))]
 
 -- | Compile a right-hand-side expression.
 compileRhs :: S.Rhs -> Compile (Either JsStmt JsExp)

@@ -74,12 +74,11 @@ scanNewtypeDecls _ = return ()
 
 -- | Add new types to the state
 compileNewtypeDecl :: [F.QualConDecl] -> Compile ()
-compileNewtypeDecl [QualConDecl _ _ _ condecl] =
-  case condecl of
-      -- newtype declaration without destructor
-    ConDecl _ name  [ty]            -> addNewtype name Nothing ty
-    RecDecl _ cname [FieldDecl _ [dname] ty] -> addNewtype cname (Just dname) ty
-    x -> error $ "compileNewtypeDecl case: Should be impossible (this is a bug). Got: " ++ show x
+compileNewtypeDecl [QualConDecl _ _ _ condecl] = case condecl of
+    -- newtype declaration without destructor
+  ConDecl _ name  [ty]            -> addNewtype name Nothing ty
+  RecDecl _ cname [FieldDecl _ [dname] ty] -> addNewtype cname (Just dname) ty
+  x -> error $ "compileNewtypeDecl case: Should be impossible (this is a bug). Got: " ++ show x
   where
     getBangTy :: F.BangType -> N.Type
     getBangTy (BangedTy _ t)   = unAnn t

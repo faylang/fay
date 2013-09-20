@@ -50,30 +50,31 @@ compileFFI name' formatstr sig =
   -- real compileFFI
   compileFFI' =<< rmNewtys sig
 
-  where rmNewtys :: S.Type -> Compile N.Type
-        rmNewtys (TyForall _ b c t) = TyForall () (fmap (map unAnn) b) (fmap unAnn c) <$> rmNewtys t
-        rmNewtys (TyFun _ t1 t2)    = TyFun () <$> rmNewtys t1 <*> rmNewtys t2
-        rmNewtys (TyTuple _ b tl)   = TyTuple () b <$> mapM rmNewtys tl
-        rmNewtys (TyList _ t)       = TyList () <$> rmNewtys t
-        rmNewtys (TyApp _ t1 t2)    = TyApp () <$> rmNewtys t1 <*> rmNewtys t2
-        rmNewtys t@TyVar{}          = return (unAnn t)
-        rmNewtys (TyCon _ qname)    = do
-          newty <- lookupNewtypeConst qname
-          return $ case newty of
-                     Nothing     -> TyCon () (unAnn qname)
-                     Just (_,ty) -> ty
-        rmNewtys (TyParen _ t)      = TyParen () <$> rmNewtys t
-        rmNewtys (TyInfix _ t1 q t2)= flip (TyInfix ()) (unAnn q) <$> rmNewtys t1 <*> rmNewtys t2
-        rmNewtys (TyKind _ t k)     = flip (TyKind ()) (unAnn k) <$> rmNewtys t
+  where
+    rmNewtys :: S.Type -> Compile N.Type
+    rmNewtys (TyForall _ b c t) = TyForall () (fmap (map unAnn) b) (fmap unAnn c) <$> rmNewtys t
+    rmNewtys (TyFun _ t1 t2)    = TyFun () <$> rmNewtys t1 <*> rmNewtys t2
+    rmNewtys (TyTuple _ b tl)   = TyTuple () b <$> mapM rmNewtys tl
+    rmNewtys (TyList _ t)       = TyList () <$> rmNewtys t
+    rmNewtys (TyApp _ t1 t2)    = TyApp () <$> rmNewtys t1 <*> rmNewtys t2
+    rmNewtys t@TyVar{}          = return (unAnn t)
+    rmNewtys (TyCon _ qname)    = do
+      newty <- lookupNewtypeConst qname
+      return $ case newty of
+                 Nothing     -> TyCon () (unAnn qname)
+                 Just (_,ty) -> ty
+    rmNewtys (TyParen _ t)      = TyParen () <$> rmNewtys t
+    rmNewtys (TyInfix _ t1 q t2)= flip (TyInfix ()) (unAnn q) <$> rmNewtys t1 <*> rmNewtys t2
+    rmNewtys (TyKind _ t k)     = flip (TyKind ()) (unAnn k) <$> rmNewtys t
 
-        compileFFI' :: N.Type -> Compile [JsStmt]
-        compileFFI' sig' = do
-          fun <- compileFFIExp loc (Just name) formatstr sig'
-          stmt <- bindToplevel True name fun
-          return [stmt]
+    compileFFI' :: N.Type -> Compile [JsStmt]
+    compileFFI' sig' = do
+      fun <- compileFFIExp loc (Just name) formatstr sig'
+      stmt <- bindToplevel True name fun
+      return [stmt]
 
-        name = unAnn name'
-        loc = S.srcSpanInfo $ ann name'
+    name = unAnn name'
+    loc = S.srcSpanInfo $ ann name'
 
 -- | Compile an FFI expression (also used when compiling top level definitions).
 compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> (Type a) -> Compile JsExp
@@ -87,18 +88,19 @@ compileFFIExp loc (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
       when (configGClosure config') $ warnDotUses loc inner exp
       return (body inner)
 
-  where body inner = foldr wrapParam (wrapReturn inner) params
-        wrapParam pname inner = JsFun Nothing [pname] [] (Just inner)
-        params = zipWith const uniqueNames [1..typeArity sig]
-        wrapReturn :: String -> JsExp
-        wrapReturn inner = thunk $
-          case lastMay funcFundamentalTypes of
-            -- Returns a “pure” value;
-            Just{} -> jsToFay SerializeAnywhere returnType (JsRawExp inner)
-            -- Base case:
-            Nothing -> JsRawExp inner
-        funcFundamentalTypes = functionTypeArgs sig
-        returnType = last funcFundamentalTypes
+  where
+    body inner = foldr wrapParam (wrapReturn inner) params
+    wrapParam pname inner = JsFun Nothing [pname] [] (Just inner)
+    params = zipWith const uniqueNames [1..typeArity sig]
+    wrapReturn :: String -> JsExp
+    wrapReturn inner = thunk $
+      case lastMay funcFundamentalTypes of
+        -- Returns a “pure” value;
+        Just{} -> jsToFay SerializeAnywhere returnType (JsRawExp inner)
+        -- Base case:
+        Nothing -> JsRawExp inner
+    funcFundamentalTypes = functionTypeArgs sig
+    returnType = last funcFundamentalTypes
 
 -- | Warn about uses of naked x.y which will not play nicely with Google Closure.
 warnDotUses :: SrcSpanInfo -> String -> Expression SourcePos -> Compile ()
@@ -106,25 +108,26 @@ warnDotUses srcSpanInfo string expr =
   when anyrefs $
     warn $ printSrcSpanInfo srcSpanInfo ++ ":\nDot ref syntax used in FFI JS code: " ++ string
 
-  where anyrefs = not (null (listify dotref expr)) ||
+  where
+    anyrefs = not (null (listify dotref expr)) ||
                   not (null (listify ldot expr))
 
-        dotref :: Expression SourcePos -> Bool
-        dotref x = case x of
-          DotRef _ (VarRef _ (Id _ name)) _
-             | name `elem` globalNames -> False
-          DotRef{}                     -> True
-          _                            -> False
+    dotref :: Expression SourcePos -> Bool
+    dotref x = case x of
+      DotRef _ (VarRef _ (Id _ name)) _
+         | name `elem` globalNames -> False
+      DotRef{}                     -> True
+      _                            -> False
 
-        ldot :: LValue SourcePos -> Bool
-        ldot x =
-          case x of
-            LDot _ (VarRef _ (Id _ name)) _
-             | name `elem` globalNames -> False
-            LDot{}                     -> True
-            _                          -> False
+    ldot :: LValue SourcePos -> Bool
+    ldot x =
+      case x of
+        LDot _ (VarRef _ (Id _ name)) _
+         | name `elem` globalNames -> False
+        LDot{}                     -> True
+        _                          -> False
 
-        globalNames = ["Math","console","JSON"]
+    globalNames = ["Math","console","JSON"]
 
 -- | Make a Fay→JS encoder.
 emitFayToJs :: Name a -> [TyVarBind b] -> [([Name c], BangType d)] -> Compile ()
@@ -178,12 +181,11 @@ transcodingObjForced = JsNameVar "_obj"
 
 -- | Get arg types of a function type.
 functionTypeArgs :: N.Type -> [FundamentalType]
-functionTypeArgs t =
-  case t of
-    TyForall _ _ _ i -> functionTypeArgs i
-    TyFun _ a b      -> argType a : functionTypeArgs b
-    TyParen _ st     -> functionTypeArgs st
-    r                -> [argType r]
+functionTypeArgs t = case t of
+  TyForall _ _ _ i -> functionTypeArgs i
+  TyFun _ a b      -> argType a : functionTypeArgs b
+  TyParen _ st     -> functionTypeArgs st
+  r                -> [argType r]
 
 -- | Convert a Haskell type to an internal FFI representation.
 argType :: N.Type -> FundamentalType
@@ -341,7 +343,6 @@ formatFFI loc formatstr args = go formatstr where
 -- | Generate n name-typ pairs from the given list.
 explodeFields :: [([a], t)] -> [(a, t)]
 explodeFields = concatMap $ \(names,typ) -> map (,typ) names
-
 
 -- | Generate Fay→JS encoding.
 fayToJsHash :: [(String, JsExp)] -> [JsStmt]

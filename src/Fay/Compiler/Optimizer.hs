@@ -46,50 +46,48 @@ runOptimizer optimizer stmts =
 -- | Inline x >> y to x;y in the JS output.
 inlineMonad :: [JsStmt] -> [JsStmt]
 inlineMonad = map go where
-  go stmt =
-    case stmt of
-      JsVar name exp          -> JsVar name (inline exp)
-      JsMappedVar a name exp  -> JsMappedVar a name (inline exp)
-      JsIf exp stmts stmts'   -> JsIf (inline exp) (map go stmts) (map go stmts')
-      JsEarlyReturn exp       -> JsEarlyReturn (inline exp)
-      JsThrow exp             -> JsThrow (inline exp)
-      JsWhile exp stmts       -> JsWhile (inline exp) (map go stmts)
-      JsUpdate name exp       -> JsUpdate name (inline exp)
-      JsSetProp a b exp       -> JsSetProp a b (inline exp)
-      JsSetQName a exp        -> JsSetQName a (inline exp)
-      JsSetModule a exp       -> JsSetModule a (inline exp)
-      JsSetConstructor a exp  -> JsSetConstructor a (inline exp)
-      JsSetPropExtern a b exp -> JsSetPropExtern a b (inline exp)
-      JsContinue              -> JsContinue
-      JsBlock stmts           -> JsBlock (map go stmts)
-      JsExpStmt exp           -> JsExpStmt (inline exp)
+  go stmt = case stmt of
+    JsVar name exp          -> JsVar name (inline exp)
+    JsMappedVar a name exp  -> JsMappedVar a name (inline exp)
+    JsIf exp stmts stmts'   -> JsIf (inline exp) (map go stmts) (map go stmts')
+    JsEarlyReturn exp       -> JsEarlyReturn (inline exp)
+    JsThrow exp             -> JsThrow (inline exp)
+    JsWhile exp stmts       -> JsWhile (inline exp) (map go stmts)
+    JsUpdate name exp       -> JsUpdate name (inline exp)
+    JsSetProp a b exp       -> JsSetProp a b (inline exp)
+    JsSetQName a exp        -> JsSetQName a (inline exp)
+    JsSetModule a exp       -> JsSetModule a (inline exp)
+    JsSetConstructor a exp  -> JsSetConstructor a (inline exp)
+    JsSetPropExtern a b exp -> JsSetPropExtern a b (inline exp)
+    JsContinue              -> JsContinue
+    JsBlock stmts           -> JsBlock (map go stmts)
+    JsExpStmt exp           -> JsExpStmt (inline exp)
 
-  inline expr =
-    case expr of
-      -- Optimizations
-      JsApp op args -> fromMaybe (JsApp (inline op) $ map inline args) (flatten expr)
+  inline expr = case expr of
+    -- Optimizations
+    JsApp op args -> fromMaybe (JsApp (inline op) $ map inline args) (flatten expr)
 
-      -- Plumbing
-      JsFun nm names stmts mexp        -> JsFun nm names (map go stmts) (fmap inline mexp)
+    -- Plumbing
+    JsFun nm names stmts mexp        -> JsFun nm names (map go stmts) (fmap inline mexp)
 
-      JsNegApp exp                     -> JsNegApp (inline exp)
-      JsTernaryIf exp1 exp2 exp3       -> JsTernaryIf (inline exp1) (inline exp2) (inline exp3)
-      JsParen exp                      -> JsParen (inline exp)
-      JsGetProp exp name               -> JsGetProp (inline exp) name
-      JsLookup exp exp2                -> JsLookup (inline exp) (inline exp2)
-      JsUpdateProp exp name exp2       -> JsUpdateProp (inline exp) name (inline exp2)
-      JsGetPropExtern exp string       -> JsGetPropExtern (inline exp) string
-      JsUpdatePropExtern exp name exp2 -> JsUpdatePropExtern (inline exp) name (inline exp2)
-      JsList exps                      -> JsList (map inline exps)
-      JsNew name exps                  -> JsNew name (map inline exps)
-      JsThrowExp exp                   -> JsThrowExp (inline exp)
-      JsInstanceOf exp name            -> JsInstanceOf (inline exp) name
-      JsIndex i exp                    -> JsIndex i (inline exp)
-      JsEq exp exp2                    -> JsEq (inline exp) (inline exp2)
-      JsNeq exp exp2                   -> JsNeq (inline exp) (inline exp2)
-      JsInfix string exp exp2          -> JsInfix string (inline exp) (inline exp2)
-      JsObj keyvals                    -> JsObj keyvals
-      rest                             -> rest
+    JsNegApp exp                     -> JsNegApp (inline exp)
+    JsTernaryIf exp1 exp2 exp3       -> JsTernaryIf (inline exp1) (inline exp2) (inline exp3)
+    JsParen exp                      -> JsParen (inline exp)
+    JsGetProp exp name               -> JsGetProp (inline exp) name
+    JsLookup exp exp2                -> JsLookup (inline exp) (inline exp2)
+    JsUpdateProp exp name exp2       -> JsUpdateProp (inline exp) name (inline exp2)
+    JsGetPropExtern exp string       -> JsGetPropExtern (inline exp) string
+    JsUpdatePropExtern exp name exp2 -> JsUpdatePropExtern (inline exp) name (inline exp2)
+    JsList exps                      -> JsList (map inline exps)
+    JsNew name exps                  -> JsNew name (map inline exps)
+    JsThrowExp exp                   -> JsThrowExp (inline exp)
+    JsInstanceOf exp name            -> JsInstanceOf (inline exp) name
+    JsIndex i exp                    -> JsIndex i (inline exp)
+    JsEq exp exp2                    -> JsEq (inline exp) (inline exp2)
+    JsNeq exp exp2                   -> JsNeq (inline exp) (inline exp2)
+    JsInfix string exp exp2          -> JsInfix string (inline exp) (inline exp2)
+    JsObj keyvals                    -> JsObj keyvals
+    rest                             -> rest
 
 -- | Flatten a a>>(b>>c) to [a,b,c].
 flatten :: JsExp -> Maybe JsExp
@@ -100,14 +98,13 @@ flatten exp = case collect exp of
 
 -- | Try to collect nested a>>(b>>c).
 collect :: JsExp -> Maybe [JsExp]
-collect exp =
-  case exp of
-    JsApp op args | isThen op ->
-      case args of
-        [rest,x] -> (x :) <$> collect rest
-        [x]  -> return [x]
-        _ -> Nothing
-    _ -> return [exp]
+collect exp = case exp of
+  JsApp op args | isThen op ->
+    case args of
+      [rest,x] -> (x :) <$> collect rest
+      [x]  -> return [x]
+      _ -> Nothing
+  _ -> return [exp]
 
   where
     isThen (JsName (JsNameVar (Qual _ (ModuleName _ m) (Ident _ n)))) = m == "Fay$" && n == "then$uncurried"
@@ -172,8 +169,8 @@ stripAndUncurry = applyToExpsInStmts stripFuncForces where
     JsApp a b                      -> do
       result <- walkAndStripForces arities exp
       case result of
-        Just strippedExp             -> go strippedExp
-        Nothing                      -> JsApp <$> go a <*> mapM go b
+        Just strippedExp           -> go strippedExp
+        Nothing                    -> JsApp <$> go a <*> mapM go b
     JsNegApp e                     -> JsNegApp <$> go e
     JsTernaryIf a b c              -> JsTernaryIf <$> go a <*> go b <*> go c
     JsParen e                      -> JsParen <$> go e
@@ -193,12 +190,14 @@ stripAndUncurry = applyToExpsInStmts stripFuncForces where
 walkAndStripForces :: [FuncArity] -> JsExp -> Optimize (Maybe JsExp)
 walkAndStripForces arities = go True [] where
   go frst args app = case app of
-    JsApp (JsName JsForce) [e] -> if frst
-                                     then do result <- go False args e
-                                             case result of
-                                               Nothing -> return Nothing
-                                               Just ex -> return (Just (JsApp (JsName JsForce) [ex]))
-                                     else go False args e
+    JsApp (JsName JsForce) [e] ->
+      if frst
+        then do
+          result <- go False args e
+          case result of
+            Nothing -> return Nothing
+            Just ex -> return (Just (JsApp (JsName JsForce) [ex]))
+        else go False args e
     JsApp op [arg] -> go False (arg:args) op
     JsName (JsNameVar f)
       | Just arity <- lookup f arities, length args == arity -> do

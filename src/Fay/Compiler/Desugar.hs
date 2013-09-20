@@ -108,7 +108,7 @@ desugarExp ex = case ex of
   Let l b e -> Let l <$> desugarBinds b <*> desugarExp e
   If l e1 e2 e3 -> If l <$> desugarExp e1 <*> desugarExp e2 <*> desugarExp e3
   Case l e as -> Case l <$> desugarExp e <*> mapM desugarAlt as
-  Do _ stmts -> fromMaybe (error "EmptyDoBlock") <$> (mmap desugarExp $ foldl desugarStmt' Nothing (reverse stmts))
+  Do _ stmts -> maybe (throwError EmptyDoBlock) return =<< (mmap desugarExp $ foldl desugarStmt' Nothing (reverse stmts))
   MDo l ss -> MDo l <$> mapM desugarStmt ss
   Tuple l b es -> Tuple l b <$> mapM desugarExp es
   TupleSection l b mes -> TupleSection l b <$> mapM (mmap desugarExp) mes

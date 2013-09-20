@@ -9,14 +9,15 @@ module Fay.Compiler.Pattern where
 import           Fay.Compiler.Misc
 import           Fay.Compiler.QName
 import           Fay.Exts.NoAnnotation           (unAnn)
+import qualified Fay.Exts.NoAnnotation           as N
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Reader
-import           Data.List
 import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Names
 
 -- | Compile the given pattern against the given expression.
 compilePat :: JsExp -> S.Pat -> [JsStmt] -> Compile [JsStmt]
@@ -59,18 +60,21 @@ compilePatFields exp name pats body = do
                          (JsGetProp (force exp) (JsNameVar (unQualify $ unAnn fieldname)))
                    : r -- TODO: think about this force call
 
-        compilePats' names (PFieldWildcard _:xs) = do
-          fields <- recToFields name
-          let fields' = fields \\ map (unQual . unAnn) names
-          f <- forM fields' $ \fieldName ->
-            return $ JsVar (JsNameVar $ UnQual () fieldName)
-                           (JsGetProp (force exp) (JsNameVar $ UnQual () fieldName))
+        compilePats' names (PFieldWildcard (wildcardFields -> fields):xs) = do
+          f <- forM fields $ \fieldName ->
+            return $ JsVar (JsNameVar fieldName)
+                           (JsGetProp (force exp) (JsNameVar fieldName))
           r <- compilePats' names xs
           return $ f ++ r
 
         compilePats' _ [] = return []
 
         compilePats' _ (pat:_) = throwError (UnsupportedFieldPattern pat)
+
+        wildcardFields :: S.X -> [N.QName]
+        wildcardFields l = case l of
+          Scoped (RecPatWildcard es) _ -> map (\(OrigName _ o) -> unQualify $ gname2Qname o) es
+          _ -> []
 
 -- | Compile a literal value from a pattern match.
 compilePLit :: JsExp -> S.Literal -> [JsStmt] -> Compile [JsStmt]

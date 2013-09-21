@@ -39,7 +39,6 @@ data FayCompilerOptions = FayCompilerOptions
   , optNoStdlib      :: Bool
   , optPrintRuntime  :: Bool
   , optStdlibOnly    :: Bool
-  , optNoBuiltins    :: Bool
   , optBasePath      :: Maybe FilePath
   , optStrict        :: [String]
   , optTypecheckOnly :: Bool
@@ -55,7 +54,6 @@ main = do
         addConfigPackages (optPackages opts) $ def
           { configOptimize         = optOptimize opts
           , configFlattenApps      = optFlattenApps opts
-          , configExportBuiltins   = not (optNoBuiltins opts)
           , configPrettyPrint      = optPretty opts
           , configLibrary          = optLibrary opts
           , configHtmlWrapper      = optHTMLWrapper opts
@@ -115,7 +113,6 @@ options = FayCompilerOptions
   <*> switch (long "no-stdlib" <> help "Don't generate code for the Prelude/FFI")
   <*> switch (long "print-runtime" <> help "Print the runtime JS source to stdout")
   <*> switch (long "stdlib" <> help "Only output the stdlib")
-  <*> switch (long "no-builtins" <> help "Don't export no-builtins")
   <*> optional (strOption $ long "base-path" <> help "If fay can't find the sources of fay-base you can use this to provide the path. Use --base-path ~/example instead of --base-path=~/example to make sure ~ is expanded properly")
   <*> strsOption (long "strict" <> metavar "modulename[, ..]"
       <> help "Generate strict and uncurried exports for the supplied modules. Simplifies calling Fay from JS")

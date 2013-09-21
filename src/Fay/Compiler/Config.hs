@@ -47,7 +47,6 @@ instance Default CompileConfig where
     CompileConfig
     { configOptimize           = False
     , configFlattenApps        = False
-    , configExportBuiltins     = True
     , configExportRuntime      = True
     , configExportStdlib       = True
     , configExportStdlibOnly   = False

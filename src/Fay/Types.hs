@@ -56,7 +56,6 @@ import           Language.Haskell.Names            (Symbols)
 data CompileConfig = CompileConfig
   { configOptimize          :: Bool                        -- ^ Run optimizations
   , configFlattenApps       :: Bool                        -- ^ Flatten function application?
-  , configExportBuiltins    :: Bool                        -- ^ Export built-in functions?
   , configExportRuntime     :: Bool                        -- ^ Export the runtime?
   , configExportStdlib      :: Bool                        -- ^ Export the stdlib?
   , configExportStdlibOnly  :: Bool                        -- ^ Export /only/ the stdlib?

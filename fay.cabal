@@ -293,6 +293,8 @@ extra-source-files:
   tests/records.res
   tests/recordUseBeforeDefine.hs
   tests/recordUseBeforeDefine.res
+  tests/recordWildCards.hs
+  tests/recordWildCards_partial.res
   tests/recursive.hs
   tests/recursive.res
   tests/ReExport1.hs
@@ -307,8 +309,6 @@ extra-source-files:
   tests/ReExportGlobally.res
   tests/ReExportGloballyExplicit.hs
   tests/ReExportGloballyExplicit.res
-  tests/regressions/recordWildCards.hs
-  tests/regressions/recordWildCards_partial.res
   tests/reservedWords.hs
   tests/reservedWords.res
   tests/sections.hs

@@ -73,7 +73,7 @@ main = do
   if optVersion opts
     then runCommandVersion
     else if optPrintRuntime opts
-      then getRuntime config >>= readFile >>= putStr
+      then getConfigRuntime config >>= readFile >>= putStr
       else do
         void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
         case optFiles opts of

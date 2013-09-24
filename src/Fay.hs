@@ -15,8 +15,9 @@ module Fay
   ,compileFromToAndGenerateHtml
   ,toJsName
   ,showCompileError
-  ,getRuntime)
-   where
+  ,getConfigRuntime
+  ,getRuntime
+  ) where
 
 import           Fay.Compiler
 import           Fay.Compiler.Misc                      (ioWarn,
@@ -84,7 +85,7 @@ compileFile config filein = either Left (Right . fst) <$> compileFileWithState c
 -- | Compile a file returning the state.
 compileFileWithState :: CompileConfig -> FilePath -> IO (Either CompileError (String,CompileState))
 compileFileWithState config filein = do
-  runtime <- getRuntime config
+  runtime <- getConfigRuntime config
   hscode <- readFile filein
   raw <- readFile runtime
   config' <- resolvePackages config
@@ -161,7 +162,10 @@ showCompileError e = case e of
   UnsupportedWhereInMatch m        -> "unsupported `where' syntax: " ++ prettyPrint m
 
 -- | Get the JS runtime source.
-getRuntime :: CompileConfig -> IO String
-getRuntime cfg = case configRuntimePath cfg of
-  Just fp -> return fp
-  Nothing -> getDataFileName "js/runtime.js"
+-- This will return the user supplied runtime if it exists.
+getConfigRuntime :: CompileConfig -> IO String
+getConfigRuntime cfg = maybe getRuntime return $ configRuntimePath cfg
+
+-- | Get the default JS runtime source.
+getRuntime :: IO String
+getRuntime = getDataFileName "js/runtime.js"

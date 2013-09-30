@@ -73,7 +73,7 @@ compilePatFields exp name pats body = do
 
       wildcardFields :: S.X -> [N.QName]
       wildcardFields l = case l of
-        Scoped (RecPatWildcard es) _ -> map (unQualify . gname2Qname . origGName) es
+        Scoped (RecPatWildcard es) _ -> map (unQualify . origName2QName) es
         _ -> []
 
 -- | Compile a literal value from a pattern match.

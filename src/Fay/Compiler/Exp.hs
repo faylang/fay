@@ -293,9 +293,8 @@ compileRecConstr name fieldUpdates = do
     updateStmt _ u = error ("updateStmt: " ++ show u)
 
     wildcardFields l = case l of
-      Scoped (RecExpWildcard es) _ -> map (unQualify . gname2Qname . origGName) . map fst $ es
+      Scoped (RecExpWildcard es) _ -> map (unQualify . origName2QName) . map fst $ es
       _ -> []
-
 
 -- | Compile a record update.
 compileRecUpdate :: S.Exp -> [S.FieldUpdate] -> Compile JsExp

@@ -18,7 +18,7 @@ import           Language.Haskell.Names
 getNonLocalExportsWithoutNewtypes :: N.ModuleName -> CompileState -> Maybe (Set N.QName)
 getNonLocalExportsWithoutNewtypes modName cs =
   fmap ( S.filter (not . isLocal)
-       . S.map (gname2Qname . origGName . sv_origName)
+       . S.map (origName2QName . sv_origName)
        . S.filter (not . (`isNewtype` cs))
        . (\(Symbols exports _) -> exports)
        )
@@ -29,7 +29,7 @@ getNonLocalExportsWithoutNewtypes modName cs =
 getLocalExportsWithoutNewtypes :: N.ModuleName -> CompileState -> Maybe (Set N.QName)
 getLocalExportsWithoutNewtypes modName cs =
   fmap ( S.filter isLocal
-       . S.map (gname2Qname . origGName . sv_origName)
+       . S.map (origName2QName . sv_origName)
        . S.filter (not . (`isNewtype` cs))
        . (\(Symbols exports _) -> exports)
        )
@@ -42,8 +42,8 @@ isNewtype :: SymValueInfo OrigName -> CompileState -> Bool
 isNewtype s cs = case s of
   SymValue{}                     -> False
   SymMethod{}                    -> False
-  SymSelector    { sv_typeName } -> not . (`isNewtypeDest` cs) . gname2Qname . origGName $ sv_typeName
-  SymConstructor { sv_typeName } -> not . (`isNewtypeCons` cs) . gname2Qname . origGName $ sv_typeName
+  SymSelector    { sv_typeName } -> not . (`isNewtypeDest` cs) . origName2QName $ sv_typeName
+  SymConstructor { sv_typeName } -> not . (`isNewtypeCons` cs) . origName2QName $ sv_typeName
 
 -- | Is this *resolved* name a new type destructor?
 isNewtypeDest :: N.QName -> CompileState -> Bool

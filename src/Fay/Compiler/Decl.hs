@@ -55,6 +55,16 @@ compileDecl toplevel decl = case decl of
   ClassDecl{} -> return []
   InstDecl {} -> return [] -- FIXME: Ignore.
   DerivDecl{} -> return []
+  DefaultDecl{} -> return []
+  RulePragmaDecl{} -> return []
+  DeprPragmaDecl{} -> return []
+  WarnPragmaDecl{} -> return []
+  InlineSig{} -> return []
+  InlineConlikeSig{} -> return []
+  SpecSig{} -> return []
+  SpecInlineSig{} -> return []
+  InstSig{} -> return []
+  AnnPragma{} -> return []
   _ -> throwError (UnsupportedDeclaration decl)
 
 

@@ -57,7 +57,7 @@ preprocessAST () mod'@Module{} = do
     Right dmod -> do
       let (Module _ _ _ _ decls) = dmod
       -- This can only return one element since we only compile one module.
-      ([exports],_) <- HN.getInterfaces Haskell2010 [] [dmod]
+      ([exports],_) <- HN.getInterfaces Haskell2010 defaultExtensions [dmod]
       modify $ \s -> s { stateInterfaces = M.insert (stateModuleName s) exports $ stateInterfaces s }
       forM_ decls scanTypeSigs
       forM_ decls scanRecordDecls

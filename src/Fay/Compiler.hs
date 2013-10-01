@@ -119,7 +119,7 @@ compileModuleFromAST imported mod''@(Module _ _ pragmas _ _) = do
   case res of
     Left err -> throwError err
     Right mod' -> do
-      mod@(Module _ _ _ _ decls) <- annotateModule Haskell2010 [] $ mod'
+      mod@(Module _ _ _ _ decls) <- annotateModule Haskell2010 defaultExtensions $ mod'
       let modName = unAnn $ F.moduleName mod
       modify $ \s -> s { stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
                        }

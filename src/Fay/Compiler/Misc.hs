@@ -310,20 +310,25 @@ data CPPState = NoCPP
 -- | The parse mode for Fay.
 parseMode :: ParseMode
 parseMode = defaultParseMode
-  { extensions = map EnableExtension
-                   [GADTs
-                   ,ExistentialQuantification
-                   ,StandaloneDeriving
-                   ,PackageImports
-                   ,EmptyDataDecls
-                   ,TypeOperators
-                   ,RecordWildCards
-                   ,NamedFieldPuns
-                   ,FlexibleContexts
-                   ,FlexibleInstances
-                   ,KindSignatures]
+  { extensions = defaultExtensions
   , fixities = Just (preludeFixities ++ baseFixities)
   }
 
 shouldBeDesugared :: (Functor f, Show (f ())) => f l -> Compile a
 shouldBeDesugared = throwError . ShouldBeDesugared . show . unAnn
+
+defaultExtensions :: [Extension]
+defaultExtensions = map EnableExtension
+  [GADTs
+  ,ExistentialQuantification
+  ,StandaloneDeriving
+  ,PackageImports
+  ,EmptyDataDecls
+  ,TypeOperators
+  ,RecordWildCards
+  ,NamedFieldPuns
+  ,FlexibleContexts
+  ,FlexibleInstances
+  ,KindSignatures
+  ] ++ map DisableExtension
+  [ImplicitPrelude]

@@ -66,4 +66,5 @@ instance Default CompileConfig where
     , configStrict             = []
     , configTypecheckOnly      = False
     , configRuntimePath        = Nothing
+    , configSourceMap          = False
     }

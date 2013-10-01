@@ -431,6 +431,7 @@ library
                    , unordered-containers
                    , utf8-string
                    , vector
+                   , sourcemap
 
 executable fay
   hs-source-dirs:    src/main

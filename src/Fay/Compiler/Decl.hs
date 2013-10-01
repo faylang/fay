@@ -15,8 +15,7 @@ import           Fay.Compiler.Misc
 import           Fay.Compiler.Pattern
 import           Fay.Compiler.State
 import           Fay.Data.List.Extra
-import           Fay.Exts                        (convertFieldDecl,
-                                                  fieldDeclNames)
+import           Fay.Exts                        (convertFieldDecl, fieldDeclNames)
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
@@ -76,14 +75,14 @@ mkTyVars (DHParen _ dh) = mkTyVars dh
 -- | Compile a top-level pattern bind.
 compilePatBind :: Bool -> Maybe S.Type -> S.Decl -> Compile [JsStmt]
 compilePatBind toplevel sig pat = case pat of
-  PatBind _ (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
+  PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
     case ffiExp rhs of
       Just formatstr -> case sig of
         Just sig -> compileFFI ident formatstr sig
         Nothing  -> throwError (FfiNeedsTypeSig pat)
-      _ -> compileUnguardedRhs toplevel ident rhs
-  PatBind _ (PVar _ ident) Nothing (UnGuardedRhs _ rhs) (Just bdecls) ->
-    compileUnguardedRhs toplevel ident (Let S.noI bdecls rhs)
+      _ -> compileUnguardedRhs toplevel srcloc ident rhs
+  PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) (Just bdecls) ->
+    compileUnguardedRhs toplevel srcloc ident (Let S.noI bdecls rhs)
   PatBind _ pat Nothing (UnGuardedRhs _ rhs) _bdecls -> do
     exp <- compileExp rhs
     name <- withScopedTmpJsName return
@@ -93,10 +92,10 @@ compilePatBind toplevel sig pat = case pat of
   _ -> throwError (UnsupportedDeclaration pat)
 
 -- | Compile a normal simple pattern binding.
-compileUnguardedRhs :: Bool -> S.Name -> S.Exp -> Compile [JsStmt]
-compileUnguardedRhs toplevel ident rhs = do
+compileUnguardedRhs :: Bool -> S.X -> S.Name -> S.Exp -> Compile [JsStmt]
+compileUnguardedRhs toplevel srcloc ident rhs = do
   body <- compileExp rhs
-  bind <- bindToplevel toplevel ident (thunk body)
+  bind <- bindToplevel toplevel (Just (srcInfoSpan (S.srcSpanInfo srcloc))) ident (thunk body)
   return [bind]
 
 -- | Compile a data declaration (or a GADT, latter is converted to former).
@@ -153,17 +152,18 @@ compileDataDecl toplevel tyvars constructors =
                        fields
       added <- gets (addedModulePath mp)
       if added
-        then return . JsSetQName qname $ JsApp (JsName $ JsBuiltIn "objConcat")
-                                               [func, JsName $ JsNameVar qname]
+        then return . JsSetQName Nothing qname $ JsApp (JsName $ JsBuiltIn "objConcat")
+                                                       [func, JsName $ JsNameVar qname]
         else do
           modify $ addModulePath mp
-          return $ JsSetQName qname func
+          return $ JsSetQName Nothing qname func
 
     -- Creates getters for a RecDecl's values
     makeAccessors :: [S.Name] -> Compile [JsStmt]
     makeAccessors fields =
       forM fields $ \(unAnn -> name) ->
            bindToplevel toplevel
+                        Nothing
                         name
                         (JsFun Nothing
                                [JsNameVar "x"]
@@ -177,9 +177,10 @@ compileFunCase :: Bool -> [S.Match] -> Compile [JsStmt]
 compileFunCase _toplevel [] = return []
 compileFunCase toplevel (InfixMatch l pat name pats rhs binds : rest) =
   compileFunCase toplevel (Match l name (pat:pats) rhs binds : rest)
-compileFunCase toplevel matches@(Match _ name argslen _ _:_) = do
+compileFunCase toplevel matches@(Match srcloc name argslen _ _:_) = do
   pats <- fmap optimizePatConditions (mapM compileCase matches)
   bind <- bindToplevel toplevel
+                       (Just (srcInfoSpan (S.srcSpanInfo srcloc)))
                        name
                        (foldr (\arg inner -> JsFun Nothing [arg] [] (Just inner))
                               (stmtsThunk (concat pats ++ basecase))

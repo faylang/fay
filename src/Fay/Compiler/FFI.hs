@@ -35,7 +35,7 @@ import           Data.String
 import           Language.ECMAScript3.Parser            as JS
 import           Language.ECMAScript3.Syntax
 import           Language.Haskell.Exts.Annotated        (SrcSpanInfo,
-                                                         prettyPrint)
+                                                         prettyPrint,srcInfoSpan)
 import           Language.Haskell.Exts.Annotated.Syntax
 import           Prelude                                hiding (exp, mod)
 import           Safe
@@ -70,7 +70,7 @@ compileFFI name' formatstr sig =
     compileFFI' :: N.Type -> Compile [JsStmt]
     compileFFI' sig' = do
       fun <- compileFFIExp loc (Just name) formatstr sig'
-      stmt <- bindToplevel True name fun
+      stmt <- bindToplevel True (Just (srcInfoSpan loc)) name fun
       return [stmt]
 
     name = unAnn name'

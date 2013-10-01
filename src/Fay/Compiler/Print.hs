@@ -27,8 +27,9 @@ import qualified Data.ByteString.Lazy.UTF8              as UTF8
 import           Data.Default
 import           Data.List
 import           Data.String
-import           Language.Haskell.Exts.Annotated.Syntax
+import           Language.Haskell.Exts.Annotated
 import           Prelude                                hiding (exp)
+import           SourceMap.Types
 
 --------------------------------------------------------------------------------
 -- Printing
@@ -104,7 +105,8 @@ instance Printable JsStmt where
     name +> " = " +> expr +> ";" +> newline
   printJS (JsSetProp name prop expr) =
     name +> "." +> prop +> " = " +> expr +> ";" +> newline
-  printJS (JsSetQName name expr) =
+  printJS (JsSetQName msrcloc name expr) = do
+    maybe (return ()) mapping msrcloc
     name +> " = " +> expr +> ";" +> newline
   printJS (JsSetConstructor name expr) =
     printCons name +> " = " +> expr +> ";" +> newline
@@ -129,8 +131,6 @@ instance Printable JsStmt where
     "}" +> newline
   printJS JsContinue =
     printJS "continue;" +> newline
-  printJS (JsMappedVar _ name expr) =
-    "var " +> name +> " = " +> expr +> ";" +> newline
 
 -- | Print a module path.
 instance Printable ModulePath where
@@ -329,6 +329,20 @@ write x = do
 
   where srclines = lines x
         additionalLines = length (filter (=='\n') x)
+
+-- | Generate a mapping from the Haskell location to the current point in the output.
+mapping :: SrcSpan -> Printer ()
+mapping SrcSpan{..} = do
+  modify $ \s -> s  { psMappings = m s : psMappings s }
+  return ()
+
+  where m ps = Mapping { mapGenerated = Pos (fromIntegral (psLine ps))
+                                            (fromIntegral (psColumn ps))
+                       , mapOriginal = Just (Pos (fromIntegral srcSpanStartLine)
+                                                 (fromIntegral srcSpanStartColumn - 1))
+                       , mapSourceFile = Just srcSpanFilename
+                       , mapName = Nothing
+                       }
 
 -- | Intercalate monadic action.
 intercalateM :: String -> [Printer a] -> Printer ()

@@ -43,7 +43,7 @@ import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
 import           Control.Monad.State
-import           Data.Default                    (def)
+
 import           Data.Maybe
 import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated hiding (name)
@@ -55,20 +55,20 @@ import           Prelude                         hiding (mod)
 
 -- | Compile a Haskell source string to a JavaScript source string.
 compileViaStr
+
   :: FilePath
   -> CompileConfig
+  -> PrintState
   -> (F.Module -> Compile [JsStmt])
   -> String
   -> IO (Either CompileError (PrintState,CompileState,CompileWriter))
-compileViaStr filepath cfg with from = do
+compileViaStr filepath cfg printState with from = do
   rs <- defaultCompileReader cfg
   runTopCompile rs
              defaultCompileState
              (parseResult (throwError . uncurry ParseError)
-                          (fmap (\x -> execState (runPrinter (printJS x)) printConfig) . with)
+                          (fmap (\x -> execState (runPrinter (printJS x)) printState) . with)
                           (parseFay filepath from))
-
-  where printConfig = def { psPretty = configPrettyPrint cfg }
 
 -- | Compile the top-level Fay module.
 compileToplevelModule :: FilePath -> F.Module -> Compile [JsStmt]
@@ -187,7 +187,7 @@ generateExports = do
   maybe [] (map (exportExp modName) . S.toList) <$> gets (getNonLocalExportsWithoutNewtypes modName)
   where
     exportExp :: N.ModuleName -> N.QName -> JsStmt
-    exportExp m v = JsSetQName (changeModule m v) $ case findPrimOp v of
+    exportExp m v = JsSetQName Nothing (changeModule m v) $ case findPrimOp v of
       Just p  -> JsName $ JsNameVar p -- TODO add test case for this case, is it needed at all?
       Nothing -> JsName $ JsNameVar v
 
@@ -206,10 +206,10 @@ generateStrictExports = do
     else return []
   where
     exportExp :: N.ModuleName -> N.QName -> JsStmt
-    exportExp m v = JsSetQName (changeModule' ("Strict." ++) $ changeModule m v) $ JsName $ JsNameVar $ changeModule' ("Strict." ++) v
+    exportExp m v = JsSetQName Nothing (changeModule' ("Strict." ++) $ changeModule m v) $ JsName $ JsNameVar $ changeModule' ("Strict." ++) v
 
     exportExp' :: N.QName -> JsStmt
-    exportExp' name = JsSetQName (changeModule' ("Strict." ++) name) $ serialize (JsName (JsNameVar name))
+    exportExp' name = JsSetQName Nothing (changeModule' ("Strict." ++) name) $ serialize (JsName (JsNameVar name))
 
     serialize :: JsExp -> JsExp
     serialize n = JsApp (JsRawExp "Fay$$fayToJs") [JsRawExp "['automatic']", n]

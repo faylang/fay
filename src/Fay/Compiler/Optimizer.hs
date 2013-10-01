@@ -48,14 +48,13 @@ inlineMonad :: [JsStmt] -> [JsStmt]
 inlineMonad = map go where
   go stmt = case stmt of
     JsVar name exp          -> JsVar name (inline exp)
-    JsMappedVar a name exp  -> JsMappedVar a name (inline exp)
     JsIf exp stmts stmts'   -> JsIf (inline exp) (map go stmts) (map go stmts')
     JsEarlyReturn exp       -> JsEarlyReturn (inline exp)
     JsThrow exp             -> JsThrow (inline exp)
     JsWhile exp stmts       -> JsWhile (inline exp) (map go stmts)
     JsUpdate name exp       -> JsUpdate name (inline exp)
     JsSetProp a b exp       -> JsSetProp a b (inline exp)
-    JsSetQName a exp        -> JsSetQName a (inline exp)
+    JsSetQName s a exp      -> JsSetQName s a (inline exp)
     JsSetModule a exp       -> JsSetModule a (inline exp)
     JsSetConstructor a exp  -> JsSetConstructor a (inline exp)
     JsSetPropExtern a b exp -> JsSetPropExtern a b (inline exp)
@@ -120,7 +119,6 @@ optimizeToplevel = stripAndUncurry
 tco :: [JsStmt] -> [JsStmt]
 tco = map inStmt where
   inStmt stmt = case stmt of
-    JsMappedVar srcloc name exp -> JsMappedVar srcloc name (inject name exp)
     JsVar name exp -> JsVar name (inject name exp)
     e -> e
   inject name exp = case exp of
@@ -216,7 +214,6 @@ applyToExpsInStmt :: [FuncArity] -> ([FuncArity] -> JsExp -> Optimize JsExp) -> 
 applyToExpsInStmt funcs f stmts = uncurryInStmt stmts where
   transform = f funcs
   uncurryInStmt stmt = case stmt of
-    JsMappedVar srcloc name exp -> JsMappedVar srcloc name <$> transform exp
     JsVar name exp              -> JsVar name <$> transform exp
     JsEarlyReturn exp           -> JsEarlyReturn <$> transform exp
     JsIf op ithen ielse         -> JsIf <$> transform op
@@ -227,7 +224,6 @@ applyToExpsInStmt funcs f stmts = uncurryInStmt stmts where
 -- | Collect functions and their arity from the whole codeset.
 collectFuncs :: [JsStmt] -> [FuncArity]
 collectFuncs = (++ prim) . concatMap collectFunc where
-  collectFunc (JsMappedVar _ name exp) = collectFunc (JsVar name exp)
   collectFunc (JsVar (JsNameVar name) exp) | arity > 0 = [(name,arity)]
     where arity = expArity exp
   collectFunc _ = []
@@ -247,8 +243,6 @@ uncurryBinding :: [JsStmt] -> N.QName -> Maybe JsStmt
 uncurryBinding stmts qname = listToMaybe (mapMaybe funBinding stmts)
   where
     funBinding stmt = case stmt of
-      JsMappedVar srcloc (JsNameVar name) body
-        | name == qname -> JsMappedVar srcloc (JsNameVar (renameUncurried name)) <$> uncurryIt body
       JsVar (JsNameVar name) body
         | name == qname -> JsVar (JsNameVar (renameUncurried name)) <$> uncurryIt body
       _ -> Nothing

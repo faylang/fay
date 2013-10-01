@@ -37,8 +37,8 @@ case_importedList = do
   res <- compileFileWithState defConf { configPackageConf = whatAGreatFramework } fp
   case res of
     Left err -> error (show err)
-    Right (_,r) -> assertBool "RecordImport_Export was not added to stateImported" .
-                     isJust . lookup (ModuleName () "RecordImport_Export") $ stateImported r
+    Right (_,_,r) -> assertBool "RecordImport_Export was not added to stateImported" .
+                       isJust . lookup (ModuleName () "RecordImport_Export") $ stateImported r
 
 fp :: FilePath
 fp = "tests/RecordImport_Import.hs"
@@ -49,7 +49,7 @@ case_stateRecordTypes = do
   res <- compileFileWithState defConf { configPackageConf = whatAGreatFramework } "tests/Compile/Records.hs"
   case res of
     Left err -> error (show err)
-    Right (_,r) ->
+    Right (_,_,r) ->
       -- TODO order should not matter
       assertEqual "stateRecordTypes mismatch"
         [ ("Compile.Records.T", ["Compile.Records.:+"])
@@ -63,7 +63,7 @@ case_importStateRecordTypes = do
   res <- compileFileWithState defConf { configPackageConf = whatAGreatFramework } "tests/Compile/ImportRecords.hs"
   case res of
     Left err -> error (show err)
-    Right (_,r) ->
+    Right (_,_,r) ->
       -- TODO order should not matter
       assertEqual "stateRecordTypes mismatch"
         [ ("Compile.Records.T",["Compile.Records.:+"])
@@ -87,7 +87,7 @@ case_strictWrapper :: Assertion
 case_strictWrapper = do
   whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
   res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Compile/StrictWrapper.hs", configStrict = ["StrictWrapper"] } "tests/Compile/StrictWrapper.hs"
-  (\a b -> either a b res) (assertFailure . show) $ \js -> do
+  (\a b -> either a b res) (assertFailure . show) $ \(js,_) -> do
     writeFile "tests/Compile/StrictWrapper.js" js
     (err, out) <- either id id <$> readAllFromProcess "node" ["tests/Compile/StrictWrapper.js"] ""
     when (err /= "") $ assertFailure err

@@ -29,11 +29,16 @@ import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad
+import           Data.Aeson (encode)
+import qualified Data.ByteString.Lazy as L
+import           Data.Default
 import           Data.List
 import           Language.Haskell.Exts.Annotated        (prettyPrint)
 import           Language.Haskell.Exts.Annotated.Syntax
 import           Language.Haskell.Exts.SrcLoc
 import           Paths_fay
+import           SourceMap (generate)
+import           SourceMap.Types
 import           System.FilePath
 
 -- | Compile the given file and write the output to the given path, or
@@ -50,15 +55,15 @@ compileFromTo cfg filein fileout =
                       (compileFromToAndGenerateHtml cfg filein)
                       fileout
     case result of
-      Right out -> maybe (putStrLn out) (`writeFile` out) fileout
+      Right (out,_) -> maybe (putStrLn out) (`writeFile` out) fileout
       Left err -> error $ showCompileError err
 
 -- | Compile the given file and write to the output, also generate any HTML.
-compileFromToAndGenerateHtml :: CompileConfig -> FilePath -> FilePath -> IO (Either CompileError String)
+compileFromToAndGenerateHtml :: CompileConfig -> FilePath -> FilePath -> IO (Either CompileError (String,[Mapping]))
 compileFromToAndGenerateHtml config filein fileout = do
   result <- compileFile config { configFilePath = Just filein } filein
   case result of
-    Right out -> do
+    Right (out,mappings) -> do
       when (configHtmlWrapper config) $
         writeFile (replaceExtension fileout "html") $ unlines [
             "<!doctype html>"
@@ -72,18 +77,29 @@ compileFromToAndGenerateHtml config filein fileout = do
           , "  <body>"
           , "  </body>"
           , "</html>"]
-      return (Right out)
+
+      when (configSourceMap config) $ do
+        L.writeFile (replaceExtension fileout "map") $
+          encode $
+            generate SourceMapping
+              { smFile = fileout
+              , smSourceRoot = Nothing
+              , smMappings = mappings
+              }
+
+      return (Right (if configSourceMap config then sourceMapHeader ++ out else out,mappings))
             where relativeJsPath = makeRelative (dropFileName fileout) fileout
                   makeScriptTagSrc :: FilePath -> String
                   makeScriptTagSrc s = "<script type=\"text/javascript\" src=\"" ++ s ++ "\"></script>"
+                  sourceMapHeader = "//@ sourceMappingURL=" ++ replaceExtension fileout "map" ++ "\n"
     Left err -> return (Left err)
 
 -- | Compile the given file.
-compileFile :: CompileConfig -> FilePath -> IO (Either CompileError String)
-compileFile config filein = either Left (Right . fst) <$> compileFileWithState config filein
+compileFile :: CompileConfig -> FilePath -> IO (Either CompileError (String,[Mapping]))
+compileFile config filein = fmap (\(src,maps,_) -> (src,maps)) <$> compileFileWithState config filein
 
 -- | Compile a file returning the state.
-compileFileWithState :: CompileConfig -> FilePath -> IO (Either CompileError (String,CompileState))
+compileFileWithState :: CompileConfig -> FilePath -> IO (Either CompileError (String,[Mapping],CompileState))
 compileFileWithState config filein = do
   runtime <- getConfigRuntime config
   hscode <- readFile filein
@@ -94,14 +110,15 @@ compileFileWithState config filein = do
 -- | Compile the given module to a runnable module.
 compileToModule :: FilePath
                 -> CompileConfig -> String -> (F.Module -> Compile [JsStmt]) -> String
-                -> IO (Either CompileError (String,CompileState))
+                -> IO (Either CompileError (String,[Mapping],CompileState))
 compileToModule filepath config raw with hscode = do
-  result <- compileViaStr filepath config with hscode
+  result <- compileViaStr filepath config printState with hscode
   return $ case result of
     Left err -> Left err
     Right (PrintState{..},state,_) ->
       Right ( generateWrapped (concat $ reverse psOutput)
                               (stateModuleName state)
+            , psMappings
             , state
             )
   where
@@ -115,6 +132,9 @@ compileToModule filepath config raw with hscode = do
                        ]
           else ""
       ]
+    printState = def { psPretty = configPrettyPrint config
+                     , psLine = length (lines raw) + 3
+                     }
 
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String

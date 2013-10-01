@@ -127,12 +127,12 @@ qualifyQName (UnQual _ name) = qualify name
 qualifyQName (unAnn -> n)    = return n
 
 -- | Make a top-level binding.
-bindToplevel :: Bool -> Name a -> JsExp -> Compile JsStmt
-bindToplevel toplevel (unAnn -> name) expr =
+bindToplevel :: Bool -> Maybe SrcSpan -> Name a -> JsExp -> Compile JsStmt
+bindToplevel toplevel msrcloc (unAnn -> name) expr =
   if toplevel
     then do
       mod <- gets stateModuleName
-      return $ JsSetQName (Qual () mod name) expr
+      return $ JsSetQName msrcloc (Qual () mod name) expr
     else return $ JsVar (JsNameVar $ UnQual () name) expr
 
 -- | Force an expression in a thunk.

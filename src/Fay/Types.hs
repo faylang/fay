@@ -21,7 +21,6 @@ module Fay.Types
   ,FundamentalType(..)
   ,PrintState(..)
   ,Printer(..)
-  ,Mapping(..)
   ,SerializeContext(..)
   ,ModulePath (unModulePath)
   ,mkModulePath
@@ -48,6 +47,7 @@ import           Data.String
 import           Distribution.HaskellSuite.Modules
 import           Language.Haskell.Exts.Annotated
 import           Language.Haskell.Names            (Symbols)
+import           SourceMap.Types
 
 --------------------------------------------------------------------------------
 -- Compiler types
@@ -62,6 +62,7 @@ data CompileConfig = CompileConfig
   , configDirectoryIncludes :: [(Maybe String, FilePath)]  -- ^ Possibly a fay package name, and a include directory.
   , configPrettyPrint       :: Bool                        -- ^ Pretty print the JS output?
   , configHtmlWrapper       :: Bool                        -- ^ Output a HTML file including the produced JS.
+  , configSourceMap         :: Bool                        -- ^ Output a source map file as outfile.map.
   , configHtmlJSLibs        :: [FilePath]                  -- ^ Any JS files to link to in the HTML.
   , configLibrary           :: Bool                        -- ^ Don't invoke main in the produced JS.
   , configWarn              :: Bool                        -- ^ Warn on dubious stuff, not related to typechecking.
@@ -169,19 +170,12 @@ instance MonadModule Compile where
 liftModuleT :: ModuleT Symbols IO a -> Compile a
 liftModuleT = Compile . lift . lift
 
--- | A source mapping.
-data Mapping = Mapping
-  { mappingName :: String -- ^ The name of the mapping.
-  , mappingFrom :: SrcLoc -- ^ The original source location.
-  , mappingTo   :: SrcLoc -- ^ The new source location.
-  } deriving (Show)
-
 -- | The state of the pretty printer.
 data PrintState = PrintState
   { psPretty      :: Bool      -- ^ Are we to pretty print?
   , psLine        :: Int       -- ^ The current line.
   , psColumn      :: Int       -- ^ Current column.
-  , psMapping     :: [Mapping] -- ^ Source mappings.
+  , psMappings    :: [Mapping] -- ^ Source mappings.
   , psIndentLevel :: Int       -- ^ Current indentation level.
   , psOutput      :: [String]  -- ^ The current output. TODO: Make more efficient.
   , psNewline     :: Bool      -- ^ Just outputted a newline?
@@ -241,14 +235,13 @@ newtype Fay a = Fay (Identity a)
 -- | Statement type.
 data JsStmt
   = JsVar JsName JsExp
-  | JsMappedVar SrcLoc JsName JsExp
   | JsIf JsExp [JsStmt] [JsStmt]
   | JsEarlyReturn JsExp
   | JsThrow JsExp
   | JsWhile JsExp [JsStmt]
   | JsUpdate JsName JsExp
   | JsSetProp JsName JsName JsExp
-  | JsSetQName N.QName JsExp
+  | JsSetQName (Maybe SrcSpan) N.QName JsExp
   | JsSetModule ModulePath JsExp
   | JsSetConstructor N.QName JsExp
   | JsSetPropExtern JsName JsName JsExp

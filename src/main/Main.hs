@@ -43,6 +43,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optStrict        :: [String]
   , optTypecheckOnly :: Bool
   , optRuntimePath   :: Maybe FilePath
+  , optSourceMap     :: Bool
   }
 
 -- | Main entry point.
@@ -69,6 +70,7 @@ main = do
           , configStrict           = optStrict opts
           , configTypecheckOnly    = optTypecheckOnly opts
           , configRuntimePath      = optRuntimePath opts
+          , configSourceMap        = optSourceMap opts
           }
   if optVersion opts
     then runCommandVersion
@@ -118,6 +120,8 @@ options = FayCompilerOptions
       <> help "Generate strict and uncurried exports for the supplied modules. Simplifies calling Fay from JS")
   <*> switch (long "typecheck-only" <> help "Only invoke GHC for typechecking, don't produce any output")
   <*> optional (strOption $ long "runtime-path" <> help "Custom path to the runtime so you don't have to reinstall fay when modifying it")
+  <*> switch (long "sourcemap" <> help "Produce a source map in <outfile>.map")
+
 
   where strsOption m =
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])

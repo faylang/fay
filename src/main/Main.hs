@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards  #-}
 -- | Main compiler executable.
@@ -15,6 +16,9 @@ import           Data.List.Split     (wordsBy)
 import           Data.Maybe
 import           Data.Version        (showVersion)
 import           Options.Applicative
+#if MIN_VERSION_optparse_applicative(0,6,0)
+import           Options.Applicative.Types
+#endif
 import           System.Environment
 
 -- | Options and help.
@@ -124,7 +128,11 @@ options = FayCompilerOptions
 
 
   where strsOption m =
+#if MIN_VERSION_optparse_applicative(0,6,0)
+          nullOption (m <> reader (ReadM . Right . wordsBy (== ',')) <> value [])
+#else
           nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])
+#endif
 
 
 -- | Make incompatible options.

@@ -1,4 +1,4 @@
-module StrictWrapper (f,g,h) where
+module StrictWrapper (f,g,h,r) where
 
 import           FFI
 import           Prelude
@@ -14,8 +14,13 @@ g R{i=i} = i
 h :: R -> R
 h (R i) = R (i + 1)
 
+r :: R
+r = R 2
+
+-- You should probably not use the strict wrapper from Fay, this is just for the sake of the test.
 main :: Fay ()
 main = do
   ffi "console.log(Strict.StrictWrapper.f(1,2))" :: Fay ()
   ffi "console.log(Strict.StrictWrapper.g({instance:'R',i:1}))" :: Fay ()
   ffi "console.log(Strict.StrictWrapper.h({instance:'R',i:1}))" :: Fay ()
+  ffi "console.log(Strict.StrictWrapper.r)" :: Fay ()

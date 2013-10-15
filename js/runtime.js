@@ -260,7 +260,7 @@ function Fay$$fayToJs(type,fayObj){
       }
       jsObj = arr;
     } else {
-      var fayToJsFun = fayObj && fayObj.constructor && Fay$$fayToJsHash[fayObj.constructor.name];
+      var fayToJsFun = fayObj && fayObj.instance && Fay$$fayToJsHash[fayObj.instance];
       jsObj = fayToJsFun ? fayToJsFun(type,type[2],fayObj) : fayObj;
     }
   }

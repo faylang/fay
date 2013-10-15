@@ -109,7 +109,9 @@ instance Printable JsStmt where
     maybe (return ()) mapping msrcloc
     name +> " = " +> expr +> ";" +> newline
   printJS (JsSetConstructor name expr) =
-    printCons name +> " = " +> expr +> ";" +> newline
+    printCons name +> " = " +> expr +> ";" +> newline +>
+    -- The unqualifiedness here is bad.
+    printCons name +> ".prototype.instance = \"" +> printConsUnQual name +> "\";" +> newline
   printJS (JsSetModule mp expr) =
     mp +> " = " +> expr +> ";" +> newline
   printJS (JsSetPropExtern name prop expr) =
@@ -235,6 +237,11 @@ printCons :: N.QName -> Printer ()
 printCons (UnQual _ n) = printConsName n
 printCons (Qual _ (ModuleName _ m) n) = printJS m +> "." +> printConsName n
 printCons (Special {}) = error "qname2String Special"
+
+-- | Print an unqualified name.
+printConsUnQual (UnQual _ x) = printJS x
+printConsUnQual (Qual _ _ n) = printJS n
+printConsUnQual (Special {}) = error "printConsUnqual Special"
 
 -- | Print a constructor name given a Name. Helper for printCons.
 printConsName :: N.Name -> Printer ()

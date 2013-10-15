@@ -81,24 +81,27 @@ compileToplevelModule filein mod@Module{}  = do
     either throwError warn res
   initialPass filein
   -- Reset imports after initialPass so the modules can be imported during code generation.
-  startCompile compileFileWithSource filein
+  (hstmts, fstmts) <- startCompile compileFileWithSource filein
+  return (hstmts++fstmts)
 compileToplevelModule _ m = throwError $ UnsupportedModuleSyntax "compileToplevelModule" m
 
 --------------------------------------------------------------------------------
 -- Compilers
 
 -- | Compile a source string.
-compileModuleFromContents :: String -> Compile [JsStmt]
+compileModuleFromContents :: String -> Compile ([JsStmt], [JsStmt])
 compileModuleFromContents = compileFileWithSource "<interactive>"
 
 -- | Compile given the location and source string.
-compileFileWithSource :: FilePath -> String -> Compile [JsStmt]
+compileFileWithSource :: FilePath -> String -> Compile ([JsStmt], [JsStmt])
 compileFileWithSource filepath contents = do
-  (stmts,st,wr) <- compileWith filepath compileModuleFromAST compileFileWithSource contents
+  ((hstmts,fstmts),st,wr) <- compileWith filepath compileModuleFromAST compileFileWithSource contents
   modify $ \s -> s { stateImported      = stateImported      st
                    , stateJsModulePaths = stateJsModulePaths st
                    }
-  maybeOptimize $ stmts ++ writerCons wr ++ makeTranscoding wr
+  hstmts' <- maybeOptimize $ hstmts ++ writerCons wr ++ makeTranscoding wr
+  fstmts' <- maybeOptimize fstmts
+  return (hstmts', fstmts')
   where
     makeTranscoding :: CompileWriter -> [JsStmt]
     makeTranscoding CompileWriter{..} =
@@ -113,8 +116,8 @@ compileFileWithSource filepath contents = do
         else stmts
 
 -- | Compile a parse HSE module.
-compileModuleFromAST :: [JsStmt] -> F.Module -> Compile [JsStmt]
-compileModuleFromAST imported mod''@(Module _ _ pragmas _ _) = do
+compileModuleFromAST :: ([JsStmt], [JsStmt]) -> F.Module -> Compile ([JsStmt], [JsStmt])
+compileModuleFromAST (hstmts0, fstmts0) mod''@(Module _ _ pragmas _ _) = do
   res <- io $ desugar mod''
   case res of
     Left err -> throwError err
@@ -130,14 +133,15 @@ compileModuleFromAST imported mod''@(Module _ _ pragmas _ _) = do
       modulePaths      <- createModulePath modName
       extExports       <- generateExports
       strictExports    <- generateStrictExports
-      let stmts = imported ++ modulePaths ++ current ++ extExports ++ strictExports
+      let hstmts = hstmts0 ++ modulePaths ++ current ++ extExports
+          fstmts = fstmts0 ++ strictExports
       return $ if exportStdlibOnly
         then if anStdlibModule modName
-                then stmts
-                else []
+                then (hstmts, fstmts)
+                else ([], [])
         else if not exportStdlib && anStdlibModule modName
-                then []
-                else stmts
+                then ([], [])
+                else (hstmts, fstmts)
 compileModuleFromAST _ mod = throwError $ UnsupportedModuleSyntax "compileModuleFromAST" mod
 
 

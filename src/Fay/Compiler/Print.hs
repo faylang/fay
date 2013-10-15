@@ -239,6 +239,7 @@ printCons (Qual _ (ModuleName _ m) n) = printJS m +> "." +> printConsName n
 printCons (Special {}) = error "qname2String Special"
 
 -- | Print an unqualified name.
+printConsUnQual :: N.QName -> Printer ()
 printConsUnQual (UnQual _ x) = printJS x
 printConsUnQual (Qual _ _ n) = printJS n
 printConsUnQual (Special {}) = error "printConsUnqual Special"

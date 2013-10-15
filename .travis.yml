@@ -6,4 +6,8 @@ notifications:
   irc:
     channels: "irc.freenode.net#fay"
     skip_join: true
-  email: false
+  email:
+    recipients:
+      - adam@edea.se
+    on_success: change
+    on_failure: change

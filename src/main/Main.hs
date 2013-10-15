@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards  #-}
 -- | Main compiler executable.
@@ -16,9 +15,7 @@ import           Data.List.Split     (wordsBy)
 import           Data.Maybe
 import           Data.Version        (showVersion)
 import           Options.Applicative
-#if MIN_VERSION_optparse_applicative(0,6,0)
 import           Options.Applicative.Types
-#endif
 import           System.Environment
 
 -- | Options and help.
@@ -125,15 +122,7 @@ options = FayCompilerOptions
   <*> switch (long "typecheck-only" <> help "Only invoke GHC for typechecking, don't produce any output")
   <*> optional (strOption $ long "runtime-path" <> help "Custom path to the runtime so you don't have to reinstall fay when modifying it")
   <*> switch (long "sourcemap" <> help "Produce a source map in <outfile>.map")
-
-
-  where strsOption m =
-#if MIN_VERSION_optparse_applicative(0,6,0)
-          nullOption (m <> reader (ReadM . Right . wordsBy (== ',')) <> value [])
-#else
-          nullOption (m <> reader (Right . wordsBy (== ',')) <> value [])
-#endif
-
+  where strsOption m = nullOption (m <> reader (ReadM . Right . wordsBy (== ',')) <> value [])
 
 -- | Make incompatible options.
 incompatible :: Monad m

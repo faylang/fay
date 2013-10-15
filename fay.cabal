@@ -413,7 +413,7 @@ library
                    , filepath
                    , ghc-paths
                    , haskell-names >= 0.3.1 && < 0.4
-                   , haskell-packages
+                   , haskell-packages >= 0.2.3.1
                    , haskell-src-exts >= 1.14
                    , language-ecmascript >= 0.15 && < 1.0
                    , mtl
@@ -451,7 +451,7 @@ executable fay
                    , haskell-src-exts >= 1.14
                    , language-ecmascript >= 0.15 && < 1.0
                    , mtl
-                   , optparse-applicative >= 0.5 && < 0.7
+                   , optparse-applicative >= 0.6 && < 0.7
                    , process
                    , safe
                    , split

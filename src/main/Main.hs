@@ -32,7 +32,6 @@ data FayCompilerOptions = FayCompilerOptions
   , optVersion       :: Bool
   , optOutput        :: Maybe String
   , optPretty        :: Bool
-  , optFiles         :: [String]
   , optOptimize      :: Bool
   , optGClosure      :: Bool
   , optPackageConf   :: Maybe String
@@ -45,6 +44,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optTypecheckOnly :: Bool
   , optRuntimePath   :: Maybe FilePath
   , optSourceMap     :: Bool
+  , optFiles         :: [String]
   }
 
 -- | Main entry point.
@@ -108,7 +108,6 @@ options = FayCompilerOptions
   <*> switch (long "version" <> help "Output version number")
   <*> optional (strOption (long "output" <> short 'o' <> metavar "file" <> help "Output to specified file"))
   <*> switch (long "pretty" <> short 'p' <> help "Pretty print the output")
-  <*> arguments Just (metavar "<hs-file>...")
   <*> switch (long "optimize" <> short 'O' <> help "Apply optimizations to generated code")
   <*> switch (long "closure" <> help "Provide help with Google Closure")
   <*> optional (strOption (long "package-conf" <> help "Specify the Cabal package config file"))
@@ -122,6 +121,7 @@ options = FayCompilerOptions
   <*> switch (long "typecheck-only" <> help "Only invoke GHC for typechecking, don't produce any output")
   <*> optional (strOption $ long "runtime-path" <> help "Custom path to the runtime so you don't have to reinstall fay when modifying it")
   <*> switch (long "sourcemap" <> help "Produce a source map in <outfile>.map")
+  <*> arguments Just (metavar "<hs-file>...")
   where strsOption m = nullOption (m <> reader (ReadM . Right . wordsBy (== ',')) <> value [])
 
 -- | Make incompatible options.

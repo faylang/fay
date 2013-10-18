@@ -1,3 +1,5 @@
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE RebindableSyntax #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
@@ -44,7 +46,8 @@ sync m a = ContT $ \c -> m a c
 
 -- | The continuation monad.
 data ContT r m a = ContT { runContT :: (a -> m r) -> m r }
-instance (GHC.Base.Monad m) => GHC.Base.Monad (ContT r m)
+class Monad (m :: * -> *)
+instance (Monad m) => Monad (ContT r m)
 
 data CC = CC
   { cc_return :: forall a r. a -> ContT r Fay a

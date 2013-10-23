@@ -31,7 +31,9 @@ typecheck cfg fp = do
           [ "-fno-code"
           , "-XNoImplicitPrelude"
           , "-hide-package base"
-          , "-cpp", "-pgmPcpphs", "-optP--cpp", "-DFAY=1"
+          , "-cpp", "-pgmPcpphs", "-optP--cpp"
+          , "-optP-C" -- Don't let hse-cpp remove //-style comments.
+          , "-DFAY=1"
           , "-main-is"
           , "Language.Fay.DummyMain"
           , "-i" ++ intercalate ":" includeDirs

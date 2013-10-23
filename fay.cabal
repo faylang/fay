@@ -451,7 +451,7 @@ executable fay
                    , haskell-src-exts >= 1.14
                    , language-ecmascript >= 0.15 && < 1.0
                    , mtl
-                   , optparse-applicative >= 0.6 && < 0.7
+                   , optparse-applicative >= 0.6 && < 0.8
                    , process
                    , safe
                    , split

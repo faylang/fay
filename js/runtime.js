@@ -237,13 +237,13 @@ function Fay$$fayToJs(type,fayObj){
   }
   else if(base == "ptr" || base == "unknown")
     return fayObj;
+  else if(base == "automatic" && fayObj instanceof Function) {
+    return Fay$$fayToJs(["function", "automatic_function"], fayObj);
+  }
   else if(base == "automatic" || base == "user") {
-
     fayObj = Fay$$_(fayObj);
 
-    if(fayObj instanceof Function) {
-      return Fay$$fayToJs(["function", "automatic_function"], fayObj);
-    } else if(fayObj instanceof Fay$$Cons || fayObj === null){
+    if(fayObj instanceof Fay$$Cons || fayObj === null){
       // Serialize Fay list to JavaScript array.
       var arr = [];
       while(fayObj instanceof Fay$$Cons) {
@@ -388,6 +388,12 @@ function Fay$$jsToFay(type,jsObj){
            base ==  "unknown") {
     return jsObj;
   }
+  else if(base == "automatic" && jsObj instanceof Function) {
+    var type = [["automatic"]];
+    for (var i = 0; i < jsObj.length; i++)
+      type.push(["automatic"]);
+    return Fay$$jsToFay(["function", type], jsObj);
+  }
   else if(base == "automatic" || base == "user") {
     if (jsObj && jsObj['instance']) {
       var jsToFayFun = Fay$$jsToFayHash[jsObj["instance"]];
@@ -399,12 +405,6 @@ function Fay$$jsToFay(type,jsObj){
         list = new Fay$$Cons(Fay$$jsToFay([base], jsObj[i]), list);
       }
       return list;
-    }
-    else if (jsObj instanceof Function) {
-      var type = [["automatic"]];
-      for (var i = 0; i < jsObj.length; i++)
-        type.push(["automatic"]);
-      return Fay$$jsToFay(["function", type], jsObj);
     }
     else
       return jsObj;

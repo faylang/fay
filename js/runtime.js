@@ -304,7 +304,7 @@ function Fay$$jsToFay(type,jsObj){
   var fayObj;
   if(base == "action") {
     // Unserialize a "monadic" JavaScript return value into a monadic value.
-    fayObj = new Fay$$Monad(Fay$$jsToFay(args[0],jsObj));
+    return new Fay$$Monad(Fay$$jsToFay(args[0],jsObj));
   }
   else if(base == "function") {
     // Unserialize a function from JavaScript to a function that Fay can call.
@@ -340,19 +340,18 @@ function Fay$$jsToFay(type,jsObj){
           }
         };
       };
-      fayObj = makePartial([]);
+      return makePartial([]);
     }
-    else {
-      fayObj =
-        function (arg)
-        {
-           return Fay$$jsToFay(["automatic"], jsObj(Fay$$fayToJs(["automatic"], arg)));
-        };
-    }
+    else
+      return function (arg) {
+        return Fay$$jsToFay(["automatic"], jsObj(Fay$$fayToJs(["automatic"], arg)));
+      };
   }
   else if(base == "string") {
     // Unserialize a JS string into Fay list (String).
-    fayObj = Fay$$list(jsObj);
+    // This is a special case, when String is explicit in the type signature,
+    // with `Automatic' a string would not be decoded.
+    return Fay$$list(jsObj);
   }
   else if(base == "list") {
     // Unserialize a JS array into a Fay list ([a]).
@@ -362,8 +361,7 @@ function Fay$$jsToFay(type,jsObj){
       serializedList.push(Fay$$jsToFay(args[0],jsObj[i]));
     }
     // Pop it all in a Fay list.
-    fayObj = Fay$$list(serializedList);
-
+    return Fay$$list(serializedList);
   }
   else if(base == "tuple") {
     // Unserialize a JS array into a Fay tuple ((a,b,c,...)).
@@ -373,24 +371,17 @@ function Fay$$jsToFay(type,jsObj){
       serializedTuple.push(Fay$$jsToFay(args[i],jsObj[i]));
     }
     // Pop it all in a Fay list.
-    fayObj = Fay$$list(serializedTuple);
-
+    return Fay$$list(serializedTuple);
   }
   else if(base == "defined") {
-    if (jsObj === undefined) {
-      fayObj = new Fay.FFI._Undefined();
-    } else {
-      fayObj = new Fay.FFI._Defined(Fay$$jsToFay(args[0],jsObj));
-    }
-
+    return jsObj === undefined
+      ? new Fay.FFI._Undefined()
+      : new Fay.FFI._Defined(Fay$$jsToFay(args[0],jsObj));
   }
   else if(base == "nullable") {
-    if (jsObj === null) {
-      fayObj = new Fay.FFI._Null();
-    } else {
-      fayObj = new Fay.FFI.Nullable(Fay$$jsToFay(args[0],jsObj));
-    }
-
+    return jsObj === null
+      ? new Fay.FFI._Null()
+      : new Fay.FFI.Nullable(Fay$$jsToFay(args[0],jsObj));
   }
   else if(base == "int") {
     // Int are unboxed, so there's no forcing to do.
@@ -398,7 +389,7 @@ function Fay$$jsToFay(type,jsObj){
     // E.g. Math.round(x)!=x? throw "NOT AN INTEGER, GET OUT!"
     fayObj = Math.round(jsObj);
     if(fayObj!==jsObj) throw "Argument " + jsObj + " is not an integer!";
-
+    return fayObj;
   }
   else if (base == "double" ||
            base == "bool" ||
@@ -409,14 +400,14 @@ function Fay$$jsToFay(type,jsObj){
   else if(base == "automatic" || base == "user") {
     if (jsObj && jsObj['instance']) {
       var jsToFayFun = Fay$$jsToFayHash[jsObj["instance"]];
-      fayObj = jsToFayFun ? jsToFayFun(type,type[2],jsObj) : jsObj;
+      return jsToFayFun ? jsToFayFun(type,type[2],jsObj) : jsObj;
     }
     else if (jsObj instanceof Array) {
       var list = null;
       for (var i = jsObj.length - 1; i >= 0; i--) {
         list = new Fay$$Cons(Fay$$jsToFay([base], jsObj[i]), list);
       }
-      fayObj = list;
+      return list;
     }
     else if (jsObj instanceof Function) {
       var type = [["automatic"]];
@@ -425,11 +416,9 @@ function Fay$$jsToFay(type,jsObj){
       return Fay$$jsToFay(["function", type], jsObj);
     }
     else
-      fayObj = jsObj;
-
+      return jsObj;
   }
-  else { throw new Error("Unhandled JS->Fay translation type: " + base); }
-  return fayObj;
+  throw new Error("Unhandled JS->Fay translation type: " + base);
 }
 
 // Stores the mappings from js objects to fay types.

@@ -148,14 +148,14 @@ function Fay$$fayToJs(type,fayObj){
   if(base == "action") {
     // A nullary monadic action. Should become a nullary JS function.
     // Fay () -> function(){ return ... }
-    jsObj = function(){
+    return function(){
       return Fay$$fayToJs(args[0],Fay$$_(fayObj,true).value);
     };
 
   }
   else if(base == "function") {
     // A proper function.
-    jsObj = function(){
+    return function(){
       var fayFunc = fayObj;
       var return_type = args[args.length-1];
       var len = args.length;
@@ -196,7 +196,7 @@ function Fay$$fayToJs(type,fayObj){
 
   }
   else if(base == "string") {
-    jsObj = Fay$$fayToJs_string(fayObj);
+    return Fay$$fayToJs_string(fayObj);
   }
   else if(base == "list") {
     // Serialize Fay list to JavaScript array.
@@ -206,7 +206,7 @@ function Fay$$fayToJs(type,fayObj){
       arr.push(Fay$$fayToJs(args[0],fayObj.car));
       fayObj = Fay$$_(fayObj.cdr);
     }
-    jsObj = arr;
+    return arr;
   }
   else if(base == "tuple") {
     // Serialize Fay tuple to JavaScript array.
@@ -217,31 +217,23 @@ function Fay$$fayToJs(type,fayObj){
       arr.push(Fay$$fayToJs(args[i++],fayObj.car));
       fayObj = Fay$$_(fayObj.cdr);
     }
-    jsObj = arr;
-
+    return arr;
   }
   else if(base == "defined") {
     fayObj = Fay$$_(fayObj);
-    if (fayObj instanceof Fay.FFI._Undefined) {
-      jsObj = undefined;
-    } else {
-      jsObj = Fay$$fayToJs(args[0],fayObj.slot1);
-    }
-
+    return fayObj instanceof Fay.FFI._Undefined
+      ? undefined
+      : Fay$$fayToJs(args[0],fayObj.slot1);
   }
   else if(base == "nullable") {
     fayObj = Fay$$_(fayObj);
-    if (fayObj instanceof Fay.FFI._Null) {
-      jsObj = null;
-    } else {
-      jsObj = Fay$$fayToJs(args[0],fayObj.slot1);
-    }
-
+    return fayObj instanceof Fay.FFI._Null
+      ? null
+      : Fay$$fayToJs(args[0],fayObj.slot1);
   }
   else if(base == "double" || base == "int" || base == "bool") {
     // Bools are unboxed.
-    jsObj = Fay$$_(fayObj);
-
+    return Fay$$_(fayObj);
   }
   else if(base == "ptr" || base == "unknown")
     return fayObj;
@@ -250,7 +242,7 @@ function Fay$$fayToJs(type,fayObj){
     fayObj = Fay$$_(fayObj);
 
     if(fayObj instanceof Function) {
-      jsObj = Fay$$fayToJs(["function", "automatic_function"], fayObj);
+      return Fay$$fayToJs(["function", "automatic_function"], fayObj);
     } else if(fayObj instanceof Fay$$Cons || fayObj === null){
       // Serialize Fay list to JavaScript array.
       var arr = [];
@@ -258,15 +250,14 @@ function Fay$$fayToJs(type,fayObj){
         arr.push(Fay$$fayToJs(["automatic"],fayObj.car));
         fayObj = Fay$$_(fayObj.cdr);
       }
-      jsObj = arr;
+      return arr;
     } else {
       var fayToJsFun = fayObj && fayObj.instance && Fay$$fayToJsHash[fayObj.instance];
-      jsObj = fayToJsFun ? fayToJsFun(type,type[2],fayObj) : fayObj;
+      return fayToJsFun ? fayToJsFun(type,type[2],fayObj) : fayObj;
     }
   }
-  else
-    throw new Error("Unhandled Fay->JS translation type: " + base);
-  return jsObj;
+
+  throw new Error("Unhandled Fay->JS translation type: " + base);
 }
 
 // Stores the mappings from fay types to js objects.
@@ -418,6 +409,7 @@ function Fay$$jsToFay(type,jsObj){
     else
       return jsObj;
   }
+
   throw new Error("Unhandled JS->Fay translation type: " + base);
 }
 

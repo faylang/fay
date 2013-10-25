@@ -74,22 +74,30 @@ mkTyVars (DHParen _ dh) = mkTyVars dh
 
 -- | Compile a top-level pattern bind.
 compilePatBind :: Bool -> Maybe S.Type -> S.Decl -> Compile [JsStmt]
-compilePatBind toplevel sig pat = case pat of
+compilePatBind toplevel sig patDecl = case patDecl of
   PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
     case ffiExp rhs of
       Just formatstr -> case sig of
         Just sig -> compileFFI ident formatstr sig
-        Nothing  -> throwError (FfiNeedsTypeSig pat)
+        Nothing  -> throwError $ FfiNeedsTypeSig patDecl
       _ -> compileUnguardedRhs toplevel srcloc ident rhs
+  -- TODO: Generalize to all patterns
   PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) (Just bdecls) ->
     compileUnguardedRhs toplevel srcloc ident (Let S.noI bdecls rhs)
-  PatBind _ pat Nothing (UnGuardedRhs _ rhs) _bdecls -> do
-    exp <- compileExp rhs
-    name <- withScopedTmpJsName return
-    [JsIf t b1 []] <- compilePat (JsName name) pat []
-    let err = [throw ("Irrefutable pattern failed for pattern: " ++ prettyPrint pat) (JsList [])]
-    return [JsVar name exp, JsIf t b1 err]
-  _ -> throwError (UnsupportedDeclaration pat)
+  PatBind _ pat Nothing (UnGuardedRhs _ rhs) _bdecls -> case pat of
+    PList {} -> compilePatBind' pat rhs
+    PTuple{} -> compilePatBind' pat rhs
+    PApp  {} -> compilePatBind' pat rhs
+    _        -> throwError $ UnsupportedDeclaration patDecl
+  _ -> throwError $ UnsupportedDeclaration patDecl
+  where
+    compilePatBind' :: S.Pat -> S.Exp -> Compile [JsStmt]
+    compilePatBind' pat rhs = do
+      exp <- compileExp rhs
+      name <- withScopedTmpJsName return
+      [JsIf t b1 []] <- compilePat (JsName name) pat []
+      let err = [throw ("Irrefutable pattern failed for pattern: " ++ prettyPrint pat) (JsList [])]
+      return [JsVar name exp, JsIf t b1 err]
 
 -- | Compile a normal simple pattern binding.
 compileUnguardedRhs :: Bool -> S.X -> S.Name -> S.Exp -> Compile [JsStmt]

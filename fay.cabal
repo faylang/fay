@@ -102,44 +102,44 @@ library
                      , Fay.Compiler.Typecheck
                      , Paths_fay
   ghc-options:       -O2 -Wall -fno-warn-name-shadowing
-  build-depends:     base >= 4 && < 5
-                   , Cabal
-                   , HUnit
-                   , aeson
-                   , attoparsec
-                   , bytestring
-                   , containers
-                   , cpphs
-                   , data-default
-                   , directory
-                   , filepath
-                   , ghc-paths
-                   , haskell-names >= 0.3.1 && < 0.4
-                   , haskell-packages >= 0.2.3.1
-                   , haskell-src-exts >= 1.14
-                   , language-ecmascript >= 0.15 && < 1.0
-                   , mtl
-                   , pretty-show >= 1.6
-                   , process
-                   , safe
-                   , split
-                   , syb
-                   , test-framework
-                   , test-framework-hunit
-                   , test-framework-th
-                   , text
-                   , time
-                   , unordered-containers
-                   , utf8-string
-                   , vector
-                   , sourcemap
+  build-depends:     base                 >= 4       && < 5
+                   , Cabal                              < 1.19
+                   , HUnit                              < 1.3
+                   , aeson                              < 0.7
+                   , attoparsec                         < 0.11
+                   , bytestring                         < 0.11
+                   , containers                         < 0.6
+                   , cpphs                              < 1.19
+                   , data-default                       < 0.6
+                   , directory                          < 1.3
+                   , filepath                           < 1.4
+                   , ghc-paths                          < 0.2
+                   , haskell-names        >= 0.3.1   && < 0.4
+                   , haskell-packages     >= 0.2.3.1 && < 0.3
+                   , haskell-src-exts     >= 1.14    && < 1.15
+                   , language-ecmascript  >= 0.15    && < 1.0
+                   , mtl                                < 2.2
+                   , pretty-show          >= 1.6     && < 1.7
+                   , process                            < 1.2
+                   , safe                               < 0.4
+                   , split                              < 0.3
+                   , syb                                < 0.5
+                   , test-framework                     < 0.9
+                   , test-framework-hunit               < 0.4
+                   , test-framework-th                  < 0.3
+                   , text                               < 0.12
+                   , time                               < 1.5
+                   , unordered-containers               < 0.3
+                   , utf8-string                        < 0.4
+                   , vector                             < 0.11
+                   , sourcemap                          < 0.2
 
 executable fay
   hs-source-dirs:    src/main
   ghc-options:       -O2 -Wall
   ghc-prof-options:  -fprof-auto
   main-is:           Main.hs
-  build-depends:     base >= 4 && < 5
+  build-depends:     base
                    , fay
                    , Cabal
                    , aeson
@@ -149,11 +149,11 @@ executable fay
                    , directory
                    , filepath
                    , ghc-paths
-                   , haskeline
-                   , haskell-src-exts >= 1.14
-                   , language-ecmascript >= 0.15 && < 1.0
+                   , haskeline                          < 0.8
+                   , haskell-src-exts
+                   , language-ecmascript
                    , mtl
-                   , optparse-applicative >= 0.6 && < 0.8
+                   , optparse-applicative >= 0.6     && < 0.8
                    , process
                    , safe
                    , split
@@ -169,7 +169,7 @@ executable fay-tests
                      Test.Compile
                      Test.Convert
                      Test.Util
-  build-depends:     base >= 4 && < 5
+  build-depends:     base
                    , fay
                    , Cabal
                    , HUnit
@@ -182,10 +182,10 @@ executable fay-tests
                    , directory
                    , filepath
                    , ghc-paths
-                   , haskell-src-exts >= 1.14
-                   , language-ecmascript >= 0.15 && < 1.0
+                   , haskell-src-exts
+                   , language-ecmascript
                    , mtl
-                   , pretty-show >= 1.6
+                   , pretty-show
                    , process
                    , safe
                    , split

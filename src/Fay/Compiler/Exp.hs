@@ -60,6 +60,7 @@ compileExp exp = case exp of
   Do {}                              -> shouldBeDesugared exp
   LeftSection {}                     -> shouldBeDesugared exp
   RightSection {}                    -> shouldBeDesugared exp
+  TupleSection _ _ exps              -> compileTupleSec exps
   ExpTypeSig _ exp sig               ->
     case ffiExp exp of
       Nothing -> compileExp exp
@@ -163,6 +164,29 @@ compileList :: [S.Exp] -> Compile JsExp
 compileList xs = do
   exps <- mapM compileExp xs
   return (makeList exps)
+
+-- | Compile contents of a tuple section.
+compileTupleSec :: [Maybe S.Exp] -> Compile JsExp
+compileTupleSec xs = do
+    (names, lst) <- genSlotNames xs varNames
+    return $  mkCurry names (makeList lst)
+  where
+    mkCurry :: [JsName] -> JsExp -> JsExp
+    mkCurry [name] exp = JsFun Nothing [name] [] (Just exp)
+    mkCurry (name : names) exp = JsFun Nothing [name] [] (Just $ mkCurry names exp)
+
+    varNames :: [JsName]
+    varNames = map (\i -> JsNameVar (UnQual () (Ident () ("$ts_" ++ show i)))) [0::Int ..]
+
+    genSlotNames :: [Maybe S.Exp] -> [JsName] -> Compile ([JsName], [JsExp])
+    genSlotNames [] _ = return ([], [])
+    genSlotNames (Nothing : rest) (n : ns) = do
+      (rn, re) <- genSlotNames rest ns
+      return (n : rn, JsName n : re)
+    genSlotNames (Just e : rest) ns = do
+      (rn, re) <- genSlotNames rest ns
+      e' <- compileExp e
+      return (rn, e' : re)
 
 -- | Compile an if.
 compileIf :: S.Exp -> S.Exp -> S.Exp -> Compile JsExp

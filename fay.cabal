@@ -31,6 +31,9 @@ cabal-version:       >=1.8
 data-files:          js/runtime.js
                      src/Fay/FFI.hs
 extra-source-files:
+  LICENSE
+  README.md
+  CHANGELOG.md
   -- Examples
   examples/*.hs
   examples/*.html

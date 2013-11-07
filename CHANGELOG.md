@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+### 0.18.1 (2013-11-07)
+
+* Add support for TupleSections
+
 #### 0.18.0.5 (2013-10-28)
 
 Bugfixes:

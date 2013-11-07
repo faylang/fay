@@ -23,7 +23,7 @@ bug-reports:         https://github.com/faylang/fay/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Chris Done, Adam Bergmark
-maintainer:          adam@edea.se
+maintainer:          adam@bergmark.nl
 copyright:           2012 Chris Done, Adam Bergmark
 category:            Development, Web, Fay
 build-type:          Custom

@@ -111,7 +111,7 @@ desugarExp ex = case ex of
   Do _ stmts -> maybe (throwError EmptyDoBlock) return =<< (mmap desugarExp $ foldl desugarStmt' Nothing (reverse stmts))
   MDo l ss -> MDo l <$> mapM desugarStmt ss
   Tuple l b es -> Tuple l b <$> mapM desugarExp es
-  TupleSection l b mes -> TupleSection l b <$> mapM (mmap desugarExp) mes
+  TupleSection l _ mes -> desugarTupleSec l =<< (mapM (mmap desugarExp) mes)
   List l es -> List l <$> mapM desugarExp es
   Paren l e -> Paren l <$> desugarExp e
   RecConstr l q f -> RecConstr l (desugarQName q) <$> mapM desugarFieldUpdate f
@@ -267,3 +267,22 @@ desugarTupleCon s = case s of
       params = PVar l <$> names
       body   = Tuple l b (Var l . UnQual l <$> names)
   _ -> Nothing
+
+desugarTupleSec :: l -> [Maybe (Exp l)] -> Desugar (Exp l)
+desugarTupleSec l xs = do
+    (names, lst) <- genSlotNames l xs (varNames l)
+    return $ Lambda l (map (PVar l) names) (Tuple l Unboxed lst)
+  where
+    varNames :: l -> [Name l]
+    varNames l = map (\i -> Ident l ("$gen_" ++ show i)) [0::Int ..]
+
+    genSlotNames :: l -> [Maybe (Exp l)] -> [Name l] -> Desugar ([Name l], [Exp l])
+    genSlotNames _ [] _ = return ([], [])
+    genSlotNames l (Nothing : rest) ns = do
+      -- it's safe to use head/tail here because ns is an infinite list
+      (rn, re) <- genSlotNames l rest (tail ns)
+      return (head ns : rn, Var l (UnQual l (head ns)) : re)
+    genSlotNames l (Just e : rest) ns = do
+      (rn, re) <- genSlotNames l rest ns
+      e' <- desugarExp e
+      return (rn, e' : re)

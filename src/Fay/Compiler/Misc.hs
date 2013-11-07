@@ -333,5 +333,6 @@ defaultExtensions = map EnableExtension
   ,FlexibleContexts
   ,FlexibleInstances
   ,KindSignatures
+  ,TupleSections
   ] ++ map DisableExtension
   [ImplicitPrelude]

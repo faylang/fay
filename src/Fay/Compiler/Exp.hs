@@ -60,6 +60,7 @@ compileExp exp = case exp of
   Do {}                              -> shouldBeDesugared exp
   LeftSection {}                     -> shouldBeDesugared exp
   RightSection {}                    -> shouldBeDesugared exp
+  TupleSection {}                    -> shouldBeDesugared exp
   ExpTypeSig _ exp sig               ->
     case ffiExp exp of
       Nothing -> compileExp exp

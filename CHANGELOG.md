@@ -70,11 +70,6 @@ Internal changes:
 * Migrated to haskell-src-ext's annotated AST.
 * Name resolution is now done using haskell-names, Fay's name resolution code is now pure and a lot simpler.
 
-### fay-jquery 0.4.0.1
-
-* Fixed bug in definition of `clone`
-* Don't define `fromIntegral`.
-
 ## 0.17.0.0 (2013-08-27)
 
 * With the `RebindableSyntax` and `OverloadedStrings` extensions Fay will treat Haskell string literals as JavaScript Strings. Add this in all modules and import Fay.Text (from the `fay-text` package). This is *not* a breaking change, without these extensions in a module `String` will be used, as before. All modules can still interoperate normally even if only some of them use this feature. Note that you may have to define `fromInteger` when using this with Num literals.

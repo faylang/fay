@@ -69,12 +69,6 @@ Internal changes:
 * Fixed bug in definition of `clone`
 * Don't define `fromIntegral`.
 
-### fay-base 0.18.0.0
-
-* Fixed implementation of `>>` and `>>=` (this bug didn't affect normal usage)
-* Add `fail`
-* Generalize type signatures for `fromIntegral` and `fromInteger`
-
 ## 0.17.0.0 (2013-08-27)
 
 * With the `RebindableSyntax` and `OverloadedStrings` extensions Fay will treat Haskell string literals as JavaScript Strings. Add this in all modules and import Fay.Text (from the `fay-text` package). This is *not* a breaking change, without these extensions in a module `String` will be used, as before. All modules can still interoperate normally even if only some of them use this feature. Note that you may have to define `fromInteger` when using this with Num literals.
@@ -88,10 +82,6 @@ Bugfixes:
 
 Minor:
 * Restrict upper bound on `language-ecmascript` to `< 1.0`
-
-
-Other packages:
-* fay-base 0.17.0.0 Prelude now exports `ifThenElse` as a default for `RebindableSyntax`
 
 #### 0.16.0.3 (2013-08-23)
 
@@ -122,7 +112,6 @@ Bugfixes:
 
 Minor:
  * Print location of parse errors
- * More Ratio functions, and moved these into Data.Ratio (fay-base)
  * Compile with -XNoImplicitPrelude
  * Support for testing nested modules (module A, module A.B)
  * Bump `language-ecmascript to >= 0.15` (new API)

@@ -138,10 +138,18 @@ compileNegApp e = JsNegApp . force <$> compileExp e
 
 -- | Compile an infix application, optimizing the JS cases.
 compileInfixApp :: S.Exp -> S.QOp -> S.Exp -> Compile JsExp
-compileInfixApp exp1 ap exp2 = compileExp (App noI (App noI (Var noI op) exp1) exp2)
-  where op = getOp ap
-        getOp (QVarOp _ op) = op
-        getOp (QConOp _ op) = op
+compileInfixApp exp1 ap exp2 = case exp1 of
+  Con _ q -> do
+    newtypeConst <- lookupNewtypeConst q
+    case newtypeConst of
+      Just _ -> compileExp exp2
+      Nothing -> normalApp
+  _ -> normalApp
+  where
+    normalApp = compileExp (App noI (App noI (Var noI op) exp1) exp2)
+    op = getOp ap
+    getOp (QVarOp _ op) = op
+    getOp (QConOp _ op) = op
 
 -- | Compile a let expression.
 compileLet :: [S.Decl] -> S.Exp -> Compile JsExp

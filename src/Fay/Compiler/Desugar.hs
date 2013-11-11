@@ -6,6 +6,7 @@ module Fay.Compiler.Desugar
   (desugar
   ) where
 
+import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types                       (CompileError (..))
 
 import           Control.Applicative
@@ -116,10 +117,10 @@ desugarExp ex = case ex of
   Paren l e -> Paren l <$> desugarExp e
   RecConstr l q f -> RecConstr l (desugarQName q) <$> mapM desugarFieldUpdate f
   RecUpdate l e f -> RecUpdate l <$> desugarExp e <*> mapM desugarFieldUpdate f
-  EnumFrom l e -> EnumFrom l <$> desugarExp e
-  EnumFromTo l e1 e2 -> EnumFromTo l <$> desugarExp e1 <*> desugarExp e2
-  EnumFromThen l e1 e2 -> EnumFromThen l <$> desugarExp e1 <*> desugarExp e2
-  EnumFromThenTo l e1 e2 e3 -> EnumFromThenTo l <$> desugarExp e1 <*> desugarExp e2 <*> desugarExp e3
+  e@(EnumFrom l e1) -> checkEnum e >> (EnumFrom l <$> desugarExp e1)
+  e@(EnumFromTo l e1 e2) -> checkEnum e >> (EnumFromTo l <$> desugarExp e1 <*> desugarExp e2)
+  e@(EnumFromThen l e1 e2) -> checkEnum e >> (EnumFromThen l <$> desugarExp e1 <*> desugarExp e2)
+  e@(EnumFromThenTo l e1 e2 e3) -> checkEnum e >> (EnumFromThenTo l <$> desugarExp e1 <*> desugarExp e2 <*> desugarExp e3)
   ListComp l e qs -> ListComp l <$> desugarExp e <*> mapM desugarQualStmt qs
   ParComp l e qqs -> ParComp l <$> desugarExp e <*> mapM (mapM desugarQualStmt) qqs
   ExpTypeSig l e t -> ExpTypeSig l <$> desugarExp e <*> return (desugarType t)
@@ -286,3 +287,32 @@ desugarTupleSec l xs = do
       (rn, re) <- genSlotNames l rest ns
       e' <- desugarExp e
       return (rn, e' : re)
+
+-- | We only have Enum instance for Int, but GHC hard codes [x..y]
+-- syntax to GHC.Base.Enum instead of using our Enum class so we check
+-- for obviously incorrect usages and throw an error on them. This can
+-- only checks literals, but it helps a bit.
+checkEnum :: Exp l -> Desugar ()
+checkEnum exp = case exp of
+  EnumFrom       _ e        -> checkIntOrUnknown [e]
+  EnumFromTo     _ e1 e2    -> checkIntOrUnknown [e1,e2]
+  EnumFromThen   _ e1 e2    -> checkIntOrUnknown [e1,e2]
+  EnumFromThenTo _ e1 e2 e3 -> checkIntOrUnknown [e1,e2,e3]
+  _ -> error "checkEnum: Only for Enums"
+  where
+    checkIntOrUnknown :: [Exp l] -> Desugar ()
+    checkIntOrUnknown es = if any isIntOrUnknown es
+      then return ()
+      else throwError . UnsupportedEnum $ unAnn exp
+    isIntOrUnknown :: Exp l -> Bool
+    isIntOrUnknown e = case e of
+      Con            {} -> False
+      Lit _ Int{}       -> True
+      Lit            {} -> False
+      Tuple          {} -> False
+      List           {} -> False
+      EnumFrom       {} -> False
+      EnumFromTo     {} -> False
+      EnumFromThen   {} -> False
+      EnumFromThenTo {} -> False
+      _                 -> True

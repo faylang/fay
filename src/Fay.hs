@@ -20,8 +20,7 @@ module Fay
   ) where
 
 import           Fay.Compiler
-import           Fay.Compiler.Misc                      (ioWarn,
-                                                         printSrcSpanInfo)
+import           Fay.Compiler.Misc                      (ioWarn, printSrcSpanInfo)
 import           Fay.Compiler.Packages
 import           Fay.Compiler.Typecheck
 import qualified Fay.Exts                               as F
@@ -29,15 +28,15 @@ import           Fay.Types
 
 import           Control.Applicative
 import           Control.Monad
-import           Data.Aeson (encode)
-import qualified Data.ByteString.Lazy as L
+import           Data.Aeson                             (encode)
+import qualified Data.ByteString.Lazy                   as L
 import           Data.Default
 import           Data.List
 import           Language.Haskell.Exts.Annotated        (prettyPrint)
 import           Language.Haskell.Exts.Annotated.Syntax
 import           Language.Haskell.Exts.SrcLoc
 import           Paths_fay
-import           SourceMap (generate)
+import           SourceMap                              (generate)
 import           SourceMap.Types
 import           System.FilePath
 
@@ -166,6 +165,7 @@ showCompileError e = case e of
   ShouldBeDesugared s              -> "Expected this to be desugared (this is a bug): " ++ s
   UnableResolveQualified qname     -> "unable to resolve qualified names " ++ prettyPrint qname
   UnsupportedDeclaration d         -> "unsupported declaration: " ++ prettyPrint d
+  UnsupportedEnum{}                -> "only Int is allowed in enum expressions"
   UnsupportedExportSpec es         -> "unsupported export specification: " ++ prettyPrint es
   UnsupportedExpression expr       -> "unsupported expression syntax: " ++ prettyPrint expr
   UnsupportedFieldPattern p        -> "unsupported field pattern: " ++ prettyPrint p

@@ -208,6 +208,7 @@ data CompileError
   | ShouldBeDesugared String
   | UnableResolveQualified N.QName
   | UnsupportedDeclaration S.Decl
+  | UnsupportedEnum N.Exp
   | UnsupportedExportSpec N.ExportSpec
   | UnsupportedExpression S.Exp
   | UnsupportedFieldPattern S.PatField

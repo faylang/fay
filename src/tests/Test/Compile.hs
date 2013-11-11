@@ -18,8 +18,7 @@ import           System.Environment
 import           Test.Framework
 import           Test.Framework.Providers.HUnit
 import           Test.Framework.TH
-import           Test.HUnit                      (Assertion, assertBool,
-                                                  assertEqual, assertFailure)
+import           Test.HUnit                      (Assertion, assertBool, assertEqual, assertFailure)
 import           Test.Util
 
 tests :: Test
@@ -97,3 +96,12 @@ case_strictWrapper = do
 defConf :: CompileConfig
 defConf = addConfigDirectoryIncludePaths ["tests/"]
         $ def { configTypecheck = False }
+
+case_charEnum :: Assertion
+case_charEnum = do
+  whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
+  res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Compile/EnumChar.hs" } "tests/Compile/EnumChar.hs"
+  case res of
+    Left UnsupportedEnum{} -> return ()
+    Left l  -> assertFailure $ "Should have failed with UnsupportedEnum, but failed with: " ++ show l
+    Right _ -> assertFailure $ "Should have failed with UnsupportedEnum, but compiled"

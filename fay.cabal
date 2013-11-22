@@ -15,9 +15,9 @@ description:         Fay is a proper subset of Haskell which is type-checked
                      .
                      /Release Notes/
                      .
-                     See <https://github.com/faylang/fay/wiki/Changelog>
+                     See <https://github.com/faylang/fay/blob/master/CHANGELOG.md>
                      .
-                     See full history at: <https://github.com/faylang/fay/wiki/Changelog>
+                     See full history at: <https://github.com/faylang/fay/commits>
 homepage:            http://fay-lang.org/
 bug-reports:         https://github.com/faylang/fay/issues
 license:             BSD3

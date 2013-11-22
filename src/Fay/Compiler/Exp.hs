@@ -28,6 +28,7 @@ import           Fay.Types
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
+import qualified Data.Char                       as Char
 import           Language.Haskell.Exts.Annotated
 import           Language.Haskell.Names
 
@@ -276,18 +277,18 @@ compileEnumFromThenTo a b z = do
 compileRecConstr :: S.QName -> [S.FieldUpdate] -> Compile JsExp
 compileRecConstr name fieldUpdates = do
   -- var obj = new $_Type()
-  let unQualName = unQualify $ unAnn name
+  let unQualName = withIdent lowerFirst . unQualify $ unAnn name
   qname <- unsafeResolveName name
   let record = JsVar (JsNameVar unQualName) (JsNew (JsConstructor qname) [])
   setFields <- liftM concat (forM fieldUpdates (updateStmt name))
-  return $ JsApp (JsFun Nothing [] (record:setFields) (Just $ JsName $ JsNameVar $ unQualify $ unAnn name)) []
+  return $ JsApp (JsFun Nothing [] (record:setFields) (Just . JsName . JsNameVar . withIdent lowerFirst . unQualify $ unAnn name)) []
   where
     -- updateStmt :: QName a -> S.FieldUpdate -> Compile [JsStmt]
     updateStmt (unAnn -> o) (FieldUpdate _ (unAnn -> field) value) = do
       exp <- compileExp value
-      return [JsSetProp (JsNameVar $ unQualify o) (JsNameVar $ unQualify field) exp]
-    updateStmt name (FieldWildcard (wildcardFields -> fields)) = do
-      return $ for fields $ \fieldName -> JsSetProp (JsNameVar $ unAnn name)
+      return [JsSetProp (JsNameVar $ withIdent lowerFirst $ unQualify o) (JsNameVar $ unQualify field) exp]
+    updateStmt o (FieldWildcard (wildcardFields -> fields)) = do
+      return $ for fields $ \fieldName -> JsSetProp (JsNameVar . withIdent lowerFirst . unQualify . unAnn $ o)
                                                     (JsNameVar fieldName)
                                                     (JsName $ JsNameVar fieldName)
     -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
@@ -296,6 +297,9 @@ compileRecConstr name fieldUpdates = do
     wildcardFields l = case l of
       Scoped (RecExpWildcard es) _ -> map (unQualify . origName2QName) . map fst $ es
       _ -> []
+    lowerFirst :: String -> String
+    lowerFirst "" = ""
+    lowerFirst (x:xs) = '_' : Char.toLower x : xs
 
 -- | Compile a record update.
 compileRecUpdate :: S.Exp -> [S.FieldUpdate] -> Compile JsExp

@@ -30,6 +30,17 @@ changeModule' :: (String -> String) -> QName a -> QName a
 changeModule' f (Qual l (ModuleName ml mn) n) = Qual l (ModuleName ml $ f mn) n
 changeModule' _ x = x
 
+withIdent :: (String -> String) -> QName a -> QName a
+withIdent f q = case q of
+  Qual l m n -> Qual l m $ withIdent' f n
+  UnQual l n -> UnQual l $ withIdent' f n
+  Special{} -> q
+  where
+    withIdent' :: (String -> String) -> Name a -> Name a
+    withIdent' f' n' = case n' of
+      Symbol{} -> n'
+      Ident l s -> Ident l (f' s)
+
 -- | Extract the string from a Name.
 unname :: Name a -> String
 unname (Ident _ s) = s

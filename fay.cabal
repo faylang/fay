@@ -107,7 +107,6 @@ library
   ghc-options:       -O2 -Wall -fno-warn-name-shadowing
   build-depends:     base                 >= 4       && < 5
                    , Cabal                              < 1.19
-                   , HUnit                              < 1.3
                    , aeson                              < 0.7
                    , attoparsec                         < 0.11
                    , bytestring                         < 0.11
@@ -127,9 +126,6 @@ library
                    , safe                               < 0.4
                    , split                              < 0.3
                    , syb                                < 0.5
-                   , test-framework                     < 0.9
-                   , test-framework-hunit               < 0.4
-                   , test-framework-th                  < 0.3
                    , text                               < 0.12
                    , time                               < 1.5
                    , unordered-containers               < 0.3
@@ -144,24 +140,9 @@ executable fay
   main-is:           Main.hs
   build-depends:     base
                    , fay
-                   , Cabal
-                   , aeson
-                   , containers
-                   , cpphs
                    , data-default
-                   , directory
-                   , filepath
-                   , ghc-paths
-                   , haskeline                          < 0.8
-                   , haskell-src-exts
-                   , language-ecmascript
-                   , mtl
                    , optparse-applicative >= 0.6     && < 0.8
-                   , process
-                   , safe
                    , split
-                   , syb
-                   , utf8-string
 
 executable fay-tests
   hs-source-dirs:    src/tests
@@ -174,29 +155,16 @@ executable fay-tests
                      Test.Util
   build-depends:     base
                    , fay
-                   , Cabal
-                   , HUnit
+                   , HUnit                              < 1.3
                    , aeson
                    , attoparsec
                    , bytestring
-                   , containers
-                   , cpphs
                    , data-default
                    , directory
                    , filepath
-                   , ghc-paths
                    , haskell-src-exts
-                   , language-ecmascript
-                   , mtl
-                   , pretty-show
-                   , process
-                   , safe
-                   , split
-                   , syb
-                   , test-framework
-                   , test-framework-hunit
-                   , test-framework-th
+                   , test-framework                     < 0.9
+                   , test-framework-hunit               < 0.4
+                   , test-framework-th                  < 0.3
                    , text
-                   , unordered-containers
                    , utf8-string
-                   , vector

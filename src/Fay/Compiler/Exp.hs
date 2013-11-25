@@ -71,11 +71,19 @@ compileExp exp = case exp of
 
 -- | Compile variable.
 compileVar :: S.QName -> Compile JsExp
-compileVar qname = case qname of
-  Special _ t@TupleCon{} -> shouldBeDesugared t
-  _ -> do
-    qname <- unsafeResolveName qname
-    return (JsName (JsNameVar qname))
+compileVar (Special _ t@TupleCon{}) = shouldBeDesugared t
+compileVar qname = do
+    nc <- lookupNewtypeConst qname
+    nd <- lookupNewtypeDest qname
+    if (nc /= Nothing || nd /= Nothing)
+      then -- variable is either a newtype constructor or newtype destructor,
+           -- replace it with identity function
+           return idFun
+      else do
+        qname <- unsafeResolveName qname
+        return (JsName (JsNameVar qname))
+  where
+    idFun = JsFun Nothing [JsTmp 1] [] (Just (JsName $ JsTmp 1))
 
 -- | Compile Haskell literal.
 compileLit :: S.Literal -> Compile JsExp

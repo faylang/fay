@@ -44,9 +44,9 @@ compileDecl :: Bool -> S.Decl -> Compile [JsStmt]
 compileDecl toplevel decl = case decl of
   pat@PatBind{} -> compilePatBind toplevel Nothing pat
   FunBind _ matches -> compileFunCase toplevel matches
-  DataDecl _ (DataType _ ) _ head' constructors _ -> compileDataDecl toplevel (mkTyVars head') constructors
+  DataDecl _ (DataType _ ) _ (mkTyVars -> tyvars) constructors _ -> compileDataDecl toplevel tyvars constructors
   GDataDecl _ (DataType _) _l (mkTyVars -> tyvars) _n decls _ -> compileDataDecl toplevel tyvars (map convertGADT decls)
-  DataDecl _ (NewType _)  _ _ _ _ -> return []
+  DataDecl _ (NewType _) _ (mkTyVars -> tyvars) [constructor] _ -> compileNewtypeDecl tyvars constructor
   -- Just ignore type aliases and signatures.
   TypeDecl {} -> return []
   TypeSig  {} -> return []
@@ -105,6 +105,21 @@ compileUnguardedRhs toplevel srcloc ident rhs = do
   body <- compileExp rhs
   bind <- bindToplevel toplevel (Just (srcInfoSpan (S.srcSpanInfo srcloc))) ident (thunk body)
   return [bind]
+
+-- | Compile a newtype declaration. Constructors will be converted to id
+-- functions.
+compileNewtypeDecl :: [S.TyVarBind] -> S.QualConDecl -> Compile [JsStmt]
+compileNewtypeDecl tyvars (QualConDecl _ _ _ condecl) =
+    case condecl of
+      ConDecl _ name _ -> idStmt name
+      RecDecl _ name _ -> idStmt name
+      InfixConDecl{} -> undefined
+  where
+    idStmt name = do
+      qname <- qualify name
+      return [JsSetQName Nothing qname idFun]
+
+    idFun = JsFun Nothing [JsTmp 1] [] (Just (JsName $ JsTmp 1))
 
 -- | Compile a data declaration (or a GADT, latter is converted to former).
 compileDataDecl :: Bool -> [S.TyVarBind] -> [S.QualConDecl] -> Compile [JsStmt]

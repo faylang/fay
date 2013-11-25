@@ -44,9 +44,9 @@ compileDecl :: Bool -> S.Decl -> Compile [JsStmt]
 compileDecl toplevel decl = case decl of
   pat@PatBind{} -> compilePatBind toplevel Nothing pat
   FunBind _ matches -> compileFunCase toplevel matches
-  DataDecl _ (DataType _ ) _ head' constructors _ -> compileDataDecl toplevel (mkTyVars head') constructors
+  DataDecl _ (DataType _ ) _ (mkTyVars -> tyvars) constructors _ -> compileDataDecl toplevel tyvars constructors
   GDataDecl _ (DataType _) _l (mkTyVars -> tyvars) _n decls _ -> compileDataDecl toplevel tyvars (map convertGADT decls)
-  DataDecl _ (NewType _)  _ _ _ _ -> return []
+  DataDecl _ (NewType _) _ _ _ _ -> return []
   -- Just ignore type aliases and signatures.
   TypeDecl {} -> return []
   TypeSig  {} -> return []

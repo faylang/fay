@@ -4,6 +4,10 @@ See full history at: <https://github.com/faylang/fay/commits>
 
 **Note: 0.18.0.1 added source mappings returend by `Fay:compileFile` and friends meaning it should have been a major bump. Sorry about this!**
 
+### 0.18.1.2 (2013-11-26)
+
+* Add support for indirect application of newtypes (such as `p = NewType; foo = p x` and `bar = NewType $ y`)
+
 ### 0.18.1.1 (2013-11-22)
 
 * Fix a bug where records with the same name as top level modules wouldn't be initialized correctly.

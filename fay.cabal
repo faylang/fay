@@ -128,6 +128,7 @@ library
                    , syb                                < 0.5
                    , text                               < 0.12
                    , time                               < 1.5
+                   , uniplate             >= 1.6     && < 1.7
                    , unordered-containers               < 0.3
                    , utf8-string                        < 0.4
                    , vector                             < 0.11

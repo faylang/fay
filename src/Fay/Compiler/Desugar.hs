@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE TypeFamilies               #-}
 
 module Fay.Compiler.Desugar
@@ -12,10 +13,12 @@ import           Fay.Types                       (CompileError (..))
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Reader
+import           Data.Data                       (Data)
+import           Data.Generics.Uniplate.Data
 import           Data.Maybe
+import           Data.Typeable                   (Typeable)
 import           Language.Haskell.Exts.Annotated hiding (binds, loc)
 import           Prelude                         hiding (exp)
-
 
 -- Types
 
@@ -44,12 +47,30 @@ withScopedTmpName l f = do
   local (\r -> DesugarReader $ readerNameDepth r + 1) $
    f $ Ident l $ "$gen" ++ show n
 
+withScopedTmpName' :: (Data l, Typeable l) => l -> (Name l -> Desugar a) -> Desugar a
+withScopedTmpName' l f = do
+  n <- asks readerNameDepth
+  local (\r -> DesugarReader $ readerNameDepth r + 1) $
+   f $ Ident l $ "$gen" ++ show n
+
+
 
 -- | Top level, desugar a whole module possibly returning errors
-desugar :: Module l -> IO (Either CompileError (Module l))
-desugar md = runDesugar (desugarModule md)
+desugar :: (Data l, Typeable l) => Module l -> IO (Either CompileError (Module l))
+desugar md = runDesugar (desugarSection md >>= desugarModule)
 
 -- | Desugaring
+
+desugarSection :: forall l. (Data l, Typeable l) => Module l -> Desugar (Module l)
+desugarSection = t $ \ex -> case ex of
+  LeftSection  l e q -> withScopedTmpName' l $ \tmp ->
+      return $ Lambda l [PVar l tmp] (InfixApp l e q (Var l (UnQual l tmp)))
+  RightSection l q e -> withScopedTmpName' l $ \tmp ->
+      return $ Lambda l [PVar l tmp] (InfixApp l (Var l (UnQual l tmp)) q e)
+  _                  -> return $ ex
+  where
+   t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
+   t = transformBiM
 
 desugarModule :: Module l -> Desugar (Module l)
 desugarModule m = case m of
@@ -87,15 +108,6 @@ desugarGuardedRhs g = case g of
 
 desugarExp :: Exp l -> Desugar (Exp l)
 desugarExp ex = case ex of
-  -- (a `f`) => (\b -> f a b)
-  LeftSection l e q -> desugarExp =<<
-    (withScopedTmpName l $ \v ->
-      return $ Lambda l [PVar l v] (InfixApp l e q (Var l (UnQual l v))))
-  -- (`f` b) => (\a -> f a b)
-  RightSection l q e -> desugarExp =<<
-    (withScopedTmpName l $ \tmp ->
-      return (Lambda l [PVar l tmp] (InfixApp l (Var l (UnQual l tmp)) q e)))
-
   -- Check for TupleCon
   Var _ q -> return $ desugarVar ex q
   Con _ q -> return $ desugarVar ex q
@@ -142,6 +154,7 @@ desugarExp ex = case ex of
   RightArrHighApp{} -> return ex
   CorePragma{} -> return ex
   SCCPragma{} -> return ex
+  _ -> return ex
 
 -- | Convert do notation into binds and thens.
 desugarStmt' :: Maybe (Exp l) -> (Stmt l) -> Maybe (Exp l)

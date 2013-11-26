@@ -57,7 +57,7 @@ withScopedTmpName' l f = do
 
 -- | Top level, desugar a whole module possibly returning errors
 desugar :: (Data l, Typeable l) => Module l -> IO (Either CompileError (Module l))
-desugar md = runDesugar (desugarSection md >>= desugarModule)
+desugar md = runDesugar (desugarSection md >>= return . desugarPatField >>= desugarModule)
 
 -- | Desugaring
 
@@ -71,6 +71,16 @@ desugarSection = t $ \ex -> case ex of
   where
    t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
    t = transformBiM
+
+desugarPatField :: forall l. (Data l, Typeable l) => Module l -> Module l
+desugarPatField = t $ \pf -> case pf of
+  -- {a} => {a=a} for R{a}
+  PFieldPun l n -> let dn = desugarName n in PFieldPat l (UnQual l dn) (PVar l dn)
+  _             -> pf
+  where
+   t :: (Data l, Typeable l) => (PatField l -> PatField l) -> Module l -> Module l
+   t = transformBi
+
 
 desugarModule :: Module l -> Desugar (Module l)
 desugarModule m = case m of
@@ -196,7 +206,7 @@ desugarPat pt = case pt of
   PApp l q ps -> PApp l (desugarQName q) <$> mapM desugarPat ps
   PTuple l b ps -> PTuple l b <$> mapM desugarPat ps
   PList l ps -> PList l <$> mapM desugarPat ps
-  PRec l q pfs -> PRec l (desugarQName q) <$> mapM desugarPatField pfs
+  PRec l q pfs -> return $ PRec l (desugarQName q) pfs
   PAsPat l n p -> PAsPat l (desugarName n) <$> desugarPat p
   PWildCard{} -> return pt
   PIrrPat l p -> PIrrPat l <$> desugarPat p
@@ -204,14 +214,6 @@ desugarPat pt = case pt of
   PViewPat l e p -> PViewPat l <$> desugarExp e <*> desugarPat p
   PBangPat l p -> PBangPat l <$> desugarPat p
   _ -> return pt
-
-desugarPatField :: PatField l -> Desugar (PatField l)
-desugarPatField pf = case pf of
-  -- {a} => {a=a} for R{a}
-  PFieldPun l n -> let dn = desugarName n in desugarPatField $ PFieldPat l (UnQual l dn) (PVar l dn)
-
-  PFieldPat l q p -> PFieldPat l (desugarQName q) <$> desugarPat p
-  PFieldWildcard l -> return $ PFieldWildcard l
 
 desugarGuardedAlts :: GuardedAlts l -> Desugar (GuardedAlts l)
 desugarGuardedAlts g = case g of

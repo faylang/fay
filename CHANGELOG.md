@@ -2,7 +2,7 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
-**Note: 0.18.0.1 added source mappings returend by `Fay:compileFile` and friends meaning it should have been a major bump. Sorry about this!**
+**Note: 0.18.0.1 added source mappings returned by `Fay:compileFile` and friends meaning it should have been a major bump. Sorry about this!**
 
 ### 0.18.1.2 (2013-11-26)
 

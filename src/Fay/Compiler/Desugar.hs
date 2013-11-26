@@ -41,14 +41,8 @@ runDesugar m = runErrorT (runReaderT (unDesugar m) (DesugarReader 0))
 
 -- | Generate a temporary, SCOPED name for testing conditions and
 -- such. We don't have name tracking yet, so instead we use this.
-withScopedTmpName :: l -> (Name l -> Desugar a) -> Desugar a
+withScopedTmpName :: (Data l, Typeable l) => l -> (Name l -> Desugar a) -> Desugar a
 withScopedTmpName l f = do
-  n <- asks readerNameDepth
-  local (\r -> DesugarReader $ readerNameDepth r + 1) $
-   f $ Ident l $ "$gen" ++ show n
-
-withScopedTmpName' :: (Data l, Typeable l) => l -> (Name l -> Desugar a) -> Desugar a
-withScopedTmpName' l f = do
   n <- asks readerNameDepth
   local (\r -> DesugarReader $ readerNameDepth r + 1) $
    f $ Ident l $ "$gen" ++ show n
@@ -63,9 +57,9 @@ desugar md = runDesugar (desugarSection md >>= return . desugarPatField >>= desu
 
 desugarSection :: forall l. (Data l, Typeable l) => Module l -> Desugar (Module l)
 desugarSection = t $ \ex -> case ex of
-  LeftSection  l e q -> withScopedTmpName' l $ \tmp ->
+  LeftSection  l e q -> withScopedTmpName l $ \tmp ->
       return $ Lambda l [PVar l tmp] (InfixApp l e q (Var l (UnQual l tmp)))
-  RightSection l q e -> withScopedTmpName' l $ \tmp ->
+  RightSection l q e -> withScopedTmpName l $ \tmp ->
       return $ Lambda l [PVar l tmp] (InfixApp l (Var l (UnQual l tmp)) q e)
   _                  -> return $ ex
   where
@@ -75,7 +69,7 @@ desugarSection = t $ \ex -> case ex of
 desugarPatField :: forall l. (Data l, Typeable l) => Module l -> Module l
 desugarPatField = t $ \pf -> case pf of
   -- {a} => {a=a} for R{a}
-  PFieldPun l n -> let dn = desugarName n in PFieldPat l (UnQual l dn) (PVar l dn)
+  PFieldPun l n -> PFieldPat l (UnQual l n) (PVar l n)
   _             -> pf
   where
    t :: (Data l, Typeable l) => (PatField l -> PatField l) -> Module l -> Module l
@@ -104,8 +98,8 @@ desugarBinds bs = case bs of
 
 desugarMatch :: Match l -> Desugar (Match l)
 desugarMatch m = case m of
-  Match l n ps rhs mb -> Match l (desugarName n) <$> mapM desugarPat ps <*> desugarRhs rhs <*> mmap desugarBinds mb
-  InfixMatch l p n ps r mb -> InfixMatch l <$> desugarPat p <*> return (desugarName n) <*> mapM desugarPat ps <*> desugarRhs r <*> mmap desugarBinds mb
+  Match l n ps rhs mb -> Match l n <$> mapM desugarPat ps <*> desugarRhs rhs <*> mmap desugarBinds mb
+  InfixMatch l p n ps r mb -> InfixMatch l <$> desugarPat p <*> return n <*> mapM desugarPat ps <*> desugarRhs r <*> mmap desugarBinds mb
 
 desugarRhs :: Rhs l -> Desugar (Rhs l)
 desugarRhs r = case r of
@@ -124,7 +118,7 @@ desugarExp ex = case ex of
 
   IPVar{} -> return ex
   Lit{} -> return ex
-  InfixApp l e1 qop e2 -> InfixApp l <$> desugarExp e1 <*> return (desugarQOp qop) <*> desugarExp e2
+  InfixApp l e1 qop e2 -> InfixApp l <$> desugarExp e1 <*> return qop <*> desugarExp e2
   App l e1 e2 -> App l <$> desugarExp e1 <*> desugarExp e2
   NegApp l e -> NegApp l <$> desugarExp e
   Lambda l ps e -> Lambda l <$> mapM desugarPat ps <*> desugarExp e
@@ -137,7 +131,7 @@ desugarExp ex = case ex of
   TupleSection l _ mes -> desugarTupleSec l =<< (mapM (mmap desugarExp) mes)
   List l es -> List l <$> mapM desugarExp es
   Paren l e -> Paren l <$> desugarExp e
-  RecConstr l q f -> RecConstr l (desugarQName q) <$> mapM desugarFieldUpdate f
+  RecConstr l q f -> RecConstr l q <$> mapM desugarFieldUpdate f
   RecUpdate l e f -> RecUpdate l <$> desugarExp e <*> mapM desugarFieldUpdate f
   e@(EnumFrom l e1) -> checkEnum e >> (EnumFrom l <$> desugarExp e1)
   e@(EnumFromTo l e1 e2) -> checkEnum e >> (EnumFromTo l <$> desugarExp e1 <*> desugarExp e2)
@@ -145,11 +139,11 @@ desugarExp ex = case ex of
   e@(EnumFromThenTo l e1 e2 e3) -> checkEnum e >> (EnumFromThenTo l <$> desugarExp e1 <*> desugarExp e2 <*> desugarExp e3)
   ListComp l e qs -> ListComp l <$> desugarExp e <*> mapM desugarQualStmt qs
   ParComp l e qqs -> ParComp l <$> desugarExp e <*> mapM (mapM desugarQualStmt) qqs
-  ExpTypeSig l e t -> ExpTypeSig l <$> desugarExp e <*> return (desugarType t)
-  VarQuote l q -> return $ VarQuote l (desugarQName q)
-  TypQuote l q -> return $ TypQuote l (desugarQName q)
-  BracketExp l b -> return $ BracketExp l (desugarBracket b)
-  SpliceExp l s -> return $ SpliceExp l (desugarSplice s)
+  ExpTypeSig l e t -> ExpTypeSig l <$> desugarExp e <*> return t
+  VarQuote l q -> return $ VarQuote l q
+  TypQuote l q -> return $ TypQuote l q
+  BracketExp l b -> return $ BracketExp l b
+  SpliceExp l s -> return $ SpliceExp l s
   QuasiQuote{} -> return ex
   XTag{} -> return ex
   XETag{} -> return ex
@@ -198,19 +192,19 @@ desugarPat pt = case pt of
   -- (p) => p
   PParen _ p -> desugarPat p
 
-  PVar l n -> return $ PVar l (desugarName n)
+  PVar l n -> return $ PVar l n
   PLit {} -> return pt
   PNeg l p -> PNeg l <$> desugarPat p
   PNPlusK{} -> return pt
-  PInfixApp l p1 q p2 -> PInfixApp l <$> desugarPat p1 <*> return (desugarQName q) <*> desugarPat p2
-  PApp l q ps -> PApp l (desugarQName q) <$> mapM desugarPat ps
+  PInfixApp l p1 q p2 -> PInfixApp l <$> desugarPat p1 <*> return q <*> desugarPat p2
+  PApp l q ps -> PApp l q <$> mapM desugarPat ps
   PTuple l b ps -> PTuple l b <$> mapM desugarPat ps
   PList l ps -> PList l <$> mapM desugarPat ps
-  PRec l q pfs -> return $ PRec l (desugarQName q) pfs
-  PAsPat l n p -> PAsPat l (desugarName n) <$> desugarPat p
+  PRec l q pfs -> return $ PRec l q pfs
+  PAsPat l n p -> PAsPat l n <$> desugarPat p
   PWildCard{} -> return pt
   PIrrPat l p -> PIrrPat l <$> desugarPat p
-  PatTypeSig l p t -> PatTypeSig l <$> desugarPat p <*> return (desugarType t)
+  PatTypeSig l p t -> PatTypeSig l <$> desugarPat p <*> return t
   PViewPat l e p -> PViewPat l <$> desugarExp e <*> desugarPat p
   PBangPat l p -> PBangPat l <$> desugarPat p
   _ -> return pt
@@ -220,14 +214,6 @@ desugarGuardedAlts g = case g of
   UnGuardedAlt l e -> UnGuardedAlt l <$> desugarExp e
   GuardedAlts l gas -> GuardedAlts l <$> mapM desugarGuardedAlt gas
 
-desugarQOp :: QOp l -> QOp l
-desugarQOp = id
-
-desugarType :: Type l -> Type l
-desugarType = id
-
-desugarQName :: QName l -> QName l
-desugarQName = id
 
 desugarQualStmt :: QualStmt l -> Desugar (QualStmt l)
 desugarQualStmt q = case q of
@@ -243,16 +229,10 @@ desugarAlt (Alt l p ga mb) = Alt l <$> desugarPat p <*> desugarGuardedAlts ga <*
 
 desugarFieldUpdate :: FieldUpdate l -> Desugar (FieldUpdate l)
 desugarFieldUpdate f = case f of
-  FieldUpdate l q e -> FieldUpdate l (desugarQName q) <$> desugarExp e
-  FieldPun l n -> let dn = UnQual l (desugarName n)
+  FieldUpdate l q e -> FieldUpdate l q <$> desugarExp e
+  FieldPun l n -> let dn = UnQual l n
                   in desugarFieldUpdate $ FieldUpdate l dn (Var l dn)
   FieldWildcard{} -> return f
-
-desugarBracket :: Bracket l -> Bracket l
-desugarBracket = id
-
-desugarSplice :: Splice l -> Splice l
-desugarSplice = id
 
 desugarGuardedAlt :: GuardedAlt l -> Desugar (GuardedAlt l)
 desugarGuardedAlt (GuardedAlt l ss e) = GuardedAlt l <$> mapM desugarStmt ss <*> desugarExp e
@@ -263,9 +243,6 @@ desugarStmt s = case s of
   Qualifier l e -> Qualifier l <$> desugarExp e
   LetStmt l b -> LetStmt l <$> desugarBinds b
   RecStmt l ss -> RecStmt l <$> mapM desugarStmt ss
-
-desugarName :: Name a -> Name a
-desugarName = id
 
 desugarVar :: Exp l -> QName l -> Exp l
 desugarVar e q = case q of

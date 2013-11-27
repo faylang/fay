@@ -54,9 +54,10 @@ desugar :: (Data l, Typeable l) => Module l -> IO (Either CompileError (Module l
 desugar md = runDesugar $
       checkEnum md
   >>  desugarSection md
-  >>= return . desugarPatField
   >>= return . desugarTupleCon
-  >>= return . desugarPParen
+  >>= return . desugarPatParen
+  >>= return . desugarFieldPun
+  >>= return . desugarPatFieldPun
   >>= desugarDo
   >>= desugarTupleSection
   >>= desugarModule
@@ -73,16 +74,6 @@ desugarSection = t $ \ex -> case ex of
   where
     t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
     t = transformBiM
-
-desugarPatField :: forall l. (Data l, Typeable l) => Module l -> Module l
-desugarPatField = t $ \pf -> case pf of
-  -- {a} => {a=a} for R{a}
-  PFieldPun l n -> PFieldPat l (UnQual l n) (PVar l n)
-  _             -> pf
-  where
-    t :: (Data l, Typeable l) => (PatField l -> PatField l) -> Module l -> Module l
-    t = transformBi
-
 
 --  Do _ stmts -> maybe (throwError EmptyDoBlock) return =<< (mmap desugarExp $ foldl desugarStmt' Nothing (reverse stmts))
 desugarDo :: forall l. (Data l, Typeable l) => Module l -> Desugar (Module l)
@@ -167,12 +158,29 @@ desugarTupleSection = t $ \ex -> case ex of
       return (rn, e' : re)
 
 -- (p) => p for patterns
-desugarPParen :: forall l. (Data l, Typeable l) => Module l -> Module l
-desugarPParen = t $ \pt -> case pt of
+desugarPatParen :: forall l. (Data l, Typeable l) => Module l -> Module l
+desugarPatParen = t $ \pt -> case pt of
   PParen _ p -> p
   _ -> pt
   where
     t :: (Data l, Typeable l) => (Pat l -> Pat l) -> Module l -> Module l
+    t = transformBi
+
+desugarFieldPun :: forall l. (Data l, Typeable l) => Module l -> Module l
+desugarFieldPun = t $ \f -> case f of
+  FieldPun l n -> let dn = UnQual l n in FieldUpdate l dn (Var l dn)
+  _ -> f
+  where
+    t :: (Data l, Typeable l) => (FieldUpdate l -> FieldUpdate l) -> Module l -> Module l
+    t = transformBi
+
+desugarPatFieldPun :: forall l. (Data l, Typeable l) => Module l -> Module l
+desugarPatFieldPun = t $ \pf -> case pf of
+  -- {a} => {a=a} for R{a}
+  PFieldPun l n -> PFieldPat l (UnQual l n) (PVar l n)
+  _             -> pf
+  where
+    t :: (Data l, Typeable l) => (PatField l -> PatField l) -> Module l -> Module l
     t = transformBi
 
 -- | We only have Enum instance for Int, but GHC hard codes [x..y]
@@ -258,8 +266,6 @@ desugarExp ex = case ex of
   Tuple l b es -> Tuple l b <$> mapM desugarExp es
   List l es -> List l <$> mapM desugarExp es
   Paren l e -> Paren l <$> desugarExp e
-  RecConstr l q f -> RecConstr l q <$> mapM desugarFieldUpdate f
-  RecUpdate l e f -> RecUpdate l <$> desugarExp e <*> mapM desugarFieldUpdate f
   ListComp l e qs -> ListComp l <$> desugarExp e <*> mapM desugarQualStmt qs
   ParComp l e qqs -> ParComp l <$> desugarExp e <*> mapM (mapM desugarQualStmt) qqs
   ExpTypeSig l e t -> ExpTypeSig l <$> desugarExp e <*> return t
@@ -319,13 +325,6 @@ desugarQualStmt q = case q of
 
 desugarAlt :: Alt l -> Desugar (Alt l)
 desugarAlt (Alt l p ga mb) = Alt l <$> desugarPat p <*> desugarGuardedAlts ga <*> mmap desugarBinds mb
-
-desugarFieldUpdate :: FieldUpdate l -> Desugar (FieldUpdate l)
-desugarFieldUpdate f = case f of
-  FieldUpdate l q e -> FieldUpdate l q <$> desugarExp e
-  FieldPun l n -> let dn = UnQual l n
-                  in desugarFieldUpdate $ FieldUpdate l dn (Var l dn)
-  FieldWildcard{} -> return f
 
 desugarGuardedAlt :: GuardedAlt l -> Desugar (GuardedAlt l)
 desugarGuardedAlt (GuardedAlt l ss e) = GuardedAlt l <$> mapM desugarStmt ss <*> desugarExp e

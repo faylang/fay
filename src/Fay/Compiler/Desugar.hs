@@ -51,7 +51,7 @@ withScopedTmpName l f = do
 
 -- | Top level, desugar a whole module possibly returning errors
 desugar :: (Data l, Typeable l) => Module l -> IO (Either CompileError (Module l))
-desugar md = runDesugar (desugarSection md >>= return . desugarPatField >>= desugarModule)
+desugar md = runDesugar (desugarSection md >>= return . desugarPatField >>= desugarDo >>= desugarModule)
 
 -- | Desugaring
 
@@ -63,8 +63,8 @@ desugarSection = t $ \ex -> case ex of
       return $ Lambda l [PVar l tmp] (InfixApp l (Var l (UnQual l tmp)) q e)
   _                  -> return $ ex
   where
-   t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
-   t = transformBiM
+    t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
+    t = transformBiM
 
 desugarPatField :: forall l. (Data l, Typeable l) => Module l -> Module l
 desugarPatField = t $ \pf -> case pf of
@@ -72,8 +72,45 @@ desugarPatField = t $ \pf -> case pf of
   PFieldPun l n -> PFieldPat l (UnQual l n) (PVar l n)
   _             -> pf
   where
-   t :: (Data l, Typeable l) => (PatField l -> PatField l) -> Module l -> Module l
-   t = transformBi
+    t :: (Data l, Typeable l) => (PatField l -> PatField l) -> Module l -> Module l
+    t = transformBi
+
+
+--  Do _ stmts -> maybe (throwError EmptyDoBlock) return =<< (mmap desugarExp $ foldl desugarStmt' Nothing (reverse stmts))
+desugarDo :: forall l. (Data l, Typeable l) => Module l -> Desugar (Module l)
+desugarDo = t $ \ex -> case ex of
+  Do _ stmts -> maybe (throwError EmptyDoBlock) return $ foldl desugarStmt' Nothing (reverse stmts)
+  _ -> return ex
+  where
+    t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
+    t = transformBiM
+
+-- | Convert do notation into binds and thens.
+desugarStmt' :: Maybe (Exp l) -> (Stmt l) -> Maybe (Exp l)
+desugarStmt' inner stmt =
+  maybe initStmt subsequentStmt inner
+  where
+    initStmt = case stmt of
+      Qualifier _ exp -> Just exp
+      LetStmt{}     -> error "UnsupportedLet"
+      _             -> error "InvalidDoBlock"
+
+    subsequentStmt inner' = case stmt of
+      Generator loc pat exp -> desugarGenerator loc pat inner' exp
+      Qualifier s exp -> Just $ InfixApp s exp
+                                         (QVarOp s $ UnQual s $ Symbol s ">>")
+                                         inner'
+      LetStmt _ (BDecls s binds) -> Just $ Let s (BDecls s binds) inner'
+      LetStmt _ _ -> error "UnsupportedLet"
+      RecStmt{} -> error "UnsupportedRecursiveDo"
+
+    desugarGenerator :: l -> Pat l -> Exp l -> Exp l -> Maybe (Exp l)
+    desugarGenerator s pat inner' exp =
+      Just $ InfixApp s
+                      exp
+                      (QVarOp s $ UnQual s $ Symbol s ">>=")
+                      (Lambda s [pat] (inner'))
+
 
 
 desugarModule :: Module l -> Desugar (Module l)
@@ -125,7 +162,6 @@ desugarExp ex = case ex of
   Let l b e -> Let l <$> desugarBinds b <*> desugarExp e
   If l e1 e2 e3 -> If l <$> desugarExp e1 <*> desugarExp e2 <*> desugarExp e3
   Case l e as -> Case l <$> desugarExp e <*> mapM desugarAlt as
-  Do _ stmts -> maybe (throwError EmptyDoBlock) return =<< (mmap desugarExp $ foldl desugarStmt' Nothing (reverse stmts))
   MDo l ss -> MDo l <$> mapM desugarStmt ss
   Tuple l b es -> Tuple l b <$> mapM desugarExp es
   TupleSection l _ mes -> desugarTupleSec l =<< (mapM (mmap desugarExp) mes)
@@ -159,33 +195,6 @@ desugarExp ex = case ex of
   CorePragma{} -> return ex
   SCCPragma{} -> return ex
   _ -> return ex
-
--- | Convert do notation into binds and thens.
-desugarStmt' :: Maybe (Exp l) -> (Stmt l) -> Maybe (Exp l)
-desugarStmt' inner stmt =
-  maybe initStmt subsequentStmt inner
-  where
-    initStmt = case stmt of
-      Qualifier _ exp -> Just exp
-      LetStmt{}     -> error "UnsupportedLet"
-      _             -> error "InvalidDoBlock"
-
-    subsequentStmt inner' = case stmt of
-      Generator loc pat exp -> desugarGenerator loc pat inner' exp
-      Qualifier s exp -> Just $ InfixApp s exp
-                                         (QVarOp s $ UnQual s $ Symbol s ">>")
-                                         inner'
-      LetStmt _ (BDecls s binds) -> Just $ Let s (BDecls s binds) inner'
-      LetStmt _ _ -> error "UnsupportedLet"
-      RecStmt{} -> error "UnsupportedRecursiveDo"
-
-    desugarGenerator :: l -> Pat l -> Exp l -> Exp l -> Maybe (Exp l)
-    desugarGenerator s pat inner' exp =
-      Just $ InfixApp s
-                      exp
-                      (QVarOp s $ UnQual s $ Symbol s ">>=")
-                      (Lambda s [pat] (inner'))
-
 
 desugarPat :: Pat l -> Desugar (Pat l)
 desugarPat pt = case pt of

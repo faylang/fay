@@ -51,7 +51,12 @@ withScopedTmpName l f = do
 
 -- | Top level, desugar a whole module possibly returning errors
 desugar :: (Data l, Typeable l) => Module l -> IO (Either CompileError (Module l))
-desugar md = runDesugar (desugarSection md >>= return . desugarPatField >>= desugarDo >>= desugarModule)
+desugar md = runDesugar $
+      desugarSection md
+  >>= return . desugarPatField
+  >>= desugarDo
+  >>= return . desugarTupleCon
+  >>= desugarModule
 
 -- | Desugaring
 
@@ -111,6 +116,29 @@ desugarStmt' inner stmt =
                       (QVarOp s $ UnQual s $ Symbol s ">>=")
                       (Lambda s [pat] (inner'))
 
+-- | (,)  => \x y   -> (x,y)
+--   (,,) => \x y z -> (x,y,z)
+-- etc
+desugarTupleCon :: forall l. (Data l, Typeable l) => Module l -> Module l
+desugarTupleCon = t $ \ex -> case ex of
+  Var _ (Special _ t@TupleCon{}) -> fromTupleCon ex t
+  Con _ (Special _ t@TupleCon{}) -> fromTupleCon ex t
+  _       -> ex
+  where
+    t :: (Data l, Typeable l) => (Exp l -> Exp l) -> Module l -> Module l
+    t = transformBi
+
+    fromTupleCon :: Exp l -> SpecialCon l -> Exp l
+    fromTupleCon e s = fromMaybe e $ case s of
+      TupleCon l b n -> Just $ Lambda l params body
+        where
+          -- It doesn't matter if these variable names shadow anything since
+          -- this lambda won't have inner scopes.
+          names  = take n $ map (Ident l . ("$gen" ++) . show) [(1::Int)..]
+          params = PVar l <$> names
+          body   = Tuple l b (Var l . UnQual l <$> names)
+      _ -> Nothing
+
 
 
 desugarModule :: Module l -> Desugar (Module l)
@@ -149,10 +177,6 @@ desugarGuardedRhs g = case g of
 
 desugarExp :: Exp l -> Desugar (Exp l)
 desugarExp ex = case ex of
-  -- Check for TupleCon
-  Var _ q -> return $ desugarVar ex q
-  Con _ q -> return $ desugarVar ex q
-
   IPVar{} -> return ex
   Lit{} -> return ex
   InfixApp l e1 qop e2 -> InfixApp l <$> desugarExp e1 <*> return qop <*> desugarExp e2
@@ -253,22 +277,6 @@ desugarStmt s = case s of
   LetStmt l b -> LetStmt l <$> desugarBinds b
   RecStmt l ss -> RecStmt l <$> mapM desugarStmt ss
 
-desugarVar :: Exp l -> QName l -> Exp l
-desugarVar e q = case q of
-  Special _ t@TupleCon{} -> fromMaybe e $ desugarTupleCon t
-  _ -> e
-
--- | (,) => \x y -> (x,y)
-desugarTupleCon :: SpecialCon l -> Maybe (Exp l)
-desugarTupleCon s = case s of
-  TupleCon l b n -> Just $ Lambda l params body
-    where
-      -- It doesn't matter if these variable names shadow anything since
-      -- this lambda won't have inner scopes.
-      names  = take n $ map (Ident l . ("$gen" ++) . show) [(1::Int)..]
-      params = PVar l <$> names
-      body   = Tuple l b (Var l . UnQual l <$> names)
-  _ -> Nothing
 
 desugarTupleSec :: l -> [Maybe (Exp l)] -> Desugar (Exp l)
 desugarTupleSec l xs = do

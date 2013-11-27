@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 module Fay.Compiler.Desugar
   (desugar
@@ -14,7 +14,7 @@ import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Reader
 import           Data.Data                       (Data)
-import           Data.Generics.Uniplate.Data
+import qualified Data.Generics.Uniplate.Data     as U
 import           Data.Maybe
 import           Data.Typeable                   (Typeable)
 import           Language.Haskell.Exts.Annotated hiding (binds, loc)
@@ -63,24 +63,18 @@ desugar md = runDesugar $
 
 -- | Desugaring
 
-desugarSection :: forall l. (Data l, Typeable l) => Module l -> Desugar (Module l)
-desugarSection = t $ \ex -> case ex of
+desugarSection :: (Data l, Typeable l) => Module l -> Desugar (Module l)
+desugarSection = transformBiM $ \ex -> case ex of
   LeftSection  l e q -> withScopedTmpName l $ \tmp ->
       return $ Lambda l [PVar l tmp] (InfixApp l e q (Var l (UnQual l tmp)))
   RightSection l q e -> withScopedTmpName l $ \tmp ->
       return $ Lambda l [PVar l tmp] (InfixApp l (Var l (UnQual l tmp)) q e)
   _ -> return ex
-  where
-    t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
-    t = transformBiM
 
-desugarDo :: forall l. (Data l, Typeable l) => Module l -> Desugar (Module l)
-desugarDo = t $ \ex -> case ex of
+desugarDo :: (Data l, Typeable l) => Module l -> Desugar (Module l)
+desugarDo = transformBiM $ \ex -> case ex of
   Do _ stmts -> maybe (throwError EmptyDoBlock) return $ foldl desugarStmt' Nothing (reverse stmts)
   _ -> return ex
-  where
-    t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
-    t = transformBiM
 
 -- | Convert do notation into binds and thens.
 desugarStmt' :: Maybe (Exp l) -> (Stmt l) -> Maybe (Exp l)
@@ -111,15 +105,12 @@ desugarStmt' inner stmt =
 -- | (,)  => \x y   -> (x,y)
 --   (,,) => \x y z -> (x,y,z)
 -- etc
-desugarTupleCon :: forall l. (Data l, Typeable l) => Module l -> Module l
-desugarTupleCon = t $ \ex -> case ex of
+desugarTupleCon :: (Data l, Typeable l) => Module l -> Module l
+desugarTupleCon = transformBi $ \ex -> case ex of
   Var _ (Special _ t@TupleCon{}) -> fromTupleCon ex t
   Con _ (Special _ t@TupleCon{}) -> fromTupleCon ex t
   _ -> ex
   where
-    t :: (Data l, Typeable l) => (Exp l -> Exp l) -> Module l -> Module l
-    t = transformBi
-
     fromTupleCon :: Exp l -> SpecialCon l -> Exp l
     fromTupleCon e s = fromMaybe e $ case s of
       TupleCon l b n -> Just $ Lambda l params body
@@ -131,16 +122,13 @@ desugarTupleCon = t $ \ex -> case ex of
           body   = Tuple l b (Var l . UnQual l <$> names)
       _ -> Nothing
 
-desugarTupleSection :: forall l. (Data l, Typeable l) => Module l -> Desugar (Module l)
-desugarTupleSection = t $ \ex -> case ex of
+desugarTupleSection :: (Data l, Typeable l) => Module l -> Desugar (Module l)
+desugarTupleSection = transformBiM $ \ex -> case ex of
   TupleSection l _ mes -> do
     (names, lst) <- genSlotNames l mes (varNames l)
     return $ Lambda l (map (PVar l) names) (Tuple l Unboxed lst)
   _ -> return ex
   where
-    t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
-    t = transformBiM
-
     varNames :: l -> [Name l]
     varNames l = map (\i -> Ident l ("$gen_" ++ show i)) [0::Int ..]
 
@@ -155,47 +143,35 @@ desugarTupleSection = t $ \ex -> case ex of
       return (rn, e : re)
 
 -- (p) => p for patterns
-desugarPatParen :: forall l. (Data l, Typeable l) => Module l -> Module l
-desugarPatParen = t $ \pt -> case pt of
+desugarPatParen :: (Data l, Typeable l) => Module l -> Module l
+desugarPatParen = transformBi $ \pt -> case pt of
   PParen _ p -> p
   _ -> pt
-  where
-    t :: (Data l, Typeable l) => (Pat l -> Pat l) -> Module l -> Module l
-    t = transformBi
 
-desugarFieldPun :: forall l. (Data l, Typeable l) => Module l -> Module l
-desugarFieldPun = t $ \f -> case f of
+desugarFieldPun :: (Data l, Typeable l) => Module l -> Module l
+desugarFieldPun = transformBi $ \f -> case f of
   FieldPun l n -> let dn = UnQual l n in FieldUpdate l dn (Var l dn)
   _ -> f
-  where
-    t :: (Data l, Typeable l) => (FieldUpdate l -> FieldUpdate l) -> Module l -> Module l
-    t = transformBi
 
-desugarPatFieldPun :: forall l. (Data l, Typeable l) => Module l -> Module l
-desugarPatFieldPun = t $ \pf -> case pf of
+desugarPatFieldPun :: (Data l, Typeable l) => Module l -> Module l
+desugarPatFieldPun = transformBi $ \pf -> case pf of
   -- {a} => {a=a} for R{a}
   PFieldPun l n -> PFieldPat l (UnQual l n) (PVar l n)
   _             -> pf
-  where
-    t :: (Data l, Typeable l) => (PatField l -> PatField l) -> Module l -> Module l
-    t = transformBi
 
 -- | We only have Enum instance for Int, but GHC hard codes [x..y]
 -- syntax to GHC.Base.Enum instead of using our Enum class so we check
 -- for obviously incorrect usages and throw an error on them. This can
 -- only checks literals, but it helps a bit.
-checkEnum :: forall l . (Data l, Typeable l) => Module l -> Desugar ()
-checkEnum = mapM_ f . t
+checkEnum :: (Data l, Typeable l) => Module l -> Desugar ()
+checkEnum = mapM_ f . universeBi
   where
-    t :: (Data l, Typeable l) => Module l -> [Exp l]
-    t = universeBi
-
-    f = (\ex -> case ex of
+    f ex = case ex of
       e@(EnumFrom       _ e1)       -> checkIntOrUnknown e [e1]
       e@(EnumFromTo     _ e1 e2)    -> checkIntOrUnknown e [e1,e2]
       e@(EnumFromThen   _ e1 e2)    -> checkIntOrUnknown e [e1,e2]
       e@(EnumFromThenTo _ e1 e2 e3) -> checkIntOrUnknown e [e1,e2,e3]
-      _ -> return ())
+      _ -> return ()
 
     checkIntOrUnknown :: Exp l -> [Exp l] -> Desugar ()
     checkIntOrUnknown exp es = when (not $ any isIntOrUnknown es) (throwError . UnsupportedEnum $ unAnn exp)
@@ -211,3 +187,12 @@ checkEnum = mapM_ f . t
       EnumFromThen   {} -> False
       EnumFromThenTo {} -> False
       _                 -> True
+
+transformBi :: U.Biplate (from a) (to a) => (to a -> to a) -> from a -> from a
+transformBi = U.transformBi
+
+universeBi :: U.Biplate (from a) (to a) => from a -> [to a]
+universeBi = U.universeBi
+
+transformBiM :: (Monad m, U.Biplate (from a) (to a)) => (to a -> m (to a)) -> from a -> m (from a)
+transformBiM = U.transformBiM

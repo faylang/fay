@@ -60,7 +60,6 @@ desugar md = runDesugar $
   >>= return . desugarPatFieldPun
   >>= desugarDo
   >>= desugarTupleSection
-  >>= desugarModule
 
 -- | Desugaring
 
@@ -75,7 +74,6 @@ desugarSection = t $ \ex -> case ex of
     t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
     t = transformBiM
 
---  Do _ stmts -> maybe (throwError EmptyDoBlock) return =<< (mmap desugarExp $ foldl desugarStmt' Nothing (reverse stmts))
 desugarDo :: forall l. (Data l, Typeable l) => Module l -> Desugar (Module l)
 desugarDo = t $ \ex -> case ex of
   Do _ stmts -> maybe (throwError EmptyDoBlock) return $ foldl desugarStmt' Nothing (reverse stmts)
@@ -154,8 +152,7 @@ desugarTupleSection = t $ \ex -> case ex of
       return (head ns : rn, Var l (UnQual l (head ns)) : re)
     genSlotNames l (Just e : rest) ns = do
       (rn, re) <- genSlotNames l rest ns
-      e' <- desugarExp e
-      return (rn, e' : re)
+      return (rn, e : re)
 
 -- (p) => p for patterns
 desugarPatParen :: forall l. (Data l, Typeable l) => Module l -> Module l
@@ -214,124 +211,3 @@ checkEnum = mapM_ f . t
       EnumFromThen   {} -> False
       EnumFromThenTo {} -> False
       _                 -> True
-
-
-
-desugarModule :: Module l -> Desugar (Module l)
-desugarModule m = case m of
-  Module l h ps is decls -> Module l h ps is <$> mapM desugarDecl decls
-  _ -> return $ m
-
-desugarDecl :: Decl l -> Desugar (Decl l)
-desugarDecl d = case d of
-  FunBind l ms -> FunBind l <$> mapM desugarMatch ms
-  PatBind l p mt rhs mbs -> PatBind l <$> desugarPat p <*> return mt <*> desugarRhs rhs <*> mmap desugarBinds mbs
-
-  _ -> return d
-
-mmap :: (Applicative f) => (t -> f a) -> Maybe t -> f (Maybe a)
-mmap f mbs' = case mbs' of Just b -> return <$> f b; Nothing -> pure Nothing
-
-desugarBinds :: Binds l -> Desugar (Binds l)
-desugarBinds bs = case bs of
-  BDecls l ds -> BDecls l <$> mapM desugarDecl ds
-  _ -> return bs
-
-desugarMatch :: Match l -> Desugar (Match l)
-desugarMatch m = case m of
-  Match l n ps rhs mb -> Match l n <$> mapM desugarPat ps <*> desugarRhs rhs <*> mmap desugarBinds mb
-  InfixMatch l p n ps r mb -> InfixMatch l <$> desugarPat p <*> return n <*> mapM desugarPat ps <*> desugarRhs r <*> mmap desugarBinds mb
-
-desugarRhs :: Rhs l -> Desugar (Rhs l)
-desugarRhs r = case r of
-  UnGuardedRhs l e -> UnGuardedRhs l <$> desugarExp e
-  GuardedRhss l gs -> GuardedRhss l <$> mapM desugarGuardedRhs gs
-
-desugarGuardedRhs :: GuardedRhs l -> Desugar (GuardedRhs l)
-desugarGuardedRhs g = case g of
-  GuardedRhs l stmts exp -> GuardedRhs l <$> mapM desugarStmt stmts <*> desugarExp exp
-
-desugarExp :: Exp l -> Desugar (Exp l)
-desugarExp ex = case ex of
-  IPVar{} -> return ex
-  Lit{} -> return ex
-  InfixApp l e1 qop e2 -> InfixApp l <$> desugarExp e1 <*> return qop <*> desugarExp e2
-  App l e1 e2 -> App l <$> desugarExp e1 <*> desugarExp e2
-  NegApp l e -> NegApp l <$> desugarExp e
-  Lambda l ps e -> Lambda l <$> mapM desugarPat ps <*> desugarExp e
-  Let l b e -> Let l <$> desugarBinds b <*> desugarExp e
-  If l e1 e2 e3 -> If l <$> desugarExp e1 <*> desugarExp e2 <*> desugarExp e3
-  Case l e as -> Case l <$> desugarExp e <*> mapM desugarAlt as
-  MDo l ss -> MDo l <$> mapM desugarStmt ss
-  Tuple l b es -> Tuple l b <$> mapM desugarExp es
-  List l es -> List l <$> mapM desugarExp es
-  Paren l e -> Paren l <$> desugarExp e
-  ListComp l e qs -> ListComp l <$> desugarExp e <*> mapM desugarQualStmt qs
-  ParComp l e qqs -> ParComp l <$> desugarExp e <*> mapM (mapM desugarQualStmt) qqs
-  ExpTypeSig l e t -> ExpTypeSig l <$> desugarExp e <*> return t
-  VarQuote l q -> return $ VarQuote l q
-  TypQuote l q -> return $ TypQuote l q
-  BracketExp l b -> return $ BracketExp l b
-  SpliceExp l s -> return $ SpliceExp l s
-  QuasiQuote{} -> return ex
-  XTag{} -> return ex
-  XETag{} -> return ex
-  XPcdata{} -> return ex
-  XExpTag{} -> return ex
-  XChildTag{} -> return ex
-  GenPragma{} -> return ex
-  Proc l p e -> Proc l <$> desugarPat p <*> desugarExp e
-  LeftArrApp{} -> return ex
-  RightArrApp{} -> return ex
-  LeftArrHighApp{} -> return ex
-  RightArrHighApp{} -> return ex
-  CorePragma{} -> return ex
-  SCCPragma{} -> return ex
-  _ -> return ex
-
-desugarPat :: Pat l -> Desugar (Pat l)
-desugarPat pt = case pt of
-  PVar l n -> return $ PVar l n
-  PLit {} -> return pt
-  PNeg l p -> PNeg l <$> desugarPat p
-  PNPlusK{} -> return pt
-  PInfixApp l p1 q p2 -> PInfixApp l <$> desugarPat p1 <*> return q <*> desugarPat p2
-  PApp l q ps -> PApp l q <$> mapM desugarPat ps
-  PTuple l b ps -> PTuple l b <$> mapM desugarPat ps
-  PList l ps -> PList l <$> mapM desugarPat ps
-  PRec l q pfs -> return $ PRec l q pfs
-  PAsPat l n p -> PAsPat l n <$> desugarPat p
-  PWildCard{} -> return pt
-  PIrrPat l p -> PIrrPat l <$> desugarPat p
-  PatTypeSig l p t -> PatTypeSig l <$> desugarPat p <*> return t
-  PViewPat l e p -> PViewPat l <$> desugarExp e <*> desugarPat p
-  PBangPat l p -> PBangPat l <$> desugarPat p
-  _ -> return pt
-
-desugarGuardedAlts :: GuardedAlts l -> Desugar (GuardedAlts l)
-desugarGuardedAlts g = case g of
-  UnGuardedAlt l e -> UnGuardedAlt l <$> desugarExp e
-  GuardedAlts l gas -> GuardedAlts l <$> mapM desugarGuardedAlt gas
-
-
-desugarQualStmt :: QualStmt l -> Desugar (QualStmt l)
-desugarQualStmt q = case q of
-  QualStmt l s -> QualStmt l <$> desugarStmt s
-  ThenTrans l e -> ThenTrans l <$> desugarExp e
-  ThenBy l e1 e2 -> ThenBy l <$> desugarExp e1 <*> desugarExp e2
-  GroupBy l e -> GroupBy l <$> desugarExp e
-  GroupUsing l e -> GroupUsing l <$> desugarExp e
-  GroupByUsing l e1 e2 -> GroupByUsing l <$> desugarExp e1 <*> desugarExp e2
-
-desugarAlt :: Alt l -> Desugar (Alt l)
-desugarAlt (Alt l p ga mb) = Alt l <$> desugarPat p <*> desugarGuardedAlts ga <*> mmap desugarBinds mb
-
-desugarGuardedAlt :: GuardedAlt l -> Desugar (GuardedAlt l)
-desugarGuardedAlt (GuardedAlt l ss e) = GuardedAlt l <$> mapM desugarStmt ss <*> desugarExp e
-
-desugarStmt :: Stmt l -> Desugar (Stmt l)
-desugarStmt s = case s of
-  Generator l p e -> Generator l <$> desugarPat p <*> desugarExp e
-  Qualifier l e -> Qualifier l <$> desugarExp e
-  LetStmt l b -> LetStmt l <$> desugarBinds b
-  RecStmt l ss -> RecStmt l <$> mapM desugarStmt ss

@@ -54,8 +54,9 @@ desugar :: (Data l, Typeable l) => Module l -> IO (Either CompileError (Module l
 desugar md = runDesugar $
       desugarSection md
   >>= return . desugarPatField
-  >>= desugarDo
   >>= return . desugarTupleCon
+  >>= desugarDo
+  >>= desugarTupleSection
   >>= desugarModule
 
 -- | Desugaring
@@ -66,7 +67,7 @@ desugarSection = t $ \ex -> case ex of
       return $ Lambda l [PVar l tmp] (InfixApp l e q (Var l (UnQual l tmp)))
   RightSection l q e -> withScopedTmpName l $ \tmp ->
       return $ Lambda l [PVar l tmp] (InfixApp l (Var l (UnQual l tmp)) q e)
-  _                  -> return $ ex
+  _ -> return ex
   where
     t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
     t = transformBiM
@@ -123,7 +124,7 @@ desugarTupleCon :: forall l. (Data l, Typeable l) => Module l -> Module l
 desugarTupleCon = t $ \ex -> case ex of
   Var _ (Special _ t@TupleCon{}) -> fromTupleCon ex t
   Con _ (Special _ t@TupleCon{}) -> fromTupleCon ex t
-  _       -> ex
+  _ -> ex
   where
     t :: (Data l, Typeable l) => (Exp l -> Exp l) -> Module l -> Module l
     t = transformBi
@@ -138,6 +139,31 @@ desugarTupleCon = t $ \ex -> case ex of
           params = PVar l <$> names
           body   = Tuple l b (Var l . UnQual l <$> names)
       _ -> Nothing
+
+desugarTupleSection :: forall l. (Data l, Typeable l) => Module l -> Desugar (Module l)
+desugarTupleSection = t $ \ex -> case ex of
+  TupleSection l _ mes -> do
+    (names, lst) <- genSlotNames l mes (varNames l)
+    return $ Lambda l (map (PVar l) names) (Tuple l Unboxed lst)
+  _ -> return ex
+  where
+    t :: (Data l, Typeable l) => (Exp l -> Desugar (Exp l)) -> Module l -> Desugar (Module l)
+    t = transformBiM
+
+    varNames :: l -> [Name l]
+    varNames l = map (\i -> Ident l ("$gen_" ++ show i)) [0::Int ..]
+
+    genSlotNames :: l -> [Maybe (Exp l)] -> [Name l] -> Desugar ([Name l], [Exp l])
+    genSlotNames _ [] _ = return ([], [])
+    genSlotNames l (Nothing : rest) ns = do
+      -- it's safe to use head/tail here because ns is an infinite list
+      (rn, re) <- genSlotNames l rest (tail ns)
+      return (head ns : rn, Var l (UnQual l (head ns)) : re)
+    genSlotNames l (Just e : rest) ns = do
+      (rn, re) <- genSlotNames l rest ns
+      e' <- desugarExp e
+      return (rn, e' : re)
+
 
 
 
@@ -188,7 +214,6 @@ desugarExp ex = case ex of
   Case l e as -> Case l <$> desugarExp e <*> mapM desugarAlt as
   MDo l ss -> MDo l <$> mapM desugarStmt ss
   Tuple l b es -> Tuple l b <$> mapM desugarExp es
-  TupleSection l _ mes -> desugarTupleSec l =<< (mapM (mmap desugarExp) mes)
   List l es -> List l <$> mapM desugarExp es
   Paren l e -> Paren l <$> desugarExp e
   RecConstr l q f -> RecConstr l q <$> mapM desugarFieldUpdate f
@@ -278,24 +303,6 @@ desugarStmt s = case s of
   RecStmt l ss -> RecStmt l <$> mapM desugarStmt ss
 
 
-desugarTupleSec :: l -> [Maybe (Exp l)] -> Desugar (Exp l)
-desugarTupleSec l xs = do
-    (names, lst) <- genSlotNames l xs (varNames l)
-    return $ Lambda l (map (PVar l) names) (Tuple l Unboxed lst)
-  where
-    varNames :: l -> [Name l]
-    varNames l = map (\i -> Ident l ("$gen_" ++ show i)) [0::Int ..]
-
-    genSlotNames :: l -> [Maybe (Exp l)] -> [Name l] -> Desugar ([Name l], [Exp l])
-    genSlotNames _ [] _ = return ([], [])
-    genSlotNames l (Nothing : rest) ns = do
-      -- it's safe to use head/tail here because ns is an infinite list
-      (rn, re) <- genSlotNames l rest (tail ns)
-      return (head ns : rn, Var l (UnQual l (head ns)) : re)
-    genSlotNames l (Just e : rest) ns = do
-      (rn, re) <- genSlotNames l rest ns
-      e' <- desugarExp e
-      return (rn, e' : re)
 
 -- | We only have Enum instance for Int, but GHC hard codes [x..y]
 -- syntax to GHC.Base.Enum instead of using our Enum class so we check

@@ -52,7 +52,8 @@ withScopedTmpName l f = do
 -- | Top level, desugar a whole module possibly returning errors
 desugar :: (Data l, Typeable l) => Module l -> IO (Either CompileError (Module l))
 desugar md = runDesugar $
-      desugarSection md
+      checkEnum md
+  >>  desugarSection md
   >>= return . desugarPatField
   >>= return . desugarTupleCon
   >>= desugarDo
@@ -164,6 +165,37 @@ desugarTupleSection = t $ \ex -> case ex of
       e' <- desugarExp e
       return (rn, e' : re)
 
+-- | We only have Enum instance for Int, but GHC hard codes [x..y]
+-- syntax to GHC.Base.Enum instead of using our Enum class so we check
+-- for obviously incorrect usages and throw an error on them. This can
+-- only checks literals, but it helps a bit.
+checkEnum :: forall l . (Data l, Typeable l) => Module l -> Desugar ()
+checkEnum = mapM_ f . t
+  where
+    t :: (Data l, Typeable l) => Module l -> [Exp l]
+    t = universeBi
+
+    f = (\ex -> case ex of
+      e@(EnumFrom       _ e1)       -> checkIntOrUnknown e [e1]
+      e@(EnumFromTo     _ e1 e2)    -> checkIntOrUnknown e [e1,e2]
+      e@(EnumFromThen   _ e1 e2)    -> checkIntOrUnknown e [e1,e2]
+      e@(EnumFromThenTo _ e1 e2 e3) -> checkIntOrUnknown e [e1,e2,e3]
+      _ -> return ())
+
+    checkIntOrUnknown :: Exp l -> [Exp l] -> Desugar ()
+    checkIntOrUnknown exp es = when (not $ any isIntOrUnknown es) (throwError . UnsupportedEnum $ unAnn exp)
+    isIntOrUnknown :: Exp l -> Bool
+    isIntOrUnknown e = case e of
+      Con            {} -> False
+      Lit _ Int{}       -> True
+      Lit            {} -> False
+      Tuple          {} -> False
+      List           {} -> False
+      EnumFrom       {} -> False
+      EnumFromTo     {} -> False
+      EnumFromThen   {} -> False
+      EnumFromThenTo {} -> False
+      _                 -> True
 
 
 
@@ -218,10 +250,6 @@ desugarExp ex = case ex of
   Paren l e -> Paren l <$> desugarExp e
   RecConstr l q f -> RecConstr l q <$> mapM desugarFieldUpdate f
   RecUpdate l e f -> RecUpdate l <$> desugarExp e <*> mapM desugarFieldUpdate f
-  e@(EnumFrom l e1) -> checkEnum e >> (EnumFrom l <$> desugarExp e1)
-  e@(EnumFromTo l e1 e2) -> checkEnum e >> (EnumFromTo l <$> desugarExp e1 <*> desugarExp e2)
-  e@(EnumFromThen l e1 e2) -> checkEnum e >> (EnumFromThen l <$> desugarExp e1 <*> desugarExp e2)
-  e@(EnumFromThenTo l e1 e2 e3) -> checkEnum e >> (EnumFromThenTo l <$> desugarExp e1 <*> desugarExp e2 <*> desugarExp e3)
   ListComp l e qs -> ListComp l <$> desugarExp e <*> mapM desugarQualStmt qs
   ParComp l e qqs -> ParComp l <$> desugarExp e <*> mapM (mapM desugarQualStmt) qqs
   ExpTypeSig l e t -> ExpTypeSig l <$> desugarExp e <*> return t
@@ -301,34 +329,3 @@ desugarStmt s = case s of
   Qualifier l e -> Qualifier l <$> desugarExp e
   LetStmt l b -> LetStmt l <$> desugarBinds b
   RecStmt l ss -> RecStmt l <$> mapM desugarStmt ss
-
-
-
--- | We only have Enum instance for Int, but GHC hard codes [x..y]
--- syntax to GHC.Base.Enum instead of using our Enum class so we check
--- for obviously incorrect usages and throw an error on them. This can
--- only checks literals, but it helps a bit.
-checkEnum :: Exp l -> Desugar ()
-checkEnum exp = case exp of
-  EnumFrom       _ e        -> checkIntOrUnknown [e]
-  EnumFromTo     _ e1 e2    -> checkIntOrUnknown [e1,e2]
-  EnumFromThen   _ e1 e2    -> checkIntOrUnknown [e1,e2]
-  EnumFromThenTo _ e1 e2 e3 -> checkIntOrUnknown [e1,e2,e3]
-  _ -> error "checkEnum: Only for Enums"
-  where
-    checkIntOrUnknown :: [Exp l] -> Desugar ()
-    checkIntOrUnknown es = if any isIntOrUnknown es
-      then return ()
-      else throwError . UnsupportedEnum $ unAnn exp
-    isIntOrUnknown :: Exp l -> Bool
-    isIntOrUnknown e = case e of
-      Con            {} -> False
-      Lit _ Int{}       -> True
-      Lit            {} -> False
-      Tuple          {} -> False
-      List           {} -> False
-      EnumFrom       {} -> False
-      EnumFromTo     {} -> False
-      EnumFromThen   {} -> False
-      EnumFromThenTo {} -> False
-      _                 -> True

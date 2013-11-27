@@ -56,6 +56,7 @@ desugar md = runDesugar $
   >>  desugarSection md
   >>= return . desugarPatField
   >>= return . desugarTupleCon
+  >>= return . desugarPParen
   >>= desugarDo
   >>= desugarTupleSection
   >>= desugarModule
@@ -164,6 +165,15 @@ desugarTupleSection = t $ \ex -> case ex of
       (rn, re) <- genSlotNames l rest ns
       e' <- desugarExp e
       return (rn, e' : re)
+
+-- (p) => p for patterns
+desugarPParen :: forall l. (Data l, Typeable l) => Module l -> Module l
+desugarPParen = t $ \pt -> case pt of
+  PParen _ p -> p
+  _ -> pt
+  where
+    t :: (Data l, Typeable l) => (Pat l -> Pat l) -> Module l -> Module l
+    t = transformBi
 
 -- | We only have Enum instance for Int, but GHC hard codes [x..y]
 -- syntax to GHC.Base.Enum instead of using our Enum class so we check
@@ -275,9 +285,6 @@ desugarExp ex = case ex of
 
 desugarPat :: Pat l -> Desugar (Pat l)
 desugarPat pt = case pt of
-  -- (p) => p
-  PParen _ p -> desugarPat p
-
   PVar l n -> return $ PVar l n
   PLit {} -> return pt
   PNeg l p -> PNeg l <$> desugarPat p

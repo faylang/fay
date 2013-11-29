@@ -57,7 +57,7 @@ compileExp exp = case exp of
   EnumFromThenTo _ a b z             -> compileEnumFromThenTo a b z
   RecConstr _ name fieldUpdates      -> compileRecConstr name fieldUpdates
   RecUpdate _ rec  fieldUpdates      -> compileRecUpdate rec fieldUpdates
-  ListComp _ exp stmts               -> compileExp =<< desugarListComp exp stmts
+  ListComp {}                        -> shouldBeDesugared exp
   Do {}                              -> shouldBeDesugared exp
   LeftSection {}                     -> shouldBeDesugared exp
   RightSection {}                    -> shouldBeDesugared exp
@@ -333,25 +333,6 @@ compileRecUpdate rec fieldUpdates = do
     updateExp _ f@FieldPun{} = shouldBeDesugared f
     -- I also couldn't find a code that generates (FieldUpdate FieldWildCard)
     updateExp _ FieldWildcard{} = error "unsupported update: FieldWildcard"
-
--- | Desugar list comprehensions.
-desugarListComp :: S.Exp -> [S.QualStmt] -> Compile S.Exp
-desugarListComp e [] = return (List noI [ e ])
-desugarListComp e (QualStmt _ (Generator _ p e2) : stmts) = do
-  nested <- desugarListComp e stmts
-  withScopedTmpName $ \f ->
-    return (Let noI (BDecls noI [ FunBind noI [
-        Match noI f [ p             ] (UnGuardedRhs noI nested) Nothing
-      , Match noI f [ PWildCard noI ] (UnGuardedRhs noI (List noI [])) Nothing
-      ]]) (App noI (App noI (Var noI (Qual noI (ModuleName noI "$Prelude") (Ident noI "concatMap"))) (Var noI (UnQual noI f))) e2))
-desugarListComp e (QualStmt _ (Qualifier _ e2) : stmts) = do
-  nested <- desugarListComp e stmts
-  return (If noI e2 nested (List noI []))
-desugarListComp e (QualStmt _ (LetStmt _ bs) : stmts) = do
-  nested <- desugarListComp e stmts
-  return (Let noI bs nested)
-desugarListComp _ (s : _ ) =
-  throwError (UnsupportedQualStmt s)
 
 -- | Make a Fay list.
 makeList :: [JsExp] -> JsExp

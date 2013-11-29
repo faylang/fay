@@ -54,6 +54,7 @@ desugar :: (Data l, Typeable l) => Module l -> IO (Either CompileError (Module l
 desugar md = runDesugar $
       checkEnum md
   >>  desugarSection md
+  >>= desugarListComp
   >>= return . desugarTupleCon
   >>= return . desugarPatParen
   >>= return . desugarFieldPun
@@ -158,6 +159,29 @@ desugarPatFieldPun = transformBi $ \pf -> case pf of
   -- {a} => {a=a} for R{a}
   PFieldPun l n -> PFieldPat l (UnQual l n) (PVar l n)
   _             -> pf
+
+-- | Desugar list comprehensions.
+desugarListComp :: (Data l, Typeable l) => Module l -> Desugar (Module l)
+desugarListComp = transformBiM $ \ex -> case ex of
+    ListComp l exp stmts -> desugarListComp' l exp stmts
+    _ -> return ex
+  where
+    desugarListComp' l e [] = return (List l [ e ])
+    desugarListComp' l e (QualStmt _ (Generator _ p e2) : stmts) = do
+      nested <- desugarListComp' l e stmts
+      withScopedTmpName l $ \f ->
+        return (Let l (BDecls l [ FunBind l [
+            Match l f [ p           ] (UnGuardedRhs l nested) Nothing
+          , Match l f [ PWildCard l ] (UnGuardedRhs l (List l [])) Nothing
+          ]]) (App l (App l (Var l (Qual l (ModuleName l "$Prelude") (Ident l "concatMap"))) (Var l (UnQual l f))) e2))
+    desugarListComp' l e (QualStmt _ (Qualifier _ e2) : stmts) = do
+      nested <- desugarListComp' l e stmts
+      return (If l e2 nested (List l []))
+    desugarListComp' l e (QualStmt _ (LetStmt _ bs) : stmts) = do
+      nested <- desugarListComp' l e stmts
+      return (Let l bs nested)
+    desugarListComp' _ _ (_ : _) =
+      error "UnsupportedListComprehension"
 
 -- | We only have Enum instance for Int, but GHC hard codes [x..y]
 -- syntax to GHC.Base.Enum instead of using our Enum class so we check

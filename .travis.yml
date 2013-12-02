@@ -1,6 +1,6 @@
 language: "haskell"
 install:
-  - "travis_retry cabal install 'happy >= 1.17'"
+  - "travis_retry cabal install 'happy >= 1.17' hsc2hs"
   - "travis_retry cabal install --force-reinstalls"
 script: "scripts/travis-test"
 notifications:

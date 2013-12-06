@@ -103,6 +103,7 @@ readFromFay value =
   `ext1R` parseArray value
   `extR` parseDouble value
   `extR` parseInt value
+  `extR` parseInteger value
   `extR` parseBool value
   `extR` parseString value
   `extR` parseChar value
@@ -180,6 +181,14 @@ parseInt value = do
   number <- parseNumber value
   case number of
     I n -> return (fromIntegral n)
+    _ -> mzero
+
+-- | Parse an integer.
+parseInteger :: Value -> Maybe Integer
+parseInteger value = do
+  number <- parseNumber value
+  case number of
+    I n -> return n
     _ -> mzero
 
 -- | Parse a number.

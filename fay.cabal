@@ -126,7 +126,7 @@ library
                    , safe                               < 0.4
                    , split                              < 0.3
                    , syb                                < 0.5
-                   , text                               < 0.12
+                   , text                               < 1.1
                    , time                               < 1.5
                    , uniplate             >= 1.6.11  && < 1.7
                    , unordered-containers               < 0.3

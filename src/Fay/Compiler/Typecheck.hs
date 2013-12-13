@@ -29,7 +29,6 @@ typecheck cfg fp = do
         return [flag ++ '=' : pk]
   let flags =
           [ "-fno-code"
-          , "-XNoImplicitPrelude"
           , "-hide-package base"
           , "-cpp", "-pgmPcpphs", "-optP--cpp"
           , "-optP-C" -- Don't let hse-cpp remove //-style comments.

@@ -322,17 +322,18 @@ shouldBeDesugared = throwError . ShouldBeDesugared . show . unAnn
 
 defaultExtensions :: [Extension]
 defaultExtensions = map EnableExtension
-  [GADTs
+  [EmptyDataDecls
   ,ExistentialQuantification
-  ,StandaloneDeriving
-  ,PackageImports
-  ,EmptyDataDecls
-  ,TypeOperators
-  ,RecordWildCards
-  ,NamedFieldPuns
   ,FlexibleContexts
   ,FlexibleInstances
+  ,GADTs
   ,KindSignatures
+  ,NamedFieldPuns
+  ,PackageImports
+  ,RecordWildCards
+  ,StandaloneDeriving
   ,TupleSections
+  ,TypeFamilies
+  ,TypeOperators
   ] ++ map DisableExtension
   [ImplicitPrelude]

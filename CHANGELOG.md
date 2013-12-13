@@ -4,6 +4,11 @@ See full history at: <https://github.com/faylang/fay/commits>
 
 **Note: 0.18.0.1 added source mappings returned by `Fay:compileFile` and friends meaning it should have been a major bump. Sorry about this!**
 
+### 0.18.1.3 (2013-12-14)
+
+* Add parsing of Integer to Fay.Convert (note that the runtime doesn't have arbitrary precision Integers)
+* Allow text 1.0.*
+
 ### 0.18.1.2 (2013-11-26)
 
 * Add support for indirect application of newtypes (such as `p = NewType; foo = p x` and `bar = NewType $ y`)

@@ -10,6 +10,7 @@ module Fay.Compiler.Desugar
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Exts                        (X, noI)
 import           Fay.Types                       (CompileError (..))
+import           Fay.Compiler.Misc               (hasLanguagePragma)
 
 import           Control.Applicative
 import           Control.Monad.Error
@@ -218,19 +219,22 @@ checkEnum = mapM_ f . universeBi
 
 -- TODO: Support -XNoImplicitPrelude?
 desugarImplicitPrelude :: Module X -> Desugar (Module X)
-desugarImplicitPrelude m
-  | hasExplicitPrelude m = return m
-  | otherwise            = addPrelude m
+desugarImplicitPrelude m =
+    if preludeNotNeeded
+        then return m
+        else addPrelude m
   where
-    getImportDecls :: Module X -> [ImportDecl X]
-    getImportDecls (Module _ _ _ decls _) = decls
-    getImportDecls (XmlHybrid _ _ _ decls _ _ _ _ _) = decls
-    getImportDecls _ = []
+    preludeNotNeeded = hasExplicitPrelude m ||
+                       hasLanguagePragma "NoImplicitPrelude" (getPragmas m)
 
-    setImportDecls :: Module X -> [ImportDecl X] -> Module X
-    setImportDecls (Module a b c _ d) decls = Module a b c decls d
-    setImportDecls (XmlHybrid a b c _ d e f g h) decls = XmlHybrid a b c decls d e f g h
-    setImportDecls mod _ = mod
+    getPragmas :: Module X -> [ModulePragma X]
+    getPragmas = universeBi
+
+    getImportDecls :: Module X -> [ImportDecl X]
+    getImportDecls = universeBi
+
+    setImportDecls :: [ImportDecl X] -> Module X -> Module X
+    setImportDecls decls = U.transformBi (const decls)
 
     hasExplicitPrelude :: Module X -> Bool
     hasExplicitPrelude = any isPrelude . getImportDecls
@@ -243,7 +247,7 @@ desugarImplicitPrelude m
     addPrelude mod = do
         let decls = getImportDecls mod
         prelude <- getPrelude
-        return $ setImportDecls mod (prelude : decls)
+        return $ setImportDecls (prelude : decls) mod
 
     getPrelude :: Desugar (ImportDecl X)
     getPrelude = do

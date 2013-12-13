@@ -8,6 +8,7 @@ module Fay.Compiler.Desugar
   ) where
 
 import           Fay.Exts.NoAnnotation           (unAnn)
+import           Fay.Exts                        (X, noI)
 import           Fay.Types                       (CompileError (..))
 
 import           Control.Applicative
@@ -22,13 +23,15 @@ import           Prelude                         hiding (exp)
 
 -- Types
 
-data DesugarReader = DesugarReader { readerNameDepth :: Int }
+data DesugarReader l = DesugarReader { readerNameDepth :: Int
+                                     , readerNoInfo :: l
+                                     }
 
 newtype Desugar a = Desugar
-  { unDesugar :: (ReaderT DesugarReader
+  { unDesugar :: (ReaderT (DesugarReader X)
                        (ErrorT CompileError IO))
                        a
-  } deriving ( MonadReader DesugarReader
+  } deriving ( MonadReader (DesugarReader X)
              , MonadError CompileError
              , MonadIO
              , Monad
@@ -37,20 +40,20 @@ newtype Desugar a = Desugar
              )
 
 runDesugar :: Desugar a -> IO (Either CompileError a)
-runDesugar m = runErrorT (runReaderT (unDesugar m) (DesugarReader 0))
+runDesugar m = runErrorT (runReaderT (unDesugar m) (DesugarReader 0 noI))
 
 -- | Generate a temporary, SCOPED name for testing conditions and
 -- such. We don't have name tracking yet, so instead we use this.
 withScopedTmpName :: (Data l, Typeable l) => l -> (Name l -> Desugar a) -> Desugar a
 withScopedTmpName l f = do
   n <- asks readerNameDepth
-  local (\r -> DesugarReader $ readerNameDepth r + 1) $
+  local (\r -> r { readerNameDepth = n + 1 }) $
    f $ Ident l $ "$gen" ++ show n
 
 
 
 -- | Top level, desugar a whole module possibly returning errors
-desugar :: (Data l, Typeable l) => Module l -> IO (Either CompileError (Module l))
+desugar :: Module X -> IO (Either CompileError (Module X))
 desugar md = runDesugar $
       checkEnum md
   >>  desugarSection md
@@ -61,6 +64,7 @@ desugar md = runDesugar $
   >>= return . desugarPatFieldPun
   >>= desugarDo
   >>= desugarTupleSection
+  >>= desugarImplicitPrelude
 
 -- | Desugaring
 
@@ -211,6 +215,42 @@ checkEnum = mapM_ f . universeBi
       EnumFromThen   {} -> False
       EnumFromThenTo {} -> False
       _                 -> True
+
+-- TODO: Support -XNoImplicitPrelude?
+desugarImplicitPrelude :: Module X -> Desugar (Module X)
+desugarImplicitPrelude m
+  | hasExplicitPrelude m = return m
+  | otherwise            = addPrelude m
+  where
+    getImportDecls :: Module X -> [ImportDecl X]
+    getImportDecls (Module _ _ _ decls _) = decls
+    getImportDecls (XmlHybrid _ _ _ decls _ _ _ _ _) = decls
+    getImportDecls _ = []
+
+    setImportDecls :: Module X -> [ImportDecl X] -> Module X
+    setImportDecls (Module a b c _ d) decls = Module a b c decls d
+    setImportDecls (XmlHybrid a b c _ d e f g h) decls = XmlHybrid a b c decls d e f g h
+    setImportDecls mod _ = mod
+
+    hasExplicitPrelude :: Module X -> Bool
+    hasExplicitPrelude = any isPrelude . getImportDecls
+
+    isPrelude :: ImportDecl X -> Bool
+    isPrelude decl = case importModule decl of
+                      ModuleName _ name -> name == "Prelude"
+
+    addPrelude :: Module X -> Desugar (Module X)
+    addPrelude mod = do
+        let decls = getImportDecls mod
+        prelude <- getPrelude
+        return $ setImportDecls mod (prelude : decls)
+
+    getPrelude :: Desugar (ImportDecl X)
+    getPrelude = do
+        noInfo <- asks readerNoInfo
+        return $
+            ImportDecl noInfo (ModuleName noInfo "Prelude")
+                False False Nothing Nothing Nothing
 
 transformBi :: U.Biplate (from a) (to a) => (to a -> to a) -> from a -> from a
 transformBi = U.transformBi

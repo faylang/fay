@@ -328,6 +328,7 @@ defaultExtensions = map EnableExtension
   ,FlexibleContexts
   ,FlexibleInstances
   ,GADTs
+  ,ImplicitPrelude
   ,KindSignatures
   ,NamedFieldPuns
   ,PackageImports
@@ -336,8 +337,7 @@ defaultExtensions = map EnableExtension
   ,TupleSections
   ,TypeFamilies
   ,TypeOperators
-  ] ++ map DisableExtension
-  [ImplicitPrelude]
+  ]
 
 -- | Check if the given language pragmas are all present.
 hasLanguagePragmas :: [String] -> [F.ModulePragma] -> Bool

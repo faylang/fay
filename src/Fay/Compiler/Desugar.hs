@@ -217,7 +217,6 @@ checkEnum = mapM_ f . universeBi
       EnumFromThenTo {} -> False
       _                 -> True
 
--- TODO: Support -XNoImplicitPrelude?
 desugarImplicitPrelude :: Module X -> Desugar (Module X)
 desugarImplicitPrelude m =
     if preludeNotNeeded
@@ -231,10 +230,12 @@ desugarImplicitPrelude m =
     getPragmas = universeBi
 
     getImportDecls :: Module X -> [ImportDecl X]
-    getImportDecls = universeBi
+    getImportDecls (Module _ _ _ decls _) = decls
+    getImportDecls _ = []
 
     setImportDecls :: [ImportDecl X] -> Module X -> Module X
-    setImportDecls decls = U.transformBi (const decls)
+    setImportDecls decls (Module a b c _ d) = Module a b c decls d
+    setImportDecls _ mod = mod
 
     hasExplicitPrelude :: Module X -> Bool
     hasExplicitPrelude = any isPrelude . getImportDecls

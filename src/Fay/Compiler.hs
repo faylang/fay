@@ -148,15 +148,6 @@ compileModuleFromAST _ mod = throwError $ UnsupportedModuleSyntax "compileModule
 --------------------------------------------------------------------------------
 -- Misc compilation
 
--- | Check if the given language pragmas are all present.
-hasLanguagePragmas :: [String] -> [F.ModulePragma] -> Bool
-hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter (`elem` pragmas) $ flattenPragmas modulePragmas
-  where
-    flattenPragmas :: [F.ModulePragma] -> [String]
-    flattenPragmas ps = concat $ map pragmaName ps
-    pragmaName (LanguagePragma _ q) = map unname q
-    pragmaName _ = []
-
 -- | For a module A.B, generate
 -- | var A = {};
 -- | A.B = {};

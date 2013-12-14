@@ -51,7 +51,7 @@ preprocessFileWithSource filepath contents = do
 -- | Preprocess from an AST
 preprocessAST :: () -> F.Module -> Compile ()
 preprocessAST () mod'@Module{} = do
-  res <- io $ desugar mod'
+  res <- io $ desugar F.noI mod'
   case res of
     Left err -> throwError err
     Right dmod -> do

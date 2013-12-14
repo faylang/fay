@@ -118,7 +118,7 @@ compileFileWithSource filepath contents = do
 -- | Compile a parse HSE module.
 compileModuleFromAST :: ([JsStmt], [JsStmt]) -> F.Module -> Compile ([JsStmt], [JsStmt])
 compileModuleFromAST (hstmts0, fstmts0) mod''@(Module _ _ pragmas _ _) = do
-  res <- io $ desugar mod''
+  res <- io $ desugar F.noI mod''
   case res of
     Left err -> throwError err
     Right mod' -> do

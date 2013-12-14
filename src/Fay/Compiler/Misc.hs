@@ -340,13 +340,13 @@ defaultExtensions = map EnableExtension
   ]
 
 -- | Check if the given language pragmas are all present.
-hasLanguagePragmas :: [String] -> [F.ModulePragma] -> Bool
+hasLanguagePragmas :: [String] -> [ModulePragma l] -> Bool
 hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter (`elem` pragmas) $ flattenPragmas modulePragmas
   where
-    flattenPragmas :: [F.ModulePragma] -> [String]
+    flattenPragmas :: [ModulePragma l] -> [String]
     flattenPragmas ps = concat $ map pragmaName ps
     pragmaName (LanguagePragma _ q) = map unname q
     pragmaName _ = []
 
-hasLanguagePragma :: String -> [F.ModulePragma] -> Bool
+hasLanguagePragma :: String -> [ModulePragma l] -> Bool
 hasLanguagePragma pr = hasLanguagePragmas [pr]

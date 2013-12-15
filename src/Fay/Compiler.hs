@@ -118,10 +118,12 @@ compileFileWithSource filepath contents = do
 -- | Compile a parse HSE module.
 compileModuleFromAST :: ([JsStmt], [JsStmt]) -> F.Module -> Compile ([JsStmt], [JsStmt])
 compileModuleFromAST (hstmts0, fstmts0) mod''@(Module _ _ pragmas _ _) = do
+  io $ putStrLn "desugaring in Compiler"
   res <- io $ desugar F.noI mod''
   case res of
     Left err -> throwError err
     Right mod' -> do
+      io $ showImports mod'
       mod@(Module _ _ _ _ decls) <- annotateModule Haskell2010 defaultExtensions $ mod'
       let modName = unAnn $ F.moduleName mod
       modify $ \s -> s { stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas

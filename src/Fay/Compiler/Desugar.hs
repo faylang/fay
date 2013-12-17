@@ -51,8 +51,6 @@ withScopedTmpName l f = do
   local (\r -> r { readerNameDepth = n + 1 }) $
    f $ Ident l $ "$gen" ++ show n
 
-
-
 -- | Top level, desugar a whole module possibly returning errors
 desugar :: (Data l, Typeable l) => l -> Module l -> IO (Either CompileError (Module l))
 desugar emptyAnnotation md = runDesugar emptyAnnotation $

@@ -54,7 +54,7 @@ case_stateRecordTypes = do
         [ ("Compile.Records.T", ["Compile.Records.:+"])
         , ("Compile.Records.R", ["Compile.Records.R","Compile.Records.S"])
         ]
-        (stateRecordTypes r)
+        (filter (isFromMod "Compile.Records") $ stateRecordTypes r)
 
 case_importStateRecordTypes :: Assertion
 case_importStateRecordTypes = do
@@ -68,7 +68,13 @@ case_importStateRecordTypes = do
         [ ("Compile.Records.T",["Compile.Records.:+"])
         , ("Compile.Records.R",["Compile.Records.R", "Compile.Records.S"])
         ]
-        (stateRecordTypes r)
+        (filter (isFromMod "Compile.Records") $ stateRecordTypes r)
+
+isFromMod :: String -> (QName (),[QName ()]) -> Bool
+isFromMod modName = (==) modName . getModuleName . fst
+    where
+        getModuleName (Qual _ (ModuleName _ n) _) = n
+        getModuleName x = error $ "getModuleName: expected qualified name: " ++ show x
 
 case_typecheckCPP :: Assertion
 case_typecheckCPP = do

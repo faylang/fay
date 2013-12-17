@@ -117,31 +117,27 @@ compileFileWithSource filepath contents = do
 
 -- | Compile a parse HSE module.
 compileModuleFromAST :: ([JsStmt], [JsStmt]) -> F.Module -> Compile ([JsStmt], [JsStmt])
-compileModuleFromAST (hstmts0, fstmts0) mod''@(Module _ _ pragmas _ _) = do
-  res <- io $ desugar F.noI mod''
-  case res of
-    Left err -> throwError err
-    Right mod' -> do
-      mod@(Module _ _ _ _ decls) <- annotateModule Haskell2010 defaultExtensions $ mod'
-      let modName = unAnn $ F.moduleName mod
-      modify $ \s -> s { stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
-                       }
-      current <- compileDecls True decls
+compileModuleFromAST (hstmts0, fstmts0) mod'@Module{} = do
+  mod@(Module _ _ pragmas _ decls) <- annotateModule Haskell2010 defaultExtensions $ mod'
+  let modName = unAnn $ F.moduleName mod
+  modify $ \s -> s { stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
+                   }
+  current <- compileDecls True decls
 
-      exportStdlib     <- config configExportStdlib
-      exportStdlibOnly <- config configExportStdlibOnly
-      modulePaths      <- createModulePath modName
-      extExports       <- generateExports
-      strictExports    <- generateStrictExports
-      let hstmts = hstmts0 ++ modulePaths ++ current ++ extExports
-          fstmts = fstmts0 ++ strictExports
-      return $ if exportStdlibOnly
-        then if anStdlibModule modName
-                then (hstmts, fstmts)
-                else ([], [])
-        else if not exportStdlib && anStdlibModule modName
-                then ([], [])
-                else (hstmts, fstmts)
+  exportStdlib     <- config configExportStdlib
+  exportStdlibOnly <- config configExportStdlibOnly
+  modulePaths      <- createModulePath modName
+  extExports       <- generateExports
+  strictExports    <- generateStrictExports
+  let hstmts = hstmts0 ++ modulePaths ++ current ++ extExports
+      fstmts = fstmts0 ++ strictExports
+  return $ if exportStdlibOnly
+    then if anStdlibModule modName
+            then (hstmts, fstmts)
+            else ([], [])
+    else if not exportStdlib && anStdlibModule modName
+            then ([], [])
+            else (hstmts, fstmts)
 compileModuleFromAST _ mod = throwError $ UnsupportedModuleSyntax "compileModuleFromAST" mod
 
 

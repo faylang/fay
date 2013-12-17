@@ -7,25 +7,26 @@ module Fay.Compiler.Desugar
   (desugar
   ) where
 
+import           Fay.Compiler.Misc               (hasLanguagePragma)
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types                       (CompileError (..))
-import           Fay.Compiler.Misc               (hasLanguagePragma)
 
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Reader
 import           Data.Data                       (Data)
-import qualified Data.Generics.Uniplate.Data     as U
 import           Data.Maybe
 import           Data.Typeable                   (Typeable)
 import           Language.Haskell.Exts.Annotated hiding (binds, loc)
 import           Prelude                         hiding (exp)
+import qualified Data.Generics.Uniplate.Data     as U
 
 -- Types
 
-data DesugarReader l = DesugarReader { readerNameDepth :: Int
-                                     , readerNoInfo :: l
-                                     }
+data DesugarReader l = DesugarReader
+  { readerNameDepth :: Int
+  , readerNoInfo    :: l
+  }
 
 newtype Desugar l a = Desugar
   { unDesugar :: (ReaderT (DesugarReader l)
@@ -240,20 +241,18 @@ desugarImplicitPrelude m =
 
     isPrelude :: ImportDecl l -> Bool
     isPrelude decl = case importModule decl of
-                      ModuleName _ name -> name == "Prelude"
+      ModuleName _ name -> name == "Prelude"
 
     addPrelude :: Module l -> Desugar l (Module l)
     addPrelude mod = do
-        let decls = getImportDecls mod
-        prelude <- getPrelude
-        return $ setImportDecls (prelude : decls) mod
+      let decls = getImportDecls mod
+      prelude <- getPrelude
+      return $ setImportDecls (prelude : decls) mod
 
     getPrelude :: Desugar l (ImportDecl l)
     getPrelude = do
-        noInfo <- asks readerNoInfo
-        return $
-            ImportDecl noInfo (ModuleName noInfo "Prelude")
-                False False Nothing Nothing Nothing
+      noInfo <- asks readerNoInfo
+      return $ ImportDecl noInfo (ModuleName noInfo "Prelude") False False Nothing Nothing Nothing
 
 transformBi :: U.Biplate (from a) (to a) => (to a -> to a) -> from a -> from a
 transformBi = U.transformBi

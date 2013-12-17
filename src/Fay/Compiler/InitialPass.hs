@@ -11,7 +11,6 @@ import           Fay.Compiler.Desugar
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Import
 import           Fay.Compiler.Misc
-import           Fay.Control.Monad.IO
 import           Fay.Data.List.Extra
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
@@ -50,18 +49,13 @@ preprocessFileWithSource filepath contents = do
 
 -- | Preprocess from an AST
 preprocessAST :: () -> F.Module -> Compile ()
-preprocessAST () mod'@Module{} = do
-  res <- io $ desugar F.noI mod'
-  case res of
-    Left err -> throwError err
-    Right dmod -> do
-      let (Module _ _ _ _ decls) = dmod
-      -- This can only return one element since we only compile one module.
-      ([exports],_) <- HN.getInterfaces Haskell2010 defaultExtensions [dmod]
-      modify $ \s -> s { stateInterfaces = M.insert (stateModuleName s) exports $ stateInterfaces s }
-      forM_ decls scanTypeSigs
-      forM_ decls scanRecordDecls
-      forM_ decls scanNewtypeDecls
+preprocessAST () mod@(Module _ _ _ _ decls) = do
+  -- This can only return one element since we only compile one module.
+  ([exports],_) <- HN.getInterfaces Haskell2010 defaultExtensions [mod]
+  modify $ \s -> s { stateInterfaces = M.insert (stateModuleName s) exports $ stateInterfaces s }
+  forM_ decls scanTypeSigs
+  forM_ decls scanRecordDecls
+  forM_ decls scanNewtypeDecls
 preprocessAST () mod = throwError $ UnsupportedModuleSyntax "preprocessAST" mod
 
 --------------------------------------------------------------------------------

@@ -95,7 +95,7 @@ compileModuleFromContents = compileFileWithSource "<interactive>"
 -- | Compile given the location and source string.
 compileFileWithSource :: FilePath -> String -> Compile ([JsStmt], [JsStmt])
 compileFileWithSource filepath contents = do
-  ((hstmts,fstmts),st,wr) <- compileWith filepath compileModuleFromAST compileFileWithSource contents
+  ((hstmts,fstmts),st,wr) <- compileWith filepath compileModuleFromAST compileFileWithSource desugar contents
   modify $ \s -> s { stateImported      = stateImported      st
                    , stateJsModulePaths = stateJsModulePaths st
                    }

@@ -80,10 +80,7 @@ compileVar qname = do
            -- replace it with identity function
            return idFun
       else do
-        liftIO $ putStrLn "harry-debug: about to unsafeResolveName"
-        liftIO $ putStrLn $ "harry-debug: " ++ prettyPrint qname
         qname <- unsafeResolveName qname
-        liftIO $ putStrLn "harry-debug: done it!"
         return (JsName (JsNameVar qname))
   where
     idFun = JsFun Nothing [JsTmp 1] [] (Just (JsName $ JsTmp 1))

@@ -51,12 +51,10 @@ preprocessFileWithSource filepath contents = do
 -- | Preprocess from an AST
 preprocessAST :: () -> F.Module -> Compile ()
 preprocessAST () mod'@Module{} = do
-  io $ putStrLn "desugaring in InitialPass"
   res <- io $ desugar F.noI mod'
   case res of
     Left err -> throwError err
     Right dmod -> do
-      io $ showImports dmod
       let (Module _ _ _ _ decls) = dmod
       -- This can only return one element since we only compile one module.
       ([exports],_) <- HN.getInterfaces Haskell2010 defaultExtensions [dmod]

@@ -7,8 +7,6 @@
 
 module Fay.Compiler.Misc where
 
-import           Debug.Trace
-
 import           Fay.Compiler.PrimOp
 import           Fay.Control.Monad.IO
 import qualified Fay.Exts                          as F
@@ -68,10 +66,10 @@ tryResolveName (Qual (Scoped ni _) _ _)                         = case ni of
     _             -> Nothing
     -- TODO should LocalValue just return the name for qualified imports?
 tryResolveName q@(UnQual (Scoped ni _) (unAnn -> name))         = case ni of
-    GlobalValue n -> trace ("global value: " ++ show q) $ replaceWithBuiltIns . origName2QName $ origName n
+    GlobalValue n -> replaceWithBuiltIns . origName2QName $ origName n
     LocalValue _  -> Just $ UnQual () name
-    ScopeError _  -> trace ("scope error: " ++ show q) $ resolvePrimOp q
-    x             -> trace (show q) $ Nothing
+    ScopeError _  -> resolvePrimOp q
+    _             -> Nothing
 
 origName2QName :: OrigName -> N.QName
 origName2QName = gname2Qname . origGName
@@ -352,7 +350,3 @@ hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter
 
 hasLanguagePragma :: String -> [ModulePragma l] -> Bool
 hasLanguagePragma pr = hasLanguagePragmas [pr]
-
--- for debugging: remove this
-showImports :: F.Module -> IO ()
-showImports (Module _ _ _ imports _) = mapM_ (putStrLn . prettyPrint) imports

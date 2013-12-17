@@ -14,6 +14,7 @@ import           Fay.Exts.NoAnnotation             (unAnn)
 import qualified Fay.Exts.NoAnnotation             as N
 import qualified Fay.Exts.Scoped                   as S
 import           Fay.Types
+import           Fay.Compiler.QName                (unname)
 
 import           Control.Applicative
 import           Control.Monad.Error
@@ -327,6 +328,7 @@ defaultExtensions = map EnableExtension
   ,FlexibleContexts
   ,FlexibleInstances
   ,GADTs
+  ,ImplicitPrelude
   ,KindSignatures
   ,NamedFieldPuns
   ,PackageImports
@@ -335,5 +337,16 @@ defaultExtensions = map EnableExtension
   ,TupleSections
   ,TypeFamilies
   ,TypeOperators
-  ] ++ map DisableExtension
-  [ImplicitPrelude]
+  ]
+
+-- | Check if the given language pragmas are all present.
+hasLanguagePragmas :: [String] -> [ModulePragma l] -> Bool
+hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter (`elem` pragmas) $ flattenPragmas modulePragmas
+  where
+    flattenPragmas :: [ModulePragma l] -> [String]
+    flattenPragmas ps = concat $ map pragmaName ps
+    pragmaName (LanguagePragma _ q) = map unname q
+    pragmaName _ = []
+
+hasLanguagePragma :: String -> [ModulePragma l] -> Bool
+hasLanguagePragma pr = hasLanguagePragmas [pr]

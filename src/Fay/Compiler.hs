@@ -95,7 +95,7 @@ compileModuleFromContents = compileFileWithSource "<interactive>"
 -- | Compile given the location and source string.
 compileFileWithSource :: FilePath -> String -> Compile ([JsStmt], [JsStmt])
 compileFileWithSource filepath contents = do
-  ((hstmts,fstmts),st,wr) <- compileWith filepath compileModuleFromAST compileFileWithSource contents
+  ((hstmts,fstmts),st,wr) <- compileWith filepath compileModuleFromAST compileFileWithSource desugar contents
   modify $ \s -> s { stateImported      = stateImported      st
                    , stateJsModulePaths = stateJsModulePaths st
                    }
@@ -118,7 +118,7 @@ compileFileWithSource filepath contents = do
 -- | Compile a parse HSE module.
 compileModuleFromAST :: ([JsStmt], [JsStmt]) -> F.Module -> Compile ([JsStmt], [JsStmt])
 compileModuleFromAST (hstmts0, fstmts0) mod''@(Module _ _ pragmas _ _) = do
-  res <- io $ desugar mod''
+  res <- io $ desugar F.noI mod''
   case res of
     Left err -> throwError err
     Right mod' -> do
@@ -147,15 +147,6 @@ compileModuleFromAST _ mod = throwError $ UnsupportedModuleSyntax "compileModule
 
 --------------------------------------------------------------------------------
 -- Misc compilation
-
--- | Check if the given language pragmas are all present.
-hasLanguagePragmas :: [String] -> [F.ModulePragma] -> Bool
-hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter (`elem` pragmas) $ flattenPragmas modulePragmas
-  where
-    flattenPragmas :: [F.ModulePragma] -> [String]
-    flattenPragmas ps = concat $ map pragmaName ps
-    pragmaName (LanguagePragma _ q) = map unname q
-    pragmaName _ = []
 
 -- | For a module A.B, generate
 -- | var A = {};

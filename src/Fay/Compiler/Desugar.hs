@@ -9,6 +9,7 @@ module Fay.Compiler.Desugar
 
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types                       (CompileError (..))
+import           Fay.Compiler.Misc               (hasLanguagePragma)
 
 import           Control.Applicative
 import           Control.Monad.Error
@@ -22,13 +23,15 @@ import           Prelude                         hiding (exp)
 
 -- Types
 
-data DesugarReader = DesugarReader { readerNameDepth :: Int }
+data DesugarReader l = DesugarReader { readerNameDepth :: Int
+                                     , readerNoInfo :: l
+                                     }
 
-newtype Desugar a = Desugar
-  { unDesugar :: (ReaderT DesugarReader
+newtype Desugar l a = Desugar
+  { unDesugar :: (ReaderT (DesugarReader l)
                        (ErrorT CompileError IO))
                        a
-  } deriving ( MonadReader DesugarReader
+  } deriving ( MonadReader (DesugarReader l)
              , MonadError CompileError
              , MonadIO
              , Monad
@@ -36,22 +39,21 @@ newtype Desugar a = Desugar
              , Applicative
              )
 
-runDesugar :: Desugar a -> IO (Either CompileError a)
-runDesugar m = runErrorT (runReaderT (unDesugar m) (DesugarReader 0))
+runDesugar :: l -> Desugar l a -> IO (Either CompileError a)
+runDesugar emptyAnnotation m =
+    runErrorT (runReaderT (unDesugar m) (DesugarReader 0 emptyAnnotation))
 
 -- | Generate a temporary, SCOPED name for testing conditions and
 -- such. We don't have name tracking yet, so instead we use this.
-withScopedTmpName :: (Data l, Typeable l) => l -> (Name l -> Desugar a) -> Desugar a
+withScopedTmpName :: (Data l, Typeable l) => l -> (Name l -> Desugar l a) -> Desugar l a
 withScopedTmpName l f = do
   n <- asks readerNameDepth
-  local (\r -> DesugarReader $ readerNameDepth r + 1) $
+  local (\r -> r { readerNameDepth = n + 1 }) $
    f $ Ident l $ "$gen" ++ show n
 
-
-
 -- | Top level, desugar a whole module possibly returning errors
-desugar :: (Data l, Typeable l) => Module l -> IO (Either CompileError (Module l))
-desugar md = runDesugar $
+desugar :: (Data l, Typeable l) => l -> Module l -> IO (Either CompileError (Module l))
+desugar emptyAnnotation md = runDesugar emptyAnnotation $
       checkEnum md
   >>  desugarSection md
   >>= desugarListComp
@@ -61,10 +63,11 @@ desugar md = runDesugar $
   >>= return . desugarPatFieldPun
   >>= desugarDo
   >>= desugarTupleSection
+  >>= desugarImplicitPrelude
 
 -- | Desugaring
 
-desugarSection :: (Data l, Typeable l) => Module l -> Desugar (Module l)
+desugarSection :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarSection = transformBiM $ \ex -> case ex of
   LeftSection  l e q -> withScopedTmpName l $ \tmp ->
       return $ Lambda l [PVar l tmp] (InfixApp l e q (Var l (UnQual l tmp)))
@@ -72,7 +75,7 @@ desugarSection = transformBiM $ \ex -> case ex of
       return $ Lambda l [PVar l tmp] (InfixApp l (Var l (UnQual l tmp)) q e)
   _ -> return ex
 
-desugarDo :: (Data l, Typeable l) => Module l -> Desugar (Module l)
+desugarDo :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarDo = transformBiM $ \ex -> case ex of
   Do _ stmts -> maybe (throwError EmptyDoBlock) return $ foldl desugarStmt' Nothing (reverse stmts)
   _ -> return ex
@@ -123,7 +126,7 @@ desugarTupleCon = transformBi $ \ex -> case ex of
           body   = Tuple l b (Var l . UnQual l <$> names)
       _ -> Nothing
 
-desugarTupleSection :: (Data l, Typeable l) => Module l -> Desugar (Module l)
+desugarTupleSection :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarTupleSection = transformBiM $ \ex -> case ex of
   TupleSection l _ mes -> do
     (names, lst) <- genSlotNames l mes (varNames l)
@@ -133,7 +136,7 @@ desugarTupleSection = transformBiM $ \ex -> case ex of
     varNames :: l -> [Name l]
     varNames l = map (\i -> Ident l ("$gen_" ++ show i)) [0::Int ..]
 
-    genSlotNames :: l -> [Maybe (Exp l)] -> [Name l] -> Desugar ([Name l], [Exp l])
+    genSlotNames :: l -> [Maybe (Exp l)] -> [Name l] -> Desugar l ([Name l], [Exp l])
     genSlotNames _ [] _ = return ([], [])
     genSlotNames l (Nothing : rest) ns = do
       -- it's safe to use head/tail here because ns is an infinite list
@@ -160,8 +163,8 @@ desugarPatFieldPun = transformBi $ \pf -> case pf of
   PFieldPun l n -> PFieldPat l (UnQual l n) (PVar l n)
   _             -> pf
 
--- | Desugar list comprehensions.
-desugarListComp :: (Data l, Typeable l) => Module l -> Desugar (Module l)
+-- | Desugar l list comprehensions.
+desugarListComp :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarListComp = transformBiM $ \ex -> case ex of
     ListComp l exp stmts -> desugarListComp' l exp stmts
     _ -> return ex
@@ -187,7 +190,7 @@ desugarListComp = transformBiM $ \ex -> case ex of
 -- syntax to GHC.Base.Enum instead of using our Enum class so we check
 -- for obviously incorrect usages and throw an error on them. This can
 -- only checks literals, but it helps a bit.
-checkEnum :: (Data l, Typeable l) => Module l -> Desugar ()
+checkEnum :: (Data l, Typeable l) => Module l -> Desugar l ()
 checkEnum = mapM_ f . universeBi
   where
     f ex = case ex of
@@ -197,7 +200,7 @@ checkEnum = mapM_ f . universeBi
       e@(EnumFromThenTo _ e1 e2 e3) -> checkIntOrUnknown e [e1,e2,e3]
       _ -> return ()
 
-    checkIntOrUnknown :: Exp l -> [Exp l] -> Desugar ()
+    checkIntOrUnknown :: Exp l -> [Exp l] -> Desugar l ()
     checkIntOrUnknown exp es = when (not $ any isIntOrUnknown es) (throwError . UnsupportedEnum $ unAnn exp)
     isIntOrUnknown :: Exp l -> Bool
     isIntOrUnknown e = case e of
@@ -211,6 +214,46 @@ checkEnum = mapM_ f . universeBi
       EnumFromThen   {} -> False
       EnumFromThenTo {} -> False
       _                 -> True
+
+desugarImplicitPrelude :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
+desugarImplicitPrelude m =
+    if preludeNotNeeded
+        then return m
+        else addPrelude m
+  where
+    preludeNotNeeded = hasExplicitPrelude m ||
+                       hasLanguagePragma "NoImplicitPrelude" (getPragmas m)
+
+    getPragmas :: (Data l, Typeable l) => Module l -> [ModulePragma l]
+    getPragmas = universeBi
+
+    getImportDecls :: Module l -> [ImportDecl l]
+    getImportDecls (Module _ _ _ decls _) = decls
+    getImportDecls _ = []
+
+    setImportDecls :: [ImportDecl l] -> Module l -> Module l
+    setImportDecls decls (Module a b c _ d) = Module a b c decls d
+    setImportDecls _ mod = mod
+
+    hasExplicitPrelude :: Module l -> Bool
+    hasExplicitPrelude = any isPrelude . getImportDecls
+
+    isPrelude :: ImportDecl l -> Bool
+    isPrelude decl = case importModule decl of
+                      ModuleName _ name -> name == "Prelude"
+
+    addPrelude :: Module l -> Desugar l (Module l)
+    addPrelude mod = do
+        let decls = getImportDecls mod
+        prelude <- getPrelude
+        return $ setImportDecls (prelude : decls) mod
+
+    getPrelude :: Desugar l (ImportDecl l)
+    getPrelude = do
+        noInfo <- asks readerNoInfo
+        return $
+            ImportDecl noInfo (ModuleName noInfo "Prelude")
+                False False Nothing Nothing Nothing
 
 transformBi :: U.Biplate (from a) (to a) => (to a -> to a) -> from a -> from a
 transformBi = U.transformBi

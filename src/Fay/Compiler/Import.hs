@@ -37,9 +37,10 @@ compileWith
   => FilePath
   -> (a -> F.Module -> Compile a)
   -> (FilePath -> String -> Compile a)
+  -> (F.X -> F.Module -> IO (Either CompileError F.Module))
   -> String
   -> Compile (a, CompileState, CompileWriter)
-compileWith filepath with compileModule from = do
+compileWith filepath with compileModule before from = do
   rd <- ask
   st <- get
   res <- Compile . lift . lift $
@@ -47,10 +48,12 @@ compileWith filepath with compileModule from = do
       rd
       st
       (parseResult (throwError . uncurry ParseError)
-                   (\mod@(Module _ _ _ imports _) -> do
+                   (\mod -> do
+                     mod' <- io $ before F.noI mod
+                     mod''@(Module _ _ _ imports _) <- either throwError return mod'
                      res <- foldr (<>) mempty <$> mapM (compileImport compileModule) imports
                      modify $ \s -> s { stateModuleName = unAnn $ F.moduleName mod }
-                     with res mod
+                     with res mod''
                    )
                    (parseFay filepath from))
   either throwError return res

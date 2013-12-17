@@ -33,7 +33,7 @@ initialPass = startCompile preprocessFileWithSource
 -- | Preprocess a module given its filepath and content.
 preprocessFileWithSource :: FilePath -> String -> Compile ()
 preprocessFileWithSource filepath contents = do
-  (_,st,_) <- compileWith filepath preprocessAST preprocessFileWithSource contents
+  (_,st,_) <- compileWith filepath preprocessAST preprocessFileWithSource desugar contents
   -- This is the state we want to keep
   modify $ \s -> s { stateRecords     = stateRecords     st
                    , stateRecordTypes = stateRecordTypes st
@@ -51,7 +51,7 @@ preprocessFileWithSource filepath contents = do
 -- | Preprocess from an AST
 preprocessAST :: () -> F.Module -> Compile ()
 preprocessAST () mod'@Module{} = do
-  res <- io $ desugar mod'
+  res <- io $ desugar F.noI mod'
   case res of
     Left err -> throwError err
     Right dmod -> do

@@ -1,6 +1,4 @@
-module Main where
-
-import Prelude
+module Recursive where
 
 ones :: [Int]
 ones = 1 : ones

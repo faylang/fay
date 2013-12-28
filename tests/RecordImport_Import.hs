@@ -1,6 +1,7 @@
 {- NOTE: This file is also used in the Compile tests. -}
 
-import           Prelude
+module RecordImport_Import where
+
 import           RecordImport_Export
 
 f :: R -> R

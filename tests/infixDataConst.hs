@@ -1,4 +1,4 @@
-import           Prelude
+module InfixDataConst where
 
 data Ty1 = Integer `InfixConst1` Integer
 

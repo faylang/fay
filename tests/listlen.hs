@@ -1,7 +1,6 @@
 module Listlen (main) where
 
 import FFI
-import Prelude
 
 -- Test provided by ticket
 go :: [Double] -> [Double]

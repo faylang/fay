@@ -1,4 +1,4 @@
-import           Prelude
+module Guards where
 
 f :: Int -> Int
 f n | n <=  0 = 0

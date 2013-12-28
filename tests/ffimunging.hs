@@ -1,9 +1,6 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
-module Maybe where
+module FfiMunging where
 
 import           FFI
-import           Prelude
 
 data Munge a b = Fudge a b
 

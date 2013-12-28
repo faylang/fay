@@ -1,7 +1,5 @@
 module LazyOperators where
 
-import           Prelude
-
 main :: Fay ()
 main = print testFn
 

@@ -1,4 +1,5 @@
-import Prelude
+module Automatic where
+
 import FFI
 
 func :: Bool -> Int -> Int -> Int
@@ -19,4 +20,3 @@ main = do
   print' (semiAutomatic func False)
   print' (automatic func True)
   print' (automatic func False)
-

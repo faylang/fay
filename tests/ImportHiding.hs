@@ -1,4 +1,4 @@
-import Prelude
+module ImportHiding where
 
 import ImportList1.A hiding (y)
 import ImportList1.B hiding (x)

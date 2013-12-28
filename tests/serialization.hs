@@ -1,4 +1,5 @@
-import Prelude
+module Serialization where
+
 import FFI
 
 data Parametric a = Parametric a

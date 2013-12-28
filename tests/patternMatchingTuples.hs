@@ -1,8 +1,4 @@
--- compile with fay --html-wrapper
--- error thrown as soon as HTML page is loaded:
--- Uncaught TypeError: Cannot read property 'car' of null
-
-import Prelude
+module PatternMatchingTuples where
 
 main :: Fay ()
 main = putStrLn doTest

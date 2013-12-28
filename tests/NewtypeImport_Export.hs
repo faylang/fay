@@ -1,7 +1,6 @@
 module NewtypeImport_Export where
 
 import FFI
-import Prelude
 
 newtype MyInteger = MyInteger Int
 

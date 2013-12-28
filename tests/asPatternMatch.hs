@@ -1,4 +1,4 @@
-import           Prelude
+module AsPatternMatch where
 
 matchSame :: [a] -> ([a],[a])
 matchSame x@y = (x,y)

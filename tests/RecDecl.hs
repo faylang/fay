@@ -1,5 +1,6 @@
+module RecDecl where
+
 import           FFI
-import           Prelude
 
 data R = R { i :: Double, c :: Char }
 data S = S Double Char

@@ -1,5 +1,6 @@
+module Nullable where
+
 import           FFI
-import           Prelude
 
 data R = R (Nullable Double)
 

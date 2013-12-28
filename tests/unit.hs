@@ -1,4 +1,5 @@
-import Prelude
+module Unit where
+
 main = case (f ()) of
   () -> print 123
 

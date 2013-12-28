@@ -1,3 +1,5 @@
+module ImportListType where
+
 import Prelude (Fay, putStrLn)
 
 main :: Fay ()

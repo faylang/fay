@@ -1,5 +1,6 @@
-import Prelude
+module RealFrac where
 
+main :: Fay ()
 main = do
   print $ fst $ properFraction 1.5
   print $ snd $ properFraction 1.5

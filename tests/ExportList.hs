@@ -1,6 +1,5 @@
-module Main (main) where
+module ExportList (main) where
 
-import Prelude
 import ExportList_A
 import FFI
 
@@ -15,4 +14,3 @@ main = do
   print $ b1 b
   print c
   print d
-

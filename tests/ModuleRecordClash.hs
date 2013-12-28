@@ -1,6 +1,5 @@
 module ModuleRecordClash (main) where
 
-import Prelude
 import ModuleRecordClash.R
 
 data R = R

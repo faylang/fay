@@ -1,4 +1,4 @@
-import Prelude
+module BaseFixities where
 
 fmap :: (a -> b) -> Fay a -> Fay b
 fmap f m = m >>= (return . f)

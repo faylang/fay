@@ -1,7 +1,6 @@
 module QualifiedImport where
 
 import           FFI
-import           Prelude
 
 import qualified QualifiedImport.X
 import qualified QualifiedImport.X as X

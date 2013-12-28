@@ -1,9 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 
--- | As pattern matches
+module PatternGuards where
 
 import           FFI
-import           Prelude
 
 isPositive :: Double -> Bool
 isPositive x | x > 0 = True

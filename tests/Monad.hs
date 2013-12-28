@@ -1,8 +1,5 @@
-{-# LANGUAGE EmptyDataDecls    #-}
-
--- | Monads test.
-
-import           Prelude
+{-# LANGUAGE EmptyDataDecls #-}
+module Monad where
 
 main :: Fay ()
 main = do
@@ -13,4 +10,3 @@ main = do
   y <- return 101112
   print x
   print y
-

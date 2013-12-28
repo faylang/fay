@@ -1,5 +1,5 @@
 {-# LANGUAGE TupleSections #-}
-import Prelude
+module TupleSec where
 
 main = do
     print $ (,2) 1

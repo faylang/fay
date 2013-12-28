@@ -1,4 +1,4 @@
-import Prelude
+module NumTheory where
 
 main = do
   print $ (subtract 3 5 :: Int)

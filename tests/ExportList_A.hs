@@ -1,7 +1,6 @@
 module ExportList_A (x, A (..), B (B, b1), module ExportList_B) where
 
 import ExportList_B
-import Prelude
 
 x :: Double
 x = 1

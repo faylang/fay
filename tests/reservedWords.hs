@@ -1,6 +1,6 @@
 {-# LANGUAGE EmptyDataDecls    #-}
 
-import           Prelude
+module ReservedWords where
 
 main = do
   -- All reserved words
@@ -43,4 +43,3 @@ main = do
   putStrLn ""
   -- Stdlib functions that need to be encoded
   putStrLn $ const "stdconst" 2
-

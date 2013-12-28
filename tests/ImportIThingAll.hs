@@ -1,4 +1,5 @@
-import           Prelude
+module ImportIThingAll where
+
 import           FFI
 
 import           ImportList1.C        (A (..))

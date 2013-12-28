@@ -1,4 +1,4 @@
-import           Prelude
+module WhereBind2 where
 
 someFun :: Int -> String
 someFun x = fun x

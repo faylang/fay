@@ -1,4 +1,4 @@
-import           Prelude
+module Pats where
 
 main :: Fay ()
 main = do

@@ -1,4 +1,4 @@
-import Prelude
+module SuccPred where
 
 main = do
   print (succ 1 :: Int)

@@ -1,6 +1,5 @@
-import           Prelude
+module Case where
 
 main = putStrLn (case True of
                    True -> "Hello!"
                    False -> "Ney!")
-

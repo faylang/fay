@@ -1,4 +1,4 @@
-import Prelude
+module Either where
 
 raw :: Either Int Int -> Int
 raw x = case x of Left a -> a + 1

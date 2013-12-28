@@ -1,4 +1,4 @@
-import           Prelude
+module WhereBind3 where
 
 f :: String -> String
 f x = friends ++ family
@@ -6,4 +6,3 @@ f x = friends ++ family
         family = " and family"
 
 main = putStrLn (f "my friends")
-

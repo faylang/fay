@@ -1,10 +1,7 @@
 {-# LANGUAGE EmptyDataDecls #-}
-
 {-# LANGUAGE RankNTypes     #-}
 
--- | Monads test.
-
-import           Prelude
+module Monad2 where
 
 main :: Fay ()
 main = do

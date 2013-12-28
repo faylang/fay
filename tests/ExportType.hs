@@ -8,7 +8,6 @@ module ExportType (
   ) where
 
 import           FFI
-import           Prelude
 
 data X = X
 

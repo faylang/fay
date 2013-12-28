@@ -1,4 +1,4 @@
-import           Prelude
+module WhereBind where
 
 main :: Fay ()
 main =

@@ -1,4 +1,4 @@
-import           Prelude
+module NameGen where
 
 data SomeRec = SomeRec { a :: Integer, b :: Integer } | Y | X
 
@@ -12,4 +12,3 @@ main = do
     putStrLn $ case t of
                     SomeRec _ _ -> "Bad"
                     Y -> "OK."
-

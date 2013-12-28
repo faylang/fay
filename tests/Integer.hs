@@ -1,7 +1,5 @@
 module Integer where
 
-import Prelude
-
 main :: Fay ()
 main = do
   -- Integer is Ord, Eq, and Show, but not Num.

@@ -1,4 +1,4 @@
-import Prelude
+module EnumFrom where
 
 main :: Fay ()
 main = do

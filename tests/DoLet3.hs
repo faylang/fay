@@ -1,6 +1,5 @@
 module DoLet3 where
 
-import Prelude
 import FFI
 
 data R = R Int

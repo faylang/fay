@@ -1,4 +1,4 @@
-import Prelude
+module Curry where
 
 f :: Int -> Int -> Int
 f x y = x + y

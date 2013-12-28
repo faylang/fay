@@ -1,4 +1,4 @@
-import Prelude
+module Floating where
 
 main = do
   print $ exp 0

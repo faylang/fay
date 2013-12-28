@@ -1,8 +1,9 @@
 {-# LANGUAGE NamedFieldPuns  #-}
 {-# LANGUAGE RecordWildCards #-}
 
+module RecordWildCards where
+
 import           FFI
-import           Prelude
 
 data C = C { a :: Int, b :: Int, c :: Int, d :: Int }
 

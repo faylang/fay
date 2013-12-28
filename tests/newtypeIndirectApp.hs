@@ -1,6 +1,4 @@
-module Main where
-
-import           Prelude
+module NewtypeIndirectApp where
 
 newtype Parser a = Parser { runParser :: Char -> Either Char (a, Char) }
 

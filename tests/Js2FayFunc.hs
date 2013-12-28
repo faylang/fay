@@ -1,6 +1,8 @@
-import FFI
-import Prelude
+module Js2FayFunc where
 
+import FFI
+
+main :: Fay ()
 main = do
   f <- getF
   g <- getG

@@ -1,7 +1,6 @@
 module ReExportGlobally (main, x) where
 
 import           FFI
-import           Prelude
 
 import           ReExportGlobally.A (x)
 

@@ -1,9 +1,7 @@
--- | Mutable references.
-
-{-# LANGUAGE EmptyDataDecls    #-}
+{-# LANGUAGE EmptyDataDecls #-}
+module MutableReference where
 
 import           FFI
-import           Prelude
 
 main :: Fay ()
 main = do

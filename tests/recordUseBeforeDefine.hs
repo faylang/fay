@@ -1,4 +1,4 @@
-import           Prelude
+module RecordUseBeforeDefine where
 
 import           Hierarchical.RecordDefined
 
@@ -10,4 +10,3 @@ main = do
   print $ g (Callback 1)
 
 data R = R Double
-

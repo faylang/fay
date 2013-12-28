@@ -1,7 +1,5 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-module Main where
+module FfiExpr where
 
-import Prelude
 import FFI
 
 main :: Fay ()

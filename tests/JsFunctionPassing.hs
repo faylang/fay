@@ -1,7 +1,8 @@
 {-# LANGUAGE EmptyDataDecls #-}
 
+module JsFunctionPassing where
+
 import           FFI
-import           Prelude
 
 data Func
 

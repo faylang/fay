@@ -1,6 +1,9 @@
+module List2 where
+
 import           FFI
 import           Prelude hiding (take)
 
+main :: Fay ()
 main = putStrLn (showList (take 5 (let ns = 1 : map' (foo 123) ns in ns)))
 
 foo :: Double -> Double -> Double

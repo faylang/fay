@@ -1,5 +1,4 @@
 import           FFI
-import           Prelude
 
 data R = R (Defined Double)
 

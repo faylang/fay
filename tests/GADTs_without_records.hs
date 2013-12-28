@@ -2,14 +2,12 @@
 
 module GADTs_without_records where
 
-import Prelude
-
 data Expr a where
   I :: Int -> Expr Int
   Plus :: Expr Int -> Expr Int -> Expr Int
   B :: Bool -> Expr Bool
   IfThenElse :: Expr Bool -> Expr a -> Expr a -> Expr a
-  
+
 false :: Expr Bool
 false = B False
 
@@ -23,7 +21,7 @@ eval (B x) = x
 eval (IfThenElse p e1 e2) = case eval p of
   True -> eval e1
   False -> eval e2
-  
+
 n5 = I 5
 n2 = I 2
 

@@ -1,6 +1,5 @@
 module StringForcing where
 
-import Prelude
 import FFI
 
 main = do

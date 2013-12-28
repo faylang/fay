@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings, RebindableSyntax #-}
 module FromString where
 
-import Prelude
 import FromString.FayText
 import FromString.Dep (myString, depTest)
 
@@ -12,4 +11,3 @@ main = do
   putStrLn myString
   print myString
   depTest
-

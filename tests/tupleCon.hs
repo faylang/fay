@@ -1,4 +1,4 @@
-import Prelude
+module TupleCon where
 
 main = do
   print $ (,) 1 2

@@ -1,6 +1,5 @@
 module TyVarSerialization where
 
-import Prelude
 import FFI
 
 main :: Fay ()

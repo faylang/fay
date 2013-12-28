@@ -1,7 +1,6 @@
 module Ord where
 
-import           Prelude
-
+main :: Fay ()
 main = do
   when ((1::Int) < 2) $ putStrLn "Expected <"
   when ((1::Int) < 1) $ putStrLn "Unexpected < (1)"

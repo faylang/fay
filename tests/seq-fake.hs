@@ -1,4 +1,4 @@
-import Prelude
+module SeqFake where
 
 fakeSeq :: a -> b -> b
 fakeSeq x y = y

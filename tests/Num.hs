@@ -1,7 +1,6 @@
 module Num where
 
-import           Prelude
-
+main :: Fay ()
 main = do
   print (1 + 2::Int)
   print (4 - 1::Int)

@@ -1,4 +1,4 @@
-import Prelude
+module Eq where
 
 main = do
   when (1 == 1) $ putStrLn "Expected =="

@@ -1,5 +1,6 @@
+module Newtype where
+
 import FFI
-import Prelude
 
 newtype MyInteger = MyInteger Int
 

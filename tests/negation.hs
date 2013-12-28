@@ -1,8 +1,9 @@
-import           Prelude
+module Negation where
 
 print' :: Double -> Fay ()
 print' = print
 
+main :: Fay ()
 main = do print' $ (-7/2)
           print' $ (-7)/2
           print' $ -f x/y

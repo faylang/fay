@@ -1,4 +1,4 @@
-import Prelude
+module GuardWhere where
 
 poseL :: Bool -> String
 poseL y | y == True = "Not OK"

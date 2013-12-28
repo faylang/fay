@@ -1,6 +1,5 @@
 module ImportList where
 
-import           Prelude
 import           FFI
 
 import           ImportList1.A        (x)

@@ -1,7 +1,8 @@
-import Prelude
+module LinesAndWords where
 
 quote s = "\"" ++ s ++ "\""
 
+main :: Fay ()
 main = do
   mapM_ (putStrLn . quote) $ words "  this  is\ta\n\r\ftest  "
   putStrLn $ quote $ unwords ["this", "is", "too"]

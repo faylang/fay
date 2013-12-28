@@ -1,7 +1,5 @@
 module Sections where
 
-import           Prelude
-
 withTwo :: (Int -> Int) -> Int
 withTwo f = f 2
 

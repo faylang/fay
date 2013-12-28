@@ -1,4 +1,4 @@
-import           Prelude
+module ImportType where
 
 import           ExportType
 
@@ -14,4 +14,3 @@ main = do
   print w'
   print (V 1 2)
   print (v1 (V 1 2))
-

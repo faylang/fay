@@ -1,6 +1,5 @@
 module DoLet2 where
 
-import Prelude
 import FFI
 
 main = do

@@ -1,4 +1,4 @@
-import Prelude
+module Integral where
 
 printPair :: (Int,Int) -> Fay ()
 printPair (x,y) = print x >> print y

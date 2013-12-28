@@ -1,6 +1,5 @@
 module Ratio where
 
-import Prelude
 import Data.Ratio
 
 main :: Fay ()

@@ -1,5 +1,5 @@
 -- | This is to test tail-recursive calls are iterative.
-import           Prelude
+module TailRecursion where
 
 main = do
   print (sumTo 1000 0 :: Double)

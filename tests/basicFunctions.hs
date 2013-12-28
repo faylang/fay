@@ -1,4 +1,4 @@
-import           Prelude
+module BasicFunctions where
 
 main = putStrLn (concat' ["Hello, ","World!"])
 
@@ -9,4 +9,3 @@ foldr' f z (x:xs) = f x (foldr f z xs)
 
 append (x:xs) ys = x : append xs ys
 append []     ys = ys
-

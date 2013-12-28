@@ -1,4 +1,4 @@
-import           Prelude
+module DoLet where
 
 main = do
   first
@@ -43,4 +43,3 @@ sixth = do
   let y = 777
   print y
   print x
-

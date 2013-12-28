@@ -1,0 +1,13 @@
+fac
+5
+fac
+4
+fac
+3
+fac
+2
+fac
+1
+fac
+0
+120

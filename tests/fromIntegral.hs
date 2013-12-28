@@ -1,4 +1,7 @@
 module FromIntegral where
 
 main :: Fay ()
-main = putStrLn $ show $ fromIntegral 5
+main = print $ fromIntegral' 5
+
+fromIntegral' :: Int -> Double
+fromIntegral' = fromIntegral

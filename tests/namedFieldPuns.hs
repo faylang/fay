@@ -3,7 +3,7 @@ module NamedFieldPuns where
 
 import           FFI
 
-data SomeRec = SomeRec { a :: Integer, b :: Integer } | Y | X
+data SomeRec = SomeRec { a :: Int, b :: Int } | Y | X
 
 fun :: SomeRec -> SomeRec
 fun SomeRec{a} = SomeRec{a=a+1, b=10}

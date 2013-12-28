@@ -3,6 +3,7 @@ module FromString where
 
 import FromString.FayText
 import FromString.Dep (myString, depTest)
+import Prelude
 
 main :: Fay ()
 main = do

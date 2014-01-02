@@ -71,7 +71,6 @@ compileFromToAndGenerateHtml config filein fileout = do
           ,"    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>"
           , unlines . map (("    "++) . makeScriptTagSrc) $ configHtmlJSLibs config
           , "    " ++ makeScriptTagSrc relativeJsPath
-          , "    </script>"
           , "  </head>"
           , "  <body>"
           , "  </body>"

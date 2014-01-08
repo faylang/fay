@@ -2,10 +2,20 @@ module CorrectTypeSigFFI where
 
 import FFI
 
-an_int = 0
-an_int :: Int
+int = 0
+int :: Int
 
-a_string = ffi "\"hello, world\""
-a_string :: String
+toplevel = ffi "\"one \""
+toplevel :: String
 
-main = putStrLn a_string
+multipleToplevel, insideWhere :: String
+multipleToplevel = ffi "\"two \""
+
+insideWhere = "three "
+  -- where
+  --   str :: String
+  --   str = ffi "\"three \""
+
+expression = "f" ++ (ffi "\"our\"" :: String)
+
+main = putStrLn $ concat [toplevel, multipleToplevel, insideWhere, expression]

@@ -14,6 +14,7 @@ import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Pattern
 import           Fay.Compiler.State
+import           Fay.Compiler.QName              (unname)
 import           Fay.Data.List.Extra
 import           Fay.Exts                        (convertFieldDecl, fieldDeclNames)
 import           Fay.Exts.NoAnnotation           (unAnn)
@@ -44,12 +45,8 @@ compileDecls toplevel' decls' = go toplevel' decls'
 
     -- Tests whether a type signature declares what the type of a given name is
     includesName name (TypeSig _ names _) =
-      any (== (getStr name)) $ map getStr names
+      any (== (unname name)) $ map unname names
     includesName _ _ = False
-
-    getStr name = case name of
-      Ident _ s -> s
-      Symbol _ s -> s
 
     go toplevel decls = case decls of
       [] -> return []

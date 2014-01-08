@@ -14,7 +14,6 @@ import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Pattern
 import           Fay.Compiler.State
-import           Fay.Compiler.QName              (unname)
 import           Fay.Data.List.Extra
 import           Fay.Exts                        (convertFieldDecl, fieldDeclNames)
 import           Fay.Exts.NoAnnotation           (unAnn)
@@ -28,37 +27,7 @@ import           Language.Haskell.Exts.Annotated
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
-compileDecls toplevel' decls' = go toplevel' decls'
-  where
-    isTypeSig (TypeSig _ _ _) = True
-    isTypeSig _               = False
-
-    typeSigs = filter isTypeSig decls'
-
-    getSigFor decl = case decl of
-      (PatBind _ (PVar _ name) _ _ _) ->
-        case filter (includesName name) typeSigs of
-          [] -> Nothing
-          [(TypeSig _ _ sig)] -> Just sig
-          _ -> error "(todo) multiple type signatures"
-      _ -> Nothing
-
-    -- Tests whether a type signature declares what the type of a given name is
-    includesName name (TypeSig _ names _) =
-      any (== (unname name)) $ map unname names
-    includesName _ _ = False
-
-    go toplevel decls = case decls of
-      [] -> return []
-      (bind@PatBind{}:decls) -> appendM (compilePatBind toplevel (getSigFor bind) bind)
-                                        (compileDecls toplevel decls)
-      (decl:decls) -> appendM (compileDecl toplevel decl)
-                              (go toplevel decls)
-
-    appendM m n = do x <- m
-                     xs <- n
-                     return (x ++ xs)
-
+compileDecls toplevel = fmap concat . sequence . map (compileDecl toplevel)
 
 -- | Compile a declaration.
 compileDecl :: Bool -> S.Decl -> Compile [JsStmt]
@@ -97,11 +66,7 @@ mkTyVars (DHParen _ dh) = mkTyVars dh
 compilePatBind :: Bool -> Maybe S.Type -> S.Decl -> Compile [JsStmt]
 compilePatBind toplevel sig patDecl = case patDecl of
   PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
-    case ffiExp rhs of
-      Just formatstr -> case sig of
-        Just sig -> compileFFI ident formatstr sig
-        Nothing  -> throwError $ FfiNeedsTypeSig patDecl
-      _ -> compileUnguardedRhs toplevel srcloc ident rhs
+      compileUnguardedRhs toplevel srcloc ident rhs
   -- TODO: Generalize to all patterns
   PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) (Just bdecls) ->
     compileUnguardedRhs toplevel srcloc ident (Let S.noI bdecls rhs)

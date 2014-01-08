@@ -27,17 +27,41 @@ import           Language.Haskell.Exts.Annotated
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
-compileDecls toplevel decls = case decls of
-  [] -> return []
-  (TypeSig _ _ sig:bind@PatBind{}:decls) -> appendM (compilePatBind toplevel (Just sig) bind)
-                                                    (compileDecls toplevel decls)
-  (decl:decls) -> appendM (compileDecl toplevel decl)
-                          (compileDecls toplevel decls)
-
+compileDecls toplevel' decls' = go toplevel' decls'
   where
+    isTypeSig (TypeSig _ _ _) = True
+    isTypeSig _               = False
+
+    typeSigs = filter isTypeSig decls'
+
+    getSigFor decl = case decl of
+      (PatBind _ (PVar _ name) _ _ _) ->
+        case filter (includesName name) typeSigs of
+          [] -> Nothing
+          [(TypeSig _ _ sig)] -> Just sig
+          _ -> error "(todo) multiple type signatures"
+      _ -> Nothing
+
+    -- Tests whether a type signature declares what the type of a given name is
+    includesName name (TypeSig _ names _) =
+      any (== (getStr name)) $ map getStr names
+    includesName _ _ = False
+
+    getStr name = case name of
+      Ident _ s -> s
+      Symbol _ s -> s
+
+    go toplevel decls = case decls of
+      [] -> return []
+      (bind@PatBind{}:decls) -> appendM (compilePatBind toplevel (getSigFor bind) bind)
+                                        (compileDecls toplevel decls)
+      (decl:decls) -> appendM (compileDecl toplevel decl)
+                              (go toplevel decls)
+
     appendM m n = do x <- m
                      xs <- n
                      return (x ++ xs)
+
 
 -- | Compile a declaration.
 compileDecl :: Bool -> S.Decl -> Compile [JsStmt]

@@ -7,7 +7,8 @@ module Fay.Compiler.Desugar
   (desugar
   ) where
 
-import           Fay.Compiler.Misc               (hasLanguagePragma)
+import           Fay.Compiler.QName              (unname)
+import           Fay.Compiler.Misc               (hasLanguagePragma, ffiExp)
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types                       (CompileError (..))
 
@@ -65,6 +66,7 @@ desugar emptyAnnotation md = runDesugar emptyAnnotation $
   >>= desugarDo
   >>= desugarTupleSection
   >>= desugarImplicitPrelude
+  >>= desugarToplevelFFITypeSigs
 
 -- | Desugaring
 
@@ -164,7 +166,7 @@ desugarPatFieldPun = transformBi $ \pf -> case pf of
   PFieldPun l n -> PFieldPat l (UnQual l n) (PVar l n)
   _             -> pf
 
--- | Desugar l list comprehensions.
+-- | Desugar list comprehensions.
 desugarListComp :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarListComp = transformBiM $ \ex -> case ex of
     ListComp l exp stmts -> desugarListComp' l exp stmts
@@ -253,6 +255,63 @@ desugarImplicitPrelude m =
     getPrelude = do
       noInfo <- asks readerNoInfo
       return $ ImportDecl noInfo (ModuleName noInfo "Prelude") False False Nothing Nothing Nothing
+
+-- | For each toplevel FFI pattern binding, search the module for the relevant
+-- type declaration; if found, add a type signature to the ffi expression.
+-- e.g.
+--  foo :: Int
+--  foo = ffi "3"
+-- becomes
+--  foo :: Int
+--  foo = (ffi "3" :: Int)
+desugarToplevelFFITypeSigs :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
+desugarToplevelFFITypeSigs m = case m of
+  Module a b c d decls -> do
+    let toplevelTypeSigs = getToplevelTypeSigs decls
+    decls' <- sequence $ go toplevelTypeSigs decls
+    return $ Module a b c d decls'
+  _ -> return m
+  where
+  getToplevelTypeSigs decls =
+    [ (unname n, typ) | TypeSig _ names typ <- decls, n <- names ]
+
+  go toplevelTypeSigs decls =
+    map (addTypeSig toplevelTypeSigs) decls
+
+  addTypeSig sigs decl = case decl of
+    (PatBind loc pat typ rhs binds) ->
+      case getUnguardedRhs rhs of
+        Just (srcInfo, rhExp) ->
+          if isFFI rhExp
+            then do
+              rhExp' <- addSigToExp sigs decl rhExp
+              return $ PatBind loc pat typ (UnGuardedRhs srcInfo rhExp') binds
+            else return decl
+        _ -> return decl
+    _ -> return decl
+
+  getUnguardedRhs rhs = case rhs of
+    (UnGuardedRhs srcInfo exp) -> Just (srcInfo, exp)
+    _ -> Nothing
+
+  isFFI = isJust . ffiExp
+
+  -- | Adds an explicit type signature to an expression (which is assumed to
+  -- be the RHS of a declaration). This should only need to be called for FFI
+  -- function declarations.
+  -- Arguments:
+  --  sigs:  List of toplevel type signatures
+  --  decl:  The declaration, which should be a PatBind.
+  --  rhExp: Expression comprising the RHS of the declaration
+  addSigToExp sigs decl rhExp = case getTypeFor sigs decl of
+    Just typ -> do
+      noInfo <- asks readerNoInfo
+      return $ ExpTypeSig noInfo rhExp typ
+    Nothing -> return rhExp
+
+  getTypeFor sigs decl = case decl of
+    (PatBind _ (PVar _ name) _ _ _) -> lookup (unname name) sigs
+    _ -> Nothing
 
 transformBi :: U.Biplate (from a) (to a) => (to a -> to a) -> from a -> from a
 transformBi = U.transformBi

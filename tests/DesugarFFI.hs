@@ -10,19 +10,19 @@ addOne = ffi "%1 + 1"
 addTwo = ffi "%1 + 2"
 
 -- FFI call in a let binding
--- addThree :: Int -> Int
--- addThree x =
---   let go :: Int -> Int
---       go = ffi "%1 + 3"
---   in go x
+addThree :: Int -> Int
+addThree x =
+  let go :: Int -> Int
+      go = ffi "%1 + 3"
+  in go x
 
 -- FFI call in a where binding
--- addFour :: Int -> Int
--- addFour x = go x
---   where
---   go :: Int -> Int
---   go = ffi "%1 + 3"
+addFour :: Int -> Int
+addFour x = go x
+  where
+  go :: Int -> Int
+  go = ffi "%1 + 4"
 
 main = do
-  let result = addOne . addTwo {-.  addThree . addFour -} $ 0
+  let result = addOne . addTwo .  addThree . addFour $ 0
   putStrLn $ show result

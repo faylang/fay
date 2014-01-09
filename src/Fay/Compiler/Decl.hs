@@ -27,22 +27,12 @@ import           Language.Haskell.Exts.Annotated
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
-compileDecls toplevel decls = case decls of
-  [] -> return []
-  (TypeSig _ _ sig:bind@PatBind{}:decls) -> appendM (compilePatBind toplevel (Just sig) bind)
-                                                    (compileDecls toplevel decls)
-  (decl:decls) -> appendM (compileDecl toplevel decl)
-                          (compileDecls toplevel decls)
-
-  where
-    appendM m n = do x <- m
-                     xs <- n
-                     return (x ++ xs)
+compileDecls toplevel = fmap concat . sequence . map (compileDecl toplevel)
 
 -- | Compile a declaration.
 compileDecl :: Bool -> S.Decl -> Compile [JsStmt]
 compileDecl toplevel decl = case decl of
-  pat@PatBind{} -> compilePatBind toplevel Nothing pat
+  pat@PatBind{} -> compilePatBind toplevel pat
   FunBind _ matches -> compileFunCase toplevel matches
   DataDecl _ (DataType _ ) _ (mkTyVars -> tyvars) constructors _ -> compileDataDecl toplevel tyvars constructors
   GDataDecl _ (DataType _) _l (mkTyVars -> tyvars) _n decls _ -> compileDataDecl toplevel tyvars (map convertGADT decls)
@@ -73,14 +63,10 @@ mkTyVars (DHInfix _ t1 _ t2) = [t1, t2]
 mkTyVars (DHParen _ dh) = mkTyVars dh
 
 -- | Compile a top-level pattern bind.
-compilePatBind :: Bool -> Maybe S.Type -> S.Decl -> Compile [JsStmt]
-compilePatBind toplevel sig patDecl = case patDecl of
+compilePatBind :: Bool -> S.Decl -> Compile [JsStmt]
+compilePatBind toplevel patDecl = case patDecl of
   PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
-    case ffiExp rhs of
-      Just formatstr -> case sig of
-        Just sig -> compileFFI ident formatstr sig
-        Nothing  -> throwError $ FfiNeedsTypeSig patDecl
-      _ -> compileUnguardedRhs toplevel srcloc ident rhs
+      compileUnguardedRhs toplevel srcloc ident rhs
   -- TODO: Generalize to all patterns
   PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) (Just bdecls) ->
     compileUnguardedRhs toplevel srcloc ident (Let S.noI bdecls rhs)

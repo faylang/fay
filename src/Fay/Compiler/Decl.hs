@@ -32,7 +32,7 @@ compileDecls toplevel = fmap concat . sequence . map (compileDecl toplevel)
 -- | Compile a declaration.
 compileDecl :: Bool -> S.Decl -> Compile [JsStmt]
 compileDecl toplevel decl = case decl of
-  pat@PatBind{} -> compilePatBind toplevel Nothing pat
+  pat@PatBind{} -> compilePatBind toplevel pat
   FunBind _ matches -> compileFunCase toplevel matches
   DataDecl _ (DataType _ ) _ (mkTyVars -> tyvars) constructors _ -> compileDataDecl toplevel tyvars constructors
   GDataDecl _ (DataType _) _l (mkTyVars -> tyvars) _n decls _ -> compileDataDecl toplevel tyvars (map convertGADT decls)
@@ -63,8 +63,8 @@ mkTyVars (DHInfix _ t1 _ t2) = [t1, t2]
 mkTyVars (DHParen _ dh) = mkTyVars dh
 
 -- | Compile a top-level pattern bind.
-compilePatBind :: Bool -> Maybe S.Type -> S.Decl -> Compile [JsStmt]
-compilePatBind toplevel sig patDecl = case patDecl of
+compilePatBind :: Bool -> S.Decl -> Compile [JsStmt]
+compilePatBind toplevel patDecl = case patDecl of
   PatBind _ (PVar _ ident'@Ident{}) Nothing
     (UnGuardedRhs _
       (ExpTypeSig _

@@ -1,4 +1,4 @@
-module StrictWrapper (f,g,h,r,clog) where
+module StrictWrapper (f, g, h, r, clog, logInlineOnly, logSeparateOnly, logBoth) where
 
 import           FFI
 import           Prelude
@@ -20,6 +20,16 @@ r = R 2
 clog :: a -> Fay ()
 clog = ffi "console.log(%1)"
 
+-- FFI Expressions
+logInlineOnly = ffi "console.log(%1)" :: a -> Fay ()
+
+logSeparateOnly :: a -> Fay ()
+logSeparateOnly = ffi "console.log(%1)"
+
+logBoth :: a -> Fay ()
+logBoth = ffi "console.log(%1)" :: a -> Fay ()
+
+
 -- You should probably not use the strict wrapper from Fay, this is just for the sake of the test.
 main :: Fay ()
 main = do
@@ -28,3 +38,6 @@ main = do
   ffi "console.log(Strict.StrictWrapper.h({instance:'R',i:1}))" :: Fay ()
   ffi "console.log(Strict.StrictWrapper.r)" :: Fay ()
   ffi "Strict.StrictWrapper.clog(123)" :: Fay ()
+  ffi "Strict.StrictWrapper.logInlineOnly('inlineOnly')" :: Fay ()
+  ffi "Strict.StrictWrapper.logSeparateOnly('separateOnly')" :: Fay ()
+  ffi "Strict.StrictWrapper.logBoth('both')" :: Fay ()

@@ -41,11 +41,12 @@ import           Prelude                                hiding (exp, mod)
 import           Safe
 
 -- | Compile an FFI call.
-compileFFI :: S.Name  -- ^ Name of the to-be binding.
+compileFFI :: Bool
+           -> S.Name  -- ^ Name of the to-be binding.
            -> String -- ^ The format string.
            -> S.Type   -- ^ Type signature.
            -> Compile [JsStmt]
-compileFFI name' formatstr sig =
+compileFFI toplevel name' formatstr sig =
   -- substitute newtypes with their child types before calling
   -- real compileFFI
   compileFFI' =<< rmNewtys sig
@@ -69,7 +70,7 @@ compileFFI name' formatstr sig =
 
     compileFFI' :: N.Type -> Compile [JsStmt]
     compileFFI' sig' = do
-      fun <- compileFFIExp loc (Just name) formatstr sig'
+      fun <- compileFFIExp toplevel loc (Just name) formatstr sig'
       stmt <- bindToplevel True (Just (srcInfoSpan loc)) name fun
       return [stmt]
 
@@ -77,8 +78,8 @@ compileFFI name' formatstr sig =
     loc = S.srcSpanInfo $ ann name'
 
 -- | Compile an FFI expression (also used when compiling top level definitions).
-compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> (Type a) -> Compile JsExp
-compileFFIExp loc (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
+compileFFIExp :: Bool -> SrcSpanInfo -> Maybe (Name a) -> String -> (Type a) -> Compile JsExp
+compileFFIExp toplevel loc (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
   let name = fromMaybe "<exp>" nameopt
   inner <- formatFFI loc formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.expression (prettyPrint name) (printJSString (wrapReturn inner)) of
@@ -93,7 +94,7 @@ compileFFIExp loc (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
     wrapParam pname inner = JsFun Nothing [pname] [] (Just inner)
     params = zipWith const uniqueNames [1..typeArity sig]
     wrapReturn :: String -> JsExp
-    wrapReturn inner = thunk $
+    wrapReturn inner = (if toplevel then id else thunk) $
       case lastMay funcFundamentalTypes of
         -- Returns a “pure” value;
         Just{} -> jsToFay SerializeAnywhere returnType (JsRawExp inner)

@@ -75,10 +75,17 @@ mkTyVars (DHParen _ dh) = mkTyVars dh
 -- | Compile a top-level pattern bind.
 compilePatBind :: Bool -> Maybe S.Type -> S.Decl -> Compile [JsStmt]
 compilePatBind toplevel sig patDecl = case patDecl of
+  PatBind _ (PVar _ ident'@Ident{}) Nothing
+    (UnGuardedRhs _
+      (ExpTypeSig _
+        (App _ (Var _ (UnQual _ (Ident _ "ffi")))
+                (Lit _ (String _ formatstr _)))
+      sig)) Nothing ->
+    compileFFI True ident' formatstr sig
   PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
     case ffiExp rhs of
       Just formatstr -> case sig of
-        Just sig -> compileFFI ident formatstr sig
+        Just sig -> compileFFI False ident formatstr sig
         Nothing  -> throwError $ FfiNeedsTypeSig patDecl
       _ -> compileUnguardedRhs toplevel srcloc ident rhs
   -- TODO: Generalize to all patterns

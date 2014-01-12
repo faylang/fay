@@ -71,7 +71,7 @@ compilePatBind toplevel patDecl = case patDecl of
         (App _ (Var _ (UnQual _ (Ident _ "ffi")))
                 (Lit _ (String _ formatstr _)))
       sig)) Nothing ->
-    compileFFI True ident' formatstr sig
+    compileFFI toplevel ident' formatstr sig
   PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
       compileUnguardedRhs toplevel srcloc ident rhs
   -- TODO: Generalize to all patterns

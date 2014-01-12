@@ -70,16 +70,16 @@ compileFFI toplevel name' formatstr sig =
 
     compileFFI' :: N.Type -> Compile [JsStmt]
     compileFFI' sig' = do
-      fun <- compileFFIExp toplevel loc (Just name) formatstr sig'
-      stmt <- bindToplevel True (Just (srcInfoSpan loc)) name fun
+      fun <- compileFFIExp loc (Just name) formatstr sig'
+      stmt <- bindToplevel toplevel (Just (srcInfoSpan loc)) name fun
       return [stmt]
 
     name = unAnn name'
     loc = S.srcSpanInfo $ ann name'
 
 -- | Compile an FFI expression (also used when compiling top level definitions).
-compileFFIExp :: Bool -> SrcSpanInfo -> Maybe (Name a) -> String -> (Type a) -> Compile JsExp
-compileFFIExp toplevel loc (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
+compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> (Type a) -> Compile JsExp
+compileFFIExp loc (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
   let name = fromMaybe "<exp>" nameopt
   inner <- formatFFI loc formatstr (zip params funcFundamentalTypes)
   case JS.parse JS.expression (prettyPrint name) (printJSString (wrapReturn inner)) of
@@ -94,7 +94,7 @@ compileFFIExp toplevel loc (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
     wrapParam pname inner = JsFun Nothing [pname] [] (Just inner)
     params = zipWith const uniqueNames [1..typeArity sig]
     wrapReturn :: String -> JsExp
-    wrapReturn inner = (if toplevel then id else thunk) $
+    wrapReturn inner = thunk $
       case lastMay funcFundamentalTypes of
         -- Returns a “pure” value;
         Just{} -> jsToFay SerializeAnywhere returnType (JsRawExp inner)

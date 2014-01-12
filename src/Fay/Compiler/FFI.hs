@@ -8,7 +8,6 @@
 module Fay.Compiler.FFI
   (emitFayToJs
   ,emitJsToFay
-  ,compileFFI
   ,compileFFIExp
   ,jsToFayHash
   ,fayToJsHash
@@ -34,25 +33,10 @@ import           Data.Maybe
 import           Data.String
 import           Language.ECMAScript3.Parser            as JS
 import           Language.ECMAScript3.Syntax
-import           Language.Haskell.Exts.Annotated        (SrcSpanInfo,
-                                                         prettyPrint,srcInfoSpan)
+import           Language.Haskell.Exts.Annotated        (SrcSpanInfo, prettyPrint)
 import           Language.Haskell.Exts.Annotated.Syntax
 import           Prelude                                hiding (exp, mod)
 import           Safe
-
--- | Compile an FFI call.
-compileFFI :: Bool
-           -> S.Name  -- ^ Name of the to-be binding.
-           -> String -- ^ The format string.
-           -> S.Type   -- ^ Type signature.
-           -> Compile [JsStmt]
-compileFFI toplevel name' formatstr sig = do
-  fun <- compileFFIExp loc (Just name) formatstr sig
-  stmt <- bindToplevel toplevel (Just (srcInfoSpan loc)) name fun
-  return [stmt]
-  where
-    name = unAnn name'
-    loc = S.srcSpanInfo $ ann name'
 
 -- | Compile an FFI expression (also used when compiling top level definitions).
 compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> S.Type -> Compile JsExp

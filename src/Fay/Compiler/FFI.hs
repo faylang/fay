@@ -46,24 +46,19 @@ compileFFI :: Bool
            -> String -- ^ The format string.
            -> S.Type   -- ^ Type signature.
            -> Compile [JsStmt]
-compileFFI toplevel name' formatstr sig =
-  -- substitute newtypes with their child types before calling
-  -- real compileFFI
-  compileFFI' sig
-
+compileFFI toplevel name' formatstr sig = do
+  fun <- compileFFIExp loc (Just name) formatstr sig
+  stmt <- bindToplevel toplevel (Just (srcInfoSpan loc)) name fun
+  return [stmt]
   where
-    compileFFI' :: S.Type -> Compile [JsStmt]
-    compileFFI' sig' = do
-      fun <- compileFFIExp loc (Just name) formatstr sig'
-      stmt <- bindToplevel toplevel (Just (srcInfoSpan loc)) name fun
-      return [stmt]
-
     name = unAnn name'
     loc = S.srcSpanInfo $ ann name'
 
 -- | Compile an FFI expression (also used when compiling top level definitions).
 compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> S.Type -> Compile JsExp
 compileFFIExp loc (fmap unAnn -> nameopt) formatstr sig' =
+  -- substitute newtypes with their child types before calling
+  -- real compileFFI
   compileFFI' . unAnn =<< rmNewtys sig'
   where
     compileFFI' :: N.Type -> Compile JsExp

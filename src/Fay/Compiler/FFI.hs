@@ -49,9 +49,46 @@ compileFFI :: Bool
 compileFFI toplevel name' formatstr sig =
   -- substitute newtypes with their child types before calling
   -- real compileFFI
-  compileFFI' =<< rmNewtys sig
+  compileFFI' sig
 
   where
+    compileFFI' :: S.Type -> Compile [JsStmt]
+    compileFFI' sig' = do
+      fun <- compileFFIExp loc (Just name) formatstr sig'
+      stmt <- bindToplevel toplevel (Just (srcInfoSpan loc)) name fun
+      return [stmt]
+
+    name = unAnn name'
+    loc = S.srcSpanInfo $ ann name'
+
+-- | Compile an FFI expression (also used when compiling top level definitions).
+compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> S.Type -> Compile JsExp
+compileFFIExp loc (fmap unAnn -> nameopt) formatstr sig' =
+  compileFFI' . unAnn =<< rmNewtys sig'
+  where
+    compileFFI' :: N.Type -> Compile JsExp
+    compileFFI' sig = do
+      let name = fromMaybe "<exp>" nameopt
+      inner <- formatFFI loc formatstr (zip params funcFundamentalTypes)
+      case JS.parse JS.expression (prettyPrint name) (printJSString (wrapReturn inner)) of
+        Left err -> throwError (FfiFormatInvalidJavaScript loc inner (show err))
+        Right exp  -> do
+          config' <- config id
+          when (configGClosure config') $ warnDotUses loc inner exp
+          return (body inner)
+      where
+        body inner = foldr wrapParam (wrapReturn inner) params
+        wrapParam pname inner = JsFun Nothing [pname] [] (Just inner)
+        params = zipWith const uniqueNames [1..typeArity sig]
+        wrapReturn :: String -> JsExp
+        wrapReturn inner = thunk $
+          case lastMay funcFundamentalTypes of
+            -- Returns a “pure” value;
+            Just{} -> jsToFay SerializeAnywhere returnType (JsRawExp inner)
+            -- Base case:
+            Nothing -> JsRawExp inner
+        funcFundamentalTypes = functionTypeArgs sig
+        returnType = last funcFundamentalTypes
     rmNewtys :: S.Type -> Compile N.Type
     rmNewtys (TyForall _ b c t) = TyForall () (fmap (map unAnn) b) (fmap unAnn c) <$> rmNewtys t
     rmNewtys (TyFun _ t1 t2)    = TyFun () <$> rmNewtys t1 <*> rmNewtys t2
@@ -67,41 +104,6 @@ compileFFI toplevel name' formatstr sig =
     rmNewtys (TyParen _ t)      = TyParen () <$> rmNewtys t
     rmNewtys (TyInfix _ t1 q t2)= flip (TyInfix ()) (unAnn q) <$> rmNewtys t1 <*> rmNewtys t2
     rmNewtys (TyKind _ t k)     = flip (TyKind ()) (unAnn k) <$> rmNewtys t
-
-    compileFFI' :: N.Type -> Compile [JsStmt]
-    compileFFI' sig' = do
-      fun <- compileFFIExp loc (Just name) formatstr sig'
-      stmt <- bindToplevel toplevel (Just (srcInfoSpan loc)) name fun
-      return [stmt]
-
-    name = unAnn name'
-    loc = S.srcSpanInfo $ ann name'
-
--- | Compile an FFI expression (also used when compiling top level definitions).
-compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> (Type a) -> Compile JsExp
-compileFFIExp loc (fmap unAnn -> nameopt) formatstr (unAnn -> sig) = do
-  let name = fromMaybe "<exp>" nameopt
-  inner <- formatFFI loc formatstr (zip params funcFundamentalTypes)
-  case JS.parse JS.expression (prettyPrint name) (printJSString (wrapReturn inner)) of
-    Left err -> throwError (FfiFormatInvalidJavaScript loc inner (show err))
-    Right exp  -> do
-      config' <- config id
-      when (configGClosure config') $ warnDotUses loc inner exp
-      return (body inner)
-
-  where
-    body inner = foldr wrapParam (wrapReturn inner) params
-    wrapParam pname inner = JsFun Nothing [pname] [] (Just inner)
-    params = zipWith const uniqueNames [1..typeArity sig]
-    wrapReturn :: String -> JsExp
-    wrapReturn inner = thunk $
-      case lastMay funcFundamentalTypes of
-        -- Returns a “pure” value;
-        Just{} -> jsToFay SerializeAnywhere returnType (JsRawExp inner)
-        -- Base case:
-        Nothing -> JsRawExp inner
-    funcFundamentalTypes = functionTypeArgs sig
-    returnType = last funcFundamentalTypes
 
 -- | Warn about uses of naked x.y which will not play nicely with Google Closure.
 warnDotUses :: SrcSpanInfo -> String -> Expression SourcePos -> Compile ()

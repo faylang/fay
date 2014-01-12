@@ -61,6 +61,18 @@ compileFFIExp loc (fmap unAnn -> nameopt) formatstr sig' =
   -- real compileFFI
   compileFFI' . unAnn =<< rmNewtys sig'
   where
+    rmNewtys :: S.Type -> Compile N.Type
+    rmNewtys typ = case typ of
+      TyForall _ b c t  -> TyForall () (fmap (map unAnn) b) (fmap unAnn c) <$> rmNewtys t
+      TyFun _ t1 t2     -> TyFun () <$> rmNewtys t1 <*> rmNewtys t2
+      TyTuple _ b tl    -> TyTuple () b <$> mapM rmNewtys tl
+      TyList _ t        -> TyList () <$> rmNewtys t
+      TyApp _ t1 t2     -> TyApp () <$> rmNewtys t1 <*> rmNewtys t2
+      t@TyVar{}         -> return $ unAnn t
+      TyCon _ qname     -> maybe (TyCon () (unAnn qname)) snd <$> lookupNewtypeConst qname
+      TyParen _ t       -> TyParen () <$> rmNewtys t
+      TyInfix _ t1 q t2 -> flip (TyInfix ()) (unAnn q) <$> rmNewtys t1 <*> rmNewtys t2
+      TyKind _ t k      -> flip (TyKind ()) (unAnn k) <$> rmNewtys t
     compileFFI' :: N.Type -> Compile JsExp
     compileFFI' sig = do
       let name = fromMaybe "<exp>" nameopt
@@ -84,21 +96,6 @@ compileFFIExp loc (fmap unAnn -> nameopt) formatstr sig' =
             Nothing -> JsRawExp inner
         funcFundamentalTypes = functionTypeArgs sig
         returnType = last funcFundamentalTypes
-    rmNewtys :: S.Type -> Compile N.Type
-    rmNewtys (TyForall _ b c t) = TyForall () (fmap (map unAnn) b) (fmap unAnn c) <$> rmNewtys t
-    rmNewtys (TyFun _ t1 t2)    = TyFun () <$> rmNewtys t1 <*> rmNewtys t2
-    rmNewtys (TyTuple _ b tl)   = TyTuple () b <$> mapM rmNewtys tl
-    rmNewtys (TyList _ t)       = TyList () <$> rmNewtys t
-    rmNewtys (TyApp _ t1 t2)    = TyApp () <$> rmNewtys t1 <*> rmNewtys t2
-    rmNewtys t@TyVar{}          = return (unAnn t)
-    rmNewtys (TyCon _ qname)    = do
-      newty <- lookupNewtypeConst qname
-      return $ case newty of
-                 Nothing     -> TyCon () (unAnn qname)
-                 Just (_,ty) -> ty
-    rmNewtys (TyParen _ t)      = TyParen () <$> rmNewtys t
-    rmNewtys (TyInfix _ t1 q t2)= flip (TyInfix ()) (unAnn q) <$> rmNewtys t1 <*> rmNewtys t2
-    rmNewtys (TyKind _ t k)     = flip (TyKind ()) (unAnn k) <$> rmNewtys t
 
 -- | Warn about uses of naked x.y which will not play nicely with Google Closure.
 warnDotUses :: SrcSpanInfo -> String -> Expression SourcePos -> Compile ()

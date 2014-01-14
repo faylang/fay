@@ -117,7 +117,7 @@ library
                    , filepath                           < 1.4
                    , ghc-paths                          < 0.2
                    , haskell-names        >= 0.3.1   && < 0.4
-                   , haskell-packages     >= 0.2.3.1 && < 0.3
+                   , haskell-packages     == 0.2.3.1 || > 0.2.3.2 && < 0.3
                    , haskell-src-exts     >= 1.14    && < 1.15
                    , language-ecmascript  >= 0.15    && < 1.0
                    , mtl                                < 2.2

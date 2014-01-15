@@ -3,6 +3,11 @@
 See full history at: <https://github.com/faylang/fay/commits>
 
 
+#### 0.19.0.1 (2014-01-15)
+
+Dependency bumps:
+* Allow `aeson 0.7.*`
+
 ## 0.19 (2014-01-14)
 
 * Made import Prelude is implicit, but note that RebindableSyntax implies NoImplicitPrelude.

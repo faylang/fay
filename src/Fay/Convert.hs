@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE PatternGuards      #-}
@@ -30,6 +31,9 @@ import qualified Data.Vector            as Vector
 import           Numeric
 import           Safe
 import qualified Text.Show.Pretty       as Show
+#if MIN_VERSION_aeson(0,7,0)
+import Data.Scientific
+#endif
 
 --------------------------------------------------------------------------------
 -- The conversion functions.
@@ -69,8 +73,14 @@ showToFay = Show.reify >=> convert where
           int = convertInt value
 
   -- Number converters
+
+#if MIN_VERSION_aeson(0,7,0)
+  convertDouble = fmap (Number . fromFloatDigits) . pDouble
+  convertInt = fmap (Number . fromInteger) . pInt
+#else
   convertDouble = fmap (Number . D) . pDouble
   convertInt = fmap (Number . I) . pInt
+#endif
 
   -- Number parsers
   pDouble :: Show.Value -> Maybe Double
@@ -193,9 +203,17 @@ parseInteger value = do
 
 -- | Parse a number.
 parseNumber :: Value -> Maybe Number
+#if MIN_VERSION_aeson(0,7,0)
+parseNumber value = case value of
+  Number n
+    | base10Exponent n >= 0 -> return . I . round $ n
+    | otherwise             -> return . D . fromRational . toRational $ n
+  _ -> mzero
+#else
 parseNumber value = case value of
   Number n -> return n
   _ -> mzero
+#endif
 
 -- | Parse a bool.
 parseBool :: Value -> Maybe Bool

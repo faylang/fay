@@ -46,7 +46,7 @@ printJSPretty x = concat $ reverse $ psOutput $ execState (runPrinter (printJS x
 -- JS-format literals. Could use the Text.JSON library.
 instance Printable JsLit where
   printJS typ = write $
-    let u8 = UTF8.toString . encode . UTF8.fromString
+    let u8 = UTF8.toString . encode
     in case typ of
       (JsChar char)    -> u8 [char]
       (JsStr str)      -> u8 str

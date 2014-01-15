@@ -107,7 +107,7 @@ library
   ghc-options:       -O2 -Wall -fno-warn-name-shadowing
   build-depends:     base                 >= 4       && < 5
                    , Cabal                              < 1.19
-                   , aeson                              < 0.7
+                   , aeson                              < 0.8
                    , attoparsec                         < 0.12
                    , bytestring                         < 0.11
                    , containers                         < 0.6
@@ -133,6 +133,7 @@ library
                    , utf8-string                        < 0.4
                    , vector                             < 0.11
                    , sourcemap                          < 0.2
+                   , scientific                         < 0.3
 
 executable fay
   hs-source-dirs:    src/main

@@ -38,6 +38,7 @@ compileExp exp = case exp of
   Paren _ exp                        -> compileExp exp
   Var _ qname                        -> compileVar qname
   Lit _ lit                          -> compileLit lit
+  App _ (Var _ (UnQual _ (Ident _ "ffi"))) _ -> throwError (FfiNeedsTypeSig exp)
   App _ exp1 exp2                    -> compileApp exp1 exp2
   NegApp _ exp                       -> compileNegApp exp
   InfixApp _ exp1 op exp2            -> compileInfixApp exp1 op exp2

@@ -201,7 +201,7 @@ data CompileError
   | FfiFormatIncompleteArg SrcSpanInfo
   | FfiFormatInvalidJavaScript SrcSpanInfo String String
   | FfiFormatNoSuchArg SrcSpanInfo Int
-  | FfiNeedsTypeSig S.Decl
+  | FfiNeedsTypeSig S.Exp
   | GHCError String
   | InvalidDoBlock
   | ParseError S.SrcLoc String

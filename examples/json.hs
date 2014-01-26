@@ -1,5 +1,3 @@
-
-
 module Console where
 
 import           FFI
@@ -11,10 +9,12 @@ data MyData = MyData  { xVar :: Text, yVar :: Int }
 myData :: MyData
 myData = MyData { xVar = pack "asdfasd", yVar = 9 }
 
-
 main = do
 	jsonSerialized <- toJSON myData
 	jsonDeserialized <- toMyData jsonSerialized
+	-- The "instance" field below is required for reliable parsing.
+	-- If your JSON source doesn't have an "instance" field, you can
+	-- add one like this: ffi "%1['instance']='MyData',%1" :: Json -> MyData
 	fromStringData <- toMyData "{\"xVar\":3,\"yVar\":-1,\"instance\":\"MyData\"}"
 	print' jsonSerialized
 

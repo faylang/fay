@@ -95,18 +95,23 @@ compileModuleFromContents = compileFileWithSource "<interactive>"
 -- | Compile given the location and source string.
 compileFileWithSource :: FilePath -> String -> Compile ([JsStmt], [JsStmt])
 compileFileWithSource filepath contents = do
+  exportStdlib <- config configExportStdlib
   ((hstmts,fstmts),st,wr) <- compileWith filepath compileModuleFromAST compileFileWithSource desugar contents
   modify $ \s -> s { stateImported      = stateImported      st
                    , stateJsModulePaths = stateJsModulePaths st
                    }
-  hstmts' <- maybeOptimize $ hstmts ++ writerCons wr ++ makeTranscoding wr
+  hstmts' <- maybeOptimize $ hstmts ++ writerCons wr ++ makeTranscoding exportStdlib (stateModuleName st) wr
   fstmts' <- maybeOptimize fstmts
   return (hstmts', fstmts')
   where
-    makeTranscoding :: CompileWriter -> [JsStmt]
-    makeTranscoding CompileWriter{..} =
-      let fay2js = if null writerFayToJs then [] else fayToJsHash writerFayToJs
-          js2fay = if null writerJsToFay then [] else jsToFayHash writerJsToFay
+    makeTranscoding :: Bool -> ModuleName a -> CompileWriter -> [JsStmt]
+    makeTranscoding exportStdlib moduleName CompileWriter{..} =
+      let fay2js = if null writerFayToJs || (anStdlibModule moduleName && not exportStdlib)
+                     then []
+                     else fayToJsHash writerFayToJs
+          js2fay = if null writerJsToFay || (anStdlibModule moduleName && not exportStdlib)
+                     then []
+                     else jsToFayHash writerJsToFay
       in fay2js ++ js2fay
     maybeOptimize :: [JsStmt] -> Compile [JsStmt]
     maybeOptimize stmts = do

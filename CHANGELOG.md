@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.19.0.2 (2014-01-30)
+
+Bugfixes:
+* Don't export transcoding information for fay-base packages when compiling with --no-stdlib
 
 #### 0.19.0.1 (2014-01-15)
 

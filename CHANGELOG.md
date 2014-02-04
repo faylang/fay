@@ -6,6 +6,7 @@ See full history at: <https://github.com/faylang/fay/commits>
 
 Bugfixes:
 * Don't export transcoding information for fay-base packages when compiling with --no-stdlib
+* Better error messages when forgetting the type signature in an FFI declaration
 
 #### 0.19.0.1 (2014-01-15)
 

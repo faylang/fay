@@ -106,7 +106,7 @@ library
                      , Paths_fay
   ghc-options:       -O2 -Wall -fno-warn-name-shadowing
   build-depends:     base                 >= 4       && < 5
-                   , Cabal                              < 1.19
+                   , Cabal                              < 1.20
                    , aeson                              < 0.8
                    , attoparsec                         < 0.12
                    , bytestring                         < 0.11

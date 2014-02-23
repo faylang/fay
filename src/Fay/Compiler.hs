@@ -213,4 +213,4 @@ generateStrictExports = do
 -- | Is the module a standard module, i.e., one that we'd rather not
 -- output code for if we're compiling separate files.
 anStdlibModule :: ModuleName a -> Bool
-anStdlibModule (ModuleName _ name) = name `elem` ["Prelude","FFI","Fay.FFI","Data.Data","Data.Ratio","Debug.Trace"]
+anStdlibModule (ModuleName _ name) = name `elem` ["Prelude","FFI","Fay.FFI","Data.Data","Data.Ratio","Debug.Trace","Data.Char"]

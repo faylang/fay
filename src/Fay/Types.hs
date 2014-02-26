@@ -17,6 +17,7 @@ module Fay.Types
   ,CompileReader(..)
   ,CompileWriter(..)
   ,CompileConfig(..)
+  ,configDirectoryIncludes
   ,CompileState(..)
   ,FundamentalType(..)
   ,PrintState(..)
@@ -28,6 +29,7 @@ module Fay.Types
   ,mkModulePathFromQName
   ) where
 
+import           Fay.Compiler.Config
 import           Fay.Compiler.QName
 import qualified Fay.Exts                          as F
 import qualified Fay.Exts.NoAnnotation             as N
@@ -51,32 +53,6 @@ import           SourceMap.Types
 
 --------------------------------------------------------------------------------
 -- Compiler types
-
--- | Configuration of the compiler.
-data CompileConfig = CompileConfig
-  { configOptimize          :: Bool                        -- ^ Run optimizations
-  , configFlattenApps       :: Bool                        -- ^ Flatten function application?
-  , configExportRuntime     :: Bool                        -- ^ Export the runtime?
-  , configExportStdlib      :: Bool                        -- ^ Export the stdlib?
-  , configExportStdlibOnly  :: Bool                        -- ^ Export /only/ the stdlib?
-  , configDirectoryIncludes :: [(Maybe String, FilePath)]  -- ^ Possibly a fay package name, and a include directory.
-  , configPrettyPrint       :: Bool                        -- ^ Pretty print the JS output?
-  , configHtmlWrapper       :: Bool                        -- ^ Output a HTML file including the produced JS.
-  , configSourceMap         :: Bool                        -- ^ Output a source map file as outfile.map.
-  , configHtmlJSLibs        :: [FilePath]                  -- ^ Any JS files to link to in the HTML.
-  , configLibrary           :: Bool                        -- ^ Don't invoke main in the produced JS.
-  , configWarn              :: Bool                        -- ^ Warn on dubious stuff, not related to typechecking.
-  , configFilePath          :: Maybe FilePath              -- ^ File path to output to.
-  , configTypecheck         :: Bool                        -- ^ Typecheck with GHC.
-  , configWall              :: Bool                        -- ^ Typecheck with -Wall.
-  , configGClosure          :: Bool                        -- ^ Run Google Closure on the produced JS.
-  , configPackageConf       :: Maybe FilePath              -- ^ The package config e.g. packages-6.12.3.
-  , configPackages          :: [String]                    -- ^ Included Fay packages.
-  , configBasePath          :: Maybe FilePath              -- ^ Custom source location for fay-base
-  , configStrict            :: [String]                    -- ^ Produce strict and uncurried wrappers for all functions with type signatures in the given module
-  , configTypecheckOnly     :: Bool                        -- ^ Only invoke GHC for typechecking, don't produce any output
-  , configRuntimePath       :: Maybe FilePath
-  } deriving (Show)
 
 -- | The name of a module split into a list for code generation.
 newtype ModulePath = ModulePath { unModulePath :: [String] }
@@ -117,8 +93,7 @@ data CompileWriter = CompileWriter
   { writerCons    :: [JsStmt]         -- ^ Constructors.
   , writerFayToJs :: [(String,JsExp)] -- ^ Fay to JS dispatchers.
   , writerJsToFay :: [(String,JsExp)] -- ^ JS to Fay dispatchers.
-  }
-  deriving (Show)
+  } deriving (Show)
 
 -- | Simple concatenating instance.
 instance Monoid CompileWriter where
@@ -135,30 +110,23 @@ data CompileReader = CompileReader
 
 -- | Compile monad.
 newtype Compile a = Compile
-  { unCompile :: (RWST CompileReader
-                      CompileWriter
-                      CompileState
-                      (ErrorT CompileError (ModuleT (ModuleInfo Compile) IO)))
-                   a -- ^ Uns the compiler
-  }
-  deriving (MonadState CompileState
-           ,MonadError CompileError
-           ,MonadReader CompileReader
-           ,MonadWriter CompileWriter
-           ,MonadIO
-           ,Monad
-           ,Functor
-           ,Applicative
-           )
+  { unCompile :: RWST CompileReader CompileWriter CompileState
+                      (ErrorT CompileError (ModuleT (ModuleInfo Compile) IO))
+                      a -- ^ Uns the compiler
+  } deriving
+    ( Applicative
+    , Functor
+    , Monad
+    , MonadError CompileError
+    , MonadIO
+    , MonadReader CompileReader
+    , MonadState CompileState
+    , MonadWriter CompileWriter
+    )
 
-type CompileResult a
-  = Either CompileError
-           (a, CompileState, CompileWriter)
+type CompileResult a = Either CompileError (a, CompileState, CompileWriter)
 
-type CompileModule a
-  = ModuleT Symbols
-            IO
-            (CompileResult a)
+type CompileModule a = ModuleT Symbols IO (CompileResult a)
 
 instance MonadModule Compile where
   type ModuleInfo Compile = Symbols
@@ -187,7 +155,12 @@ instance Default PrintState where
 
 -- | The printer monad.
 newtype Printer a = Printer { runPrinter :: State PrintState a }
-  deriving (Applicative,Monad,Functor,MonadState PrintState)
+  deriving
+    ( Applicative
+    , Functor
+    , Monad
+    , MonadState PrintState
+    )
 
 -- | Print some value.
 class Printable a where
@@ -228,7 +201,11 @@ instance Error CompileError
 
 -- | The JavaScript FFI interfacing monad.
 newtype Fay a = Fay (Identity a)
-  deriving (Applicative,Functor,Monad)
+  deriving
+    ( Applicative
+    , Functor
+    , Monad
+    )
 
 --------------------------------------------------------------------------------
 -- JS AST types
@@ -281,7 +258,7 @@ data JsExp
   | JsUndefined
   | JsAnd JsExp JsExp
   | JsOr  JsExp JsExp
-  deriving (Show,Eq)
+  deriving (Eq, Show)
 
 -- | A name of some kind.
 data JsName
@@ -296,7 +273,7 @@ data JsName
   | JsConstructor N.QName
   | JsBuiltIn N.Name
   | JsModuleName N.ModuleName
-  deriving (Eq,Show)
+  deriving (Eq, Show)
 
 -- | Literal value type.
 data JsLit
@@ -305,7 +282,7 @@ data JsLit
   | JsInt Int
   | JsFloating Double
   | JsBool Bool
-  deriving (Show,Eq)
+  deriving (Eq, Show)
 
 -- | Just handy to have.
 instance IsString JsLit where fromString = JsStr
@@ -341,4 +318,4 @@ data FundamentalType
 -- serializing some value or a particular field in a user-defined data
 -- type.
 data SerializeContext = SerializeAnywhere | SerializeUserArg Int
-  deriving (Read,Show,Eq)
+  deriving (Eq, Read, Show)

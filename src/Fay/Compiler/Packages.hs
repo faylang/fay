@@ -7,7 +7,6 @@ module Fay.Compiler.Packages where
 import           Fay.Compiler.Config
 import           Fay.Control.Monad.Extra
 import           Fay.System.Process.Extra
-import           Fay.Types
 import           Paths_fay
 
 import           Control.Applicative

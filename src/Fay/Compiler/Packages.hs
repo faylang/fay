@@ -40,9 +40,12 @@ resolvePackage config name = do
       exists <- mapM doesSourceDirExist includes
       if or exists
          then return (addConfigDirectoryIncludes (map (Just nameVer,) includes) config)
-         else error $ "unable to find (existing) package's share dir: " ++ name ++ "\n" ++
-                      "tried: " ++ unlines includes ++ "\n" ++
-                      "but none of them seem to have Haskell files in them."
+         else error $ concat
+                [ "unable to find (existing) package's share dir: ", name, "\n"
+                , "tried: ", unlines includes, "\n"
+                , "but none of them seem to have Haskell files in them.\n"
+                , "If you are using a sandbox you need to specify the HASKELL_PACKAGE_SANDBOX environment variable or use --package-conf."
+                ]
 
 -- | Does a directory exist and does it contain any Haskell sources?
 doesSourceDirExist :: FilePath -> IO Bool

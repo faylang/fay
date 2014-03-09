@@ -1,6 +1,7 @@
 language: "haskell"
 install:
-  - "cabal install 'happy >= 1.19'"
+  - "travis_retry cabal install 'cpphs >= 1.18.3'"
+  - "cabal install --dry-run -v3"
   - "travis_retry cabal install --force-reinstalls"
 script: "scripts/travis-test"
 notifications:
@@ -9,6 +10,6 @@ notifications:
     skip_join: true
   email:
     recipients:
-      - adam@edea.se
+      - adam@bergmark.nl
     on_success: change
     on_failure: change

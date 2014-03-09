@@ -1,5 +1,3 @@
 git clone https://github.com/faylang/fay-base.git
-cd fay-base
-cabal install
-cd ..
+cabal install fay-base/
 dist/build/fay-tests/fay-tests --plain

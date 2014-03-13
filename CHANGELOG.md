@@ -2,6 +2,15 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+### 0.19.1 (2014-03-13)
+
+* Added Data.Char to fay-base
+
+Dependency bumps:
+* Allow `Cabal 1.19.*`
+* Allow `Process 1.2.*`
+
+
 #### 0.19.0.2 (2014-01-30)
 
 Bugfixes:

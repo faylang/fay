@@ -8,8 +8,7 @@ See full history at: <https://github.com/faylang/fay/commits>
 
 Dependency bumps:
 * Allow `Cabal 1.19.*`
-* Allow `Process 1.2.*`
-
+* Allow `process 1.2.*`
 
 #### 0.19.0.2 (2014-01-30)
 

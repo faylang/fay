@@ -1,11 +1,8 @@
 {-# LANGUAGE EmptyDataDecls    #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 
 module RingOscillator (main) where
 
 import FFI
-import Prelude hiding (mapM, forM)
-
 
 -- System parameters.
 --
@@ -419,14 +416,6 @@ zipWith5 :: (a->b->c->d->e->f) -> [a]->[b]->[c]->[d]->[e]->[f]
 zipWith5 z (a:as) (b:bs) (c:cs) (d:ds) (e:es) = z a b c d e :
                                                 zipWith5 z as bs cs ds es
 zipWith5 _ _ _ _ _ _ = []
-
-mapM :: (a -> Fay b) -> [a] -> Fay [b]
-mapM m (x:xs) = m x >>= (\mx -> mapM m xs >>= (\mxs -> return (mx:mxs)))
-mapM _ [] = return []
-
-forM :: [a] -> (a -> Fay b) -> Fay [b]
-forM (x:xs) m = m x >>= (\mx -> mapM m xs >>= (\mxs -> return (mx:mxs)))
-forM [] _ = return []
 
 replicateM :: Int -> Fay a -> Fay [a]
 replicateM n x = sequence (replicate n x)

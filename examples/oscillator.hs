@@ -4,7 +4,7 @@
 module RingOscillator (main) where
 
 import FFI
-import Prelude
+import Prelude hiding (mapM, forM)
 
 
 -- System parameters.

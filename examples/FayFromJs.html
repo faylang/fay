@@ -13,21 +13,29 @@
         document.body.appendChild(div);
       }
 
+      function UnFay(fay)
+      {
+        while(Fay$$$.prototype.isPrototypeOf(fay))
+          fay=fay.value();
+
+        return fay;
+      }
+
       window.onload = function () {
-        var V = Strict.FayFromJs;
+        var V = FayFromJs;
         // Constant
-        print("aVector = ", V.aVector);
+        print("aVector = ", UnFay(V.aVector));
         // Simple function calls
-        print("|aVector| = ", V.len(V.aVector));
+        print("|aVector| = ", UnFay(V.len(V.aVector)));
         // Arguments are deserialized from JSON using Automatic.
-        print("|[10, 20]| = ", V.len({ instance : "Vector", x : 10, y : 20 }));
+        print("|[10, 20]| = ", UnFay(V.len(new V._Vector (10, 20) )));
         // Call with uncurried arguments
         // Return values are serialized to the JSON format using Automatic.
         print( "aVector + [10, 20] = "
-             , V.add(V.aVector, { instance : "Vector", x : 10, y : 20 }));
+             , UnFay(V.add(V.aVector)(V.Vector (10)(20) )));
         // Curried call is also fine
         print( "aVector + [10, 20] = "
-             , V.add(V.aVector)({ instance : "Vector", x : 10, y : 20 }));
+             , V.add(V.aVector)(new V._Vector (10, 20) ).value().value()); // istead of UnFay we are using .value().value()
       };
     </script>
   </head>

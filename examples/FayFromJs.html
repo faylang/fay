@@ -13,11 +13,16 @@
         document.body.appendChild(div);
       }
 
+        var V = FayFromJs;
+
       function UnFay(fay)
       {
         while(Fay$$$.prototype.isPrototypeOf(fay))
-          fay=fay.value();
-
+          if(typeof(fay.value)==="function")
+            fay=fay.value();
+          else
+            fay=fay.value;
+          
         return fay;
       }
 

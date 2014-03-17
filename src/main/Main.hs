@@ -121,7 +121,7 @@ options = FayCompilerOptions
   <*> switch (long "typecheck-only" <> help "Only invoke GHC for typechecking, don't produce any output")
   <*> optional (strOption $ long "runtime-path" <> help "Custom path to the runtime so you don't have to reinstall fay when modifying it")
   <*> switch (long "sourcemap" <> help "Produce a source map in <outfile>.map")
-  <*> arguments Just (metavar "<hs-file>...")
+  <*> many (argument Just (metavar "<hs-file>..."))
   where strsOption m = nullOption (m <> reader (ReadM . Right . wordsBy (== ',')) <> value [])
 
 -- | Make incompatible options.

@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.19.0.1 (2014-03-17)
+
+* Allow `optparse-applicative 0.8.*`
+
 ### 0.19.1 (2014-03-13)
 
 * Added Data.Char to fay-base

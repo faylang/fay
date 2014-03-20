@@ -187,7 +187,7 @@ instance Default PrintState where
 
 -- | The printer monad.
 newtype Printer a = Printer { runPrinter :: State PrintState a }
-  deriving (Monad,Functor,MonadState PrintState)
+  deriving (Applicative,Monad,Functor,MonadState PrintState)
 
 -- | Print some value.
 class Printable a where
@@ -228,7 +228,7 @@ instance Error CompileError
 
 -- | The JavaScript FFI interfacing monad.
 newtype Fay a = Fay (Identity a)
-  deriving Monad
+  deriving (Applicative,Functor,Monad)
 
 --------------------------------------------------------------------------------
 -- JS AST types

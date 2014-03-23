@@ -1,4 +1,3 @@
-{-# OPTIONS -fno-warn-name-shadowing #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -23,7 +22,8 @@ import           Fay.Types
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)
+import           Prelude                         hiding (exp)
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
@@ -199,8 +199,8 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _:_) = do
     isWildCardMatch (InfixMatch _ pat _ pats _ _) = all isWildCardPat (pat:pats)
 
     compileCase :: S.Match -> Compile [JsStmt]
-    compileCase (InfixMatch l pat name pats rhs binds) =
-      compileCase $ Match l name (pat:pats) rhs binds
+    compileCase (InfixMatch l pat nm pats rhs binds) =
+      compileCase $ Match l nm (pat:pats) rhs binds
     compileCase match@(Match _ _ pats rhs _) = do
       whereDecls' <- whereDecls match
       rhsform <- compileRhs rhs

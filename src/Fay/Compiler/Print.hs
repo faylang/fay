@@ -27,7 +27,7 @@ import qualified Data.ByteString.Lazy.UTF8              as UTF8
 import           Data.Default
 import           Data.List
 import           Data.String
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts.Annotated        hiding (alt, name, op, sym)
 import           Prelude                                hiding (exp)
 import           SourceMap.Types
 

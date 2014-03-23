@@ -99,7 +99,7 @@ library
                      , Fay.Compiler.State
                      , Fay.Compiler.Typecheck
                      , Paths_fay
-  ghc-options:       -O2 -Wall -fno-warn-name-shadowing
+  ghc-options:       -O2 -Wall
   build-depends:     base                 >= 4       && < 5
                    , Cabal                              < 1.20
                    , aeson                              < 0.8

@@ -18,8 +18,8 @@ import           Control.Monad.Reader
 import           Data.Data                       (Data)
 import           Data.Maybe
 import           Data.Typeable                   (Typeable)
-import           Language.Haskell.Exts.Annotated hiding (binds, loc)
-import           Prelude                         hiding (exp)
+import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)
+import           Prelude                         hiding (exp, mod)
 import qualified Data.Generics.Uniplate.Data     as U
 
 -- Types
@@ -287,10 +287,9 @@ addFFIExpTypeSigs decls = do
   -- | Create a lookup list mapping names to types, for all the types declared
   -- through standalone (ie: not in an expression) type signatures at this
   -- scope level.
-  getTypeSigs decls =
-    [ (unname n, typ) | TypeSig _ names typ <- decls, n <- names ]
+  getTypeSigs ds = [ (unname n, typ) | TypeSig _ names typ <- ds, n <- names ]
 
-  go typeSigs decls = map (addTypeSig typeSigs) decls
+  go typeSigs ds = map (addTypeSig typeSigs) ds
 
   addTypeSig typeSigs decl = case decl of
     (PatBind loc pat typ rhs binds) ->

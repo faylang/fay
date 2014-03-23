@@ -1,4 +1,3 @@
-{-# OPTIONS -fno-warn-name-shadowing #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
 
@@ -16,8 +15,9 @@ import           Fay.Types
 import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Reader
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts.Annotated hiding (name)
 import           Language.Haskell.Names
+import           Prelude hiding (exp)
 
 -- | Compile the given pattern against the given expression.
 compilePat :: JsExp -> S.Pat -> [JsStmt] -> Compile [JsStmt]
@@ -31,12 +31,12 @@ compilePat exp pat body = case pat of
   PLit _ literal    -> compilePLit exp literal body
   PParen{}          -> shouldBeDesugared pat
   PWildCard _       -> return body
-  pat@PInfixApp{}   -> compileInfixPat exp pat body
+  PInfixApp{}       -> compileInfixPat exp pat body
   PList _ pats      -> compilePList pats body exp
   PTuple _ _bx pats -> compilePList pats body exp
-  PAsPat _ name pat -> compilePAsPat exp name pat body
+  PAsPat _ name pt  -> compilePAsPat exp name pt body
   PRec _ name pats  -> compilePatFields exp name pats body
-  pat               -> throwError (UnsupportedPattern pat)
+  _                 -> throwError (UnsupportedPattern pat)
 
 -- | Compile a pattern variable e.g. x.
 compilePVar :: S.Name -> JsExp -> [JsStmt] -> Compile [JsStmt]
@@ -123,8 +123,8 @@ compilePApp cons pats exp body = do
         Nothing -> error $ "Constructor '" ++ prettyPrint n ++ "' could not be resolved"
         Just _ -> do
           recordFields <- map (UnQual ()) <$> recToFields n
-          substmts <- foldM (\body (field,pat) ->
-                                 compilePat (JsGetProp forcedExp (JsNameVar field)) pat body)
+          substmts <- foldM (\bd (field,pat) ->
+                                 compilePat (JsGetProp forcedExp (JsNameVar field)) pat bd)
                       body
                       (reverse (zip recordFields pats))
           qcons <- unsafeResolveName cons
@@ -138,10 +138,10 @@ compilePList [] body exp =
   return [JsIf (JsEq (force exp) JsNull) body []]
 compilePList pats body exp = do
   let forcedExp = force exp
-  stmts <- foldM (\body (i,pat) -> compilePat (JsApp (JsName (JsBuiltIn "index"))
-                                                     [JsLit (JsInt i),forcedExp])
-                                              pat
-                                              body)
+  stmts <- foldM (\bd (i,pat) -> compilePat (JsApp (JsName (JsBuiltIn "index"))
+                                                   [JsLit (JsInt i),forcedExp])
+                                            pat
+                                            bd)
         body
         (reverse (zip [0..] pats))
   let patsLen = JsLit (JsInt (length pats))

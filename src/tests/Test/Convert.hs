@@ -35,7 +35,7 @@ tests = testGroup "Test.Convert" [reading, showing]
 -- Test cases
 
 -- | A test.
-data Testcase = forall x. Show x => Testcase x Bytes.ByteString
+data Testcase = forall x. (Show x,Data x) => Testcase x Bytes.ByteString
 
 -- | A read test.
 data ReadTest = forall x. (Data x,Show x,Eq x,Read x) => ReadTest x

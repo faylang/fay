@@ -120,6 +120,7 @@ tco :: [JsStmt] -> [JsStmt]
 tco = map inStmt where
   inStmt stmt = case stmt of
     JsVar name exp -> JsVar name (inject name exp)
+    JsSetQName l name exp -> JsSetQName l name (inject (JsNameVar name) exp)
     e -> e
   inject name exp = case exp of
     JsFun nm params [] (Just (JsNew JsThunk [JsFun _ [] stmts ret])) ->
@@ -215,6 +216,7 @@ applyToExpsInStmt funcs f stmts = uncurryInStmt stmts where
   transform = f funcs
   uncurryInStmt stmt = case stmt of
     JsVar name exp              -> JsVar name <$> transform exp
+    JsSetQName l name exp       -> JsSetQName l name <$> transform exp
     JsEarlyReturn exp           -> JsEarlyReturn <$> transform exp
     JsIf op ithen ielse         -> JsIf <$> transform op
                                         <*> mapM uncurryInStmt ithen
@@ -224,7 +226,7 @@ applyToExpsInStmt funcs f stmts = uncurryInStmt stmts where
 -- | Collect functions and their arity from the whole codeset.
 collectFuncs :: [JsStmt] -> [FuncArity]
 collectFuncs = (++ prim) . concatMap collectFunc where
-  collectFunc (JsVar (JsNameVar name) exp) | arity > 0 = [(name,arity)]
+  collectFunc (JsSetQName _ name exp) | arity > 0 = [(name,arity)]
     where arity = expArity exp
   collectFunc _ = []
   prim = map (first (Qual () (ModuleName () "Fay$"))) (unary ++ binary)
@@ -245,6 +247,8 @@ uncurryBinding stmts qname = listToMaybe (mapMaybe funBinding stmts)
     funBinding stmt = case stmt of
       JsVar (JsNameVar name) body
         | name == qname -> JsVar (JsNameVar (renameUncurried name)) <$> uncurryIt body
+      JsSetQName l name body
+        | name == qname -> JsSetQName l (renameUncurried name) <$> uncurryIt body
       _ -> Nothing
 
     uncurryIt = Just . go [] where

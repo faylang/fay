@@ -34,8 +34,8 @@ main = do
   sandbox <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
   (packageConf,args) <- fmap (prefixed (=="-package-conf")) getArgs
   let (basePath,args') = prefixed (=="-base-path") args
-  compiler <- makeCompilerTests (packageConf <|> sandbox) basePath
-  defaultMainWithArgs [Compile.tests, Cmd.tests, compiler, C.tests]
+  (runtime,codegen) <- makeCompilerTests (packageConf <|> sandbox) basePath
+  defaultMainWithArgs [Compile.tests, Cmd.tests, runtime, codegen, C.tests]
                       args'
 
 -- | Extract the element prefixed by the given element in the list.
@@ -43,12 +43,31 @@ prefixed :: (a -> Bool) -> [a] -> (Maybe a,[a])
 prefixed f (break f -> (x,y)) = (listToMaybe (drop 1 y),x ++ drop 2 y)
 
 -- | Make the case-by-case unit tests.
-makeCompilerTests :: Maybe FilePath -> Maybe FilePath -> IO Test
+makeCompilerTests :: Maybe FilePath -> Maybe FilePath -> IO (Test,Test)
 makeCompilerTests packageConf basePath = do
-  files <- sortBy (comparing (map toLower)) . filter (\v -> not (isInfixOf "/Compile/" v) && not (isInfixOf "/regressions/" v)) . filter (isSuffixOf ".hs") <$> getRecursiveContents "tests"
-  return $ testGroup "Tests" $ flip map files $ \file -> testCase file $ do
-    testFile packageConf basePath False file
-    testFile packageConf basePath True file
+  runtimeFiles <- runtimeTestFiles
+  codegenFiles <- codegenTestFiles
+  return
+    (makeTestGroup "Runtime tests"
+                   runtimeFiles
+                   (\file -> do testFile packageConf basePath False file
+                                testFile packageConf basePath True file)
+    ,makeTestGroup "Codegen tests"
+                   codegenFiles
+                   (\file -> do testCodegen packageConf basePath file))
+  where
+    makeTestGroup title files inner =
+      testGroup title $ flip map files $ \file ->
+        testCase file $ inner file
+    runtimeTestFiles =
+      filter (not . nonRuntime) <$> testFiles
+    codegenTestFiles =
+      filter (isInfixOf "/codegen/") <$> testFiles
+    testFiles =
+      sortBy (comparing (map toLower)) . filter (isSuffixOf ".hs") <$>
+      getRecursiveContents "tests"
+    nonRuntime x =
+      any (`isInfixOf` x) ["/Compile/","/regressions/","/codegen/"]
 
 testFile :: Maybe FilePath -> Maybe FilePath -> Bool -> String -> IO ()
 testFile packageConf basePath opt file = do
@@ -78,6 +97,33 @@ testFile packageConf basePath opt file = do
              assertEqual file output res
            Right (err,res) -> assertFailure $ "Did not fail:\n stdout: " ++ res ++ "\n\nstderr: " ++ err
          else assertEqual (file ++ ": Expected program to fail") True (either (const True) (const False) result)
+
+-- | Test the generated code output for the given file with
+-- optimizations turned on. This disables runtime generation and
+-- things like that; it's only concerned with the core of the program.
+testCodegen :: Maybe FilePath -> Maybe FilePath -> String -> IO ()
+testCodegen packageConf basePath file = do
+  let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
+      out = toJsName file
+      resf = root <.> "res"
+      config =
+        addConfigDirectoryIncludePaths ["tests/codegen/"] $
+          def { configOptimize      = True
+              , configTypecheck     = False
+              , configPackageConf   = packageConf
+              , configBasePath      = basePath
+              , configExportStdlib  = False
+              , configPrettyPrint   = True
+              , configLibrary       = True
+              , configExportRuntime = False
+              }
+  resExists <- doesFileExist resf
+  compileFromTo config file (Just out)
+  actual <- readStripped out
+  expected <- readStripped resf
+  assertEqual file expected actual
+  where readStripped =
+          fmap (unlines . filter (not . null) . lines) . readFile
 
 -- | Run a JS file.
 runJavaScriptFile :: String -> IO (Either (String,String) (String,String))

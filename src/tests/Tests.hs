@@ -117,7 +117,6 @@ testCodegen packageConf basePath file = do
               , configLibrary       = True
               , configExportRuntime = False
               }
-  resExists <- doesFileExist resf
   compileFromTo config file (Just out)
   actual <- readStripped out
   expected <- readStripped resf

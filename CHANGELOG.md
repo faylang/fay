@@ -2,7 +2,11 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
-#### 0.19.0.1 (2014-03-17)
+#### 0.19.1.2 (2014-04-07)
+
+* Fix optimizations that were not applied and add codegen test cases.
+
+#### 0.19.1.1 (2014-03-17)
 
 * Allow `optparse-applicative 0.8.*`
 

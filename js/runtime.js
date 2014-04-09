@@ -394,17 +394,17 @@ function Fay$$jsToFay(type,jsObj){
       type.push(["automatic"]);
     return Fay$$jsToFay(["function", type], jsObj);
   }
+  else if(base == "automatic" && jsObj instanceof Array) {
+    var list = null;
+    for (var i = jsObj.length - 1; i >= 0; i--) {
+      list = new Fay$$Cons(Fay$$jsToFay([base], jsObj[i]), list);
+    }
+    return list;
+  }
   else if(base == "automatic" || base == "user") {
     if (jsObj && jsObj['instance']) {
       var jsToFayFun = Fay$$jsToFayHash[jsObj["instance"]];
       return jsToFayFun ? jsToFayFun(type,type[2],jsObj) : jsObj;
-    }
-    else if (jsObj instanceof Array) {
-      var list = null;
-      for (var i = jsObj.length - 1; i >= 0; i--) {
-        list = new Fay$$Cons(Fay$$jsToFay([base], jsObj[i]), list);
-      }
-      return list;
     }
     else
       return jsObj;

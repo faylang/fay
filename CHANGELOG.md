@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+### 0.19.2 (2014-04-10)
+
+* Fixes a bug where arrays types with an empty data decls would be deserialized into a Fay list.
+
 #### 0.19.1.2 (2014-04-07)
 
 * Fix optimizations that were not applied and add codegen test cases.

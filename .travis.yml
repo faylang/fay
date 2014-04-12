@@ -2,14 +2,17 @@ language: "haskell"
 install:
   - "travis_retry cabal install 'cpphs >= 1.18.3'"
   - "cabal install --dry-run -v3"
-  - "travis_retry cabal install --force-reinstalls"
-script: "scripts/travis-test"
+  - "travis_retry cabal install --force-reinstalls --only-dependencies"
+script:
+  - git clone https://github.com/faylang/fay-base.git
+  - cabal install
+  - cabal install fay-base/
+  - dist/build/fay-tests/fay-tests --plain
 notifications:
   irc:
     channels: "irc.freenode.net#fay"
     skip_join: true
   email:
-    recipients:
-      - adam@bergmark.nl
+    recipients: adam@bergmark.nl
     on_success: change
     on_failure: change

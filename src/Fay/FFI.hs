@@ -14,7 +14,7 @@ module Fay.FFI
 
 import           Data.String (IsString)
 import           Fay.Types
-import           Prelude     (Bool, Char, Double, Int, Maybe, String, error)
+import           Prelude     (error)
 
 -- | Values that may be null
 --  Nullable x decodes to x, Null decodes to null.

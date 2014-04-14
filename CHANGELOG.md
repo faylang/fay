@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.19.2.1 (2014-04-14)
+
+* Allow `haskell-src-exts 1.15.*`
+
 ### 0.19.2 (2014-04-10)
 
 * Fixes a bug where arrays used with empty data decls would be deserialized into a Fay list instead of kept as is.

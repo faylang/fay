@@ -333,6 +333,7 @@ defaultExtensions = map EnableExtension
   ,ImplicitPrelude
   ,KindSignatures
   ,LambdaCase
+  ,MultiWayIf
   ,NamedFieldPuns
   ,PackageImports
   ,RecordWildCards

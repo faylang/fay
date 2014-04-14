@@ -68,6 +68,7 @@ desugar emptyAnnotation md = runDesugar emptyAnnotation $
   >>= desugarImplicitPrelude
   >>= desugarFFITypeSigs
   >>= desugarLCase
+  >>= return . desugarMultiIf
 
 -- | Desugaring
 
@@ -135,6 +136,13 @@ desugarLCase :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarLCase = transformBiM $ \ex -> case ex of
   LCase l alts -> withScopedTmpName l $ \n -> return $ Lambda l [PVar l n] (Case l (Var l (UnQual l n)) alts)
   _ -> return ex
+
+desugarMultiIf :: (Data l, Typeable l) => Module l -> Module l
+desugarMultiIf = transformBi $ \ex -> case ex of
+  MultiIf l alts -> Case l (Con l (Special l (UnitCon l)))
+                           [Alt l (PWildCard l) (GuardedAlts l gas) Nothing]
+    where gas = map (\(IfAlt l' p a) -> GuardedAlt l' [Qualifier l' p] a) alts
+  _ -> ex
 
 desugarTupleSection :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarTupleSection = transformBiM $ \ex -> case ex of

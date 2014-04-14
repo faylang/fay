@@ -67,6 +67,7 @@ desugar emptyAnnotation md = runDesugar emptyAnnotation $
   >>= desugarTupleSection
   >>= desugarImplicitPrelude
   >>= desugarFFITypeSigs
+  >>= desugarLCase
 
 -- | Desugaring
 
@@ -128,6 +129,12 @@ desugarTupleCon = transformBi $ \ex -> case ex of
           params = PVar l <$> names
           body   = Tuple l b (Var l . UnQual l <$> names)
       _ -> Nothing
+
+-- | \case x of [...] -> \foo -> case foo of [...]
+desugarLCase :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
+desugarLCase = transformBiM $ \ex -> case ex of
+  LCase l alts -> withScopedTmpName l $ \n -> return $ Lambda l [PVar l n] (Case l (Var l (UnQual l n)) alts)
+  _ -> return ex
 
 desugarTupleSection :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarTupleSection = transformBiM $ \ex -> case ex of

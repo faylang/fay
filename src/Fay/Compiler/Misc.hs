@@ -332,6 +332,7 @@ defaultExtensions = map EnableExtension
   ,GADTs
   ,ImplicitPrelude
   ,KindSignatures
+  ,LambdaCase
   ,NamedFieldPuns
   ,PackageImports
   ,RecordWildCards

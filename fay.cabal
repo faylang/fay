@@ -114,7 +114,7 @@ library
                    , haskell-names        >= 0.3.1   && < 0.4
                    , haskell-packages     == 0.2.3.1 || > 0.2.3.2 && < 0.3
                    , haskell-src-exts     >= 1.14    && < 1.16
-                   , language-ecmascript  >= 0.15    && < 1.0
+                   , language-ecmascript  >= 0.15    && < 0.17
                    , mtl                                < 2.2
                    , pretty-show          >= 1.6     && < 1.7
                    , process                            < 1.3

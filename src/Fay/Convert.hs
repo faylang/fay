@@ -21,7 +21,7 @@ import           Control.Arrow (first)
 import           Control.Monad.State
 import           Control.Spoon
 import           Data.Aeson
-import           Data.Attoparsec.Number
+import           Data.Aeson.Types (parseEither)
 import           Data.Data
 import           Data.Generics.Aliases
 import           Data.HashMap.Strict    (HashMap)
@@ -30,7 +30,6 @@ import           Data.Text              (Text)
 import qualified Data.Text              as Text
 import           Data.Vector            (Vector)
 import qualified Data.Vector            as Vector
-import           GHC.Float
 
 --------------------------------------------------------------------------------
 -- The conversion functions.
@@ -56,10 +55,10 @@ encodeFayInternal specialCases = specialCases $
     encodeGeneric rec
     `extQ` unit
     `extQ` Bool
-    `extQ` (int :: Int -> Value)
-    `extQ` float
-    `extQ` double
-    `extQ` (real :: Rational -> Value)
+    `extQ` (toJSON :: Int -> Value)
+    `extQ` (toJSON :: Float -> Value)
+    `extQ` (toJSON :: Double -> Value)
+    `extQ` (toJSON :: Rational -> Value)
     `ext1Q` list
     `extQ` string
     `extQ` char
@@ -68,10 +67,6 @@ encodeFayInternal specialCases = specialCases $
     rec :: GenericQ Value
     rec = encodeFayInternal specialCases
     unit () = Null
-    int = Number . I . fromIntegral
-    float = Number . D . float2Double
-    double = Number . D
-    real = Number . D . realToFrac
     list :: Data a => [a] -> Value
     list = Array . Vector.fromList . map rec
     string = String . Text.pack
@@ -194,25 +189,11 @@ lookupField obj key =
 
 -- | Parse a double.
 parseDouble :: Value -> Either String Double
-parseDouble value = do
-  number <- parseNumber value
-  case number of
-    I n -> return (fromIntegral n)
-    D n -> return n
+parseDouble = parseEither parseJSON
 
 -- | Parse an int.
 parseInt :: Value -> Either String Int
-parseInt value = do
-  number <- parseNumber value
-  case number of
-    I n -> return (fromIntegral n)
-    _ -> badData value
-
--- | Parse a number.
-parseNumber :: Value -> Either String Number
-parseNumber value = case value of
-  Number n -> return n
-  _ -> badData value
+parseInt = parseEither parseJSON
 
 -- | Parse a bool.
 parseBool :: Value -> Either String Bool

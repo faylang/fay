@@ -1,13 +1,18 @@
 {-# LANGUAGE TemplateHaskell #-}
-
-module Test.Desugar (tests, devTest, parseE, parseM, des) where
+module Test.Desugar
+  ( tests
+  , devTest
+  , parseE
+  , parseM
+  , des
+  ) where
 
 import           Control.Monad
 import           Data.List
 import           Data.Maybe
 import           Language.Haskell.Exts.Annotated hiding (alt, binds, loc, name)
-import Test.Tasty
-import Test.Tasty.HUnit
+import           Test.Tasty
+import           Test.Tasty.HUnit
 import           Text.Groom
 
 import           Fay.Compiler.Desugar            (desugar')

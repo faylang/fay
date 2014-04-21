@@ -36,7 +36,7 @@ testDeclarations =
      "import Prelude; f = \\gen0 gen1 gen2 -> (gen0, gen1, gen2)"
      "import Prelude; f = (,,)"
   ,T "Do"
-     "import Prelude; f = x >>= \\gen0 -> y >> z"
+     "import Prelude; f = (>>=) x (\\gen0 -> (>>) y z)"
      "import Prelude; f = do { gen0 <- x; y; z }"
   ,T "TupleSection"
      "import Prelude; f = \\gen0 gen1 -> (gen0,2,gen1)"
@@ -54,11 +54,20 @@ testDeclarations =
      "{-# LANGUAGE NoImplicitPrelude #-}"
      "{-# LANGUAGE NoImplicitPrelude #-}"
   ,T "OperatorSectionRight"
-     "import Prelude; f = \\gen0 -> gen0 `g` x"
+     "import Prelude; f = \\gen0 -> g gen0 x"
      "import Prelude; f = (`g` x)"
   ,T "OperatorSectionLeft"
-     "import Prelude; f = \\gen0 -> x `g` gen0"
+     "import Prelude; f = \\gen0 -> g x gen0"
      "import Prelude; f = (x `g`)"
+  ,T "InfixOpOp"
+     "import Prelude; f = (+) x y"
+     "import Prelude; f = x + y"
+  ,T "InfixOpFun"
+     "import Prelude; f = g x y"
+     "import Prelude; f = x `g` y"
+  ,T "InfixOpCons"
+     "import Prelude; f = (:) x y"
+     "import Prelude; f = x : y"
   ]
 
 parseAndDesugar :: String -> String -> IO (Module SrcLoc, Either CompileError (Module SrcLoc))
@@ -73,9 +82,9 @@ doDesugar :: String -> String -> String -> Assertion
 doDesugar testName a b = do
   (expected,Right e) <- parseAndDesugar (testName ++ " expected") a
   (_       ,Right t) <- parseAndDesugar (testName ++ " input"   ) b
-  assertEqual "identity"  expected e
-  assertEqual "desugared" expected t
-  assertEqual "both"      t        e
+  assertEqual "identity"  (unAnn expected) (unAnn e)
+  assertEqual "desugared" (unAnn expected) (unAnn t)
+  assertEqual "both"      (unAnn t       ) (unAnn e)
 
 
 -- When developing:

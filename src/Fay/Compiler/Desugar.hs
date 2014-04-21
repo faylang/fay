@@ -85,6 +85,7 @@ desugar' prefix emptyAnnotation md = runDesugar prefix emptyAnnotation $
   >>= desugarFFITypeSigs
   >>= desugarLCase
   >>= return . desugarMultiIf
+  >>= return . desugarInfixOp
 
 -- | Desugaring
 
@@ -358,6 +359,14 @@ addFFIExpTypeSigs decls = do
   getTypeFor typeSigs decl = case decl of
     (PatBind _ (PVar _ name) _ _ _) -> lookup (unname name) typeSigs
     _ -> Nothing
+
+desugarInfixOp :: (Data l, Typeable l) => Module l -> Module l
+desugarInfixOp = transformBi $ \ex -> case ex of
+  InfixApp l e1 oper e2 -> App l (App l (getOp oper) e1) e2
+    where
+      getOp (QVarOp l' o) = Var l' o
+      getOp (QConOp l' o) = Con l' o
+  _ -> ex
 
 transformBi :: U.Biplate (from a) (to a) => (to a -> to a) -> from a -> from a
 transformBi = U.transformBi

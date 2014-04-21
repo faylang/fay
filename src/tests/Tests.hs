@@ -11,6 +11,9 @@ import           Fay
 import           Fay.Compiler.Config
 import           Fay.System.Directory.Extra
 import           Fay.System.Process.Extra
+import qualified Test.CommandLine            as Cmd
+import qualified Test.Compile                as Compile
+import qualified Test.Convert                as C
 
 import           Control.Applicative
 import           Data.Char
@@ -21,12 +24,8 @@ import           Data.Ord
 import           System.Directory
 import           System.Environment
 import           System.FilePath
-import qualified Test.CommandLine               as Cmd
-import qualified Test.Compile                   as Compile
-import qualified Test.Convert                   as C
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
-import           Test.HUnit                     (assertEqual, assertFailure)
+import           Test.Tasty
+import           Test.Tasty.HUnit
 
 -- | Main test runner.
 main :: IO ()
@@ -35,15 +34,14 @@ main = do
   (packageConf,args) <- fmap (prefixed (=="-package-conf")) getArgs
   let (basePath,args') = prefixed (=="-base-path") args
   (runtime,codegen) <- makeCompilerTests (packageConf <|> sandbox) basePath
-  defaultMainWithArgs [Compile.tests, Cmd.tests, runtime, codegen, C.tests]
-                      args'
+  withArgs args' $ defaultMain $ testGroup "Fay" [Compile.tests, Cmd.tests, runtime, codegen, C.tests]
 
 -- | Extract the element prefixed by the given element in the list.
 prefixed :: (a -> Bool) -> [a] -> (Maybe a,[a])
 prefixed f (break f -> (x,y)) = (listToMaybe (drop 1 y),x ++ drop 2 y)
 
 -- | Make the case-by-case unit tests.
-makeCompilerTests :: Maybe FilePath -> Maybe FilePath -> IO (Test,Test)
+makeCompilerTests :: Maybe FilePath -> Maybe FilePath -> IO (TestTree,TestTree)
 makeCompilerTests packageConf basePath = do
   runtimeFiles <- runtimeTestFiles
   codegenFiles <- codegenTestFiles

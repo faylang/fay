@@ -3,19 +3,18 @@
 module Test.CommandLine (tests) where
 
 import           Fay.System.Process.Extra
+import           Test.Util
 
 import           Control.Applicative
 import           Data.Maybe
 import           System.Directory
 import           System.Environment
 import           System.FilePath
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
-import           Test.Framework.TH
-import           Test.HUnit                     (Assertion, assertBool)
-import           Test.Util
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.TH
 
-tests :: Test
+tests :: TestTree
 tests = $testGroupGenerator
 
 compileFile :: [String] -> IO (Either String String)

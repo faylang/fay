@@ -3,6 +3,8 @@
 
 module Test.Convert (tests) where
 
+import           Fay.Convert
+
 import qualified Data.Aeson.Parser              as Aeson
 import           Data.Attoparsec.ByteString
 import qualified Data.ByteString                as Bytes
@@ -10,12 +12,10 @@ import qualified Data.ByteString.UTF8           as UTF8
 import           Data.Data
 import           Data.Ratio
 import           Data.Text                      (Text, pack)
-import           Fay.Convert
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
-import           Test.HUnit                     (assertEqual)
+import           Test.Tasty
+import           Test.Tasty.HUnit
 
-tests :: Test
+tests :: TestTree
 tests = testGroup "Test.Convert" [reading, showing]
   where reading = testGroup "reading" $
           flip map readTests $ \(ReadTest value) ->

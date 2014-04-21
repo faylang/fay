@@ -8,6 +8,7 @@ import           Fay
 import           Fay.Compiler.Config
 import           Fay.System.Process.Extra
 import           Fay.Types                       ()
+import           Test.Util
 
 import           Control.Applicative
 import           Control.Monad
@@ -15,13 +16,11 @@ import           Data.Default
 import           Data.Maybe
 import           Language.Haskell.Exts.Annotated
 import           System.Environment
-import           Test.Framework
-import           Test.Framework.Providers.HUnit
-import           Test.Framework.TH
-import           Test.HUnit                      (Assertion, assertBool, assertEqual, assertFailure)
-import           Test.Util
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.TH
 
-tests :: Test
+tests :: TestTree
 tests = $testGroupGenerator
 
 case_imports :: Assertion

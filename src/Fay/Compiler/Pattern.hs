@@ -26,16 +26,16 @@ compilePat exp pat body = case pat of
   PApp _ cons pats  -> do
     newty <- lookupNewtypeConst cons
     case newty of
-      Nothing -> compilePApp cons pats exp body
+      Nothing -> compilePApp pat cons pats exp body
       Just _  -> compileNewtypePat pats exp body
   PLit _ literal    -> compilePLit exp literal body
-  PParen{}          -> shouldBeDesugared pat
   PWildCard _       -> return body
-  PInfixApp{}       -> compileInfixPat exp pat body
   PList _ pats      -> compilePList pats body exp
   PTuple _ _bx pats -> compilePList pats body exp
   PAsPat _ name pt  -> compilePAsPat exp name pt body
   PRec _ name pats  -> compilePatFields exp name pats body
+  PParen{}          -> shouldBeDesugared pat
+  PInfixApp{}       -> shouldBeDesugared pat
   _                 -> throwError (UnsupportedPattern pat)
 
 -- | Compile a pattern variable e.g. x.
@@ -107,13 +107,26 @@ compileNewtypePat [pat] exp body = compilePat exp pat body
 compileNewtypePat ps _ _ = error $ "compileNewtypePat: Should be impossible (this is a bug). Got: " ++ show ps
 
 -- | Compile a pattern application.
-compilePApp :: S.QName -> [S.Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
-compilePApp cons pats exp body = do
+compilePApp :: S.Pat -> S.QName -> [S.Pat] -> JsExp -> [JsStmt] -> Compile [JsStmt]
+compilePApp origPat cons pats exp body = do
   let forcedExp = force exp
   let boolIf b = return [JsIf (JsEq forcedExp (JsLit (JsBool b))) body []]
   case cons of
     -- Special-casing on the booleans.
     Special _ (UnitCon _) -> return (JsExpStmt forcedExp : body)
+    Special _ Cons{} -> case pats of
+      [left, right] -> do
+        withScopedTmpJsName $ \tmpName -> do
+          let forcedList = JsName tmpName
+              x = JsGetProp forcedList (JsNameVar "car")
+              xs = JsGetProp forcedList (JsNameVar "cdr")
+          rightMatch <- compilePat xs right body
+          leftMatch <- compilePat x left rightMatch
+          return [JsVar tmpName (force exp)
+                 ,JsIf (JsInstanceOf forcedList (JsBuiltIn "Cons"))
+                       leftMatch
+                       []]
+      _ -> throwError $ UnsupportedPattern origPat
     UnQual _ (Ident _ "True")   -> boolIf True
     UnQual _ (Ident _ "False")  -> boolIf False
     -- Everything else, generic:
@@ -148,20 +161,3 @@ compilePList pats body exp = do
   return [JsIf (JsApp (JsName (JsBuiltIn "listLen")) [forcedExp,patsLen])
                stmts
                []]
-
--- | Compile an infix pattern (e.g. cons and tuples.)
-compileInfixPat :: JsExp -> S.Pat -> [JsStmt] -> Compile [JsStmt]
-compileInfixPat exp pat@(PInfixApp _ left (Special _ cons) right) body = case cons of
-  Cons _ ->
-    withScopedTmpJsName $ \tmpName -> do
-      let forcedExp = JsName tmpName
-          x = JsGetProp forcedExp (JsNameVar "car")
-          xs = JsGetProp forcedExp (JsNameVar "cdr")
-      rightMatch <- compilePat xs right body
-      leftMatch <- compilePat x left rightMatch
-      return [JsVar tmpName (force exp)
-             ,JsIf (JsInstanceOf forcedExp (JsBuiltIn "Cons"))
-                   leftMatch
-                   []]
-  _ -> throwError (UnsupportedPattern pat)
-compileInfixPat _ pat _ = throwError (UnsupportedPattern pat)

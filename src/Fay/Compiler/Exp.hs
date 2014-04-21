@@ -36,13 +36,11 @@ import           Prelude                         hiding (exp)
 -- | Compile Haskell expression.
 compileExp :: S.Exp -> Compile JsExp
 compileExp e = case e of
-  Paren _ exp                        -> compileExp exp
   Var _ qname                        -> compileVar qname
   Lit _ lit                          -> compileLit lit
   App _ (Var _ (UnQual _ (Ident _ "ffi"))) _ -> throwError $ FfiNeedsTypeSig e
   App _ exp1 exp2                    -> compileApp exp1 exp2
   NegApp _ exp                       -> compileNegApp exp
-  InfixApp _ exp1 op exp2            -> compileInfixApp exp1 op exp2
   Let _ (BDecls _ decls) exp         -> compileLet decls exp
   List _ []                          -> return JsNull
   List _ xs                          -> compileList xs
@@ -67,6 +65,8 @@ compileExp e = case e of
   LeftSection {}                     -> shouldBeDesugared e
   RightSection {}                    -> shouldBeDesugared e
   TupleSection {}                    -> shouldBeDesugared e
+  Paren {}                           -> shouldBeDesugared e
+  InfixApp {}                        -> shouldBeDesugared e
   exp -> throwError $ UnsupportedExpression exp
 
 -- | Compile variable.
@@ -141,21 +141,6 @@ compileApp' exp1 exp2 = do
 -- | Compile a negate application
 compileNegApp :: S.Exp -> Compile JsExp
 compileNegApp e = JsNegApp . force <$> compileExp e
-
--- | Compile an infix application, optimizing the JS cases.
-compileInfixApp :: S.Exp -> S.QOp -> S.Exp -> Compile JsExp
-compileInfixApp exp1 ap exp2 = case exp1 of
-  Con _ q -> do
-    newtypeConst <- lookupNewtypeConst q
-    case newtypeConst of
-      Just _ -> compileExp exp2
-      Nothing -> normalApp
-  _ -> normalApp
-  where
-    normalApp = compileExp (App noI (App noI (Var noI op) exp1) exp2)
-    op = getOp ap
-    getOp (QVarOp _ o) = o
-    getOp (QConOp _ o) = o
 
 -- | Compile a let expression.
 compileLet :: [S.Decl] -> S.Exp -> Compile JsExp

@@ -198,9 +198,9 @@ desugarFieldPun = transformBi $ \f -> case f of
   FieldPun l n -> let dn = UnQual l n in FieldUpdate l dn (Var l dn)
   _ -> f
 
+-- | {a} => {a=a} for R{a}
 desugarPatFieldPun :: (Data l, Typeable l) => Module l -> Module l
 desugarPatFieldPun = transformBi $ \pf -> case pf of
-  -- {a} => {a=a} for R{a}
   PFieldPun l n -> PFieldPat l (UnQual l n) (PVar l n)
   _             -> pf
 

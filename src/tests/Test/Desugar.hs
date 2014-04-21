@@ -77,6 +77,9 @@ testDeclarations =
   ,T "PatInfixOp"
      "import Prelude; f ((:) x y) = z"
      "import Prelude; f (x : y) = z"
+  ,T "PatFieldPun"
+     "import Prelude; f R { x = x } = y"
+     "import Prelude; f R { x } = y"
   ]
 
 parseAndDesugar :: String -> String -> IO (Module SrcLoc, Either CompileError (Module SrcLoc))

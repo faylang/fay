@@ -26,9 +26,9 @@ import qualified Data.Generics.Uniplate.Data     as U
 -- Types
 
 data DesugarReader l = DesugarReader
-  { readerNameDepth    :: Int
-  , readerNoInfo       :: l
-  , readerDollarPrefix :: Bool
+  { readerNameDepth     :: Int
+  , readerNoInfo        :: l
+  , readerTmpNamePrefix :: String
   }
 
 newtype Desugar l a = Desugar
@@ -43,26 +43,35 @@ newtype Desugar l a = Desugar
              , Applicative
              )
 
-runDesugar :: Bool -> l -> Desugar l a -> IO (Either CompileError a)
-runDesugar dollarPrefix emptyAnnotation m =
-    runErrorT (runReaderT (unDesugar m) (DesugarReader 0 emptyAnnotation dollarPrefix))
+runDesugar :: String -> l -> Desugar l a -> IO (Either CompileError a)
+runDesugar tmpNamePrefix emptyAnnotation m =
+    runErrorT (runReaderT (unDesugar m) (DesugarReader 0 emptyAnnotation tmpNamePrefix))
 
 -- | Generate a temporary, SCOPED name for testing conditions and
 -- such. We don't have name tracking yet, so instead we use this.
 withScopedTmpName :: (Data l, Typeable l) => l -> (Name l -> Desugar l a) -> Desugar l a
 withScopedTmpName l f = do
-  dollar <- asks readerDollarPrefix
+  prefix <- asks readerTmpNamePrefix
   n <- asks readerNameDepth
   local (\r -> r { readerNameDepth = n + 1 }) $
-    f $ Ident l $ (if dollar then "$" else "") ++ "gen" ++ show n
+    f $ tmpName l prefix n
+
+-- | Generates temporary names where the scope doesn't matter.
+unscopedTmpNames :: l -> String -> [Name l]
+unscopedTmpNames l prefix = map (tmpName l prefix) [0..]
+
+-- | Don't call this directly, use withScopedTmpName or unscopedTmpNames instead.
+tmpName :: l -> String -> Int -> Name l
+tmpName l prefix n = Ident l $ prefix ++ show n
 
 -- | Top level, desugar a whole module possibly returning errors
 desugar :: (Data l, Typeable l) => l -> Module l -> IO (Either CompileError (Module l))
-desugar = desugar' True
+desugar = desugar' "$gen"
 
--- | Desugar with the option to generate valid variable names (for printing the result using HSE)
-desugar' :: (Data l, Typeable l) => Bool -> l -> Module l -> IO (Either CompileError (Module l))
-desugar' dollarP emptyAnnotation md = runDesugar dollarP emptyAnnotation $
+-- | Desugar with the option to specify a prefix for generated names.
+-- Useful if you want to provide valid haskell name that HSE can print.
+desugar' :: (Data l, Typeable l) => String -> l -> Module l -> IO (Either CompileError (Module l))
+desugar' prefix emptyAnnotation md = runDesugar prefix emptyAnnotation $
       checkEnum md
   >>  desugarSection md
   >>= desugarListComp
@@ -123,19 +132,19 @@ desugarStmt' inner stmt =
 -- etc
 desugarTupleCon :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarTupleCon md = do
-  dollar <- asks readerDollarPrefix
+  prefix <- asks readerTmpNamePrefix
   return $ flip transformBi md $ \ex -> case ex of
-    Var _ (Special _ t@TupleCon{}) -> fromTupleCon dollar ex t
-    Con _ (Special _ t@TupleCon{}) -> fromTupleCon dollar ex t
+    Var _ (Special _ t@TupleCon{}) -> fromTupleCon prefix ex t
+    Con _ (Special _ t@TupleCon{}) -> fromTupleCon prefix ex t
     _ -> ex
   where
-    fromTupleCon :: Bool -> Exp l -> SpecialCon l -> Exp l
-    fromTupleCon doll e s = fromMaybe e $ case s of
+    fromTupleCon :: String -> Exp l -> SpecialCon l -> Exp l
+    fromTupleCon prefix e s = fromMaybe e $ case s of
       TupleCon l b n -> Just $ Lambda l params body
         where
           -- It doesn't matter if these variable names shadow anything since
           -- this lambda won't have inner scopes.
-          names  = take n $ map (Ident l . ((if doll then "$" else "") ++) . ("gen" ++) . show) [(0::Int)..]
+          names  = take n $ unscopedTmpNames l prefix
           params = PVar l <$> names
           body   = Tuple l b (Var l . UnQual l <$> names)
       _ -> Nothing
@@ -155,15 +164,13 @@ desugarMultiIf = transformBi $ \ex -> case ex of
 
 desugarTupleSection :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarTupleSection md = do
-  dollar <- asks readerDollarPrefix
+  prefix <- asks readerTmpNamePrefix
   flip transformBiM md $ \ex -> case ex of
     TupleSection l _ mes -> do
-      (names, lst) <- genSlotNames l mes (varNames l dollar)
+      (names, lst) <- genSlotNames l mes (unscopedTmpNames l prefix)
       return $ Lambda l (map (PVar l) names) (Tuple l Boxed lst)
     _ -> return ex
   where
-    varNames :: l -> Bool -> [Name l]
-    varNames l dollar = map (\i -> Ident l ((if dollar then "$" else "") ++ "gen" ++ show i)) [0::Int ..]
 
     genSlotNames :: l -> [Maybe (Exp l)] -> [Name l] -> Desugar l ([Name l], [Exp l])
     genSlotNames _ [] _ = return ([], [])

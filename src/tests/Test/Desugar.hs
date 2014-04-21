@@ -48,7 +48,7 @@ parseAndDesugar name s =
   case parseFay "test" s :: ParseResult (Module SrcLoc) of
     ParseFailed a b -> error $ show (name, a, b)
     ParseOk m -> do
-      d <- desugar' False noLoc m
+      d <- desugar' "gen" noLoc m
       return (m,d)
 
 doDesugar :: String -> String -> String -> Assertion
@@ -104,5 +104,5 @@ parseE s = let ParseOk m = parseFay "exp" s :: ParseResult (Exp SrcSpanInfo) in 
 
 des :: String -> IO ()
 des s = do
-  Right r <- desugar' False () $ parseM s
+  Right r <- desugar' "gen" () $ parseM s
   g r

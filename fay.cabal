@@ -23,7 +23,6 @@ copyright:           2012 Chris Done, Adam Bergmark
 category:            Development, Web, Fay
 build-type:          Custom
 cabal-version:       >=1.8
-
 data-files:
   js/runtime.js
   src/Fay/FFI.hs
@@ -106,7 +105,7 @@ library
     Paths_fay
   build-depends:
       base >= 4 && < 4.8
-    , Cabal < 1.20
+    , Cabal < 1.22
     , aeson < 0.8
     , attoparsec < 0.12
     , bytestring < 0.11

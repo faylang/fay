@@ -71,6 +71,12 @@ testDeclarations =
   ,T "ExpParen"
      "import Prelude; f = x y"
      "import Prelude; f = (x (y))"
+  ,T "PatParen"
+     "import Prelude; f x = y"
+     "import Prelude; f (x) = y"
+  ,T "PatInfixOp"
+     "import Prelude; f ((:) x y) = z"
+     "import Prelude; f (x : y) = z"
   ]
 
 parseAndDesugar :: String -> String -> IO (Module SrcLoc, Either CompileError (Module SrcLoc))
@@ -84,9 +90,6 @@ parseAndDesugar name s =
 doDesugar :: String -> String -> String -> Assertion
 doDesugar testName a b = do
   (originalExpected, desugaredExpected, desugared) <- parseAndDesugarAll testName a b
-  -- We need to desugar the paren in the original module since we
-  -- strip it away in desugaring but there isn't a way to construct
-  -- this directly from a source string
   assertEqual "identity"  (unAnn originalExpected) (unAnn desugaredExpected)
   assertEqual "desugared" (unAnn originalExpected) (unAnn desugared        )
   assertEqual "both"      (unAnn desugared       ) (unAnn desugaredExpected)
@@ -95,7 +98,10 @@ parseAndDesugarAll :: String -> String -> String -> IO (Module SrcLoc, Module Sr
 parseAndDesugarAll testName a b = do
   (originalExpected',Right desugaredExpected) <- parseAndDesugar (testName ++ " expected")   a
   (_                ,Right desugared        ) <- parseAndDesugar (testName ++ " input") b
-  let originalExpected = desugarExpParen originalExpected'
+  -- We need to desugar parens in the original module since we
+  -- strip it away in desugaring but there isn't alawys a way to construct
+  -- this paren directly from a source string
+  let originalExpected = desugarPatParen . desugarExpParen $ originalExpected'
   return (originalExpected, desugaredExpected, desugared)
 
 -- When developing:

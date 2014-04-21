@@ -7,6 +7,7 @@ module Fay.Compiler.Desugar
   (desugar
   ,desugar'
   ,desugarExpParen
+  ,desugarPatParen
   ) where
 
 import           Fay.Compiler.QName              (unname)
@@ -87,6 +88,7 @@ desugar' prefix emptyAnnotation md = runDesugar prefix emptyAnnotation $
   >>= desugarLCase
   >>= return . desugarMultiIf
   >>= return . desugarInfixOp
+  >>= return . desugarInfixPat
   >>= return . desugarExpParen
 
 -- | Desugaring
@@ -369,6 +371,11 @@ desugarInfixOp = transformBi $ \ex -> case ex of
       getOp (QVarOp l' o) = Var l' o
       getOp (QConOp l' o) = Con l' o
   _ -> ex
+
+desugarInfixPat :: (Data l, Typeable l) => Module l -> Module l
+desugarInfixPat = transformBi $ \pt -> case pt of
+  PInfixApp l p1 iop p2 -> PApp l iop [p1, p2]
+  _ -> pt
 
 desugarExpParen :: (Data l, Typeable l) => Module l -> Module l
 desugarExpParen = transformBi $ \ex -> case ex of

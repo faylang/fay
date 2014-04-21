@@ -74,6 +74,7 @@ library
     Fay
     Fay.Compiler
     Fay.Compiler.Config
+    Fay.Compiler.Desugar
     Fay.Control.Monad.Extra
     Fay.Control.Monad.IO
     Fay.Convert
@@ -85,16 +86,15 @@ library
     Fay.System.Directory.Extra
     Fay.System.Process.Extra
     Fay.Types
+    Fay.Compiler.Misc
   other-modules:
     Fay.Compiler.Decl
     Fay.Compiler.Defaults
-    Fay.Compiler.Desugar
     Fay.Compiler.Exp
     Fay.Compiler.FFI
     Fay.Compiler.GADT
     Fay.Compiler.Import
     Fay.Compiler.InitialPass
-    Fay.Compiler.Misc
     Fay.Compiler.Optimizer
     Fay.Compiler.Packages
     Fay.Compiler.Pattern
@@ -156,6 +156,7 @@ executable fay-tests
     Test.CommandLine
     Test.Compile
     Test.Convert
+    Test.Desugar
     Test.Util
   build-depends:
       base
@@ -166,6 +167,7 @@ executable fay-tests
     , directory
     , fay
     , filepath
+    , groom == 0.1.*
     , haskell-src-exts
     , tasty == 0.8.*
     , tasty-hunit == 0.8.*

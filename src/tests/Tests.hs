@@ -13,7 +13,8 @@ import           Fay.System.Directory.Extra
 import           Fay.System.Process.Extra
 import qualified Test.CommandLine            as Cmd
 import qualified Test.Compile                as Compile
-import qualified Test.Convert                as C
+import qualified Test.Convert                as Convert
+import qualified Test.Desugar                as Desugar
 
 import           Control.Applicative
 import           Data.Char
@@ -34,7 +35,14 @@ main = do
   (packageConf,args) <- fmap (prefixed (=="-package-conf")) getArgs
   let (basePath,args') = prefixed (=="-base-path") args
   (runtime,codegen) <- makeCompilerTests (packageConf <|> sandbox) basePath
-  withArgs args' $ defaultMain $ testGroup "Fay" [Compile.tests, Cmd.tests, runtime, codegen, C.tests]
+  withArgs args' $ defaultMain $ testGroup "Fay"
+    [ Desugar.tests
+    , Convert.tests
+    , codegen
+    , runtime
+    , Cmd.tests
+    , Compile.tests
+    ]
 
 -- | Extract the element prefixed by the given element in the list.
 prefixed :: (a -> Bool) -> [a] -> (Maybe a,[a])

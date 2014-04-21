@@ -5,6 +5,7 @@
 
 module Fay.Compiler.Desugar
   (desugar
+  ,desugar'
   ) where
 
 import           Fay.Compiler.QName              (unname)
@@ -25,8 +26,9 @@ import qualified Data.Generics.Uniplate.Data     as U
 -- Types
 
 data DesugarReader l = DesugarReader
-  { readerNameDepth :: Int
-  , readerNoInfo    :: l
+  { readerNameDepth    :: Int
+  , readerNoInfo       :: l
+  , readerDollarPrefix :: Bool
   }
 
 newtype Desugar l a = Desugar
@@ -41,21 +43,26 @@ newtype Desugar l a = Desugar
              , Applicative
              )
 
-runDesugar :: l -> Desugar l a -> IO (Either CompileError a)
-runDesugar emptyAnnotation m =
-    runErrorT (runReaderT (unDesugar m) (DesugarReader 0 emptyAnnotation))
+runDesugar :: Bool -> l -> Desugar l a -> IO (Either CompileError a)
+runDesugar dollarPrefix emptyAnnotation m =
+    runErrorT (runReaderT (unDesugar m) (DesugarReader 0 emptyAnnotation dollarPrefix))
 
 -- | Generate a temporary, SCOPED name for testing conditions and
 -- such. We don't have name tracking yet, so instead we use this.
 withScopedTmpName :: (Data l, Typeable l) => l -> (Name l -> Desugar l a) -> Desugar l a
 withScopedTmpName l f = do
+  dollar <- asks readerDollarPrefix
   n <- asks readerNameDepth
   local (\r -> r { readerNameDepth = n + 1 }) $
-   f $ Ident l $ "$gen" ++ show n
+   f $ Ident l $ (if dollar then "$" else "") ++ "gen" ++ show n
 
 -- | Top level, desugar a whole module possibly returning errors
 desugar :: (Data l, Typeable l) => l -> Module l -> IO (Either CompileError (Module l))
-desugar emptyAnnotation md = runDesugar emptyAnnotation $
+desugar = desugar' True
+
+-- | Desugar with the option to generate valid variable names (for printing the result using HSE)
+desugar' :: (Data l, Typeable l) => Bool -> l -> Module l -> IO (Either CompileError (Module l))
+desugar' dollarP emptyAnnotation md = runDesugar dollarP emptyAnnotation $
       checkEnum md
   >>  desugarSection md
   >>= desugarListComp

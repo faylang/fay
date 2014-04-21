@@ -68,6 +68,9 @@ testDeclarations =
   ,T "InfixOpCons"
      "import Prelude; f = (:) x y"
      "import Prelude; f = x : y"
+  ,T "ExpParen"
+     "import Prelude; f = x y"
+     "import Prelude; f = (x (y))"
   ]
 
 parseAndDesugar :: String -> String -> IO (Module SrcLoc, Either CompileError (Module SrcLoc))

@@ -86,6 +86,7 @@ desugar' prefix emptyAnnotation md = runDesugar prefix emptyAnnotation $
   >>= desugarLCase
   >>= return . desugarMultiIf
   >>= return . desugarInfixOp
+  >>= return . desugarExpParen
 
 -- | Desugaring
 
@@ -366,6 +367,11 @@ desugarInfixOp = transformBi $ \ex -> case ex of
     where
       getOp (QVarOp l' o) = Var l' o
       getOp (QConOp l' o) = Con l' o
+  _ -> ex
+
+desugarExpParen :: (Data l, Typeable l) => Module l -> Module l
+desugarExpParen = transformBi $ \ex -> case ex of
+  Paren _ e -> e
   _ -> ex
 
 transformBi :: U.Biplate (from a) (to a) => (to a -> to a) -> from a -> from a

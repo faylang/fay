@@ -83,25 +83,27 @@ parseAndDesugar name s =
 
 doDesugar :: String -> String -> String -> Assertion
 doDesugar testName a b = do
-  (expected',Right e) <- parseAndDesugar (testName ++ " expected") a
-  let expected = desugarExpParen expected'
-  (_       ,Right t) <- parseAndDesugar (testName ++ " input"   ) b
+  (originalExpected, desugaredExpected, desugared) <- parseAndDesugarAll testName a b
   -- We need to desugar the paren in the original module since we
   -- strip it away in desugaring but there isn't a way to construct
   -- this directly from a source string
-  assertEqual "identity"  (unAnn expected) (unAnn e)
-  assertEqual "desugared" (unAnn expected) (unAnn t)
-  assertEqual "both"      (unAnn t       ) (unAnn e)
+  assertEqual "identity"  (unAnn originalExpected) (unAnn desugaredExpected)
+  assertEqual "desugared" (unAnn originalExpected) (unAnn desugared        )
+  assertEqual "both"      (unAnn desugared       ) (unAnn desugaredExpected)
 
+parseAndDesugarAll :: String -> String -> String -> IO (Module SrcLoc, Module SrcLoc, Module SrcLoc)
+parseAndDesugarAll testName a b = do
+  (originalExpected',Right desugaredExpected) <- parseAndDesugar (testName ++ " expected")   a
+  (_                ,Right desugared        ) <- parseAndDesugar (testName ++ " input") b
+  let originalExpected = desugarExpParen originalExpected'
+  return (originalExpected, desugaredExpected, desugared)
 
 -- When developing:
 
 devTest :: String -> IO ()
 devTest nam = do
   let (T _ a b) = fromJust (find (\(T n _ _) -> n == nam) testDeclarations)
-  (originalExpected',Right desugaredExpected) <- parseAndDesugar "expected"   a
-  let originalExpected = desugarExpParen originalExpected'
-  (_                ,Right desugared        ) <- parseAndDesugar "test input" b
+  (originalExpected, desugaredExpected, desugared) <- parseAndDesugarAll "" a b
   if unAnn desugared == unAnn desugaredExpected && unAnn desugared == unAnn originalExpected
     then putStrLn "OK"
     else do

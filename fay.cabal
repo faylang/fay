@@ -100,7 +100,7 @@ library
                      , Fay.Compiler.Typecheck
                      , Paths_fay
   ghc-options:       -O2 -Wall
-  build-depends:     base >= 4 && < 5
+  build-depends:     base >= 4 && < 4.8
                    , Cabal < 1.20
                    , aeson < 0.8
                    , attoparsec < 0.12

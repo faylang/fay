@@ -41,6 +41,18 @@ testDeclarations =
   ,T "TupleSection"
      "import Prelude; f = \\gen0 gen1 -> (gen0,2,gen1)"
      "import Prelude; f = (,2,)"
+  ,T "ImplicitPrelude1" -- Add missing Prelude import
+     "import Prelude"
+     ""
+  ,T "ImplicitPrelude2" -- Keep existing Prelude import
+     "import Prelude ()"
+     "import Prelude ()"
+  ,T "ImplicitPrelude3" -- Keep existing qualified import
+     "import qualified Prelude"
+     "import qualified Prelude"
+  ,T "NoImplicitPrelude"
+     "{-# LANGUAGE NoImplicitPrelude #-}"
+     "{-# LANGUAGE NoImplicitPrelude #-}"
   ]
 
 parseAndDesugar :: String -> String -> IO (Module SrcLoc, Either CompileError (Module SrcLoc))

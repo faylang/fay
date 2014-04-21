@@ -74,6 +74,8 @@ library
     Fay.Compiler
     Fay.Compiler.Config
     Fay.Compiler.Desugar
+    Fay.Compiler.Desugar.Name
+    Fay.Compiler.Desugar.Types
     Fay.Control.Monad.Extra
     Fay.Control.Monad.IO
     Fay.Convert

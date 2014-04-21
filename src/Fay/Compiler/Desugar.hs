@@ -1,70 +1,28 @@
-{-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-
+-- | Desugars a reasonable amount of syntax to reduce duplication in code generation.
 module Fay.Compiler.Desugar
-  (desugar
-  ,desugar'
-  ,desugarExpParen
-  ,desugarPatParen
+  ( desugar
+  , desugar'
+  , desugarExpParen
+  , desugarPatParen
   ) where
 
 import           Fay.Compiler.QName              (unname)
 import           Fay.Compiler.Misc               (hasLanguagePragma, ffiExp)
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types                       (CompileError (..))
+import           Fay.Compiler.Desugar.Name
+import           Fay.Compiler.Desugar.Types
 
-import           Control.Applicative
-import           Control.Monad.Error
-import           Control.Monad.Reader
+import           Control.Applicative             ((<$>))
+import           Control.Monad                   ((>=>), when)
+import           Control.Monad.Error             (throwError)
+import           Control.Monad.Reader            (asks)
 import           Data.Data                       (Data)
-import           Data.Maybe
+import qualified Data.Generics.Uniplate.Data     as U
+import           Data.Maybe                      (fromMaybe, isJust)
 import           Data.Typeable                   (Typeable)
 import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)
 import           Prelude                         hiding (exp, mod)
-import qualified Data.Generics.Uniplate.Data     as U
-
--- Types
-
-data DesugarReader l = DesugarReader
-  { readerNameDepth     :: Int
-  , readerNoInfo        :: l
-  , readerTmpNamePrefix :: String
-  }
-
-newtype Desugar l a = Desugar
-  { unDesugar :: (ReaderT (DesugarReader l)
-                       (ErrorT CompileError IO))
-                       a
-  } deriving ( MonadReader (DesugarReader l)
-             , MonadError CompileError
-             , MonadIO
-             , Monad
-             , Functor
-             , Applicative
-             )
-
-runDesugar :: String -> l -> Desugar l a -> IO (Either CompileError a)
-runDesugar tmpNamePrefix emptyAnnotation m =
-    runErrorT (runReaderT (unDesugar m) (DesugarReader 0 emptyAnnotation tmpNamePrefix))
-
--- | Generate a temporary, SCOPED name for testing conditions and
--- such. We don't have name tracking yet, so instead we use this.
-withScopedTmpName :: (Data l, Typeable l) => l -> (Name l -> Desugar l a) -> Desugar l a
-withScopedTmpName l f = do
-  prefix <- asks readerTmpNamePrefix
-  n <- asks readerNameDepth
-  local (\r -> r { readerNameDepth = n + 1 }) $
-    f $ tmpName l prefix n
-
--- | Generates temporary names where the scope doesn't matter.
-unscopedTmpNames :: l -> String -> [Name l]
-unscopedTmpNames l prefix = map (tmpName l prefix) [0..]
-
--- | Don't call this directly, use withScopedTmpName or unscopedTmpNames instead.
-tmpName :: l -> String -> Int -> Name l
-tmpName l prefix n = Ident l $ prefix ++ show n
 
 -- | Top level, desugar a whole module possibly returning errors
 desugar :: (Data l, Typeable l) => l -> Module l -> IO (Either CompileError (Module l))
@@ -91,8 +49,8 @@ desugar' prefix emptyAnnotation md = runDesugar prefix emptyAnnotation $
   >>= return . desugarInfixPat
   >>= return . desugarExpParen
 
--- | Desugaring
-
+-- | (a `f`) => \b -> a `f` b
+--   (`f` b) => \a -> a `f` b
 desugarSection :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarSection = transformBiM $ \ex -> case ex of
   LeftSection  l e q -> withScopedTmpName l $ \tmp ->
@@ -101,12 +59,12 @@ desugarSection = transformBiM $ \ex -> case ex of
       return $ Lambda l [PVar l tmp] (InfixApp l (Var l (UnQual l tmp)) q e)
   _ -> return ex
 
+-- | Convert do notation into binds and thens.
 desugarDo :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarDo = transformBiM $ \ex -> case ex of
   Do _ stmts -> maybe (throwError EmptyDoBlock) return $ foldl desugarStmt' Nothing (reverse stmts)
   _ -> return ex
 
--- | Convert do notation into binds and thens.
 desugarStmt' :: Maybe (Exp l) -> (Stmt l) -> Maybe (Exp l)
 desugarStmt' inner stmt =
   maybe initStmt subsequentStmt inner
@@ -154,12 +112,13 @@ desugarTupleCon md = do
           body   = Tuple l b (Var l . UnQual l <$> names)
       _ -> Nothing
 
--- | \case x of [...] -> \foo -> case foo of [...]
+-- | \case { ... } => \foo -> case foo of { ... }
 desugarLCase :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarLCase = transformBiM $ \ex -> case ex of
   LCase l alts -> withScopedTmpName l $ \n -> return $ Lambda l [PVar l n] (Case l (Var l (UnQual l n)) alts)
   _ -> return ex
 
+-- | if | p -> x | q -> y => case () of _ | p -> x | q -> y
 desugarMultiIf :: (Data l, Typeable l) => Module l -> Module l
 desugarMultiIf = transformBi $ \ex -> case ex of
   MultiIf l alts -> Case l (Con l (Special l (UnitCon l)))
@@ -167,6 +126,7 @@ desugarMultiIf = transformBi $ \ex -> case ex of
     where gas = map (\(IfAlt l' p a) -> GuardedAlt l' [Qualifier l' p] a) alts
   _ -> ex
 
+-- | (a,) => \b -> (a,b)
 desugarTupleSection :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarTupleSection md = do
   prefix <- asks readerTmpNamePrefix
@@ -193,12 +153,13 @@ desugarPatParen = transformBi $ \pt -> case pt of
   PParen _ p -> p
   _ -> pt
 
+-- | {a} => {a=a} for R{a} expressions
 desugarFieldPun :: (Data l, Typeable l) => Module l -> Module l
 desugarFieldPun = transformBi $ \f -> case f of
   FieldPun l n -> let dn = UnQual l n in FieldUpdate l dn (Var l dn)
   _ -> f
 
--- | {a} => {a=a} for R{a}
+-- | {a} => {a=a} for R{a} patterns
 desugarPatFieldPun :: (Data l, Typeable l) => Module l -> Module l
 desugarPatFieldPun = transformBi $ \pf -> case pf of
   PFieldPun l n -> PFieldPat l (UnQual l n) (PVar l n)
@@ -256,6 +217,7 @@ checkEnum = mapM_ f . universeBi
       EnumFromThenTo {} -> False
       _                 -> True
 
+-- | Adds an explicit import Prelude statement when appropriate.
 desugarImplicitPrelude :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarImplicitPrelude m =
     if preludeNotNeeded
@@ -364,6 +326,9 @@ addFFIExpTypeSigs decls = do
     (PatBind _ (PVar _ name) _ _ _) -> lookup (unname name) typeSigs
     _ -> Nothing
 
+-- | a `op` b => op a b
+-- a + b => (+) a b
+-- for expressions
 desugarInfixOp :: (Data l, Typeable l) => Module l -> Module l
 desugarInfixOp = transformBi $ \ex -> case ex of
   InfixApp l e1 oper e2 -> App l (App l (getOp oper) e1) e2
@@ -372,11 +337,13 @@ desugarInfixOp = transformBi $ \ex -> case ex of
       getOp (QConOp l' o) = Con l' o
   _ -> ex
 
+-- | a : b => (:) a b for patterns
 desugarInfixPat :: (Data l, Typeable l) => Module l -> Module l
 desugarInfixPat = transformBi $ \pt -> case pt of
   PInfixApp l p1 iop p2 -> PApp l iop [p1, p2]
   _ -> pt
 
+-- | (a) => a for patterns
 desugarExpParen :: (Data l, Typeable l) => Module l -> Module l
 desugarExpParen = transformBi $ \ex -> case ex of
   Paren _ e -> e

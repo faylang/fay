@@ -6,6 +6,7 @@
 module Fay.Compiler.Desugar
   (desugar
   ,desugar'
+  ,desugarExpParen
   ) where
 
 import           Fay.Compiler.QName              (unname)

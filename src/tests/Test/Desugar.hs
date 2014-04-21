@@ -15,7 +15,7 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Text.Groom
 
-import           Fay.Compiler.Desugar            (desugar')
+import           Fay.Compiler.Desugar
 import           Fay.Compiler.Misc               (parseFay)
 import           Fay.Types                       (CompileError (..))
 
@@ -83,8 +83,12 @@ parseAndDesugar name s =
 
 doDesugar :: String -> String -> String -> Assertion
 doDesugar testName a b = do
-  (expected,Right e) <- parseAndDesugar (testName ++ " expected") a
+  (expected',Right e) <- parseAndDesugar (testName ++ " expected") a
+  let expected = desugarExpParen expected'
   (_       ,Right t) <- parseAndDesugar (testName ++ " input"   ) b
+  -- We need to desugar the paren in the original module since we
+  -- strip it away in desugaring but there isn't a way to construct
+  -- this directly from a source string
   assertEqual "identity"  (unAnn expected) (unAnn e)
   assertEqual "desugared" (unAnn expected) (unAnn t)
   assertEqual "both"      (unAnn t       ) (unAnn e)
@@ -95,8 +99,9 @@ doDesugar testName a b = do
 devTest :: String -> IO ()
 devTest nam = do
   let (T _ a b) = fromJust (find (\(T n _ _) -> n == nam) testDeclarations)
-  (originalExpected,Right desugaredExpected) <- parseAndDesugar "expected"   a
-  (_               ,Right desugared        ) <- parseAndDesugar "test input" b
+  (originalExpected',Right desugaredExpected) <- parseAndDesugar "expected"   a
+  let originalExpected = desugarExpParen originalExpected'
+  (_                ,Right desugared        ) <- parseAndDesugar "test input" b
   if unAnn desugared == unAnn desugaredExpected && unAnn desugared == unAnn originalExpected
     then putStrLn "OK"
     else do

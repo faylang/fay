@@ -80,6 +80,9 @@ testDeclarations =
   ,T "PatFieldPun"
      "import Prelude; f R { x = x } = y"
      "import Prelude; f R { x } = y"
+  ,T "PatField"
+     "import Prelude; f = R { x = x }"
+     "import Prelude; f = R { x }"
   ]
 
 parseAndDesugar :: String -> String -> IO (Module SrcLoc, Either CompileError (Module SrcLoc))

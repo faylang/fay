@@ -32,6 +32,9 @@ testDeclarations =
   ,T "MultiWayIf"
      "import Prelude; f = case () of { _ | True -> 1 | False -> 2 }"
      "import Prelude; f = if | True -> 1 | False -> 2"
+  ,T "TupleCon"
+     "import Prelude; f = \\gen0 gen1 gen2 -> (gen0, gen1, gen2)"
+     "import Prelude; f = (,,)"
   ]
 
 parseAndDesugar :: String -> String -> IO (Module (), Either CompileError (Module ()))
@@ -62,12 +65,13 @@ devTest nam = do
   if desugared == desugaredExpected && desugared == originalExpected
     then putStrLn "OK"
     else do
-      putStrLn "--- desugared"
-      g $ desugared
-      putStrLn "--- desugaredExpected"
-      g $ desugaredExpected
       putStrLn "--- originalExpected"
       g $ originalExpected
+      putStrLn "--- desugaredExpected"
+      g $ desugaredExpected
+      putStrLn "--- desugared"
+      g $ desugared
+  when (originalExpected  /= desugaredExpected) $ putStrLn "originalExpected /= desugaredExpected"
   when (desugared         /= desugaredExpected) $ putStrLn "desugared /= desugaredExpected"
   when (desugared         /= originalExpected ) $ putStrLn "desugared /= originalExpected"
   when (desugaredExpected /= originalExpected ) $ putStrLn "desugaredExpected /= undesugared"

@@ -54,7 +54,7 @@ withScopedTmpName l f = do
   dollar <- asks readerDollarPrefix
   n <- asks readerNameDepth
   local (\r -> r { readerNameDepth = n + 1 }) $
-   f $ Ident l $ (if dollar then "$" else "") ++ "gen" ++ show n
+    f $ Ident l $ (if dollar then "$" else "") ++ "gen" ++ show n
 
 -- | Top level, desugar a whole module possibly returning errors
 desugar :: (Data l, Typeable l) => l -> Module l -> IO (Either CompileError (Module l))
@@ -66,7 +66,7 @@ desugar' dollarP emptyAnnotation md = runDesugar dollarP emptyAnnotation $
       checkEnum md
   >>  desugarSection md
   >>= desugarListComp
-  >>= return . desugarTupleCon
+  >>= desugarTupleCon
   >>= return . desugarPatParen
   >>= return . desugarFieldPun
   >>= return . desugarPatFieldPun
@@ -121,19 +121,21 @@ desugarStmt' inner stmt =
 -- | (,)  => \x y   -> (x,y)
 --   (,,) => \x y z -> (x,y,z)
 -- etc
-desugarTupleCon :: (Data l, Typeable l) => Module l -> Module l
-desugarTupleCon = transformBi $ \ex -> case ex of
-  Var _ (Special _ t@TupleCon{}) -> fromTupleCon ex t
-  Con _ (Special _ t@TupleCon{}) -> fromTupleCon ex t
-  _ -> ex
+desugarTupleCon :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
+desugarTupleCon md = do
+  dollar <- asks readerDollarPrefix
+  return $ flip transformBi md $ \ex -> case ex of
+    Var _ (Special _ t@TupleCon{}) -> fromTupleCon dollar ex t
+    Con _ (Special _ t@TupleCon{}) -> fromTupleCon dollar ex t
+    _ -> ex
   where
-    fromTupleCon :: Exp l -> SpecialCon l -> Exp l
-    fromTupleCon e s = fromMaybe e $ case s of
+    fromTupleCon :: Bool -> Exp l -> SpecialCon l -> Exp l
+    fromTupleCon doll e s = fromMaybe e $ case s of
       TupleCon l b n -> Just $ Lambda l params body
         where
           -- It doesn't matter if these variable names shadow anything since
           -- this lambda won't have inner scopes.
-          names  = take n $ map (Ident l . ("$gen" ++) . show) [(1::Int)..]
+          names  = take n $ map (Ident l . ((if doll then "$" else "") ++) . ("gen" ++) . show) [(0::Int)..]
           params = PVar l <$> names
           body   = Tuple l b (Var l . UnQual l <$> names)
       _ -> Nothing

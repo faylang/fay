@@ -162,13 +162,13 @@ showCompileError e = case e of
     err ++ " at line: " ++ show (srcLine pos) ++ " column:" ++
     "\n" ++ show (srcColumn pos)
   ShouldBeDesugared s              -> "Expected this to be desugared (this is a bug): " ++ s
-  UnableResolveQualified qname     -> "unable to resolve qualified names " ++ prettyPrint qname
+  UnableResolveQualified qname     -> "unable to resolve qualified names (this might be a bug):" ++ prettyPrint qname
   UnsupportedDeclaration d         -> "unsupported declaration: " ++ prettyPrint d
   UnsupportedEnum{}                -> "only Int is allowed in enum expressions"
   UnsupportedExportSpec es         -> "unsupported export specification: " ++ prettyPrint es
   UnsupportedExpression expr       -> "unsupported expression syntax: " ++ prettyPrint expr
   UnsupportedFieldPattern p        -> "unsupported field pattern: " ++ prettyPrint p
-  UnsupportedImport i              -> "unsupported import syntax, we're too lazy: " ++ prettyPrint i
+  UnsupportedImport i              -> "unsupported import syntax: " ++ prettyPrint i
   UnsupportedLet                   -> "let not supported here"
   UnsupportedLetBinding d          -> "unsupported let binding: " ++ prettyPrint d
   UnsupportedLiteral lit           -> "unsupported literal syntax: " ++ prettyPrint lit

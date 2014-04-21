@@ -39,9 +39,9 @@ main = do
     [ Desugar.tests
     , Convert.tests
     , codegen
-    , runtime
     , Cmd.tests
     , Compile.tests
+    , runtime
     ]
 
 -- | Extract the element prefixed by the given element in the list.

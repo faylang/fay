@@ -23,12 +23,14 @@ copyright:           2012 Chris Done, Adam Bergmark
 category:            Development, Web, Fay
 build-type:          Custom
 cabal-version:       >=1.8
-data-files:          js/runtime.js
-                     src/Fay/FFI.hs
+
+data-files:
+  js/runtime.js
+  src/Fay/FFI.hs
 extra-source-files:
+  CHANGELOG.md
   LICENSE
   README.md
-  CHANGELOG.md
   -- Examples
   examples/*.hs
   examples/*.html
@@ -66,102 +68,108 @@ source-repository head
   location: https://github.com/faylang/fay.git
 
 library
-  hs-source-dirs:    src
-  exposed-modules:     Fay
-                     , Fay.Compiler
-                     , Fay.Compiler.Config
-                     , Fay.Control.Monad.Extra
-                     , Fay.Control.Monad.IO
-                     , Fay.Convert
-                     , Fay.Data.List.Extra
-                     , Fay.Exts
-                     , Fay.Exts.Scoped
-                     , Fay.Exts.NoAnnotation
-                     , Fay.FFI
-                     , Fay.System.Directory.Extra
-                     , Fay.System.Process.Extra
-                     , Fay.Types
-  other-modules:       Fay.Compiler.Decl
-                     , Fay.Compiler.Defaults
-                     , Fay.Compiler.Desugar
-                     , Fay.Compiler.Exp
-                     , Fay.Compiler.FFI
-                     , Fay.Compiler.GADT
-                     , Fay.Compiler.Import
-                     , Fay.Compiler.InitialPass
-                     , Fay.Compiler.Misc
-                     , Fay.Compiler.Optimizer
-                     , Fay.Compiler.Packages
-                     , Fay.Compiler.Pattern
-                     , Fay.Compiler.PrimOp
-                     , Fay.Compiler.Print
-                     , Fay.Compiler.QName
-                     , Fay.Compiler.State
-                     , Fay.Compiler.Typecheck
-                     , Paths_fay
   ghc-options:       -O2 -Wall
-  build-depends:     base >= 4 && < 4.8
-                   , Cabal < 1.20
-                   , aeson < 0.8
-                   , attoparsec < 0.12
-                   , bytestring < 0.11
-                   , containers < 0.6
-                   , cpphs < 1.19
-                   , data-default < 0.6
-                   , directory < 1.3
-                   , filepath < 1.4
-                   , ghc-paths < 0.2
-                   , haskell-names >= 0.3.1 && < 0.4
-                   , haskell-packages == 0.2.3.1 || > 0.2.3.2 && < 0.3
-                   , haskell-src-exts >= 1.15.0.1 && < 1.16
-                   , language-ecmascript >= 0.15 && < 0.17
-                   , mtl < 2.2
-                   , pretty-show >= 1.6 && < 1.7
-                   , process < 1.3
-                   , safe < 0.4
-                   , split < 0.3
-                   , syb < 0.5
-                   , text < 1.2
-                   , time < 1.5
-                   , uniplate >= 1.6.11 && < 1.7
-                   , unordered-containers < 0.3
-                   , utf8-string < 0.4
-                   , vector < 0.11
-                   , sourcemap < 0.2
-                   , scientific < 0.3
+  hs-source-dirs:    src
+  exposed-modules:
+    Fay
+    Fay.Compiler
+    Fay.Compiler.Config
+    Fay.Control.Monad.Extra
+    Fay.Control.Monad.IO
+    Fay.Convert
+    Fay.Data.List.Extra
+    Fay.Exts
+    Fay.Exts.NoAnnotation
+    Fay.Exts.Scoped
+    Fay.FFI
+    Fay.System.Directory.Extra
+    Fay.System.Process.Extra
+    Fay.Types
+  other-modules:
+    Fay.Compiler.Decl
+    Fay.Compiler.Defaults
+    Fay.Compiler.Desugar
+    Fay.Compiler.Exp
+    Fay.Compiler.FFI
+    Fay.Compiler.GADT
+    Fay.Compiler.Import
+    Fay.Compiler.InitialPass
+    Fay.Compiler.Misc
+    Fay.Compiler.Optimizer
+    Fay.Compiler.Packages
+    Fay.Compiler.Pattern
+    Fay.Compiler.PrimOp
+    Fay.Compiler.Print
+    Fay.Compiler.QName
+    Fay.Compiler.State
+    Fay.Compiler.Typecheck
+    Paths_fay
+  build-depends:
+      base >= 4 && < 4.8
+    , Cabal < 1.20
+    , aeson < 0.8
+    , attoparsec < 0.12
+    , bytestring < 0.11
+    , containers < 0.6
+    , cpphs < 1.19
+    , data-default < 0.6
+    , directory < 1.3
+    , filepath < 1.4
+    , ghc-paths < 0.2
+    , haskell-names >= 0.3.1 && < 0.4
+    , haskell-packages == 0.2.3.1 || > 0.2.3.2 && < 0.3
+    , haskell-src-exts >= 1.15.0.1 && < 1.16
+    , language-ecmascript >= 0.15 && < 0.17
+    , mtl < 2.2
+    , pretty-show >= 1.6 && < 1.7
+    , process < 1.3
+    , safe < 0.4
+    , scientific < 0.3
+    , sourcemap < 0.2
+    , split < 0.3
+    , syb < 0.5
+    , text < 1.2
+    , time < 1.5
+    , uniplate >= 1.6.11 && < 1.7
+    , unordered-containers < 0.3
+    , utf8-string < 0.4
+    , vector < 0.11
 
 executable fay
   hs-source-dirs:    src/main
   ghc-options:       -O2 -Wall
   ghc-prof-options:  -fprof-auto
   main-is:           Main.hs
-  build-depends:     base
-                   , fay
-                   , data-default
-                   , optparse-applicative >= 0.6 && < 0.9
-                   , split
+  build-depends:
+      base
+    , data-default
+    , fay
+    , optparse-applicative >= 0.6 && < 0.9
+    , split
 
 executable fay-tests
-  hs-source-dirs:    src/tests
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   ghc-prof-options:  -fprof-auto
+  hs-source-dirs:    src/tests
   main-is:           Tests.hs
-  other-modules:     Test.CommandLine
-                     Test.Compile
-                     Test.Convert
-                     Test.Util
-  build-depends:     base
-                   , fay
-                   , HUnit < 1.3
-                   , aeson
-                   , attoparsec
-                   , bytestring
-                   , data-default
-                   , directory
-                   , filepath
-                   , haskell-src-exts
-                   , test-framework < 0.9
-                   , test-framework-hunit < 0.4
-                   , test-framework-th < 0.3
-                   , text
-                   , utf8-string
+  other-modules:
+    Test.CommandLine
+    Test.Compile
+    Test.Convert
+    Test.Util
+  build-depends:
+      base
+    , HUnit < 1.3
+    , aeson
+    , attoparsec
+    , bytestring
+    , data-default
+    , directory
+    , fay
+    , filepath
+    , haskell-src-exts
+    , test-framework < 0.9
+    , test-framework-hunit < 0.4
+    , test-framework-th < 0.3
+    , text
+    , utf8-string

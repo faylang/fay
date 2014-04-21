@@ -53,6 +53,12 @@ testDeclarations =
   ,T "NoImplicitPrelude"
      "{-# LANGUAGE NoImplicitPrelude #-}"
      "{-# LANGUAGE NoImplicitPrelude #-}"
+  ,T "OperatorSectionRight"
+     "import Prelude; f = \\gen0 -> gen0 `g` x"
+     "import Prelude; f = (`g` x)"
+  ,T "OperatorSectionLeft"
+     "import Prelude; f = \\gen0 -> x `g` gen0"
+     "import Prelude; f = (x `g`)"
   ]
 
 parseAndDesugar :: String -> String -> IO (Module SrcLoc, Either CompileError (Module SrcLoc))

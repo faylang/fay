@@ -222,8 +222,6 @@ compileGuardedAlt alt =
 
 -- | Compile guards
 compileGuards :: [S.GuardedRhs] -> Compile JsStmt
-compileGuards ((GuardedRhs _ (Qualifier _ (Var _ (UnQual _ (Ident _ "otherwise"))):_) exp):_) =
-  (\e -> JsIf (JsLit $ JsBool True) [JsEarlyReturn e] []) <$> compileExp exp
 compileGuards (GuardedRhs _ (Qualifier _ guard:_) exp : rest) =
   makeIf <$> fmap force (compileExp guard)
          <*> compileExp exp

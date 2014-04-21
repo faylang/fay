@@ -158,15 +158,17 @@ config :: (CompileConfig -> a) -> Compile a
 config f = asks (f . readerConfig)
 
 -- | Optimize pattern matching conditions by merging conditions in common.
+-- TODO This is buggy and no longer used. Fails on tests/case3
 optimizePatConditions :: [[JsStmt]] -> [[JsStmt]]
-optimizePatConditions = concatMap merge . groupBy sameIf where
+optimizePatConditions = id
+  {- concatMap merge . groupBy sameIf where
   sameIf [JsIf cond1 _ _] [JsIf cond2 _ _] = cond1 == cond2
   sameIf _ _ = False
   merge xs@([JsIf cond _ _]:_) =
     [[JsIf cond (concat (optimizePatConditions (map getIfConsequent xs))) []]]
   merge noifs = noifs
   getIfConsequent [JsIf _ cons _] = cons
-  getIfConsequent other = other
+  getIfConsequent other = other -}
 
 -- | Throw a JS exception.
 throw :: String -> JsExp -> JsStmt

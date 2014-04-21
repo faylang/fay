@@ -83,9 +83,12 @@ testDeclarations =
   ,T "PatField"
      "import Prelude; f = R { x = x }"
      "import Prelude; f = R { x }"
-  ,T "FFITypeSigTopLevel"
+  ,T "FFITopLevel"
      "import Prelude; f :: Int; f = ffi \"1\" :: Int"
      "import Prelude; f :: Int; f = ffi \"1\""
+  ,T "FFIWhere"
+     "import Prelude; f = () where x :: Int; x = ffi \"1\" :: Int"
+     "import Prelude; f = () where x :: Int; x = ffi \"1\""
   ]
 
 parseAndDesugar :: String -> String -> IO (Module SrcLoc, Either CompileError (Module SrcLoc))

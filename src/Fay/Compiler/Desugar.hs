@@ -304,7 +304,7 @@ desugarFFITypeSigs = desugarToplevelFFITypeSigs >=> desugarBindsTypeSigs
 --  foo = ffi "3"
 -- becomes
 --  foo :: Int
---  foo = (ffi "3" :: Int)
+--  foo = ffi "3" :: Int
 desugarToplevelFFITypeSigs :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarToplevelFFITypeSigs m = case m of
   Module a b c d decls -> do

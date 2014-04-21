@@ -35,15 +35,17 @@ testDeclarations =
   ,T "TupleCon"
      "import Prelude; f = \\gen0 gen1 gen2 -> (gen0, gen1, gen2)"
      "import Prelude; f = (,,)"
+  ,T "Do"
+     "import Prelude; f = x >>= \\gen0 -> y >> z"
+     "import Prelude; f = do { gen0 <- x; y; z }"
   ]
 
-parseAndDesugar :: String -> String -> IO (Module (), Either CompileError (Module ()))
+parseAndDesugar :: String -> String -> IO (Module SrcLoc, Either CompileError (Module SrcLoc))
 parseAndDesugar name s =
-  case parseFay "test" s :: ParseResult (Module SrcSpanInfo) of
+  case parseFay "test" s :: ParseResult (Module SrcLoc) of
     ParseFailed a b -> error $ show (name, a, b)
-    ParseOk m' -> do
-      let m = fmap (const ()) m'
-      d <- desugar' False () m
+    ParseOk m -> do
+      d <- desugar' False noLoc m
       return (m,d)
 
 doDesugar :: String -> String -> String -> Assertion
@@ -62,22 +64,34 @@ devTest nam = do
   let (T _ a b) = fromJust (find (\(T n _ _) -> n == nam) testDeclarations)
   (originalExpected,Right desugaredExpected) <- parseAndDesugar "expected"   a
   (_               ,Right desugared        ) <- parseAndDesugar "test input" b
-  if desugared == desugaredExpected && desugared == originalExpected
+  if unAnn desugared == unAnn desugaredExpected && unAnn desugared == unAnn originalExpected
     then putStrLn "OK"
     else do
       putStrLn "--- originalExpected"
-      g $ originalExpected
+      g $ unAnn originalExpected
       putStrLn "--- desugaredExpected"
-      g $ desugaredExpected
+      g $ unAnn desugaredExpected
       putStrLn "--- desugared"
-      g $ desugared
-  when (originalExpected  /= desugaredExpected) $ putStrLn "originalExpected /= desugaredExpected"
-  when (desugared         /= desugaredExpected) $ putStrLn "desugared /= desugaredExpected"
-  when (desugared         /= originalExpected ) $ putStrLn "desugared /= originalExpected"
-  when (desugaredExpected /= originalExpected ) $ putStrLn "desugaredExpected /= undesugared"
+      g $ unAnn desugared
+      putStrLn "--- originalExpected"
+      pretty $ originalExpected
+      putStrLn "--- desugaredExpected"
+      pretty $ desugaredExpected
+      putStrLn "--- desugared"
+      pretty $ desugared
+  when (unAnn originalExpected  /= unAnn desugaredExpected) $ putStrLn "originalExpected /= desugaredExpected"
+  when (unAnn desugared         /= unAnn desugaredExpected) $ putStrLn "desugared /= desugaredExpected"
+  when (unAnn desugared         /= unAnn originalExpected ) $ putStrLn "desugared /= originalExpected"
+  when (unAnn desugaredExpected /= unAnn originalExpected ) $ putStrLn "desugaredExpected /= undesugared"
 
 g :: Show a => a -> IO ()
 g = putStrLn . groom
+
+unAnn :: Functor f => f a -> f ()
+unAnn = fmap (const ())
+
+pretty :: Module SrcLoc -> IO ()
+pretty = putStrLn . prettyPrint
 
 parseM :: String -> Module ()
 parseM s = let ParseOk m = parseFay "module" s :: ParseResult (Module SrcSpanInfo) in fmap (const ()) m

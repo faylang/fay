@@ -55,8 +55,8 @@ compileExp e = case e of
   EnumFromTo _ i i'                  -> compileEnumFromTo i i'
   EnumFromThen _ a b                 -> compileEnumFromThen a b
   EnumFromThenTo _ a b z             -> compileEnumFromThenTo a b z
-  RecConstr _ name fieldUpdates      -> compileRecConstr name fieldUpdates
-  RecUpdate _ rec  fieldUpdates      -> compileRecUpdate rec fieldUpdates
+  RecConstr _ name fieldUpdates      -> compileRecConstr e name fieldUpdates
+  RecUpdate _ rec  fieldUpdates      -> compileRecUpdate e rec fieldUpdates
   ExpTypeSig _ exp sig               -> case ffiExp exp of
     Nothing -> compileExp exp
     Just formatstr -> compileFFIExp (S.srcSpanInfo $ ann exp) Nothing formatstr sig
@@ -270,8 +270,8 @@ compileEnumFromThenTo a b z = do
 
 -- | Compile a record construction with named fields
 -- | GHC will warn on uninitialized fields, they will be undefined in JS.
-compileRecConstr :: S.QName -> [S.FieldUpdate] -> Compile JsExp
-compileRecConstr name fieldUpdates = do
+compileRecConstr :: S.Exp -> S.QName -> [S.FieldUpdate] -> Compile JsExp
+compileRecConstr origExp name fieldUpdates = do
   -- var obj = new $_Type()
   let unQualName = withIdent lowerFirst . unQualify $ unAnn name
   qname <- unsafeResolveName name
@@ -288,7 +288,7 @@ compileRecConstr name fieldUpdates = do
                                                     (JsNameVar fieldName)
                                                     (JsName $ JsNameVar fieldName)
     -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))
-    updateStmt _ u = error ("updateStmt: " ++ show u)
+    updateStmt _ _ = throwError $ UnsupportedExpression origExp
 
     wildcardFields l = case l of
       Scoped (RecExpWildcard es) _ -> map (unQualify . origName2QName) . map fst $ es
@@ -298,8 +298,8 @@ compileRecConstr name fieldUpdates = do
     lowerFirst (x:xs) = '_' : Char.toLower x : xs
 
 -- | Compile a record update.
-compileRecUpdate :: S.Exp -> [S.FieldUpdate] -> Compile JsExp
-compileRecUpdate rec fieldUpdates = do
+compileRecUpdate :: S.Exp -> S.Exp -> [S.FieldUpdate] -> Compile JsExp
+compileRecUpdate origExp rec fieldUpdates = do
   record <- force <$> compileExp rec
   let copyName = UnQual () $ Ident () "$_record_to_update"
       copy = JsVar (JsNameVar copyName)
@@ -312,7 +312,7 @@ compileRecUpdate rec fieldUpdates = do
       JsSetProp (JsNameVar copyName) (JsNameVar field) <$> compileExp value
     updateExp _ f@FieldPun{} = shouldBeDesugared f
     -- I also couldn't find a code that generates (FieldUpdate FieldWildCard)
-    updateExp _ FieldWildcard{} = error "unsupported update: FieldWildcard"
+    updateExp _ FieldWildcard{} = throwError $ UnsupportedExpression origExp
 
 -- | Make a Fay list.
 makeList :: [JsExp] -> JsExp

@@ -154,14 +154,16 @@ desugarMultiIf = transformBi $ \ex -> case ex of
   _ -> ex
 
 desugarTupleSection :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
-desugarTupleSection = transformBiM $ \ex -> case ex of
-  TupleSection l _ mes -> do
-    (names, lst) <- genSlotNames l mes (varNames l)
-    return $ Lambda l (map (PVar l) names) (Tuple l Unboxed lst)
-  _ -> return ex
+desugarTupleSection md = do
+  dollar <- asks readerDollarPrefix
+  flip transformBiM md $ \ex -> case ex of
+    TupleSection l _ mes -> do
+      (names, lst) <- genSlotNames l mes (varNames l dollar)
+      return $ Lambda l (map (PVar l) names) (Tuple l Boxed lst)
+    _ -> return ex
   where
-    varNames :: l -> [Name l]
-    varNames l = map (\i -> Ident l ("$gen_" ++ show i)) [0::Int ..]
+    varNames :: l -> Bool -> [Name l]
+    varNames l dollar = map (\i -> Ident l ((if dollar then "$" else "") ++ "gen" ++ show i)) [0::Int ..]
 
     genSlotNames :: l -> [Maybe (Exp l)] -> [Name l] -> Desugar l ([Name l], [Exp l])
     genSlotNames _ [] _ = return ([], [])

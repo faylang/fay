@@ -38,6 +38,9 @@ testDeclarations =
   ,T "Do"
      "import Prelude; f = x >>= \\gen0 -> y >> z"
      "import Prelude; f = do { gen0 <- x; y; z }"
+  ,T "TupleSection"
+     "import Prelude; f = \\gen0 gen1 -> (gen0,2,gen1)"
+     "import Prelude; f = (,2,)"
   ]
 
 parseAndDesugar :: String -> String -> IO (Module SrcLoc, Either CompileError (Module SrcLoc))

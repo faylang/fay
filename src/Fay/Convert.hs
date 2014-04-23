@@ -112,6 +112,7 @@ decodeFay :: Data b
 decodeFay specialCases value = specialCases value $
     parseDataOrTuple rec value
     `ext1R` parseArray rec value
+    `extR` parseFloat value
     `extR` parseDouble value
     `extR` parseInt value
     `extR` parseBool value
@@ -186,6 +187,10 @@ lookupField :: HashMap Text Value -> Text -> Either String Value
 lookupField obj key =
   justRight ("Missing field " ++ Text.unpack key ++ " in " ++ show (Object obj)) $
   Map.lookup key obj
+
+-- | Parse a float.
+parseFloat :: Value -> Either String Float
+parseFloat = parseEither parseJSON
 
 -- | Parse a double.
 parseDouble :: Value -> Either String Double

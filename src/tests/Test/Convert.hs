@@ -122,7 +122,7 @@ data NAryConstructor = NAryConstructor Int Double
 
 -- | Labelled record.
 data LabelledRecord = LabelledRecord { barInt :: Int, barDouble :: Double }
-                    | LabelledRecord2 { bar :: Int, bob :: Double }
+                    | LabelledRecord2 { bar :: Int, bob :: Float }
   deriving (Show,Data,Typeable,Read,Eq)
 
 -- | Order matters in unlabelled constructors.

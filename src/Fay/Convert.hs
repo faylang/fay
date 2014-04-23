@@ -58,7 +58,6 @@ encodeFayInternal specialCases = specialCases $
     `extQ` (toJSON :: Int -> Value)
     `extQ` (toJSON :: Float -> Value)
     `extQ` (toJSON :: Double -> Value)
-    `extQ` (toJSON :: Rational -> Value)
     `ext1Q` list
     `extQ` string
     `extQ` char

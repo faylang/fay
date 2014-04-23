@@ -111,15 +111,15 @@ decodeFay :: Data b
           -> Either String b
 decodeFay specialCases value = specialCases value $
     parseDataOrTuple rec value
-    `ext1R` parseArray rec value
+    `extR` parseUnit value
+    `extR` parseBool value
+    `extR` parseInt value
     `extR` parseFloat value
     `extR` parseDouble value
-    `extR` parseInt value
-    `extR` parseBool value
+    `ext1R` parseArray rec value
     `extR` parseString value
     `extR` parseChar value
     `extR` parseText value
-    `extR` parseUnit value
   where
     rec :: GenericParser
     rec = decodeFay specialCases

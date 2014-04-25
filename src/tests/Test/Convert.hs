@@ -10,7 +10,6 @@ import           Data.Attoparsec.ByteString
 import qualified Data.ByteString                as Bytes
 import qualified Data.ByteString.UTF8           as UTF8
 import           Data.Data
-import           Data.Ratio
 import           Data.Text                      (Text, pack)
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -35,7 +34,7 @@ tests = testGroup "Test.Convert" [reading, showing]
 -- Test cases
 
 -- | A test.
-data Testcase = forall x. Show x => Testcase x Bytes.ByteString
+data Testcase = forall x. (Show x,Data x) => Testcase x Bytes.ByteString
 
 -- | A read test.
 data ReadTest = forall x. (Data x,Show x,Eq x,Read x) => ReadTest x
@@ -69,9 +68,10 @@ showTests :: [Testcase]
 showTests =
    -- Fundamental data types
   [(1 :: Int) → "1"
+  ,(1 :: Float) → "1.0"
+  ,(1/2 :: Float) → "0.5"
   ,(1 :: Double) → "1.0"
   ,(1/2 :: Double) → "0.5"
-  ,(1%2 :: Rational) → "0.5"
   ,([1,2] :: [Int]) → "[1,2]"
   ,((1,2) :: (Int,Int)) → "[1,2]"
   ,"abc" → "\"abc\""
@@ -122,7 +122,7 @@ data NAryConstructor = NAryConstructor Int Double
 
 -- | Labelled record.
 data LabelledRecord = LabelledRecord { barInt :: Int, barDouble :: Double }
-                    | LabelledRecord2 { bar :: Int, bob :: Double }
+                    | LabelledRecord2 { bar :: Int, bob :: Float }
   deriving (Show,Data,Typeable,Read,Eq)
 
 -- | Order matters in unlabelled constructors.

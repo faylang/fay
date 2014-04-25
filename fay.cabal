@@ -107,12 +107,9 @@ library
     Paths_fay
   build-depends:
       base >= 4 && < 4.8
-    , Cabal < 1.22
     , aeson < 0.8
-    , attoparsec < 0.12
     , bytestring < 0.11
     , containers < 0.6
-    , cpphs < 1.19
     , data-default < 0.6
     , directory < 1.3
     , filepath < 1.4
@@ -122,15 +119,12 @@ library
     , haskell-src-exts >= 1.15.0.1 && < 1.16
     , language-ecmascript >= 0.15 && < 0.17
     , mtl < 2.2
-    , pretty-show >= 1.6 && < 1.7
     , process < 1.3
     , safe < 0.4
-    , scientific < 0.3
     , sourcemap < 0.2
     , split < 0.3
     , syb < 0.5
     , text < 1.2
-    , time < 1.5
     , uniplate >= 1.6.11 && < 1.7
     , unordered-containers < 0.3
     , utf8-string < 0.4

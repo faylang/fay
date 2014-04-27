@@ -1,4 +1,4 @@
--- | Configuring the compiler.
+-- | Configuring the compiler
 
 module Fay.Config
   ( CompileConfig

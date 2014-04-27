@@ -28,7 +28,7 @@ module Fay.Types
   ,mkModulePathFromQName
   ) where
 
-import           Fay.Compiler.Config
+import           Fay.Config
 import qualified Fay.Exts.NoAnnotation             as N
 import qualified Fay.Exts.Scoped                   as S
 import           Fay.Types.CompileError

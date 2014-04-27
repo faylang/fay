@@ -5,15 +5,15 @@
 module Main where
 
 import           Fay
-import           Fay.Compiler.Config
-import           Paths_fay           (version)
+import           Fay.Config
+import           Paths_fay                 (version)
 
-import qualified Control.Exception   as E
+import qualified Control.Exception         as E
 import           Control.Monad
 import           Data.Default
-import           Data.List.Split     (wordsBy)
+import           Data.List.Split           (wordsBy)
 import           Data.Maybe
-import           Data.Version        (showVersion)
+import           Data.Version              (showVersion)
 import           Options.Applicative
 import           Options.Applicative.Types
 import           System.Environment

@@ -8,13 +8,13 @@
 module Main where
 
 import           Fay
-import           Fay.Compiler.Config
+import           Fay.Config
 import           Fay.System.Directory.Extra
 import           Fay.System.Process.Extra
-import qualified Test.CommandLine            as Cmd
-import qualified Test.Compile                as Compile
-import qualified Test.Convert                as Convert
-import qualified Test.Desugar                as Desugar
+import qualified Test.CommandLine           as Cmd
+import qualified Test.Compile               as Compile
+import qualified Test.Convert               as Convert
+import qualified Test.Desugar               as Desugar
 
 import           Control.Applicative
 import           Data.Char

@@ -10,8 +10,8 @@ module Fay.Compiler.Import
   ,compileWith
   ) where
 
-import           Fay.Compiler.Config
 import           Fay.Compiler.Misc
+import           Fay.Config
 import           Fay.Control.Monad.IO
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)

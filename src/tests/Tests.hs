@@ -14,6 +14,7 @@ import qualified Test.CommandLine     as Cmd
 import qualified Test.Compile         as Compile
 import qualified Test.Convert         as Convert
 import qualified Test.Desugar         as Desugar
+import           Test.Util
 
 import           System.Directory
 import           System.Environment

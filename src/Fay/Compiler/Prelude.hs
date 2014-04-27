@@ -29,8 +29,6 @@ module Fay.Compiler.Prelude
   , for
   , io
   , readAllFromProcess
-  , getRecursiveContents
-
   ) where
 
 import           Control.Applicative
@@ -50,9 +48,7 @@ import           Data.Ord
 import           Data.Tuple
 
 import           Safe
-import           System.Directory
 import           System.Exit
-import           System.FilePath
 import           System.Process
 
 -- | Alias of liftIO, I hate typing it. Hate reading it.
@@ -66,22 +62,6 @@ anyM p l = return . not . null =<< filterM p l
 -- | Flip of map.
 for :: (Functor f) => f a -> (a -> b) -> f b
 for = flip fmap
-
--- | Get all files in a folder and its subdirectories.
--- Taken from Real World Haskell
--- http://book.realworldhaskell.org/read/io-case-study-a-library-for-searching-the-filesystem.html
-getRecursiveContents :: FilePath -> IO [FilePath]
-getRecursiveContents topdir = do
-  names <- getDirectoryContents topdir
-  let properNames = filter (`notElem` [".", ".."]) names
-  paths <- forM properNames $ \name -> do
-    let path = topdir </> name
-    isDirectory <- doesDirectoryExist path
-    if isDirectory
-      then getRecursiveContents path
-      else return [path]
-  return (concat paths)
-
 
 -- | Read from a process returning both std err and out.
 readAllFromProcess :: FilePath -> [String] -> String -> IO (Either (String,String) (String,String))

@@ -3,11 +3,13 @@ module Test.Util
   ( fayPath
   , isRight
   , fromLeft
+  , getRecursiveContents
   ) where
 
 import           Fay.Compiler.Prelude
 
 import           System.Directory
+import           System.FilePath
 
 -- Path to the fay executable, looks in cabal-dev, dist, PATH in that order.
 fayPath :: IO (Maybe FilePath)
@@ -32,3 +34,18 @@ hush = either (const Nothing) Just
 fromLeft :: Either a b -> a
 fromLeft (Left a) = a
 fromLeft (Right _) = error "fromLeft got Right"
+
+-- | Get all files in a folder and its subdirectories.
+-- Taken from Real World Haskell
+-- http://book.realworldhaskell.org/read/io-case-study-a-library-for-searching-the-filesystem.html
+getRecursiveContents :: FilePath -> IO [FilePath]
+getRecursiveContents topdir = do
+  names <- getDirectoryContents topdir
+  let properNames = filter (`notElem` [".", ".."]) names
+  paths <- forM properNames $ \name -> do
+    let path = topdir </> name
+    isDirectory <- doesDirectoryExist path
+    if isDirectory
+      then getRecursiveContents path
+      else return [path]
+  return (concat paths)

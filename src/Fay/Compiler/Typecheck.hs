@@ -4,13 +4,11 @@ module Fay.Compiler.Typecheck where
 
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Misc
+import           Fay.Compiler.Prelude
 import           Fay.Config
-import           Fay.System.Process.Extra
 import           Fay.Types
 
-import           Data.List
-import           Data.Maybe
-import qualified GHC.Paths                as GHCPaths
+import qualified GHC.Paths             as GHCPaths
 
 -- | Call out to GHC to type-check the file.
 typecheck :: Config -> FilePath -> IO (Either CompileError String)

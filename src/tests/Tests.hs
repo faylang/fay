@@ -8,20 +8,13 @@
 module Main where
 
 import           Fay
+import           Fay.Compiler.Prelude
 import           Fay.Config
-import           Fay.System.Directory.Extra
-import           Fay.System.Process.Extra
-import qualified Test.CommandLine           as Cmd
-import qualified Test.Compile               as Compile
-import qualified Test.Convert               as Convert
-import qualified Test.Desugar               as Desugar
+import qualified Test.CommandLine     as Cmd
+import qualified Test.Compile         as Compile
+import qualified Test.Convert         as Convert
+import qualified Test.Desugar         as Desugar
 
-import           Control.Applicative
-import           Data.Char
-import           Data.Default
-import           Data.List
-import           Data.Maybe
-import           Data.Ord
 import           System.Directory
 import           System.Environment
 import           System.FilePath
@@ -81,12 +74,13 @@ testFile packageConf basePath opt file = do
       out = toJsName file
       resf = root <.> "res"
       config =
-        addConfigDirectoryIncludePaths ["tests/"] $
-          def { configOptimize = opt
-              , configTypecheck = False
-              , configPackageConf = packageConf
-              , configBasePath = basePath
-              }
+        addConfigDirectoryIncludePaths ["tests/"]
+          defaultConfig
+            { configOptimize = opt
+            , configTypecheck = False
+            , configPackageConf = packageConf
+            , configBasePath = basePath
+            }
   resExists <- doesFileExist resf
   let partialName = root ++ "_partial.res"
   partialExists <- doesFileExist partialName
@@ -113,16 +107,17 @@ testCodegen packageConf basePath file = do
       out = toJsName file
       resf = root <.> "res"
       config =
-        addConfigDirectoryIncludePaths ["tests/codegen/"] $
-          def { configOptimize      = True
-              , configTypecheck     = False
-              , configPackageConf   = packageConf
-              , configBasePath      = basePath
-              , configExportStdlib  = False
-              , configPrettyPrint   = True
-              , configLibrary       = True
-              , configExportRuntime = False
-              }
+        addConfigDirectoryIncludePaths ["tests/codegen/"]
+          defaultConfig
+            { configOptimize      = True
+            , configTypecheck     = False
+            , configPackageConf   = packageConf
+            , configBasePath      = basePath
+            , configExportStdlib  = False
+            , configPrettyPrint   = True
+            , configLibrary       = True
+            , configExportRuntime = False
+            }
   compileFromTo config file (Just out)
   actual <- readStripped out
   expected <- readStripped resf

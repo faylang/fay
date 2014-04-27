@@ -4,15 +4,10 @@
 
 module Fay.Compiler.Packages where
 
+import           Fay.Compiler.Prelude
 import           Fay.Config
-import           Fay.Control.Monad.Extra
-import           Fay.System.Process.Extra
 import           Paths_fay
 
-import           Control.Applicative
-import           Control.Monad
-import           Data.List
-import           Data.Maybe
 import           Data.Version
 import           GHC.Paths
 import           System.Directory

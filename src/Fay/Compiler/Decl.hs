@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ViewPatterns          #-}
 
@@ -12,18 +13,16 @@ import           Fay.Compiler.FFI
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Pattern
+import           Fay.Compiler.Prelude
 import           Fay.Compiler.State
-import           Fay.Data.List.Extra
 import           Fay.Exts                        (convertFieldDecl, fieldDeclNames)
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
-import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
 import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)
-import           Prelude                         hiding (exp)
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]

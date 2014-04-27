@@ -71,23 +71,19 @@ library
   hs-source-dirs:    src
   exposed-modules:
     Fay
-    Fay.Config
     Fay.Compiler
     Fay.Compiler.Config
     Fay.Compiler.Desugar
     Fay.Compiler.Desugar.Name
     Fay.Compiler.Desugar.Types
     Fay.Compiler.Misc
-    Fay.Control.Monad.Extra
-    Fay.Control.Monad.IO
+    Fay.Compiler.Prelude
+    Fay.Config
     Fay.Convert
-    Fay.Data.List.Extra
     Fay.Exts
     Fay.Exts.NoAnnotation
     Fay.Exts.Scoped
     Fay.FFI
-    Fay.System.Directory.Extra
-    Fay.System.Process.Extra
     Fay.Types
     Fay.Types.CompileError
     Fay.Types.FFI
@@ -128,13 +124,14 @@ library
     , safe < 0.4
     , sourcemap < 0.2
     , split < 0.3
+    , spoon < 0.4
     , syb < 0.5
     , text < 1.2
+    , transformers == 0.3.*
     , uniplate >= 1.6.11 && < 1.7
     , unordered-containers < 0.3
     , utf8-string < 0.4
     , vector < 0.11
-    , spoon < 0.4
 
 executable fay
   hs-source-dirs:    src/main

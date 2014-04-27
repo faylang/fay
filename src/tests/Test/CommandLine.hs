@@ -2,11 +2,9 @@
 
 module Test.CommandLine (tests) where
 
-import           Fay.System.Process.Extra
+import           Fay.Compiler.Prelude
 import           Test.Util
 
-import           Control.Applicative
-import           Data.Maybe
 import           System.Directory
 import           System.Environment
 import           System.FilePath

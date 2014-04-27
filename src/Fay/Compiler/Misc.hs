@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE ViewPatterns      #-}
@@ -7,28 +8,23 @@
 
 module Fay.Compiler.Misc where
 
+import           Fay.Compiler.Prelude
 import           Fay.Compiler.PrimOp
 import           Fay.Compiler.QName                (unname)
-import           Fay.Control.Monad.IO
+import           Fay.Config
 import qualified Fay.Exts                          as F
 import           Fay.Exts.NoAnnotation             (unAnn)
 import qualified Fay.Exts.NoAnnotation             as N
 import qualified Fay.Exts.Scoped                   as S
 import           Fay.Types
 
-import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
-import           Data.Char                         (isAlpha)
-import           Data.List
 import qualified Data.Map                          as M
-import           Data.Maybe
-import           Data.String
 import           Data.Version                      (parseVersion)
 import           Distribution.HaskellSuite.Modules
 import           Language.Haskell.Exts.Annotated   hiding (name)
 import           Language.Haskell.Names
-import           Prelude                           hiding (exp, mod)
 import           System.IO
 import           System.Process                    (readProcess)
 import           Text.ParserCombinators.ReadP      (readP_to_S)

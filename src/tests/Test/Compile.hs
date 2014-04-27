@@ -5,15 +5,10 @@
 module Test.Compile (tests) where
 
 import           Fay
+import           Fay.Compiler.Prelude
 import           Fay.Config
-import           Fay.System.Process.Extra
 import           Fay.Types                       ()
-import           Test.Util
 
-import           Control.Applicative
-import           Control.Monad
-import           Data.Default
-import           Data.Maybe
 import           Language.Haskell.Exts.Annotated
 import           System.Environment
 import           Test.Tasty
@@ -100,7 +95,7 @@ case_strictWrapper = do
 
 defConf :: Config
 defConf = addConfigDirectoryIncludePaths ["tests/"]
-        $ def { configTypecheck = False }
+        $ defaultConfig { configTypecheck = False }
 
 case_charEnum :: Assertion
 case_charEnum = do

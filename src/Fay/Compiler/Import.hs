@@ -1,5 +1,6 @@
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE ViewPatterns  #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 -- | Handles finding imports and compiling them recursively.
 -- This is done for each full AST traversal the copmiler does
@@ -11,17 +12,15 @@ module Fay.Compiler.Import
   ) where
 
 import           Fay.Compiler.Misc
+import           Fay.Compiler.Prelude
 import           Fay.Config
-import           Fay.Control.Monad.IO
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types
 
-import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
 import           Language.Haskell.Exts.Annotated hiding (name, var)
-import           Prelude                         hiding (mod, read)
 import           System.Directory
 import           System.FilePath
 

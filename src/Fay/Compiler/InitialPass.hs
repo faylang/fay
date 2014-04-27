@@ -1,3 +1,4 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
 
@@ -11,19 +12,17 @@ import           Fay.Compiler.Desugar
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Import
 import           Fay.Compiler.Misc
-import           Fay.Data.List.Extra
+import           Fay.Compiler.Prelude
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
 
-import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
 import qualified Data.Map                        as M
 import           Language.Haskell.Exts.Annotated hiding (name, var)
 import qualified Language.Haskell.Names          as HN
-import           Prelude                         hiding (mod, read)
 
 -- | Preprocess and collect all information needed during code generation.
 initialPass :: FilePath -> Compile ()

@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -28,27 +29,24 @@ import           Fay.Compiler.Import
 import           Fay.Compiler.InitialPass        (initialPass)
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Optimizer
+import           Fay.Compiler.Prelude
 import           Fay.Compiler.PrimOp             (findPrimOp)
 import           Fay.Compiler.QName
 import           Fay.Compiler.State
 import           Fay.Compiler.Typecheck
 import           Fay.Config
-import           Fay.Control.Monad.IO
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
 
-import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.RWS
 import           Control.Monad.State
 
-import           Data.Maybe
 import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated hiding (name)
 import           Language.Haskell.Names
-import           Prelude                         hiding (mod)
 
 --------------------------------------------------------------------------------
 -- Top level entry points

@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE ViewPatterns          #-}
@@ -16,22 +17,20 @@ module Fay.Compiler.Exp
 import           Fay.Compiler.FFI                (compileFFIExp)
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Pattern
+import           Fay.Compiler.Prelude
 import           Fay.Compiler.Print
 import           Fay.Compiler.QName
-import           Fay.Data.List.Extra
+import           Fay.Config
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Exts.Scoped                 (noI)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
-import           Control.Applicative
-import           Control.Monad                   (foldM, forM, liftM, (>=>))
 import           Control.Monad.Error             (throwError)
 import           Control.Monad.RWS               (asks, gets)
 import qualified Data.Char                       as Char
 import           Language.Haskell.Exts.Annotated hiding (alt, binds, name, op)
 import           Language.Haskell.Names
-import           Prelude                         hiding (exp)
 
 -- | Compile Haskell expression.
 compileExp :: S.Exp -> Compile JsExp

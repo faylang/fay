@@ -10,7 +10,6 @@ import           Paths_fay                 (version)
 
 import qualified Control.Exception         as E
 import           Control.Monad
-import           Data.Default
 import           Data.List.Split           (wordsBy)
 import           Data.Maybe
 import           Data.Version              (showVersion)
@@ -53,7 +52,7 @@ main = do
   packageConf <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
   opts <- execParser parser
   let config = addConfigDirectoryIncludePaths ("." : optInclude opts) $
-        addConfigPackages (optPackages opts) $ def
+        addConfigPackages (optPackages opts) $ defaultConfig
           { configOptimize         = optOptimize opts
           , configFlattenApps      = optFlattenApps opts
           , configPrettyPrint      = optPretty opts

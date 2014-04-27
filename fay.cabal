@@ -71,6 +71,7 @@ library
   hs-source-dirs:    src
   exposed-modules:
     Fay
+    Fay.Config
     Fay.Compiler
     Fay.Compiler.Config
     Fay.Compiler.Desugar
@@ -89,6 +90,9 @@ library
     Fay.System.Process.Extra
     Fay.Types
     Fay.Types.CompileError
+    Fay.Types.FFI
+    Fay.Types.Js
+    Fay.Types.ModulePath
   other-modules:
     Fay.Compiler.Decl
     Fay.Compiler.Defaults

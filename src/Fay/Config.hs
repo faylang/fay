@@ -1,7 +1,7 @@
 -- | Configuring the compiler
 
 module Fay.Config
-  ( CompileConfig
+  ( Config
       ( configOptimize
       , configFlattenApps
       , configExportRuntime
@@ -23,6 +23,7 @@ module Fay.Config
       , configTypecheckOnly
       , configRuntimePath
       )
+  , defaultConfig
   , configDirectoryIncludes
   , configDirectoryIncludePaths
   , nonPackageConfigDirectoryIncludePaths
@@ -41,7 +42,7 @@ import           Language.Haskell.Exts.Annotated (ModuleName (..))
 
 -- | Configuration of the compiler.
 -- The fields with a leading underscore
-data CompileConfig = CompileConfig
+data Config = Config
   { configOptimize           :: Bool                        -- ^ Run optimizations
   , configFlattenApps        :: Bool                        -- ^ Flatten function application?
   , configExportRuntime      :: Bool                        -- ^ Export the runtime?
@@ -67,10 +68,10 @@ data CompileConfig = CompileConfig
   , configRuntimePath        :: Maybe FilePath
   } deriving (Show)
 
--- | Default configuration.
-instance Default CompileConfig where
-  def = addConfigPackage "fay-base"
-    CompileConfig
+
+defaultConfig :: Config
+defaultConfig = addConfigPackage "fay-base"
+  Config
     { configOptimize           = False
     , configFlattenApps        = False
     , configExportRuntime      = True
@@ -95,46 +96,49 @@ instance Default CompileConfig where
     , configSourceMap          = False
     }
 
+-- | Default configuration.
+instance Default Config where
+  def = defaultConfig
 
 -- | Reading _configDirectoryIncludes is safe to do.
-configDirectoryIncludes :: CompileConfig -> [(Maybe String, FilePath)]
+configDirectoryIncludes :: Config -> [(Maybe String, FilePath)]
 configDirectoryIncludes = _configDirectoryIncludes
 
 -- | Get all include directories without the package mapping.
-configDirectoryIncludePaths :: CompileConfig -> [FilePath]
+configDirectoryIncludePaths :: Config -> [FilePath]
 configDirectoryIncludePaths = map snd . _configDirectoryIncludes
 
 -- | Get all include directories not included through packages.
-nonPackageConfigDirectoryIncludePaths :: CompileConfig -> [FilePath]
+nonPackageConfigDirectoryIncludePaths :: Config -> [FilePath]
 nonPackageConfigDirectoryIncludePaths = map snd . filter (isJust . fst) . _configDirectoryIncludes
 
 -- | Add a mapping from (maybe) a package to a source directory
-addConfigDirectoryInclude :: Maybe String -> FilePath -> CompileConfig -> CompileConfig
+addConfigDirectoryInclude :: Maybe String -> FilePath -> Config -> Config
 addConfigDirectoryInclude pkg fp cfg = cfg { _configDirectoryIncludes = (pkg, fp) : _configDirectoryIncludes cfg }
 
 -- | Add several include directories.
-addConfigDirectoryIncludes :: [(Maybe String,FilePath)] -> CompileConfig -> CompileConfig
+addConfigDirectoryIncludes :: [(Maybe String,FilePath)] -> Config -> Config
 addConfigDirectoryIncludes pkgFps cfg = foldl (\c (pkg,fp) -> addConfigDirectoryInclude pkg fp c) cfg pkgFps
 
 -- | Add several include directories without package references.
-addConfigDirectoryIncludePaths :: [FilePath] -> CompileConfig -> CompileConfig
+addConfigDirectoryIncludePaths :: [FilePath] -> Config -> Config
 addConfigDirectoryIncludePaths fps cfg = foldl (flip (addConfigDirectoryInclude Nothing)) cfg fps
 
 
 
 -- | Reading _configPackages is safe to do.
-configPackages :: CompileConfig -> [String]
+configPackages :: Config -> [String]
 configPackages = _configPackages
 
 -- | Add a package to compilation
-addConfigPackage :: String -> CompileConfig -> CompileConfig
+addConfigPackage :: String -> Config -> Config
 addConfigPackage pkg cfg = cfg { _configPackages = pkg : _configPackages cfg }
 
 -- | Add several packages to compilation
-addConfigPackages :: [String] -> CompileConfig -> CompileConfig
+addConfigPackages :: [String] -> Config -> Config
 addConfigPackages fps cfg = foldl (flip addConfigPackage) cfg fps
 
 
 -- | Should a strict wrapper be generated for this module?
-shouldExportStrictWrapper :: ModuleName a -> CompileConfig -> Bool
+shouldExportStrictWrapper :: ModuleName a -> Config -> Bool
 shouldExportStrictWrapper (ModuleName _ m) cs = m `elem` configStrict cs

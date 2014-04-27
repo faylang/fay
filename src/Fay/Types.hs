@@ -16,7 +16,7 @@ module Fay.Types
   ,Fay
   ,CompileReader(..)
   ,CompileWriter(..)
-  ,CompileConfig(..)
+  ,Config(..)
   ,CompileState(..)
   ,FundamentalType(..)
   ,PrintState(..)
@@ -81,7 +81,7 @@ instance Monoid CompileWriter where
 
 -- | Configuration and globals for the compiler.
 data CompileReader = CompileReader
-  { readerConfig       :: CompileConfig -- ^ The compilation configuration.
+  { readerConfig       :: Config -- ^ The compilation configuration.
   , readerCompileLit   :: S.Literal -> Compile JsExp
   , readerCompileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
   }

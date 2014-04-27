@@ -5,7 +5,7 @@
 module Test.Compile (tests) where
 
 import           Fay
-import           Fay.Compiler.Config
+import           Fay.Config
 import           Fay.System.Process.Extra
 import           Fay.Types                       ()
 import           Test.Util
@@ -98,7 +98,7 @@ case_strictWrapper = do
     expected <- readFile "tests/Compile/StrictWrapper.res"
     assertEqual "strictWrapper node stdout" expected out
 
-defConf :: CompileConfig
+defConf :: Config
 defConf = addConfigDirectoryIncludePaths ["tests/"]
         $ def { configTypecheck = False }
 

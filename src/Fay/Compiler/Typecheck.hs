@@ -2,9 +2,9 @@
 
 module Fay.Compiler.Typecheck where
 
-import           Fay.Compiler.Config
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Misc
+import           Fay.Config
 import           Fay.System.Process.Extra
 import           Fay.Types
 
@@ -13,7 +13,7 @@ import           Data.Maybe
 import qualified GHC.Paths                as GHCPaths
 
 -- | Call out to GHC to type-check the file.
-typecheck :: CompileConfig -> FilePath -> IO (Either CompileError String)
+typecheck :: Config -> FilePath -> IO (Either CompileError String)
 typecheck cfg fp = do
   faydir <- faySourceDir
   let includes = configDirectoryIncludes cfg

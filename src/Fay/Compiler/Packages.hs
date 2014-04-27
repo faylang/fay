@@ -20,12 +20,12 @@ import           System.FilePath
 
 -- | Given a configuration, resolve any packages specified to their
 -- data file directories for importing the *.hs sources.
-resolvePackages :: CompileConfig -> IO CompileConfig
+resolvePackages :: Config -> IO Config
 resolvePackages config =
   foldM resolvePackage config (configPackages config)
 
 -- | Resolve package.
-resolvePackage :: CompileConfig -> String -> IO CompileConfig
+resolvePackage :: Config -> String -> IO Config
 resolvePackage config name = do
   desc <- describePackage (configPackageConf config) name
   case packageVersion desc of

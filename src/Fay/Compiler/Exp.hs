@@ -25,9 +25,9 @@ import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
 import           Control.Applicative
-import           Control.Monad                   ((>=>), foldM, liftM, forM)
+import           Control.Monad                   (foldM, forM, liftM, (>=>))
 import           Control.Monad.Error             (throwError)
-import           Control.Monad.RWS               (gets, asks)
+import           Control.Monad.RWS               (asks, gets)
 import qualified Data.Char                       as Char
 import           Language.Haskell.Exts.Annotated hiding (alt, binds, name, op)
 import           Language.Haskell.Names
@@ -319,7 +319,7 @@ makeList :: [JsExp] -> JsExp
 makeList exps = JsApp (JsName $ JsBuiltIn "list") [JsList exps]
 
 -- | Optimize short literal [e1..e3] arithmetic sequences.
-optEnumFromTo :: CompileConfig -> JsExp -> JsExp -> Maybe JsExp
+optEnumFromTo :: Config -> JsExp -> JsExp -> Maybe JsExp
 optEnumFromTo cfg (JsLit f) (JsLit t) =
   if configOptimize cfg
   then case (f,t) of
@@ -335,7 +335,7 @@ optEnumFromTo cfg (JsLit f) (JsLit t) =
 optEnumFromTo _ _ _ = Nothing
 
 -- | Optimize short literal [e1,e2..e3] arithmetic sequences.
-optEnumFromThenTo :: CompileConfig -> JsExp -> JsExp -> JsExp -> Maybe JsExp
+optEnumFromThenTo :: Config -> JsExp -> JsExp -> JsExp -> Maybe JsExp
 optEnumFromThenTo cfg (JsLit fr) (JsLit th) (JsLit to) =
   if configOptimize cfg
   then case (fr,th,to) of

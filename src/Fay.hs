@@ -42,7 +42,7 @@ import           System.FilePath
 
 -- | Compile the given file and write the output to the given path, or
 -- if nothing given, stdout.
-compileFromTo :: CompileConfig -> FilePath -> Maybe FilePath -> IO ()
+compileFromTo :: Config -> FilePath -> Maybe FilePath -> IO ()
 compileFromTo cfg filein fileout =
   if configTypecheckOnly cfg
   then do
@@ -58,7 +58,7 @@ compileFromTo cfg filein fileout =
       Left err -> error $ showCompileError err
 
 -- | Compile the given file and write to the output, also generate any HTML.
-compileFromToAndGenerateHtml :: CompileConfig -> FilePath -> FilePath -> IO (Either CompileError (String,[Mapping]))
+compileFromToAndGenerateHtml :: Config -> FilePath -> FilePath -> IO (Either CompileError (String,[Mapping]))
 compileFromToAndGenerateHtml config filein fileout = do
   result <- compileFile config { configFilePath = Just filein } filein
   case result of
@@ -93,11 +93,11 @@ compileFromToAndGenerateHtml config filein fileout = do
     Left err -> return (Left err)
 
 -- | Compile the given file.
-compileFile :: CompileConfig -> FilePath -> IO (Either CompileError (String,[Mapping]))
+compileFile :: Config -> FilePath -> IO (Either CompileError (String,[Mapping]))
 compileFile config filein = fmap (\(src,maps,_) -> (src,maps)) <$> compileFileWithState config filein
 
 -- | Compile a file returning the state.
-compileFileWithState :: CompileConfig -> FilePath -> IO (Either CompileError (String,[Mapping],CompileState))
+compileFileWithState :: Config -> FilePath -> IO (Either CompileError (String,[Mapping],CompileState))
 compileFileWithState config filein = do
   runtime <- getConfigRuntime config
   hscode <- readFile filein
@@ -107,7 +107,7 @@ compileFileWithState config filein = do
 
 -- | Compile the given module to a runnable module.
 compileToModule :: FilePath
-                -> CompileConfig -> String -> (F.Module -> Compile [JsStmt]) -> String
+                -> Config -> String -> (F.Module -> Compile [JsStmt]) -> String
                 -> IO (Either CompileError (String,[Mapping],CompileState))
 compileToModule filepath config raw with hscode = do
   result <- compileViaStr filepath config printState with hscode
@@ -182,7 +182,7 @@ showCompileError e = case e of
 
 -- | Get the JS runtime source.
 -- This will return the user supplied runtime if it exists.
-getConfigRuntime :: CompileConfig -> IO String
+getConfigRuntime :: Config -> IO String
 getConfigRuntime cfg = maybe getRuntime return $ configRuntimePath cfg
 
 -- | Get the default JS runtime source.

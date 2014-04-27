@@ -8,13 +8,13 @@
 module Fay.Compiler.Misc where
 
 import           Fay.Compiler.PrimOp
+import           Fay.Compiler.QName                (unname)
 import           Fay.Control.Monad.IO
 import qualified Fay.Exts                          as F
 import           Fay.Exts.NoAnnotation             (unAnn)
 import qualified Fay.Exts.NoAnnotation             as N
 import qualified Fay.Exts.Scoped                   as S
 import           Fay.Types
-import           Fay.Compiler.QName                (unname)
 
 import           Control.Applicative
 import           Control.Monad.Error
@@ -154,7 +154,7 @@ parseResult die ok result = case result of
   ParseFailed srcloc msg -> die (srcloc,msg)
 
 -- | Get a config option.
-config :: (CompileConfig -> a) -> Compile a
+config :: (Config -> a) -> Compile a
 config f = asks (f . readerConfig)
 
 -- | Optimize pattern matching conditions by merging conditions in common.
@@ -218,7 +218,7 @@ warn :: String -> Compile ()
 warn "" = return ()
 warn w = config id >>= io . (`ioWarn` w)
 
-ioWarn :: CompileConfig -> String -> IO ()
+ioWarn :: Config -> String -> IO ()
 ioWarn _ "" = return ()
 ioWarn cfg w =
   when (configWall cfg) $

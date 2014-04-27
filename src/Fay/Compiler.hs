@@ -19,7 +19,6 @@ module Fay.Compiler
   ,parseFay)
   where
 
-import           Fay.Compiler.Config
 import           Fay.Compiler.Decl
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Desugar
@@ -33,6 +32,7 @@ import           Fay.Compiler.PrimOp             (findPrimOp)
 import           Fay.Compiler.QName
 import           Fay.Compiler.State
 import           Fay.Compiler.Typecheck
+import           Fay.Config
 import           Fay.Control.Monad.IO
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
@@ -57,7 +57,7 @@ import           Prelude                         hiding (mod)
 compileViaStr
 
   :: FilePath
-  -> CompileConfig
+  -> Config
   -> PrintState
   -> (F.Module -> Compile [JsStmt])
   -> String

@@ -12,13 +12,13 @@ import           Fay.Compiler.Desugar
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Import
 import           Fay.Compiler.Misc
+import           Fay.Compiler.Parse
 import           Fay.Compiler.Prelude
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
 
-import           Control.Monad.Error
 import           Control.Monad.RWS
 import qualified Data.Map                        as M
 import           Language.Haskell.Exts.Annotated hiding (name, var)

@@ -7,17 +7,16 @@ module Test.Desugar
   , des
   ) where
 
-import           Control.Monad
-import           Data.List
-import           Data.Maybe
+import           Fay.Compiler.Prelude
+
+import           Fay.Compiler.Desugar
+import           Fay.Compiler.Parse              (parseFay)
+import           Fay.Types.CompileError          (CompileError (..))
+
 import           Language.Haskell.Exts.Annotated hiding (alt, binds, loc, name)
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Text.Groom
-
-import           Fay.Compiler.Desugar
-import           Fay.Compiler.Misc               (parseFay)
-import           Fay.Types                       (CompileError (..))
 
 tests :: TestTree
 tests = testGroup "desugar" $ map (\(T k a b) -> testCase k $ doDesugar k a b) testDeclarations

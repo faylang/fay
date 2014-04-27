@@ -7,7 +7,6 @@ module Test.Compile (tests) where
 import           Fay
 import           Fay.Compiler.Prelude
 import           Fay.Config
-import           Fay.Types                       ()
 
 import           Language.Haskell.Exts.Annotated
 import           System.Environment

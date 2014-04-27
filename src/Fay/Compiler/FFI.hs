@@ -1,8 +1,8 @@
 {-# LANGUAGE CPP               #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE ViewPatterns      #-}
-{-# OPTIONS -Wall #-}
 
 -- | Compile FFI definitions.
 
@@ -16,6 +16,7 @@ module Fay.Compiler.FFI
   ) where
 
 import           Fay.Compiler.Misc
+import           Fay.Compiler.Prelude
 import           Fay.Compiler.Print                     (printJSString)
 import           Fay.Compiler.QName
 import           Fay.Exts.NoAnnotation                  (unAnn)
@@ -23,21 +24,12 @@ import qualified Fay.Exts.NoAnnotation                  as N
 import qualified Fay.Exts.Scoped                        as S
 import           Fay.Types
 
-import           Control.Applicative                    ((<$>), (<*>))
-import           Control.Arrow                          ((***))
-import           Control.Monad.Error
 import           Control.Monad.Writer
-import           Data.Char
 import           Data.Generics.Schemes
-import           Data.List
-import           Data.Maybe
-import           Data.String
 import           Language.ECMAScript3.Parser            as JS
 import           Language.ECMAScript3.Syntax
 import           Language.Haskell.Exts.Annotated        (SrcSpanInfo, prettyPrint)
 import           Language.Haskell.Exts.Annotated.Syntax
-import           Prelude                                hiding (exp, mod)
-import           Safe
 
 -- | Compile an FFI expression (also used when compiling top level definitions).
 compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> S.Type -> Compile JsExp

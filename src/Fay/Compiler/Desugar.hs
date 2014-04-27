@@ -1,4 +1,7 @@
 -- | Desugars a reasonable amount of syntax to reduce duplication in code generation.
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 module Fay.Compiler.Desugar
   ( desugar
   , desugar'
@@ -6,23 +9,17 @@ module Fay.Compiler.Desugar
   , desugarPatParen
   ) where
 
-import           Fay.Compiler.QName              (unname)
-import           Fay.Compiler.Misc               (hasLanguagePragma, ffiExp)
-import           Fay.Exts.NoAnnotation           (unAnn)
-import           Fay.Types                       (CompileError (..))
 import           Fay.Compiler.Desugar.Name
 import           Fay.Compiler.Desugar.Types
+import           Fay.Compiler.Misc               (ffiExp, hasLanguagePragma)
+import           Fay.Compiler.Prelude
+import           Fay.Compiler.QName              (unname)
+import           Fay.Exts.NoAnnotation           (unAnn)
+import           Fay.Types                       (CompileError (..))
 
-import           Control.Applicative             ((<$>))
-import           Control.Monad                   ((>=>), when)
-import           Control.Monad.Error             (throwError)
 import           Control.Monad.Reader            (asks)
-import           Data.Data                       (Data)
 import qualified Data.Generics.Uniplate.Data     as U
-import           Data.Maybe                      (fromMaybe, isJust)
-import           Data.Typeable                   (Typeable)
 import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)
-import           Prelude                         hiding (exp, mod)
 
 -- | Top level, desugar a whole module possibly returning errors
 desugar :: (Data l, Typeable l) => l -> Module l -> IO (Either CompileError (Module l))

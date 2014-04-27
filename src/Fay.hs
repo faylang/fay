@@ -22,15 +22,13 @@ module Fay
 import           Fay.Compiler
 import           Fay.Compiler.Misc                      (ioWarn, printSrcSpanInfo)
 import           Fay.Compiler.Packages
+import           Fay.Compiler.Prelude
 import           Fay.Compiler.Typecheck
 import qualified Fay.Exts                               as F
 import           Fay.Types
 
-import           Control.Applicative
-import           Control.Monad
 import           Data.Aeson                             (encode)
 import qualified Data.ByteString.Lazy                   as L
-import           Data.List
 import           Language.Haskell.Exts.Annotated        (prettyPrint)
 import           Language.Haskell.Exts.Annotated.Syntax
 import           Language.Haskell.Exts.SrcLoc

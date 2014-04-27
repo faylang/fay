@@ -20,6 +20,8 @@ module Fay.Compiler
   ,parseFay)
   where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Compiler.Decl
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Desugar
@@ -29,7 +31,7 @@ import           Fay.Compiler.Import
 import           Fay.Compiler.InitialPass        (initialPass)
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Optimizer
-import           Fay.Compiler.Prelude
+import           Fay.Compiler.Parse
 import           Fay.Compiler.PrimOp             (findPrimOp)
 import           Fay.Compiler.QName
 import           Fay.Compiler.State
@@ -40,7 +42,6 @@ import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
 
-import           Control.Monad.Error
 import           Control.Monad.RWS
 import           Control.Monad.State
 

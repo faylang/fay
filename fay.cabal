@@ -74,29 +74,23 @@ library
     Fay.Compiler
     Fay.Compiler.Config
     Fay.Compiler.Desugar
-    Fay.Compiler.Desugar.Name
-    Fay.Compiler.Desugar.Types
-    Fay.Compiler.Misc
+    Fay.Compiler.Parse
     Fay.Compiler.Prelude
     Fay.Config
     Fay.Convert
-    Fay.Exts
-    Fay.Exts.NoAnnotation
-    Fay.Exts.Scoped
     Fay.FFI
-    Fay.Types
     Fay.Types.CompileError
-    Fay.Types.FFI
-    Fay.Types.Js
-    Fay.Types.ModulePath
   other-modules:
     Fay.Compiler.Decl
     Fay.Compiler.Defaults
+    Fay.Compiler.Desugar.Name
+    Fay.Compiler.Desugar.Types
     Fay.Compiler.Exp
     Fay.Compiler.FFI
     Fay.Compiler.GADT
     Fay.Compiler.Import
     Fay.Compiler.InitialPass
+    Fay.Compiler.Misc
     Fay.Compiler.Optimizer
     Fay.Compiler.Packages
     Fay.Compiler.Pattern
@@ -105,6 +99,13 @@ library
     Fay.Compiler.QName
     Fay.Compiler.State
     Fay.Compiler.Typecheck
+    Fay.Exts
+    Fay.Exts.NoAnnotation
+    Fay.Exts.Scoped
+    Fay.Types
+    Fay.Types.FFI
+    Fay.Types.Js
+    Fay.Types.ModulePath
     Paths_fay
   build-depends:
       base >= 4 && < 4.8

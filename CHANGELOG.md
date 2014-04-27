@@ -2,6 +2,33 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+## 0.20 (unreleased)
+
+* Add support for LambdaCase and MultiWayIf
+
+* `readFromFay` has been rewritten using `syb` instead of `pretty-show` (Thanks to Michael Sloan and Chris Done)
+  * This introduces the following breaking changes:
+    * `readFromFay` has a `Data` constraint instead of `Show`.
+    * Drops support for Rational and Integer (see below for migration steps). The reason is that neither was serialized in a way that would roundtrip for all values. Also, for similar reasons, fromRational is potentially divergent for aeson's new use of the Scientific type.
+  * And adds the following features:
+    * You can now write custom `Show` instances targeting GHC for types shared with Fay.
+    * Better performance.
+    * Allows the serialization and deserialization to be customized on a per-type basis, via encodeFay and decodeFay.
+  * To migrate code using Rational or Integer, use encodeFay and pass an argument e.g. `(\f x -> maybe (f x) myIntegerToValueConversion (cast x))` and likewise to decodeFay.
+
+Bugfixes:
+
+* Fix bug where multiple guards on a pattern in a case expression would optimize away everything but the first guard. This disables an optimization we had on pattern conditions (for now).
+
+Dependency bumps:
+
+* Allow Cabal 1.20 and 1.21
+
+Internal:
+
+* Test cases are now using tasty instead of test-framework. To run cases in parallel use `fay-tests --num-threads=N` (see `fay-tests --help` for more info).
+
+
 #### 0.19.2.1 (2014-04-14)
 
 * Allow `haskell-src-exts 1.15.*`

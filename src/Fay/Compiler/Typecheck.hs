@@ -2,6 +2,7 @@
 
 module Fay.Compiler.Typecheck where
 
+import           Fay.Compiler.Config
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Misc
 import           Fay.System.Process.Extra

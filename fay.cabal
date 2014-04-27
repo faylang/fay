@@ -76,6 +76,7 @@ library
     Fay.Compiler.Desugar
     Fay.Compiler.Desugar.Name
     Fay.Compiler.Desugar.Types
+    Fay.Compiler.Misc
     Fay.Control.Monad.Extra
     Fay.Control.Monad.IO
     Fay.Convert
@@ -87,7 +88,7 @@ library
     Fay.System.Directory.Extra
     Fay.System.Process.Extra
     Fay.Types
-    Fay.Compiler.Misc
+    Fay.Types.CompileError
   other-modules:
     Fay.Compiler.Decl
     Fay.Compiler.Defaults

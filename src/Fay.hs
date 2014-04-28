@@ -30,7 +30,6 @@ import           Control.Applicative
 import           Control.Monad
 import           Data.Aeson                             (encode)
 import qualified Data.ByteString.Lazy                   as L
-import           Data.Default
 import           Data.List
 import           Language.Haskell.Exts.Annotated        (prettyPrint)
 import           Language.Haskell.Exts.Annotated.Syntax
@@ -130,9 +129,10 @@ compileToModule filepath config raw with hscode = do
                        ]
           else ""
       ]
-    printState = def { psPretty = configPrettyPrint config
-                     , psLine = length (lines raw) + 3
-                     }
+    printState = defaultPrintState
+      { psPretty = configPrettyPrint config
+      , psLine = length (lines raw) + 3
+      }
 
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String

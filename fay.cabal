@@ -143,7 +143,6 @@ executable fay
   main-is:           Main.hs
   build-depends:
       base
-    , data-default
     , fay
     , optparse-applicative >= 0.6 && < 0.9
     , split
@@ -164,7 +163,6 @@ executable fay-tests
     , aeson
     , attoparsec
     , bytestring
-    , data-default
     , directory
     , fay
     , filepath

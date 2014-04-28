@@ -17,18 +17,17 @@
 module Fay.Compiler.Print where
 
 import           Fay.Compiler.PrimOp
-import qualified Fay.Exts.NoAnnotation                  as N
+import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
 
 import           Control.Monad
 import           Control.Monad.State
 import           Data.Aeson.Encode
-import qualified Data.ByteString.Lazy.UTF8              as UTF8
-import           Data.Default
+import qualified Data.ByteString.Lazy.UTF8       as UTF8
 import           Data.List
 import           Data.String
-import           Language.Haskell.Exts.Annotated        hiding (alt, name, op, sym)
-import           Prelude                                hiding (exp)
+import           Language.Haskell.Exts.Annotated hiding (alt, name, op, sym)
+import           Prelude                         hiding (exp)
 import           SourceMap.Types
 
 --------------------------------------------------------------------------------
@@ -36,11 +35,11 @@ import           SourceMap.Types
 
 -- | Print the JS to a flat string.
 printJSString :: Printable a => a -> String
-printJSString x = concat $ reverse $ psOutput $ execState (runPrinter (printJS x)) def
+printJSString x = concat . reverse . psOutput $ execState (runPrinter (printJS x)) defaultPrintState
 
 -- | Print the JS to a pretty string.
 printJSPretty :: Printable a => a -> String
-printJSPretty x = concat $ reverse $ psOutput $ execState (runPrinter (printJS x)) def { psPretty = True }
+printJSPretty x = concat . reverse . psOutput $ execState (runPrinter (printJS x)) defaultPrintState { psPretty = True }
 
 -- | Print literals. These need some special encoding for
 -- JS-format literals. Could use the Text.JSON library.

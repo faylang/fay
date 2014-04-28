@@ -20,6 +20,7 @@ module Fay.Types
   ,CompileState(..)
   ,FundamentalType(..)
   ,PrintState(..)
+  ,defaultPrintState
   ,Printer(..)
   ,SerializeContext(..)
   ,ModulePath (unModulePath)
@@ -41,7 +42,6 @@ import           Control.Monad.Error               (ErrorT, MonadError)
 import           Control.Monad.Identity            (Identity)
 import           Control.Monad.RWS
 import           Control.Monad.State
-import           Data.Default
 import           Data.Map                          (Map)
 import           Data.Set                          (Set)
 import           Distribution.HaskellSuite.Modules
@@ -128,8 +128,8 @@ data PrintState = PrintState
   }
 
 -- | Default state.
-instance Default PrintState where
-  def = PrintState False 0 0 [] 0 [] False
+defaultPrintState :: PrintState
+defaultPrintState = PrintState False 0 0 [] 0 [] False
 
 -- | The printer monad.
 newtype Printer a = Printer { runPrinter :: State PrintState a }

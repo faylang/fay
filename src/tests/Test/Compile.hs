@@ -88,7 +88,7 @@ case_strictWrapper :: Assertion
 case_strictWrapper = do
   whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
   res <- compileFile defConf { configPackageConf = whatAGreatFramework, configTypecheck = True, configFilePath = Just "tests/Compile/StrictWrapper.hs", configStrict = ["StrictWrapper"] } "tests/Compile/StrictWrapper.hs"
-  (\a b -> either a b res) (assertFailure . show) $ \(js,_) -> do
+  (\a b -> either a b res) (assertFailure . show) $ \js -> do
     writeFile "tests/Compile/StrictWrapper.js" js
     (err, out) <- either id id <$> readAllFromProcess "node" ["tests/Compile/StrictWrapper.js"] ""
     when (err /= "") $ assertFailure err

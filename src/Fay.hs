@@ -13,6 +13,7 @@ module Fay
   ,CompileState (..)
   ,compileFile
   ,compileFileWithState
+  ,compileFileWithRes
   ,compileFromTo
   ,compileFromToAndGenerateHtml
   ,toJsName
@@ -54,15 +55,15 @@ compileFromTo cfg filein fileout =
                       (compileFromToAndGenerateHtml cfg filein)
                       fileout
     case result of
-      Right (out,_) -> maybe (putStrLn out) (`writeFile` out) fileout
+      Right out -> maybe (putStrLn out) (`writeFile` out) fileout
       Left err -> error $ showCompileError err
 
 -- | Compile the given file and write to the output, also generate any HTML.
-compileFromToAndGenerateHtml :: Config -> FilePath -> FilePath -> IO (Either CompileError (String,[Mapping]))
+compileFromToAndGenerateHtml :: Config -> FilePath -> FilePath -> IO (Either CompileError String)
 compileFromToAndGenerateHtml config filein fileout = do
-  result <- compileFile config { configFilePath = Just filein } filein
+  result <- compileFileWithRes config { configFilePath = Just filein } filein
   case result of
-    Right (out,mappings) -> do
+    Right (out,res) -> do
       when (configHtmlWrapper config) $
         writeFile (replaceExtension fileout "html") $ unlines [
             "<!doctype html>"
@@ -82,10 +83,10 @@ compileFromToAndGenerateHtml config filein fileout = do
             generate SourceMapping
               { smFile = fileout
               , smSourceRoot = Nothing
-              , smMappings = mappings
+              , smMappings = resMappings res
               }
 
-      return (Right (if configSourceMap config then sourceMapHeader ++ out else out,mappings))
+      return $ Right (if configSourceMap config then sourceMapHeader ++ out else out)
             where relativeJsPath = makeRelative (dropFileName fileout) fileout
                   makeScriptTagSrc :: FilePath -> String
                   makeScriptTagSrc s = "<script type=\"text/javascript\" src=\"" ++ s ++ "\"></script>"
@@ -93,8 +94,8 @@ compileFromToAndGenerateHtml config filein fileout = do
     Left err -> return (Left err)
 
 -- | Compile the given file.
-compileFile :: Config -> FilePath -> IO (Either CompileError (String,[Mapping]))
-compileFile config filein = fmap (\(src,maps,_) -> (src,maps)) <$> compileFileWithState config filein
+compileFile :: Config -> FilePath -> IO (Either CompileError String)
+compileFile config filein = fmap (\(src,_,_) -> src) <$> compileFileWithState config filein
 
 -- | Compile a file returning the state.
 compileFileWithState :: Config -> FilePath -> IO (Either CompileError (String,[Mapping],CompileState))
@@ -104,6 +105,19 @@ compileFileWithState config filein = do
   raw <- readFile runtime
   config' <- resolvePackages config
   compileToModule filein config' raw (compileToplevelModule filein) hscode
+
+compileFileWithRes :: Config -> FilePath -> IO (Either CompileError (String,CompileRes))
+compileFileWithRes config filein = do
+  res <- compileFileWithState config filein
+  return $ do
+    (s,m,st) <- res
+    return ( s
+           , CompileRes
+               { resImported = map (first F.moduleNameString) $ stateImported st
+               , resMappings = m
+               })
+
+data CompileRes = CompileRes { resImported :: [(String, String)], resMappings :: [Mapping] }
 
 -- | Compile the given module to a runnable module.
 compileToModule :: FilePath

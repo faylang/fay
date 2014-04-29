@@ -3,7 +3,6 @@
 module Main where
 
 import           Fay
-import           Fay.Config
 import           Paths_fay                 (version)
 
 import qualified Control.Exception         as E

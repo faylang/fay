@@ -7,7 +7,6 @@ module Test.Compile (tests) where
 
 import           Fay
 import           Fay.Compiler.Prelude
-import           Fay.Config
 #if !MIN_VERSION_base(4,7,0)
 import           Test.Util                       (isRight)
 #endif

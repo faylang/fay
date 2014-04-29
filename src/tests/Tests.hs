@@ -9,7 +9,6 @@ module Main where
 
 import           Fay
 import           Fay.Compiler.Prelude
-import           Fay.Config
 import qualified Test.CommandLine     as Cmd
 import qualified Test.Compile         as Compile
 import qualified Test.Convert         as Convert

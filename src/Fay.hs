@@ -8,7 +8,7 @@
 -- | Main library entry point.
 
 module Fay
-  (Config (..)
+  (module Fay.Config
   ,CompileError (..)
   ,CompileState (..)
   ,compileFile
@@ -26,6 +26,7 @@ import           Fay.Compiler.Misc                      (ioWarn, printSrcSpanInf
 import           Fay.Compiler.Packages
 import           Fay.Compiler.Prelude
 import           Fay.Compiler.Typecheck
+import           Fay.Config
 import qualified Fay.Exts                               as F
 import           Fay.Types
 

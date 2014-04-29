@@ -10,6 +10,7 @@
 module Fay
   (Config (..)
   ,CompileError (..)
+  ,CompileState (..)
   ,compileFile
   ,compileFileWithState
   ,compileFromTo

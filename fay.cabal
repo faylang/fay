@@ -79,6 +79,7 @@ library
     Fay.Config
     Fay.Convert
     Fay.FFI
+    Fay.Types
     Fay.Types.CompileError
   other-modules:
     Fay.Compiler.Decl
@@ -102,7 +103,6 @@ library
     Fay.Exts
     Fay.Exts.NoAnnotation
     Fay.Exts.Scoped
-    Fay.Types
     Fay.Types.FFI
     Fay.Types.Js
     Fay.Types.ModulePath

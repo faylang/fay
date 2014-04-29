@@ -111,7 +111,7 @@ lookupNewtypeDest n = do
     Just (cname,_,ty) -> return $ Just (cname,ty)
 
 -- | Qualify a name for the current module.
-qualify :: Name a -> Compile (N.QName)
+qualify :: Name a -> Compile N.QName
 qualify (Ident _ name) = do
   modulename <- gets stateModuleName
   return (Qual () modulename (Ident () name))
@@ -237,7 +237,7 @@ typeToRecs :: QName a -> Compile [N.QName]
 typeToRecs (unAnn -> typ) = fromMaybe [] . lookup typ <$> gets stateRecordTypes
 
 recToFields :: S.QName -> Compile [N.Name]
-recToFields con = do
+recToFields con =
   case tryResolveName con of
     Nothing -> return []
     Just c -> fromMaybe [] . lookup c <$> gets stateRecords
@@ -282,7 +282,7 @@ hasLanguagePragmas :: [String] -> [ModulePragma l] -> Bool
 hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter (`elem` pragmas) $ flattenPragmas modulePragmas
   where
     flattenPragmas :: [ModulePragma l] -> [String]
-    flattenPragmas ps = concat $ map pragmaName ps
+    flattenPragmas ps = concatMap pragmaName ps
     pragmaName (LanguagePragma _ q) = map unname q
     pragmaName _ = []
 

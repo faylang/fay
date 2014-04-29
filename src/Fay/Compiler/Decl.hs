@@ -27,7 +27,7 @@ import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
-compileDecls toplevel = fmap concat . sequence . map (compileDecl toplevel)
+compileDecls toplevel = fmap concat . mapM (compileDecl toplevel)
 
 -- | Compile a declaration.
 compileDecl :: Bool -> S.Decl -> Compile [JsStmt]

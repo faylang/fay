@@ -46,7 +46,7 @@ moduleName m = error $ "moduleName: " ++ A.prettyPrint m
 moduleExports :: A.Module X -> Maybe (A.ExportSpecList X)
 moduleExports (A.Module _ (Just (A.ModuleHead _ _ _ e)) _ _ _) = e
 moduleExports (A.Module _ Nothing                     _ _ _) = Nothing
-moduleExports m = error $ ("moduleExports: " ++ A.prettyPrint m)
+moduleExports m = error $ "moduleExports: " ++ A.prettyPrint m
 
 moduleNameString :: A.ModuleName t -> String
 moduleNameString (A.ModuleName _ n) = n

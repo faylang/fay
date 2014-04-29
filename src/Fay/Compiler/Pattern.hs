@@ -116,7 +116,7 @@ compilePApp origPat cons pats exp body = do
     -- Special-casing on the booleans.
     Special _ (UnitCon _) -> return (JsExpStmt forcedExp : body)
     Special _ Cons{} -> case pats of
-      [left, right] -> do
+      [left, right] ->
         withScopedTmpJsName $ \tmpName -> do
           let forcedList = JsName tmpName
               x = JsGetProp forcedList (JsNameVar "car")

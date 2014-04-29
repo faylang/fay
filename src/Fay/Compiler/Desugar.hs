@@ -64,7 +64,7 @@ desugarDo = transformBiM $ \ex -> case ex of
   Do _ stmts -> maybe (throwError EmptyDoBlock) return $ foldl desugarStmt' Nothing (reverse stmts)
   _ -> return ex
 
-desugarStmt' :: Maybe (Exp l) -> (Stmt l) -> Maybe (Exp l)
+desugarStmt' :: Maybe (Exp l) -> Stmt l -> Maybe (Exp l)
 desugarStmt' inner stmt =
   maybe initStmt subsequentStmt inner
   where
@@ -87,7 +87,7 @@ desugarStmt' inner stmt =
       Just $ InfixApp s
                       exp
                       (QVarOp s $ UnQual s $ Symbol s ">>=")
-                      (Lambda s [pat] (inner'))
+                      (Lambda s [pat] inner')
 
 -- | (,)  => \x y   -> (x,y)
 --   (,,) => \x y z -> (x,y,z)
@@ -202,7 +202,7 @@ checkEnum = mapM_ f . universeBi
       _ -> return ()
 
     checkIntOrUnknown :: Exp l -> [Exp l] -> Desugar l ()
-    checkIntOrUnknown exp es = when (not $ any isIntOrUnknown es) (throwError . UnsupportedEnum $ unAnn exp)
+    checkIntOrUnknown exp es = unless (any isIntOrUnknown es) (throwError . UnsupportedEnum $ unAnn exp)
     isIntOrUnknown :: Exp l -> Bool
     isIntOrUnknown e = case e of
       Con            {} -> False
@@ -288,7 +288,7 @@ addFFIExpTypeSigs decls = do
   -- scope level.
   getTypeSigs ds = [ (unname n, typ) | TypeSig _ names typ <- ds, n <- names ]
 
-  go typeSigs ds = map (addTypeSig typeSigs) ds
+  go typeSigs = map (addTypeSig typeSigs)
 
   addTypeSig typeSigs decl = case decl of
     (PatBind loc pat typ rhs binds) ->

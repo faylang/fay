@@ -116,7 +116,7 @@ scanRecordDecls decl = do
     -- | Collect record definitions and store record name and field names.
     -- A ConDecl will have fields named slot1..slotN
     dataDecl :: [F.QualConDecl] -> Compile ()
-    dataDecl constructors = do
+    dataDecl constructors =
       forM_ constructors $ \(QualConDecl _ _ _ condecl) ->
         case condecl of
           ConDecl _ name types -> do

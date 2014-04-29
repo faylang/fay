@@ -73,7 +73,7 @@ compileFromToAndGenerateHtml config filein fileout = do
           , "  </body>"
           , "</html>"]
 
-      when (configSourceMap config) $ do
+      when (configSourceMap config) $
         L.writeFile (replaceExtension fileout "map") $
           encode $
             generate SourceMapping

@@ -103,4 +103,4 @@ case_charEnum = do
   case res of
     Left UnsupportedEnum{} -> return ()
     Left l  -> assertFailure $ "Should have failed with UnsupportedEnum, but failed with: " ++ show l
-    Right _ -> assertFailure $ "Should have failed with UnsupportedEnum, but compiled"
+    Right _ -> assertFailure "Should have failed with UnsupportedEnum, but compiled"

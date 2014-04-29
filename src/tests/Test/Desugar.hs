@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 module Test.Desugar
   ( tests
   , devTest
@@ -131,11 +130,11 @@ devTest nam = do
       putStrLn "--- desugared"
       g $ unAnn desugared
       putStrLn "--- originalExpected"
-      pretty $ originalExpected
+      pretty originalExpected
       putStrLn "--- desugaredExpected"
-      pretty $ desugaredExpected
+      pretty desugaredExpected
       putStrLn "--- desugared"
-      pretty $ desugared
+      pretty desugared
   when (unAnn originalExpected  /= unAnn desugaredExpected) $ putStrLn "originalExpected /= desugaredExpected"
   when (unAnn desugared         /= unAnn desugaredExpected) $ putStrLn "desugared /= desugaredExpected"
   when (unAnn desugared         /= unAnn originalExpected ) $ putStrLn "desugared /= originalExpected"
@@ -145,16 +144,16 @@ g :: Show a => a -> IO ()
 g = putStrLn . groom
 
 unAnn :: Functor f => f a -> f ()
-unAnn = fmap (const ())
+unAnn = void
 
 pretty :: Module SrcLoc -> IO ()
 pretty = putStrLn . prettyPrint
 
 parseM :: String -> Module ()
-parseM s = let ParseOk m = parseFay "module" s :: ParseResult (Module SrcSpanInfo) in fmap (const ()) m
+parseM s = let ParseOk m = parseFay "module" s :: ParseResult (Module SrcSpanInfo) in unAnn m
 
 parseE :: String -> Exp ()
-parseE s = let ParseOk m = parseFay "exp" s :: ParseResult (Exp SrcSpanInfo) in fmap (const ()) m
+parseE s = let ParseOk m = parseFay "exp" s :: ParseResult (Exp SrcSpanInfo) in unAnn m
 
 des :: String -> IO ()
 des s = do

@@ -45,7 +45,7 @@ type TyVarBind = A.TyVarBind ()
 type Type = A.Type ()
 
 unAnn :: Functor f => f a -> f ()
-unAnn = fmap (const ())
+unAnn = void
 
 -- | Helpful for some things.
 instance IsString (A.Name ()) where

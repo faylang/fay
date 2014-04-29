@@ -111,7 +111,7 @@ instance MonadModule Compile where
   type ModuleInfo Compile = Symbols
   lookupInCache        = liftModuleT . lookupInCache
   insertInCache n m    = liftModuleT $ insertInCache n m
-  getPackages          = liftModuleT $ getPackages
+  getPackages          = liftModuleT getPackages
   readModuleInfo fps n = liftModuleT $ readModuleInfo fps n
 
 liftModuleT :: ModuleT Symbols IO a -> Compile a

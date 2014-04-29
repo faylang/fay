@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE PatternGuards       #-}
 {-# LANGUAGE RankNTypes          #-}

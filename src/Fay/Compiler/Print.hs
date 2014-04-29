@@ -117,12 +117,12 @@ instance Printable JsStmt where
     "if (" +> exp +> ") {" +> newline +>
     indented (printJS thens) +>
     "}" +>
-    (when (length elses > 0) $ " else {" +>
+    (unless (null elses) $ " else {" +>
     indented (printJS elses) +>
     "}") +> newline
   printJS (JsEarlyReturn exp) =
     "return " +> exp +> ";" +> newline
-  printJS (JsThrow exp) = do
+  printJS (JsThrow exp) =
     "throw " +> exp +> ";" +> newline
   printJS (JsWhile cond stmts) =
     "while (" +> cond +> ") {"  +> newline +>
@@ -153,7 +153,7 @@ instance Printable JsExp where
   printJS (JsList exps) =
     "[" +> intercalateM "," (map printJS exps) +> printJS "]"
   printJS (JsNew name args) =
-    "new " +> (JsApp (JsName name) args)
+    "new " +> JsApp (JsName name) args
   printJS (JsIndex i exp) =
     "(" +> exp +> ")[" +> show i +> "]"
   printJS (JsEq exp1 exp2) =
@@ -176,10 +176,10 @@ instance Printable JsExp where
   printJS (JsInstanceOf exp classname) =
     exp +> " instanceof " +> classname
   printJS (JsObj assoc) =
-    "{" +> (intercalateM "," (map cons assoc)) +> "}"
+    "{" +> intercalateM "," (map cons assoc) +> "}"
       where cons (key,value) = "\"" +> key +> "\": " +> value
   printJS (JsLitObj assoc) =
-    "{" +> (intercalateM "," (map cons assoc)) +> "}"
+    "{" +> intercalateM "," (map cons assoc) +> "}"
       where
         cons :: (N.Name, JsExp) -> Printer ()
         cons (key,value) = "\"" +> key +> "\": " +> value
@@ -187,7 +187,7 @@ instance Printable JsExp where
        "function"
     +> maybe (return ()) ((" " +>) . printJS . ident) nm
     +> "("
-    +> (intercalateM "," (map printJS params))
+    +> intercalateM "," (map printJS params)
     +> "){" +> newline
     +> indented (stmts +>
                  case ret of
@@ -285,9 +285,7 @@ encodeName name
 
 -- | Normalize the given name to JavaScript-valid names.
 normalizeName :: String -> String
-normalizeName name =
-  concatMap encodeChar name
-
+normalizeName = concatMap encodeChar
   where
     encodeChar c | c `elem` allowed = [c]
                  | otherwise        = escapeChar c
@@ -308,7 +306,7 @@ indented p = do
      then do modify $ \s -> s { psIndentLevel = psIndentLevel + 1 }
              void p
              modify $ \s -> s { psIndentLevel = psIndentLevel }
-     else p >> return ()
+     else void p
 
 -- | Output a newline.
 newline :: Printer ()
@@ -352,7 +350,7 @@ mapping SrcSpan{..} = do
 -- | Intercalate monadic action.
 intercalateM :: String -> [Printer a] -> Printer ()
 intercalateM _ [] = return ()
-intercalateM _ [x] = x >> return ()
+intercalateM _ [x] = void x
 intercalateM str (x:xs) = do
   void x
   write str

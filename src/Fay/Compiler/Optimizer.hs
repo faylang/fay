@@ -208,7 +208,7 @@ applyToExpsInStmts f stmts = mapM (applyToExpsInStmt (collectFuncs stmts) f) stm
 -- | Apply the given function to the top-level expressions in the
 -- given statement.
 applyToExpsInStmt :: [FuncArity] -> ([FuncArity] -> JsExp -> Optimize JsExp) -> JsStmt -> Optimize JsStmt
-applyToExpsInStmt funcs f stmts = uncurryInStmt stmts where
+applyToExpsInStmt funcs f = uncurryInStmt where
   transform = f funcs
   uncurryInStmt stmt = case stmt of
     JsVar name exp              -> JsVar name <$> transform exp

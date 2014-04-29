@@ -54,7 +54,7 @@ makeCompilerTests packageConf basePath = do
                                 testFile packageConf basePath True file)
     ,makeTestGroup "Codegen tests"
                    codegenFiles
-                   (\file -> do testCodegen packageConf basePath file))
+                   (\file -> testCodegen packageConf basePath file))
   where
     makeTestGroup title files inner =
       testGroup title $ flip map files $ \file ->

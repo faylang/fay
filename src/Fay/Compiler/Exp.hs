@@ -75,7 +75,7 @@ compileVar (Special _ t@TupleCon{}) = shouldBeDesugared t
 compileVar qname = do
     nc <- lookupNewtypeConst qname
     nd <- lookupNewtypeDest qname
-    if (nc /= Nothing || nd /= Nothing)
+    if isJust nc || isJust nd
       then -- variable is either a newtype constructor or newtype destructor,
            -- replace it with identity function
            return idFun
@@ -91,9 +91,9 @@ compileLit lit = case lit of
   Frac _ rational _ -> return (JsLit (JsFloating (fromRational rational)))
   String _ string _ -> do
     fromString <- gets stateUseFromString
-    if fromString
-      then return (JsLit (JsStr string))
-      else return (JsApp (JsName (JsBuiltIn "list")) [JsLit (JsStr string)])
+    return $ if fromString
+      then JsLit (JsStr string)
+      else JsApp (JsName (JsBuiltIn "list")) [JsLit (JsStr string)]
   _                 -> throwError $ UnsupportedLiteral lit
 
 -- | Compile simple application.
@@ -177,7 +177,7 @@ compileCase :: S.Exp -> [S.Alt] -> Compile JsExp
 compileCase e alts = do
   exp <- compileExp e
   withScopedTmpJsName $ \tmpName -> do
-    pats <- fmap optimizePatConditions $ mapM (compilePatAlt (JsName tmpName)) alts
+    pats <- optimizePatConditions <$> mapM (compilePatAlt (JsName tmpName)) alts
     return $
       JsApp (JsFun Nothing
                    [tmpName]
@@ -283,7 +283,7 @@ compileRecConstr origExp name fieldUpdates = do
     updateStmt (unAnn -> o) (FieldUpdate _ (unAnn -> field) value) = do
       exp <- compileExp value
       return [JsSetProp (JsNameVar $ withIdent lowerFirst $ unQualify o) (JsNameVar $ unQualify field) exp]
-    updateStmt o (FieldWildcard (wildcardFields -> fields)) = do
+    updateStmt o (FieldWildcard (wildcardFields -> fields)) =
       return $ for fields $ \fieldName -> JsSetProp (JsNameVar . withIdent lowerFirst . unQualify . unAnn $ o)
                                                     (JsNameVar fieldName)
                                                     (JsName $ JsNameVar fieldName)
@@ -291,7 +291,7 @@ compileRecConstr origExp name fieldUpdates = do
     updateStmt _ _ = throwError $ UnsupportedExpression origExp
 
     wildcardFields l = case l of
-      Scoped (RecExpWildcard es) _ -> map (unQualify . origName2QName) . map fst $ es
+      Scoped (RecExpWildcard es) _ -> map (unQualify . origName2QName . fst) es
       _ -> []
     lowerFirst :: String -> String
     lowerFirst "" = ""

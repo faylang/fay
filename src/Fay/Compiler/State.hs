@@ -40,10 +40,10 @@ getLocalExportsWithoutNewtypes modName cs =
 -- | Is this *resolved* name a new type constructor or destructor?
 isNewtype :: SymValueInfo OrigName -> CompileState -> Bool
 isNewtype s cs = case s of
-  SymValue{}                     -> False
-  SymMethod{}                    -> False
-  SymSelector    { sv_typeName } -> not . (`isNewtypeDest` cs) . origName2QName $ sv_typeName
-  SymConstructor { sv_typeName } -> not . (`isNewtypeCons` cs) . origName2QName $ sv_typeName
+  SymValue{}                          -> False
+  SymMethod{}                         -> False
+  SymSelector    { sv_typeName = tn } -> not . (`isNewtypeDest` cs) . origName2QName $ tn
+  SymConstructor { sv_typeName = tn } -> not . (`isNewtypeCons` cs) . origName2QName $ tn
 
 -- | Is this *resolved* name a new type destructor?
 isNewtypeDest :: N.QName -> CompileState -> Bool
@@ -61,6 +61,6 @@ addModulePath mp cs = cs { stateJsModulePaths = mp `S.insert` stateJsModulePaths
 addedModulePath :: ModulePath -> CompileState -> Bool
 addedModulePath mp CompileState { stateJsModulePaths } = mp `S.member` stateJsModulePaths
 
-
+-- | Find the type signature of a top level name
 findTypeSig :: N.QName -> CompileState -> Maybe N.Type
 findTypeSig n  = M.lookup n . stateTypeSigs

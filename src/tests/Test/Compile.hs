@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -7,7 +8,9 @@ module Test.Compile (tests) where
 import           Fay
 import           Fay.Compiler.Prelude
 import           Fay.Config
-import           Test.Util
+#if !MIN_VERSION_base(4,7,0)
+import           Test.Util                       (isRight)
+#endif
 
 import           Language.Haskell.Exts.Annotated
 import           System.Environment

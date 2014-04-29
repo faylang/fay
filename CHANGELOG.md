@@ -2,7 +2,7 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
-## 0.20 (unreleased)
+## 0.20 (2014-04-29)
 
 * Adds support for LambdaCase and MultiWayIf
 

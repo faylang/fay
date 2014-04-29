@@ -6,6 +6,16 @@ See full history at: <https://github.com/faylang/fay/commits>
 
 * Add support for LambdaCase and MultiWayIf
 
+* The Fay module now re-exports most of what you need to work with Fay as a library. Please let us know if you think something is missing.
+
+* `CompileConfig` has been renamed to `Config` and is now located in Fay.Config. `CompileConfig` has become a temporary type alias for `Config`. The only modules you will generally need to import are `Fay`, `Fay.Config` and `Fay.Types.CompileError`.
+
+* `Fay.Compiler.Config` has been deprecated, import `Fay` or `Fay.Config` instead.
+
+* Importing `Fay.Types` has been deprecated, import `Fay` instead.
+
+* All these deprecations will become errors in a later major release.
+
 * `readFromFay` has been rewritten using `syb` instead of `pretty-show` (Thanks to Michael Sloan and Chris Done)
   * This introduces the following breaking changes:
     * `readFromFay` has a `Data` constraint instead of `Show`.
@@ -27,6 +37,7 @@ Dependency bumps:
 Internal:
 
 * Test cases are now using tasty instead of test-framework. To run cases in parallel use `fay-tests --num-threads=N` (see `fay-tests --help` for more info).
+* Added a test group for desugaring.
 
 
 #### 0.19.2.1 (2014-04-14)

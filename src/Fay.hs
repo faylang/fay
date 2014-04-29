@@ -8,7 +8,8 @@
 -- | Main library entry point.
 
 module Fay
-  (module Fay.Types
+  (Config (..)
+  ,CompileError (..)
   ,compileFile
   ,compileFileWithState
   ,compileFromTo

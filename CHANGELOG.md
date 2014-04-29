@@ -4,15 +4,19 @@ See full history at: <https://github.com/faylang/fay/commits>
 
 ## 0.20 (unreleased)
 
-* Add support for LambdaCase and MultiWayIf
+* Adds support for LambdaCase and MultiWayIf
 
-* The Fay module now re-exports most of what you need to work with Fay as a library. Please let us know if you think something is missing.
+* Modules have moved around a lot and several modules have been un-exposed. From now on you will probably only need to deal with at most `Fay` (which re-exports a lot of things), `Fay.Config`, `Fay.Types.CompileError`, `Fay.Convert`, and `Fay.Types.CompileResult`. Please let us know if you would like us to expose more things
 
 * Config:
   * `CompileConfig` has been renamed to `Config` and is now located in `Fay.Config`.
   * `CompileConfig` has become a temporary type alias for `Config`.
   * `Fay.Compiler.Config` is deprecated, import `Fay` or `Fay.Config` instead.
   * The `data-default` instance for `Config` is deprecated, use `defaultConfig` instead.
+
+* compiling
+  * `compileFileWithState` is deprecated, use `compileFileWithResult` which returns a `Fay.Types.CompileResult` instead. As a consequence `CompileState` is also deprecated from public consumption.
+  * `compileFile`, `compileFromToAndGenerateHtml` no longer return a triple with the sourcemap, use `compileFileWithResult` if you want access to this.
 
 * Importing `Fay.Types` has been deprecated, import `Fay` instead.
 
@@ -38,7 +42,6 @@ Internal:
 
 * Test cases are now using `tasty` instead of `test-framework`. To run cases in parallel use `fay-tests --num-threads=N` (see `fay-tests --help` for more info).
 * Added a test group for desugaring.
-
 
 #### 0.19.2.1 (2014-04-14)
 

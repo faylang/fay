@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 module Test.Util
   ( fayPath
@@ -49,3 +50,9 @@ getRecursiveContents topdir = do
       then getRecursiveContents path
       else return [path]
   return (concat paths)
+
+#if !MIN_VERSION_base(4,7,0)
+isRight :: Either a b -> Bool
+isRight Right{} = True
+isRight Left{} = False
+#endif

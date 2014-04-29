@@ -77,14 +77,16 @@ compileFromToAndGenerateHtml config filein fileout = do
           , "  </body>"
           , "</html>"]
 
-      when (configSourceMap config) $
-        L.writeFile (replaceExtension fileout "map") $
-          encode $
-            generate SourceMapping
-              { smFile = fileout
-              , smSourceRoot = Nothing
-              , smMappings = resMappings res
-              }
+      case (configSourceMap config, resSourceMappings res) of
+        (True, Just mappings) ->
+          L.writeFile (replaceExtension fileout "map") $
+            encode $
+              generate SourceMapping
+                { smFile       = fileout
+                , smSourceRoot = Nothing
+                , smMappings   = mappings
+                }
+        _ -> return ()
 
       return $ Right (if configSourceMap config then sourceMapHeader ++ out else out)
             where relativeJsPath = makeRelative (dropFileName fileout) fileout
@@ -97,8 +99,9 @@ compileFromToAndGenerateHtml config filein fileout = do
 compileFile :: Config -> FilePath -> IO (Either CompileError String)
 compileFile config filein = fmap (\(src,_,_) -> src) <$> compileFileWithState config filein
 
--- | Compile a file returning the state.
-compileFileWithState :: Config -> FilePath -> IO (Either CompileError (String,[Mapping],CompileState))
+-- | Compile a file returning the resulting internal state of the compiler.
+-- This is only to be used by the test suite.
+compileFileWithState :: Config -> FilePath -> IO (Either CompileError (String,Maybe [Mapping],CompileState))
 compileFileWithState config filein = do
   runtime <- getConfigRuntime config
   hscode <- readFile filein
@@ -106,6 +109,7 @@ compileFileWithState config filein = do
   config' <- resolvePackages config
   compileToModule filein config' raw (compileToplevelModule filein) hscode
 
+-- | Compile a file returning additional generated metadata.
 compileFileWithRes :: Config -> FilePath -> IO (Either CompileError (String,CompileRes))
 compileFileWithRes config filein = do
   res <- compileFileWithState config filein
@@ -114,23 +118,24 @@ compileFileWithRes config filein = do
     return ( s
            , CompileRes
                { resImported = map (first F.moduleNameString) $ stateImported st
-               , resMappings = m
+               , resSourceMappings = m
                })
 
-data CompileRes = CompileRes { resImported :: [(String, String)], resMappings :: [Mapping] }
+data CompileRes = CompileRes { resImported :: [(String, FilePath)], resSourceMappings :: Maybe [Mapping] }
+  deriving Show
 
 -- | Compile the given module to a runnable module.
 compileToModule :: FilePath
                 -> Config -> String -> (F.Module -> Compile [JsStmt]) -> String
-                -> IO (Either CompileError (String,[Mapping],CompileState))
+                -> IO (Either CompileError (String,Maybe [Mapping],CompileState))
 compileToModule filepath config raw with hscode = do
   result <- compileViaStr filepath config printState with hscode
   return $ case result of
     Left err -> Left err
-    Right (PrintState{..},state,_) ->
-      Right ( generateWrapped (concat $ reverse psOutput)
+    Right (ps,state,_) ->
+      Right ( generateWrapped (concat . reverse $ psOutput ps)
                               (stateModuleName state)
-            , psMappings
+            , if null (psMappings ps) then Nothing else Just (psMappings ps)
             , state
             )
   where

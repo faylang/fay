@@ -72,7 +72,6 @@ library
   exposed-modules:
     Fay
     Fay.Compiler
-    Fay.Compiler.Config
     Fay.Compiler.Desugar
     Fay.Compiler.Parse
     Fay.Compiler.Prelude

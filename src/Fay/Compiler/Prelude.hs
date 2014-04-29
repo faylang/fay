@@ -36,7 +36,7 @@ import           Control.Arrow       (first, second, (&&&), (***), (+++), (|||))
 import           Control.Monad       hiding (guard)
 import           Control.Monad.Error
 import           Data.Char           hiding (GeneralCategory (..))
-import           Data.Data           (Data (..), Typeable (..))
+import           Data.Data           (Data (..), Typeable)
 import           Data.Either
 import           Data.Function       (on)
 import           Data.List           hiding (delete)

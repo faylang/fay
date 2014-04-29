@@ -8,13 +8,13 @@ See full history at: <https://github.com/faylang/fay/commits>
 
 * The Fay module now re-exports most of what you need to work with Fay as a library. Please let us know if you think something is missing.
 
-* `CompileConfig` has been renamed to `Config` and is now located in Fay.Config. `CompileConfig` has become a temporary type alias for `Config`. The only modules you will generally need to import are `Fay`, `Fay.Config` and `Fay.Types.CompileError`.
-
-* `Fay.Compiler.Config` has been deprecated, import `Fay` or `Fay.Config` instead.
+* Config:
+  * `CompileConfig` has been renamed to `Config` and is now located in `Fay.Config`.
+  * `CompileConfig` has become a temporary type alias for `Config`.
+  * `Fay.Compiler.Config` is deprecated, import `Fay` or `Fay.Config` instead.
+  * The `data-default` instance for `Config` is deprecated, use `defaultConfig` instead.
 
 * Importing `Fay.Types` has been deprecated, import `Fay` instead.
-
-* All these deprecations will become errors in a later major release.
 
 * `readFromFay` has been rewritten using `syb` instead of `pretty-show` (Thanks to Michael Sloan and Chris Done)
   * This introduces the following breaking changes:
@@ -28,7 +28,7 @@ See full history at: <https://github.com/faylang/fay/commits>
 
 Bugfixes:
 
-* Fix bug where multiple guards on a pattern in a case expression would optimize away everything but the first guard. This disables an optimization we had on pattern conditions (for now).
+* Mltiple guards on a pattern in a case expression skipped everything but the first guard. To fix this an optimization we had on pattern conditions was disabled.
 
 Dependency bumps:
 
@@ -36,7 +36,7 @@ Dependency bumps:
 
 Internal:
 
-* Test cases are now using tasty instead of test-framework. To run cases in parallel use `fay-tests --num-threads=N` (see `fay-tests --help` for more info).
+* Test cases are now using `tasty` instead of `test-framework`. To run cases in parallel use `fay-tests --num-threads=N` (see `fay-tests --help` for more info).
 * Added a test group for desugaring.
 
 

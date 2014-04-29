@@ -11,9 +11,10 @@ module Fay
   (module Fay.Config
   ,CompileError (..)
   ,CompileState (..)
+  ,CompileResult (..)
   ,compileFile
   ,compileFileWithState
-  ,compileFileWithRes
+  ,compileFileWithResult
   ,compileFromTo
   ,compileFromToAndGenerateHtml
   ,toJsName
@@ -30,6 +31,7 @@ import           Fay.Compiler.Typecheck
 import           Fay.Config
 import qualified Fay.Exts                               as F
 import           Fay.Types
+import           Fay.Types.CompileResult
 
 import           Data.Aeson                             (encode)
 import qualified Data.ByteString.Lazy                   as L
@@ -58,12 +60,12 @@ compileFromTo cfg filein fileout =
       Right out -> maybe (putStrLn out) (`writeFile` out) fileout
       Left err -> error $ showCompileError err
 
--- | Compile the given file and write to the output, also generate any HTML.
+-- | Compile the given file and write to the output, also generates HTML and sourcemap files if configured.
 compileFromToAndGenerateHtml :: Config -> FilePath -> FilePath -> IO (Either CompileError String)
 compileFromToAndGenerateHtml config filein fileout = do
-  result <- compileFileWithRes config { configFilePath = Just filein } filein
-  case result of
-    Right (out,res) -> do
+  mres <- compileFileWithResult config { configFilePath = Just filein } filein
+  case mres of
+    Right res -> do
       when (configHtmlWrapper config) $
         writeFile (replaceExtension fileout "html") $ unlines [
             "<!doctype html>"
@@ -88,7 +90,7 @@ compileFromToAndGenerateHtml config filein fileout = do
                 }
         _ -> return ()
 
-      return $ Right (if configSourceMap config then sourceMapHeader ++ out else out)
+      return $ Right (if configSourceMap config then sourceMapHeader ++ resOutput res else resOutput res)
             where relativeJsPath = makeRelative (dropFileName fileout) fileout
                   makeScriptTagSrc :: FilePath -> String
                   makeScriptTagSrc s = "<script type=\"text/javascript\" src=\"" ++ s ++ "\"></script>"
@@ -99,8 +101,20 @@ compileFromToAndGenerateHtml config filein fileout = do
 compileFile :: Config -> FilePath -> IO (Either CompileError String)
 compileFile config filein = fmap (\(src,_,_) -> src) <$> compileFileWithState config filein
 
+-- | Compile a file returning additional generated metadata.
+compileFileWithResult :: Config -> FilePath -> IO (Either CompileError CompileResult)
+compileFileWithResult config filein = do
+  res <- compileFileWithState config filein
+  return $ do
+    (s,m,st) <- res
+    return CompileResult
+      { resOutput         = s
+      , resImported       = map (first F.moduleNameString) $ stateImported st
+      , resSourceMappings = m
+      }
+
 -- | Compile a file returning the resulting internal state of the compiler.
--- This is only to be used by the test suite.
+-- Don't use this directly, it's only exposed for the test suite.
 compileFileWithState :: Config -> FilePath -> IO (Either CompileError (String,Maybe [Mapping],CompileState))
 compileFileWithState config filein = do
   runtime <- getConfigRuntime config
@@ -108,21 +122,6 @@ compileFileWithState config filein = do
   raw <- readFile runtime
   config' <- resolvePackages config
   compileToModule filein config' raw (compileToplevelModule filein) hscode
-
--- | Compile a file returning additional generated metadata.
-compileFileWithRes :: Config -> FilePath -> IO (Either CompileError (String,CompileRes))
-compileFileWithRes config filein = do
-  res <- compileFileWithState config filein
-  return $ do
-    (s,m,st) <- res
-    return ( s
-           , CompileRes
-               { resImported = map (first F.moduleNameString) $ stateImported st
-               , resSourceMappings = m
-               })
-
-data CompileRes = CompileRes { resImported :: [(String, FilePath)], resSourceMappings :: Maybe [Mapping] }
-  deriving Show
 
 -- | Compile the given module to a runnable module.
 compileToModule :: FilePath

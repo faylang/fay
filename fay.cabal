@@ -80,6 +80,7 @@ library
     Fay.FFI
     Fay.Types
     Fay.Types.CompileError
+    Fay.Types.CompileResult
   other-modules:
     Fay.Compiler.Decl
     Fay.Compiler.Defaults

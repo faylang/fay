@@ -10,7 +10,6 @@ module Fay.Types
   ,JsName(..)
   ,CompileError(..)
   ,Compile(..)
-  ,CompileResult
   ,CompileModule
   ,Printable(..)
   ,Fay
@@ -103,9 +102,7 @@ newtype Compile a = Compile
     , MonadWriter CompileWriter
     )
 
-type CompileResult a = Either CompileError (a, CompileState, CompileWriter)
-
-type CompileModule a = ModuleT Symbols IO (CompileResult a)
+type CompileModule a = ModuleT Symbols IO (Either CompileError (a, CompileState, CompileWriter))
 
 instance MonadModule Compile where
   type ModuleInfo Compile = Symbols

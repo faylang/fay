@@ -1,6 +1,6 @@
 {-# OPTIONS -fno-warn-orphans        #-}
-{-# OPTIONS -fno-warn-unused-do-bind #-}
 {-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE NoImplicitPrelude    #-}
 {-# LANGUAGE RecordWildCards      #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ViewPatterns         #-}
@@ -16,18 +16,16 @@
 
 module Fay.Compiler.Print where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Compiler.PrimOp
 import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
 
-import           Control.Monad
 import           Control.Monad.State
 import           Data.Aeson.Encode
 import qualified Data.ByteString.Lazy.UTF8       as UTF8
-import           Data.List
-import           Data.String
 import           Language.Haskell.Exts.Annotated hiding (alt, name, op, sym)
-import           Prelude                         hiding (exp)
 import           SourceMap.Types
 
 --------------------------------------------------------------------------------
@@ -308,7 +306,7 @@ indented p = do
   PrintState{..} <- get
   if psPretty
      then do modify $ \s -> s { psIndentLevel = psIndentLevel + 1 }
-             p
+             void p
              modify $ \s -> s { psIndentLevel = psIndentLevel }
      else p >> return ()
 
@@ -356,7 +354,7 @@ intercalateM :: String -> [Printer a] -> Printer ()
 intercalateM _ [] = return ()
 intercalateM _ [x] = x >> return ()
 intercalateM str (x:xs) = do
-  x
+  void x
   write str
   intercalateM str xs
 

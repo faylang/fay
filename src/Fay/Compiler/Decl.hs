@@ -8,18 +8,20 @@
 
 module Fay.Compiler.Decl where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Compiler.Exp
 import           Fay.Compiler.FFI
 import           Fay.Compiler.GADT
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Pattern
-import           Fay.Compiler.Prelude
 import           Fay.Compiler.State
 import           Fay.Exts                        (convertFieldDecl, fieldDeclNames)
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
+import           Control.Monad.Error
 import           Control.Monad.RWS
 import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)
 

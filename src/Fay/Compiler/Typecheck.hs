@@ -2,9 +2,10 @@
 
 module Fay.Compiler.Typecheck where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Compiler.Defaults
 import           Fay.Compiler.Misc
-import           Fay.Compiler.Prelude
 import           Fay.Config
 import           Fay.Types
 

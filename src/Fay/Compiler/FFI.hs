@@ -15,8 +15,9 @@ module Fay.Compiler.FFI
   ,typeArity
   ) where
 
-import           Fay.Compiler.Misc
 import           Fay.Compiler.Prelude
+
+import           Fay.Compiler.Misc
 import           Fay.Compiler.Print                     (printJSString)
 import           Fay.Compiler.QName
 import           Fay.Exts.NoAnnotation                  (unAnn)
@@ -24,6 +25,7 @@ import qualified Fay.Exts.NoAnnotation                  as N
 import qualified Fay.Exts.Scoped                        as S
 import           Fay.Types
 
+import           Control.Monad.Error
 import           Control.Monad.Writer
 import           Data.Generics.Schemes
 import           Language.ECMAScript3.Parser            as JS

@@ -1,3 +1,4 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
 
@@ -21,13 +22,14 @@ module Fay.Compiler.PrimOp
   , resolvePrimOp
   ) where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.NoAnnotation           as N
 
 import           Data.Map                        (Map)
 import qualified Data.Map                        as M
 import           Language.Haskell.Exts.Annotated hiding (binds, name)
-import           Prelude                         hiding (mod)
 
 -- | Make an identifier from the built-in HJ module.
 fayBuiltin :: a -> String -> QName a

@@ -2,9 +2,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Fay.Exts.NoAnnotation where
 
+import           Fay.Compiler.Prelude
 
-import           Data.Char                       (isAlpha)
-import           Data.List                       (intercalate)
 import           Data.List.Split                 (splitOn)
 import           Data.String
 import qualified Language.Haskell.Exts.Annotated as A

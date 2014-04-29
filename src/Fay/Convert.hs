@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE PatternGuards       #-}
-{-# LANGUAGE TupleSections       #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE ViewPatterns        #-}
 {-# OPTIONS -fno-warn-type-defaults #-}
 
@@ -17,19 +17,20 @@ module Fay.Convert
   ,decodeFay)
   where
 
-import           Control.Arrow (first)
+import           Fay.Compiler.Prelude
+
 import           Control.Monad.State
 import           Control.Spoon
 import           Data.Aeson
-import           Data.Aeson.Types (parseEither)
+import           Data.Aeson.Types      (parseEither)
 import           Data.Data
 import           Data.Generics.Aliases
-import           Data.HashMap.Strict    (HashMap)
-import qualified Data.HashMap.Strict    as Map
-import           Data.Text              (Text)
-import qualified Data.Text              as Text
-import           Data.Vector            (Vector)
-import qualified Data.Vector            as Vector
+import           Data.HashMap.Strict   (HashMap)
+import qualified Data.HashMap.Strict   as Map
+import           Data.Text             (Text)
+import qualified Data.Text             as Text
+import           Data.Vector           (Vector)
+import qualified Data.Vector           as Vector
 
 --------------------------------------------------------------------------------
 -- The conversion functions.

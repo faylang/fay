@@ -14,10 +14,11 @@ module Fay.Compiler.Exp
   ,compileLit
   ) where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Compiler.FFI                (compileFFIExp)
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Pattern
-import           Fay.Compiler.Prelude            hiding (guard)
 import           Fay.Compiler.Print
 import           Fay.Compiler.QName
 import           Fay.Config
@@ -26,6 +27,7 @@ import           Fay.Exts.Scoped                 (noI)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
+import           Control.Monad.Error             (throwError)
 import           Control.Monad.RWS               (asks, gets)
 import qualified Data.Char                       as Char
 import           Language.Haskell.Exts.Annotated hiding (alt, binds, name, op)

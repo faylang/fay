@@ -4,11 +4,11 @@ module Fay.Compiler.Desugar.Name
   , unscopedTmpNames
   ) where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Compiler.Desugar.Types
 
 import           Control.Monad.Reader            (asks, local)
-import           Data.Data                       (Data)
-import           Data.Typeable                   (Typeable)
 import           Language.Haskell.Exts.Annotated (Name (..))
 
 -- | Generate a temporary, SCOPED name for testing conditions and

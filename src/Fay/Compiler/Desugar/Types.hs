@@ -9,13 +9,12 @@ module Fay.Compiler.Desugar.Types
   , runDesugar
   ) where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Types            (CompileError (..))
 
-import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Reader
-
--- Types
 
 data DesugarReader l = DesugarReader
   { readerNameDepth     :: Int

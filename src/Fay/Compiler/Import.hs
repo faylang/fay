@@ -11,14 +11,16 @@ module Fay.Compiler.Import
   ,compileWith
   ) where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Compiler.Misc
 import           Fay.Compiler.Parse
-import           Fay.Compiler.Prelude
 import           Fay.Config
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types
 
+import           Control.Monad.Error
 import           Control.Monad.RWS
 import           Language.Haskell.Exts.Annotated hiding (name, var)
 import           System.Directory

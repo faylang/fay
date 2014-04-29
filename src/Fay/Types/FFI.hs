@@ -1,3 +1,4 @@
+
 module Fay.Types.FFI
   ( FundamentalType (..)
   , SerializeContext (..)

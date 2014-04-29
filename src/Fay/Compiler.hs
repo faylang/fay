@@ -42,9 +42,9 @@ import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
 
+import           Control.Monad.Error
 import           Control.Monad.RWS
 import           Control.Monad.State
-
 import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated hiding (name)
 import           Language.Haskell.Names

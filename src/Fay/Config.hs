@@ -36,8 +36,10 @@ module Fay.Config
   , shouldExportStrictWrapper
   ) where
 
+import           Fay.Compiler.Prelude
+
 import           Data.Default
-import           Data.Maybe
+import           Data.Maybe                      ()
 import           Language.Haskell.Exts.Annotated (ModuleName (..))
 
 -- | Configuration of the compiler.

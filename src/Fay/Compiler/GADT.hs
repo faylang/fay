@@ -4,7 +4,7 @@ module Fay.Compiler.GADT
   (convertGADT
   ) where
 
-import           Language.Haskell.Exts.Annotated hiding (binds, name)
+import           Language.Haskell.Exts.Annotated hiding (name)
 
 -- | Convert a GADT to a normal data type.
 convertGADT :: GadtDecl a -> QualConDecl a

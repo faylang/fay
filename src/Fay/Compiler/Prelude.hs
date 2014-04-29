@@ -8,7 +8,6 @@ module Fay.Compiler.Prelude
   , module Control.Applicative
   , module Control.Arrow -- Partial
   , module Control.Monad
-  , module Control.Monad.Error
 
   -- * Data modules
   , module Data.Char     -- Partial
@@ -19,7 +18,6 @@ module Fay.Compiler.Prelude
   , module Data.Maybe
   , module Data.Monoid   -- Partial
   , module Data.Ord
-  , module Data.Tuple
 
   -- * Safe
   , module Safe
@@ -34,7 +32,6 @@ module Fay.Compiler.Prelude
 import           Control.Applicative
 import           Control.Arrow       (first, second, (&&&), (***), (+++), (|||))
 import           Control.Monad       hiding (guard)
-import           Control.Monad.Error
 import           Data.Char           hiding (GeneralCategory (..))
 import           Data.Data           (Data (..), Typeable)
 import           Data.Either
@@ -43,10 +40,10 @@ import           Data.List           hiding (delete)
 import           Data.Maybe
 import           Data.Monoid         (Monoid (..), (<>))
 import           Data.Ord
-import           Data.Tuple
 import           Prelude             hiding (exp, mod)
-
 import           Safe
+
+import           Control.Monad.Error
 import           System.Exit
 import           System.Process
 

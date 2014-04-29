@@ -9,6 +9,7 @@
 module Fay.Compiler.Misc where
 
 import           Fay.Compiler.Prelude
+
 import           Fay.Compiler.PrimOp
 import           Fay.Compiler.QName                (unname)
 import           Fay.Config
@@ -18,6 +19,7 @@ import qualified Fay.Exts.NoAnnotation             as N
 import qualified Fay.Exts.Scoped                   as S
 import           Fay.Types
 
+import           Control.Monad.Error
 import           Control.Monad.RWS
 import qualified Data.Map                          as M
 import           Data.Version                      (parseVersion)

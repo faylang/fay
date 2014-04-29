@@ -29,6 +29,8 @@ module Fay.Types
   ,mkModulePathFromQName
   ) where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Config
 import qualified Fay.Exts.NoAnnotation             as N
 import qualified Fay.Exts.Scoped                   as S
@@ -37,7 +39,6 @@ import           Fay.Types.FFI
 import           Fay.Types.Js
 import           Fay.Types.ModulePath
 
-import           Control.Applicative
 import           Control.Monad.Error               (ErrorT, MonadError)
 import           Control.Monad.Identity            (Identity)
 import           Control.Monad.RWS

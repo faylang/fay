@@ -9,14 +9,16 @@ module Fay.Compiler.Desugar
   , desugarPatParen
   ) where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Compiler.Desugar.Name
 import           Fay.Compiler.Desugar.Types
 import           Fay.Compiler.Misc               (ffiExp, hasLanguagePragma)
-import           Fay.Compiler.Prelude
 import           Fay.Compiler.QName              (unname)
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types                       (CompileError (..))
 
+import           Control.Monad.Error
 import           Control.Monad.Reader            (asks)
 import qualified Data.Generics.Uniplate.Data     as U
 import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)

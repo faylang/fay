@@ -5,6 +5,7 @@
 module Fay.Compiler.Packages where
 
 import           Fay.Compiler.Prelude
+
 import           Fay.Config
 import           Paths_fay
 

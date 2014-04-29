@@ -1,9 +1,12 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
 
 -- | Compile pattern matches.
 
 module Fay.Compiler.Pattern where
+
+import           Fay.Compiler.Prelude
 
 import           Fay.Compiler.Misc
 import           Fay.Compiler.QName
@@ -12,12 +15,10 @@ import qualified Fay.Exts.NoAnnotation           as N
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
-import           Control.Applicative
 import           Control.Monad.Error
 import           Control.Monad.Reader
 import           Language.Haskell.Exts.Annotated hiding (name)
 import           Language.Haskell.Names
-import           Prelude hiding (exp)
 
 -- | Compile the given pattern against the given expression.
 compilePat :: JsExp -> S.Pat -> [JsStmt] -> Compile [JsStmt]

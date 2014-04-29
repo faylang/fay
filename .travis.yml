@@ -5,8 +5,7 @@ install:
   - "travis_retry cabal install --force-reinstalls --only-dependencies"
 script:
   - git clone https://github.com/faylang/fay-base.git
-  - cabal install --jobs=1
-  - cabal install fay-base/ --jobs=1
+  - cabal install . fay-base/ --jobs=1
   - fay-tests --num-threads=4
 notifications:
   irc:

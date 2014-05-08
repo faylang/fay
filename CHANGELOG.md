@@ -2,7 +2,11 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
-## 0.20.0.1 (2014-05-08)
+#### 0.20.0.2 (2014-05-08)
+
+* Allow `haskell-names 0.4.*`
+
+#### 0.20.0.1 (2014-05-08)
 
 * Allow `transformers >= 0.4.1 && < 0.5`
 

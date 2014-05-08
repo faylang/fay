@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.20.0.3 (2014-05-09)
+
+* Allow `mtl 2.2.*`
+
 #### 0.20.0.2 (2014-05-08)
 
 * Allow `haskell-names 0.4.*`

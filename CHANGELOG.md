@@ -2,7 +2,11 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
-## 0.20 (2014-04-29)
+## 0.20.0.1 (2014-05-08)
+
+* Allow `transformers >= 0.4.1 && < 0.5`
+
+## 0.20.0.0 (2014-04-29)
 
 * Adds support for LambdaCase and MultiWayIf
 

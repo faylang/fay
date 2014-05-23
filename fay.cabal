@@ -142,7 +142,7 @@ executable fay
   build-depends:
       base
     , fay
-    , optparse-applicative >= 0.6 && < 0.9
+    , optparse-applicative >= 0.6 && < 0.10
     , split
 
 executable fay-tests

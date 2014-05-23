@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.20.0.4 (2014-05-23)
+
+* Allow `optparse-applicative 0.9.*`
+
 #### 0.20.0.3 (2014-05-09)
 
 * Allow `mtl 2.2.*`

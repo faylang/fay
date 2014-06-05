@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP               #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections     #-}
@@ -52,9 +51,7 @@ compileFFIExp loc (fmap unAnn -> nameopt) formatstr sig' =
       TyParen _ t       -> TyParen () <$> rmNewtys t
       TyInfix _ t1 q t2 -> flip (TyInfix ()) (unAnn q) <$> rmNewtys t1 <*> rmNewtys t2
       TyKind _ t k      -> flip (TyKind ()) (unAnn k) <$> rmNewtys t
-#if MIN_VERSION_haskell_src_exts(1,15,0)
       TyPromoted {}     -> return $ unAnn typ
-#endif
     compileFFI' :: N.Type -> Compile JsExp
     compileFFI' sig = do
       let name = fromMaybe "<exp>" nameopt

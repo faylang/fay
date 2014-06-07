@@ -128,6 +128,7 @@ library
     , spoon < 0.4
     , syb < 0.5
     , text < 1.2
+    , time >= 1 && < 1.5
     , transformers >= 0.3 && < 0.4 || > 0.4.1 && < 0.5
     , uniplate >= 1.6.11 && < 1.7
     , unordered-containers < 0.3

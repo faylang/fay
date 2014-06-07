@@ -28,6 +28,7 @@ import           Data.HashMap.Strict   (HashMap)
 import qualified Data.HashMap.Strict   as Map
 import           Data.Text             (Text)
 import qualified Data.Text             as Text
+import           Data.Time.Clock       (UTCTime)
 import           Data.Vector           (Vector)
 import qualified Data.Vector           as Vector
 
@@ -58,6 +59,7 @@ encodeFayInternal specialCases = specialCases $
     `extQ` (toJSON :: Int -> Value)
     `extQ` (toJSON :: Float -> Value)
     `extQ` (toJSON :: Double -> Value)
+    `extQ` (toJSON :: UTCTime -> Value)
     `ext1Q` list
     `extQ` string
     `extQ` char
@@ -116,6 +118,7 @@ decodeFay specialCases value = specialCases value $
     `extR` parseFloat value
     `extR` parseDouble value
     `ext1R` parseArray rec value
+    `extR` parseUTCTime value
     `extR` parseString value
     `extR` parseChar value
     `extR` parseText value
@@ -210,6 +213,11 @@ parseString :: Value -> Either String String
 parseString value = case value of
   String s -> return (Text.unpack s)
   _ -> badData value
+
+parseUTCTime :: Value -> Either String UTCTime
+parseUTCTime value = case fromJSON value of
+  Success t -> Right t
+  Error _   -> badData value
 
 -- | Parse a char.
 parseChar :: Value -> Either String Char

@@ -12,7 +12,6 @@ import           Data.Maybe
 import           Data.Version              (showVersion)
 import           Options.Applicative
 import           Options.Applicative.Types
-import           System.Environment
 
 -- | Options and help.
 data FayCompilerOptions = FayCompilerOptions
@@ -46,10 +45,10 @@ data FayCompilerOptions = FayCompilerOptions
 -- | Main entry point.
 main :: IO ()
 main = do
-  packageConf <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
-  opts <- execParser parser
+  config' <- defaultConfigWithSandbox
+  opts    <- execParser parser
   let config = addConfigDirectoryIncludePaths ("." : optInclude opts) $
-        addConfigPackages (optPackages opts) $ defaultConfig
+        addConfigPackages (optPackages opts) $ config'
           { configOptimize         = optOptimize opts
           , configFlattenApps      = optFlattenApps opts
           , configPrettyPrint      = optPretty opts
@@ -59,7 +58,7 @@ main = do
           , configTypecheck        = not $ optNoGHC opts
           , configWall             = optWall opts
           , configGClosure         = optGClosure opts
-          , configPackageConf      = optPackageConf opts <|> packageConf
+          , configPackageConf      = optPackageConf opts <|> configPackageConf config'
           , configExportRuntime    = not (optNoRTS opts)
           , configExportStdlib     = not (optNoStdlib opts)
           , configExportStdlibOnly = optStdlibOnly opts

@@ -24,6 +24,7 @@ module Fay.Config
       , configRuntimePath
       )
   , defaultConfig
+  , defaultConfigWithSandbox
   , configDirectoryIncludes
   , configDirectoryIncludePaths
   , nonPackageConfigDirectoryIncludePaths
@@ -41,6 +42,7 @@ import           Fay.Compiler.Prelude
 import           Data.Default
 import           Data.Maybe                      ()
 import           Language.Haskell.Exts.Annotated (ModuleName (..))
+import           System.Environment
 
 -- | Configuration of the compiler.
 -- The fields with a leading underscore
@@ -97,6 +99,11 @@ defaultConfig = addConfigPackage "fay-base"
     , configRuntimePath        = Nothing
     , configSourceMap          = False
     }
+
+defaultConfigWithSandbox :: IO Config
+defaultConfigWithSandbox = do
+  packageConf <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
+  return defaultConfig { configPackageConf = packageConf }
 
 -- | Default configuration.
 instance Default Config where

@@ -76,10 +76,10 @@ testFile packageConf basePath opt file = do
       config =
         addConfigDirectoryIncludePaths ["tests/"]
           defaultConfig
-            { configOptimize = opt
-            , configTypecheck = False
+            { configOptimize    = opt
+            , configTypecheck   = False
             , configPackageConf = packageConf
-            , configBasePath = basePath
+            , configBasePath    = basePath
             }
   resExists <- doesFileExist resf
   let partialName = root ++ "_partial.res"

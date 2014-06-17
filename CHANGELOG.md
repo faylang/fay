@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.20.1.1 (2014-06-17)
+
+* Don't cache the `main` thunk in the generated `main` call.
+
 ### 0.20.1.0 (2014-06-14)
 
 * Add default case for UTCTime in Fay.Convert using the aeson instances. Note that this serializes to a json string so you won't be able to deserialize it as a separate type (such as Date) when using `Automatic` in Fay.

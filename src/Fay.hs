@@ -144,7 +144,7 @@ compileToModule filepath config raw with hscode = do
       ,jscode
       ,if not (configLibrary config)
           then unlines [";"
-                       ,"Fay$$_(" ++ modulename ++ ".main);"
+                       ,"Fay$$_(" ++ modulename ++ ".main,true);"
                        ]
           else ""
       ]

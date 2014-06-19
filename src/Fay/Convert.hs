@@ -39,7 +39,7 @@ import qualified Data.Vector           as Vector
 --   values aren't handled by explicit cases.  'encodeFay' can be used to
 --   resolve this issue.
 showToFay :: Data a => a -> Maybe Value
-showToFay = encodeFay (\x -> x)
+showToFay = spoon . encodeFay (\x -> x)
 
 -- | Convert a Haskell value to a Fay json value.  This can fail when primitive
 --   values aren't handled by explicit cases.  When this happens, you can add
@@ -48,11 +48,8 @@ showToFay = encodeFay (\x -> x)
 --   The first parameter is a function that can be used to override the
 --   conversion.  This usually looks like using 'extQ' to additional type-
 --   specific cases.
-encodeFay :: (GenericQ Value -> GenericQ Value) -> GenericQ (Maybe Value)
-encodeFay specialCases = spoon . encodeFayInternal specialCases
-
-encodeFayInternal :: (GenericQ Value -> GenericQ Value) -> GenericQ Value
-encodeFayInternal specialCases = specialCases $
+encodeFay :: (GenericQ Value -> GenericQ Value) -> GenericQ Value
+encodeFay specialCases = specialCases $
     encodeGeneric rec
     `extQ` unit
     `extQ` Bool
@@ -66,7 +63,7 @@ encodeFayInternal specialCases = specialCases $
     `extQ` text
   where
     rec :: GenericQ Value
-    rec = encodeFayInternal specialCases
+    rec = encodeFay specialCases
     unit () = Null
     list :: Data a => [a] -> Value
     list = Array . Vector.fromList . map rec

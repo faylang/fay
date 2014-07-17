@@ -109,7 +109,7 @@ library
     Paths_fay
   build-depends:
       base >= 4 && < 4.8
-    , aeson < 0.8
+    , aeson > 0.6 && < 0.9
     , bytestring < 0.11
     , containers < 0.6
     , data-default < 0.6

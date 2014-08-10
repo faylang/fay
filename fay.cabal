@@ -7,13 +7,13 @@ description:         Fay is a proper subset of Haskell which is type-checked
                      .
                      /Documentation/
                      .
-                     See <http://fay-lang.org/>
+                     See <https://github.com/faylang/fay/wiki>
                      .
                      /Examples/
                      .
                      See the examples directory and <https://github.com/faylang/fay/wiki#fay-in-the-wild>
                      .
-homepage:            http://fay-lang.org/
+homepage:            https://github.com/faylang/fay/wiki
 bug-reports:         https://github.com/faylang/fay/issues
 license:             BSD3
 license-file:        LICENSE

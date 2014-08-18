@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.20.1.2 (2014-08-18)
+
+* Updated homepage URLs, fay-lang.org was 301'd
+
 #### 0.20.1.1 (2014-06-17)
 
 * Don't cache the `main` thunk in the generated `main` call.

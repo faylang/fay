@@ -66,6 +66,11 @@ source-repository head
   type: git
   location: https://github.com/faylang/fay.git
 
+flag test
+  description:       Build the fay-tests executable
+  manual:            True
+  default:           False
+
 library
   ghc-options:       -O2 -Wall
   hs-source-dirs:    src
@@ -151,24 +156,27 @@ executable fay-tests
   ghc-prof-options:  -fprof-auto
   hs-source-dirs:    src/tests
   main-is:           Tests.hs
-  other-modules:
-    Test.CommandLine
-    Test.Compile
-    Test.Convert
-    Test.Desugar
-    Test.Util
-  build-depends:
-      base
-    , aeson
-    , attoparsec
-    , bytestring
-    , directory
-    , fay
-    , filepath
-    , groom == 0.1.*
-    , haskell-src-exts
-    , tasty == 0.8.*
-    , tasty-hunit >= 0.8 && < 0.10
-    , tasty-th == 0.1.*
-    , text
-    , utf8-string
+  if flag(test)
+    other-modules:
+      Test.CommandLine
+      Test.Compile
+      Test.Convert
+      Test.Desugar
+      Test.Util
+    build-depends:
+        base
+      , aeson
+      , attoparsec
+      , bytestring
+      , directory
+      , fay
+      , filepath
+      , groom == 0.1.*
+      , haskell-src-exts
+      , tasty == 0.8.*
+      , tasty-hunit >= 0.8 && < 0.10
+      , tasty-th == 0.1.*
+      , text
+      , utf8-string
+  else
+    buildable:         False

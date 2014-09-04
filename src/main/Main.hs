@@ -3,15 +3,15 @@
 module Main where
 
 import           Fay
-import           Paths_fay                 (version)
+import           Paths_fay (version)
 
-import qualified Control.Exception         as E
 import           Control.Monad
-import           Data.List.Split           (wordsBy)
+import           Data.List.Split (wordsBy)
 import           Data.Maybe
-import           Data.Version              (showVersion)
+import           Data.Version (showVersion)
 import           Options.Applicative
 import           Options.Applicative.Types
+import qualified Control.Exception as E
 
 -- | Options and help.
 data FayCompilerOptions = FayCompilerOptions
@@ -117,7 +117,9 @@ options = FayCompilerOptions
   <*> optional (strOption $ long "runtime-path" <> help "Custom path to the runtime so you don't have to reinstall fay when modifying it")
   <*> switch (long "sourcemap" <> help "Produce a source map in <outfile>.map")
   <*> many (argument Just (metavar "<hs-file>..."))
-  where strsOption m = nullOption (m <> reader (ReadM . Right . wordsBy (== ',')) <> value [])
+  where
+    strsOption :: Mod OptionFields [String] -> Parser [String]
+    strsOption m = option (ReadM . Right . wordsBy (== ',')) (m <> value [])
 
 -- | Make incompatible options.
 incompatible :: Monad m

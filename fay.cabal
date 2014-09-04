@@ -148,7 +148,7 @@ executable fay
   build-depends:
       base
     , fay
-    , optparse-applicative >= 0.6 && < 0.10
+    , optparse-applicative == 0.10.*
     , split
 
 executable fay-tests
@@ -173,7 +173,7 @@ executable fay-tests
       , filepath
       , groom == 0.1.*
       , haskell-src-exts
-      , tasty == 0.8.*
+      , tasty == 0.9.*
       , tasty-hunit >= 0.8 && < 0.10
       , tasty-th == 0.1.*
       , text

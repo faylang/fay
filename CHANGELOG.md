@@ -2,6 +2,14 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.20.1.4 (2014-09-04)
+
+* Update to `optparse-applicative == 0.10.*`
+
+#### 0.20.1.3 (2014-08-29)
+
+* Test suite is no longer built by default, cabal install with `-ftest` to enable.
+
 #### 0.20.1.2 (2014-08-18)
 
 * Updated homepage URLs, fay-lang.org was 301'd

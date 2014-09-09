@@ -22,6 +22,7 @@ module Fay.Config
       , configStrict
       , configTypecheckOnly
       , configRuntimePath
+      , configOptimizeNewtypes
       )
   , defaultConfig
   , defaultConfigWithSandbox
@@ -70,6 +71,7 @@ data Config = Config
                                                             --   exported functions with type signatures in the given module
   , configTypecheckOnly      :: Bool                        -- ^ Only invoke GHC for typechecking, don't produce any output
   , configRuntimePath        :: Maybe FilePath
+  , configOptimizeNewtypes   :: Bool                        -- ^ Optimize away newtype constructors?
   } deriving (Show)
 
 
@@ -98,6 +100,7 @@ defaultConfig = addConfigPackage "fay-base"
     , configTypecheckOnly      = False
     , configRuntimePath        = Nothing
     , configSourceMap          = False
+    , configOptimizeNewtypes   = True
     }
 
 defaultConfigWithSandbox :: IO Config

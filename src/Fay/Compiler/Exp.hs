@@ -99,9 +99,13 @@ compileLit lit = case lit of
 -- | Compile simple application.
 compileApp :: S.Exp -> S.Exp -> Compile JsExp
 compileApp exp1@(Con _ q) exp2 =
-  maybe (compileApp' exp1 exp2) (const $ compileExp exp2) =<< lookupNewtypeConst q
+  ifOptimizeNewtypes
+    (maybe (compileApp' exp1 exp2) (const $ compileExp exp2) =<< lookupNewtypeConst q)
+    (compileApp' exp1 exp2)
 compileApp exp1@(Var _ q) exp2 =
-  maybe (compileApp' exp1 exp2) (const $ compileExp exp2) =<< lookupNewtypeDest q
+  ifOptimizeNewtypes
+    (maybe (compileApp' exp1 exp2) (const $ compileExp exp2) =<< lookupNewtypeDest q)
+    (compileApp' exp1 exp2)
 compileApp exp1 exp2 =
   compileApp' exp1 exp2
 

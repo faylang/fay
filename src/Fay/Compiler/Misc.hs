@@ -288,3 +288,11 @@ hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter
 
 hasLanguagePragma :: String -> [ModulePragma l] -> Bool
 hasLanguagePragma pr = hasLanguagePragmas [pr]
+
+-- | if then else for when 'configOptimizeNewtypes'.
+ifOptimizeNewtypes :: Compile a -> Compile a -> Compile a
+ifOptimizeNewtypes then' else' = do
+  optimize <- config configOptimizeNewtypes
+  if optimize
+     then then'
+     else else'

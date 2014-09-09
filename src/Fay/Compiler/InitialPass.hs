@@ -56,7 +56,9 @@ preprocessAST () mod@(Module _ _ _ _ decls) = do
   modify $ \s -> s { stateInterfaces = M.insert (stateModuleName s) exports $ stateInterfaces s }
   forM_ decls scanTypeSigs
   forM_ decls scanRecordDecls
-  forM_ decls scanNewtypeDecls
+  ifOptimizeNewtypes
+    (forM_ decls scanNewtypeDecls)
+    (return ())
 preprocessAST () mod = throwError $ UnsupportedModuleSyntax "preprocessAST" mod
 
 --------------------------------------------------------------------------------
@@ -93,14 +95,29 @@ compileNewtypeDecl q = error $ "compileNewtypeDecl: Should be impossible (this i
 scanRecordDecls :: F.Decl -> Compile ()
 scanRecordDecls decl = do
   case decl of
-    DataDecl _loc DataType{} _ctx (F.declHeadName -> name) qualcondecls _deriv -> do
-      let ns = for qualcondecls (\(QualConDecl _loc' _tyvarbinds _ctx' condecl) -> conDeclName condecl)
-      addRecordTypeState name ns
+    DataDecl _loc ty _ctx (F.declHeadName -> name) qualcondecls _deriv -> do
+      let addIt = let ns = for qualcondecls (\(QualConDecl _loc' _tyvarbinds _ctx' condecl) -> conDeclName condecl)
+                  in addRecordTypeState name ns
+      case ty of
+        DataType{} -> addIt
+        NewType{} -> ifOptimizeNewtypes
+                       (return ())
+                       addIt
     _ -> return ()
 
   case decl of
-    DataDecl _ DataType{} _ _ constructors _ -> dataDecl constructors
-    GDataDecl _ DataType{} _ _ _ decls _ -> dataDecl (map convertGADT decls)
+    DataDecl _ ty _ _ constructors _ ->
+      case ty of
+        DataType{} -> dataDecl constructors
+        NewType{} -> ifOptimizeNewtypes
+                       (return ())
+                       (dataDecl constructors)
+    GDataDecl _ ty _ _ _ decls _ ->
+      case ty of
+        DataType{} -> dataDecl (map convertGADT decls)
+        NewType{} -> ifOptimizeNewtypes
+                       (return ())
+                       (dataDecl (map convertGADT decls))
     _ -> return ()
 
   where

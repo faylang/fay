@@ -15,31 +15,32 @@ import qualified Control.Exception as E
 
 -- | Options and help.
 data FayCompilerOptions = FayCompilerOptions
-  { optLibrary       :: Bool
-  , optFlattenApps   :: Bool
-  , optHTMLWrapper   :: Bool
-  , optHTMLJSLibs    :: [String]
-  , optInclude       :: [String]
-  , optPackages      :: [String]
-  , optWall          :: Bool
-  , optNoGHC         :: Bool
-  , optStdout        :: Bool
-  , optVersion       :: Bool
-  , optOutput        :: Maybe String
-  , optPretty        :: Bool
-  , optOptimize      :: Bool
-  , optGClosure      :: Bool
-  , optPackageConf   :: Maybe String
-  , optNoRTS         :: Bool
-  , optNoStdlib      :: Bool
-  , optPrintRuntime  :: Bool
-  , optStdlibOnly    :: Bool
-  , optBasePath      :: Maybe FilePath
-  , optStrict        :: [String]
-  , optTypecheckOnly :: Bool
-  , optRuntimePath   :: Maybe FilePath
-  , optSourceMap     :: Bool
-  , optFiles         :: [String]
+  { optLibrary            :: Bool
+  , optFlattenApps        :: Bool
+  , optHTMLWrapper        :: Bool
+  , optHTMLJSLibs         :: [String]
+  , optInclude            :: [String]
+  , optPackages           :: [String]
+  , optWall               :: Bool
+  , optNoGHC              :: Bool
+  , optStdout             :: Bool
+  , optVersion            :: Bool
+  , optOutput             :: Maybe String
+  , optPretty             :: Bool
+  , optOptimize           :: Bool
+  , optGClosure           :: Bool
+  , optPackageConf        :: Maybe String
+  , optNoRTS              :: Bool
+  , optNoStdlib           :: Bool
+  , optPrintRuntime       :: Bool
+  , optStdlibOnly         :: Bool
+  , optBasePath           :: Maybe FilePath
+  , optStrict             :: [String]
+  , optTypecheckOnly      :: Bool
+  , optRuntimePath        :: Maybe FilePath
+  , optSourceMap          :: Bool
+  , optFiles              :: [String]
+  , optNoOptimizeNewtypes :: Bool
   }
 
 -- | Main entry point.
@@ -67,6 +68,7 @@ main = do
           , configTypecheckOnly    = optTypecheckOnly opts
           , configRuntimePath      = optRuntimePath opts
           , configSourceMap        = optSourceMap opts
+          , configOptimizeNewtypes = not $ optNoOptimizeNewtypes opts
           }
   if optVersion opts
     then runCommandVersion
@@ -117,6 +119,7 @@ options = FayCompilerOptions
   <*> optional (strOption $ long "runtime-path" <> help "Custom path to the runtime so you don't have to reinstall fay when modifying it")
   <*> switch (long "sourcemap" <> help "Produce a source map in <outfile>.map")
   <*> many (argument Just (metavar "<hs-file>..."))
+  <*> switch (long "no-optimized-newtypes" <> help "Remove optimizations for newtypes, treating them as normal data types")
   where
     strsOption :: Mod OptionFields [String] -> Parser [String]
     strsOption m = option (ReadM . Right . wordsBy (== ',')) (m <> value [])

@@ -2,6 +2,13 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+### 0.20.2.0 (2014-09-14)
+
+* Config option to disable optimizations of newtypes, treating them as
+  normal data types. This can be triggered by setting
+  `configOptimizeNewtypes = False` or passing
+  `--no-optimized-newtypes`.
+
 #### 0.20.1.4 (2014-09-04)
 
 * Update to `optparse-applicative == 0.10.*`

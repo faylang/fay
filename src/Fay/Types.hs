@@ -82,7 +82,7 @@ instance Monoid CompileWriter where
 -- | Configuration and globals for the compiler.
 data CompileReader = CompileReader
   { readerConfig       :: Config -- ^ The compilation configuration.
-  , readerCompileLit   :: S.Literal -> Compile JsExp
+  , readerCompileLit   :: S.Sign -> S.Literal -> Compile JsExp
   , readerCompileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
   }
 

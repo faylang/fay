@@ -9,13 +9,15 @@ import           Language.Haskell.Exts.Annotated hiding (name)
 -- | Convert a GADT to a normal data type.
 convertGADT :: GadtDecl a -> QualConDecl a
 convertGADT d = case d of
-  GadtDecl s name typ -> QualConDecl s tyvars context
-                           (ConDecl s name (convertFunc typ))
+  GadtDecl s name Nothing typ ->
+    QualConDecl s tyvars context (ConDecl s name (convertFunc typ))
+  GadtDecl s name (Just fs) _typ ->
+    QualConDecl s tyvars context (RecDecl s name fs)
   where
     tyvars = Nothing
     context = Nothing
-    convertFunc :: Type a -> [BangType a]
+    convertFunc :: Type a -> [Type a]
     convertFunc (TyCon _ _) = []
-    convertFunc (TyFun s x xs) = UnBangedTy s x : convertFunc xs
+    convertFunc (TyFun _ x xs) = x : convertFunc xs
     convertFunc (TyParen _ x) = convertFunc x
     convertFunc _ = []

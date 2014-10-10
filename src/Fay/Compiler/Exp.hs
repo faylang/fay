@@ -37,7 +37,7 @@ import           Language.Haskell.Names
 compileExp :: S.Exp -> Compile JsExp
 compileExp e = case e of
   Var _ qname                        -> compileVar qname
-  Lit _ lit                          -> compileLit lit
+  Lit s lit                          -> compileLit (Signless s) lit
   App _ (Var _ (UnQual _ (Ident _ "ffi"))) _ -> throwError $ FfiNeedsTypeSig e
   App _ exp1 exp2                    -> compileApp exp1 exp2
   NegApp _ exp                       -> compileNegApp exp
@@ -84,17 +84,22 @@ compileVar qname = do
     idFun = JsFun Nothing [JsTmp 1] [] (Just (JsName $ JsTmp 1))
 
 -- | Compile Haskell literal.
-compileLit :: S.Literal -> Compile JsExp
-compileLit lit = case lit of
+compileLit :: S.Sign -> S.Literal -> Compile JsExp
+compileLit sign lit = case lit of
   Char _ ch _       -> return (JsLit (JsChar ch))
-  Int _ integer _   -> return (JsLit (JsInt (fromIntegral integer))) -- FIXME:
-  Frac _ rational _ -> return (JsLit (JsFloating (fromRational rational)))
+  Int _ integer _   -> return (JsLit (JsInt (fromIntegral (applySign integer)))) -- FIXME:
+  Frac _ rational _ -> return (JsLit (JsFloating (fromRational (applySign rational))))
   String _ string _ -> do
     fromString <- gets stateUseFromString
     return $ if fromString
       then JsLit (JsStr string)
       else JsApp (JsName (JsBuiltIn "list")) [JsLit (JsStr string)]
   _                 -> throwError $ UnsupportedLiteral lit
+  where
+    applySign :: Num a => a -> a
+    applySign = case sign of
+      Signless _ -> id
+      Negative _ -> negate
 
 -- | Compile simple application.
 compileApp :: S.Exp -> S.Exp -> Compile JsExp
@@ -201,13 +206,11 @@ compilePatAlt exp a@(Alt _ pat rhs wheres) = case wheres of
     compilePat exp pat [alt]
 
 -- | Compile a guarded alt.
-compileGuardedAlt :: S.GuardedAlts -> Compile JsStmt
+compileGuardedAlt :: S.Rhs -> Compile JsStmt
 compileGuardedAlt alt =
   case alt of
-    UnGuardedAlt _ exp -> JsEarlyReturn <$> compileExp exp
-    GuardedAlts _ alts -> compileGuards (map altToRhs alts)
-   where
-    altToRhs (GuardedAlt l s e) = GuardedRhs l s e
+    UnGuardedRhs _ exp -> JsEarlyReturn <$> compileExp exp
+    GuardedRhss _ alts -> compileGuards alts
 
 -- | Compile guards
 compileGuards :: [S.GuardedRhs] -> Compile JsStmt

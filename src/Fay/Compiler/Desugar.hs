@@ -14,7 +14,7 @@ import           Fay.Compiler.Prelude
 import           Fay.Compiler.Desugar.Name
 import           Fay.Compiler.Desugar.Types
 import           Fay.Compiler.Misc               (ffiExp, hasLanguagePragma)
-import           Fay.Compiler.QName              (unname)
+import           Fay.Compiler.QName              (unname, unQual)
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types                       (CompileError (..))
 
@@ -121,8 +121,7 @@ desugarLCase = transformBiM $ \ex -> case ex of
 desugarMultiIf :: (Data l, Typeable l) => Module l -> Module l
 desugarMultiIf = transformBi $ \ex -> case ex of
   MultiIf l alts -> Case l (Con l (Special l (UnitCon l)))
-                           [Alt l (PWildCard l) (GuardedAlts l gas) Nothing]
-    where gas = map (\(IfAlt l' p a) -> GuardedAlt l' [Qualifier l' p] a) alts
+                           [Alt l (PWildCard l) (GuardedRhss l alts) Nothing]
   _ -> ex
 
 -- | (a,) => \b -> (a,b)
@@ -155,13 +154,13 @@ desugarPatParen = transformBi $ \pt -> case pt of
 -- | {a} => {a=a} for R{a} expressions
 desugarFieldPun :: (Data l, Typeable l) => Module l -> Module l
 desugarFieldPun = transformBi $ \f -> case f of
-  FieldPun l n -> let dn = UnQual l n in FieldUpdate l dn (Var l dn)
+  FieldPun l n -> FieldUpdate l n (Var l n)
   _ -> f
 
 -- | {a} => {a=a} for R{a} patterns
 desugarPatFieldPun :: (Data l, Typeable l) => Module l -> Module l
 desugarPatFieldPun = transformBi $ \pf -> case pf of
-  PFieldPun l n -> PFieldPat l (UnQual l n) (PVar l n)
+  PFieldPun l n -> PFieldPat l n (PVar l (unQual n))
   _             -> pf
 
 -- | Desugar list comprehensions.
@@ -253,7 +252,7 @@ desugarImplicitPrelude m =
     getPrelude :: Desugar l (ImportDecl l)
     getPrelude = do
       noInfo <- asks readerNoInfo
-      return $ ImportDecl noInfo (ModuleName noInfo "Prelude") False False Nothing Nothing Nothing
+      return $ ImportDecl noInfo (ModuleName noInfo "Prelude") False False False Nothing Nothing Nothing
 
 desugarFFITypeSigs :: (Data l, Typeable l) => Module l -> Desugar l (Module l)
 desugarFFITypeSigs = desugarToplevelFFITypeSigs >=> desugarBindsTypeSigs
@@ -291,13 +290,13 @@ addFFIExpTypeSigs decls = do
   go typeSigs = map (addTypeSig typeSigs)
 
   addTypeSig typeSigs decl = case decl of
-    (PatBind loc pat typ rhs binds) ->
+    (PatBind loc pat rhs binds) ->
       case getUnguardedRhs rhs of
         Just (srcInfo, rhExp) ->
           if isFFI rhExp
             then do
               rhExp' <- addSigToExp typeSigs decl rhExp
-              return $ PatBind loc pat typ (UnGuardedRhs srcInfo rhExp') binds
+              return $ PatBind loc pat (UnGuardedRhs srcInfo rhExp') binds
             else return decl
         _ -> return decl
     _ -> return decl
@@ -322,7 +321,7 @@ addFFIExpTypeSigs decls = do
     Nothing -> return rhExp
 
   getTypeFor typeSigs decl = case decl of
-    (PatBind _ (PVar _ name) _ _ _) -> lookup (unname name) typeSigs
+    (PatBind _ (PVar _ name) _ _) -> lookup (unname name) typeSigs
     _ -> Nothing
 
 -- | a `op` b => op a b

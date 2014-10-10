@@ -15,7 +15,6 @@ type ExportSpec = A.ExportSpec X
 type FieldDecl = A.FieldDecl X
 type FieldUpdate = A.FieldUpdate X
 type GadtDecl = A.GadtDecl X
-type GuardedAlts = A.GuardedAlts X
 type GuardedRhs = A.GuardedRhs X
 type ImportDecl = A.ImportDecl X
 type ImportSpec = A.ImportSpec X
@@ -57,7 +56,7 @@ mkIdent = A.Ident noI
 noI :: A.SrcSpanInfo
 noI = A.noInfoSpan (A.mkSrcSpan A.noLoc A.noLoc)
 
-convertFieldDecl :: A.FieldDecl a -> ([A.Name a], A.BangType a)
+convertFieldDecl :: A.FieldDecl a -> ([A.Name a], A.Type a)
 convertFieldDecl (A.FieldDecl _ ns b) = (ns, b)
 
 fieldDeclNames :: A.FieldDecl a -> [A.Name a]
@@ -65,6 +64,7 @@ fieldDeclNames (A.FieldDecl _ ns _) = ns
 
 declHeadName :: A.DeclHead a -> A.Name a
 declHeadName d = case d of
-  A.DHead _ n _ -> n
-  A.DHInfix _ _ n _ -> n
+  A.DHead _ n -> n
+  A.DHInfix _ _ n -> n
   A.DHParen _ h -> declHeadName h
+  A.DHApp _ h _ -> declHeadName h

@@ -52,6 +52,10 @@ compileFFIExp loc (fmap unAnn -> nameopt) formatstr sig' =
       TyInfix _ t1 q t2 -> flip (TyInfix ()) (unAnn q) <$> rmNewtys t1 <*> rmNewtys t2
       TyKind _ t k      -> flip (TyKind ()) (unAnn k) <$> rmNewtys t
       TyPromoted {}     -> return $ unAnn typ
+      TyParArray _ t    -> TyParArray () <$> rmNewtys t
+      TyEquals _ t1 t2  -> TyEquals () <$> rmNewtys t1 <*> rmNewtys t2
+      TySplice {}       -> return $ unAnn typ
+      TyBang _ bt t     -> TyBang () (unAnn bt) <$> rmNewtys t
     compileFFI' :: N.Type -> Compile JsExp
     compileFFI' sig = do
       let name = fromMaybe "<exp>" nameopt
@@ -104,7 +108,7 @@ warnDotUses srcSpanInfo string expr =
     globalNames = ["Math","console","JSON"]
 
 -- | Make a Fay→JS encoder.
-emitFayToJs :: Name a -> [TyVarBind b] -> [([Name c], BangType d)] -> Compile ()
+emitFayToJs :: Name a -> [TyVarBind b] -> [([Name c], Type d)] -> Compile ()
 emitFayToJs (unAnn -> name) (map unAnn -> tyvars) (explodeFields -> fieldTypes) = do
   qname <- qualify name
   let ctrName = printJSString $ unQual qname
@@ -121,7 +125,7 @@ emitFayToJs (unAnn -> name) (map unAnn -> tyvars) (explodeFields -> fieldTypes) 
     obj = JsVar obj_ $
       JsObj [("instance",JsLit (JsStr (printJSString (unAnn name))))]
 
-    fieldStmts :: [(Int,(N.Name,N.BangType))] -> [JsStmt]
+    fieldStmts :: [(Int,(N.Name,N.Type))] -> [JsStmt]
     fieldStmts [] = []
     fieldStmts ((i,fieldType):fts) =
       JsVar obj_v field :
@@ -137,11 +141,11 @@ emitFayToJs (unAnn -> name) (map unAnn -> tyvars) (explodeFields -> fieldTypes) 
     obj_ = JsNameVar "obj_"
 
     -- Declare/encode Fay→JS field
-    declField :: Int -> (N.Name,N.BangType) -> (String,JsExp)
+    declField :: Int -> (N.Name,N.Type) -> (String,JsExp)
     declField i (fname,typ) =
       (prettyPrint fname
       ,fayToJs (SerializeUserArg i)
-               (argType (bangType typ))
+               (argType typ)
                (JsGetProp (JsName transcodingObjForced)
                           (JsNameVar (UnQual () fname))))
 
@@ -184,13 +188,6 @@ argType t = case t of
     case t of
       TyCon _ (UnQual _ user)   -> UserDefined user []
       _ -> UnknownType
-
--- | Extract the type.
-bangType :: N.BangType -> N.Type
-bangType typ = case typ of
-  BangedTy _ ty   -> ty
-  UnBangedTy _ ty -> ty
-  UnpackedTy _ ty -> ty
 
 -- | Expand a type application.
 expandApp :: N.Type -> [N.Type]
@@ -327,7 +324,7 @@ jsToFayHash :: [(String, JsExp)] -> [JsStmt]
 jsToFayHash cases = [JsExpStmt $ JsApp (JsName $ JsBuiltIn "objConcat") [JsName $ JsBuiltIn "jsToFayHash", JsObj cases]]
 
 -- | Make a JS→Fay decoder.
-emitJsToFay :: Name a -> [TyVarBind b] -> [([Name c],BangType d)] -> Compile ()
+emitJsToFay :: Name a -> [TyVarBind b] -> [([Name c],Type d)] -> Compile ()
 emitJsToFay (unAnn -> name) (map unAnn -> tyvars) (map (unAnn *** unAnn) . explodeFields -> fieldTypes) = do
   qname <- qualify name
   tell (mempty { writerJsToFay = [(printJSString (unAnn name), translator qname)] })
@@ -338,10 +335,10 @@ emitJsToFay (unAnn -> name) (map unAnn -> tyvars) (map (unAnn *** unAnn) . explo
             (Just $ JsNew (JsConstructor qname)
                           (map (decodeField . getIndex name tyvars) fieldTypes))
     -- Decode JS→Fay field
-    decodeField :: (Int,(N.Name,N.BangType)) -> JsExp
+    decodeField :: (Int,(N.Name,N.Type)) -> JsExp
     decodeField (i,(fname,typ)) =
       jsToFay (SerializeUserArg i)
-              (argType (bangType typ))
+              (argType typ)
               (JsGetPropExtern (JsName transcodingObj)
                                (prettyPrint fname))
 
@@ -350,9 +347,9 @@ argTypes :: JsName
 argTypes = JsNameVar "argTypes"
 
 -- | Get the index of a name from the set of type variables bindings.
-getIndex :: Name a -> [TyVarBind b] -> (Name c,BangType d) -> (Int,(N.Name,N.BangType))
+getIndex :: Name a -> [TyVarBind b] -> (Name c,Type d) -> (Int,(N.Name,N.Type))
 getIndex (unAnn -> name) (map unAnn -> tyvars) (unAnn -> sname,unAnn -> ty) =
-  case bangType ty of
+  case ty of
     TyVar _ tyname -> case elemIndex tyname (map tyvar tyvars) of
       Nothing -> error $ "unknown type variable " ++ prettyPrint tyname ++
                          " for " ++ prettyPrint name ++ "." ++ prettyPrint sname ++ "," ++

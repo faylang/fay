@@ -17,7 +17,6 @@ import           Fay.Compiler.Misc
 import           Fay.Compiler.Parse
 import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
-import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
 
 import           Control.Monad.Error
@@ -77,18 +76,13 @@ compileNewtypeDecl [QualConDecl _ _ _ condecl] = case condecl of
   RecDecl _ cname [FieldDecl _ [dname] ty] -> addNewtype cname (Just dname) ty
   x -> error $ "compileNewtypeDecl case: Should be impossible (this is a bug). Got: " ++ show x
   where
-    getBangTy :: F.BangType -> N.Type
-    getBangTy (BangedTy _ t)   = unAnn t
-    getBangTy (UnBangedTy _ t) = unAnn t
-    getBangTy (UnpackedTy _ t) = unAnn t
-
     addNewtype cname dname ty = do
       qcname <- qualify cname
       qdname <- case dname of
                   Nothing -> return Nothing
                   Just n  -> Just <$> qualify n
       modify (\cs@CompileState{stateNewtypes=nts} ->
-               cs{stateNewtypes=(qcname,qdname,getBangTy ty):nts})
+               cs{stateNewtypes=(qcname,qdname,unAnn ty):nts})
 compileNewtypeDecl q = error $ "compileNewtypeDecl: Should be impossible (this is a bug). Got: " ++ show q
 
 -- | Add record declarations to the state

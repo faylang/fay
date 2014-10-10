@@ -29,7 +29,7 @@ compilePat exp pat body = case pat of
     case newty of
       Nothing -> compilePApp pat cons pats exp body
       Just _  -> compileNewtypePat pats exp body
-  PLit _ literal    -> compilePLit exp literal body
+  PLit _ sign lit   -> compilePLit exp sign lit body
   PWildCard _       -> return body
   PList _ pats      -> compilePList pats body exp
   PTuple _ _bx pats -> compilePList pats body exp
@@ -78,10 +78,10 @@ compilePatFields exp name pats body = do
         _ -> []
 
 -- | Compile a literal value from a pattern match.
-compilePLit :: JsExp -> S.Literal -> [JsStmt] -> Compile [JsStmt]
-compilePLit exp literal body = do
+compilePLit :: JsExp -> S.Sign -> S.Literal -> [JsStmt] -> Compile [JsStmt]
+compilePLit exp sign literal body = do
   c <- ask
-  lit <- readerCompileLit c literal
+  lit <- readerCompileLit c sign literal
   return [JsIf (equalExps exp lit)
                body
                []]

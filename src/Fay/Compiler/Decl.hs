@@ -60,14 +60,17 @@ compileDecl toplevel decl = case decl of
 
 
 mkTyVars :: S.DeclHead -> [S.TyVarBind]
-mkTyVars (DHead _ _ binds) = binds
-mkTyVars (DHInfix _ t1 _ t2) = [t1, t2]
-mkTyVars (DHParen _ dh) = mkTyVars dh
+mkTyVars x = go x []
+  where
+    go (DHead _ _) = id
+    go (DHInfix _ r _) = (r:)
+    go (DHParen _ dh) = go dh
+    go (DHApp _ dh r) = go dh . (r:)
 
 -- | Compile a top-level pattern bind.
 compilePatBind :: Bool -> S.Decl -> Compile [JsStmt]
 compilePatBind toplevel patDecl = case patDecl of
-  PatBind _ (PVar _ name') Nothing
+  PatBind _ (PVar _ name')
     (UnGuardedRhs _
       (ExpTypeSig _
         (App _ (Var _ (UnQual _ (Ident _ "ffi")))
@@ -79,12 +82,12 @@ compilePatBind toplevel patDecl = case patDecl of
       fun <- compileFFIExp loc (Just name) formatstr sig
       stmt <- bindToplevel toplevel (Just (srcInfoSpan loc)) name fun
       return [stmt]
-  PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) Nothing ->
+  PatBind srcloc (PVar _ ident) (UnGuardedRhs _ rhs) Nothing ->
       compileUnguardedRhs toplevel srcloc ident rhs
   -- TODO: Generalize to all patterns
-  PatBind srcloc (PVar _ ident) Nothing (UnGuardedRhs _ rhs) (Just bdecls) ->
+  PatBind srcloc (PVar _ ident) (UnGuardedRhs _ rhs) (Just bdecls) ->
     compileUnguardedRhs toplevel srcloc ident (Let S.noI bdecls rhs)
-  PatBind _ pat Nothing (UnGuardedRhs _ rhs) _bdecls -> case pat of
+  PatBind _ pat (UnGuardedRhs _ rhs) _bdecls -> case pat of
     PList {} -> compilePatBind' pat rhs
     PTuple{} -> compilePatBind' pat rhs
     PApp  {} -> compilePatBind' pat rhs

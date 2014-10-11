@@ -2,6 +2,12 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+## 0.21.0.0 (2014-10-11)
+
+* Errors are now properly thrown from `encodeFay`. Changes the type signature to `encodeFay :: (GenericQ Value -> GenericQ Value) -> GenericQ Value`
+* Update to `haskell-src-exts == 1.16.*`, This changes the type signature of `readerCompileLit` to `:: S.Sign -> S.Literal -> Compile JsExp`
+* Fixes `ghc-pkg describe` stdout errors not always being printed
+
 ### 0.20.2.0 (2014-09-14)
 
 * Config option to disable optimizations of newtypes, treating them as

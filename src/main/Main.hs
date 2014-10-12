@@ -6,6 +6,7 @@ import           Fay
 import           Paths_fay (version)
 
 import           Control.Monad
+import           Control.Monad.Reader
 import           Data.List.Split (wordsBy)
 import           Data.Maybe
 import           Data.Version (showVersion)
@@ -118,11 +119,11 @@ options = FayCompilerOptions
   <*> switch (long "typecheck-only" <> help "Only invoke GHC for typechecking, don't produce any output")
   <*> optional (strOption $ long "runtime-path" <> help "Custom path to the runtime so you don't have to reinstall fay when modifying it")
   <*> switch (long "sourcemap" <> help "Produce a source map in <outfile>.map")
-  <*> many (argument Just (metavar "<hs-file>..."))
+  <*> many (argument (ReadM ask) (metavar "<hs-file>..."))
   <*> switch (long "no-optimized-newtypes" <> help "Remove optimizations for newtypes, treating them as normal data types")
   where
     strsOption :: Mod OptionFields [String] -> Parser [String]
-    strsOption m = option (ReadM . Right . wordsBy (== ',')) (m <> value [])
+    strsOption m = option (ReadM . fmap (wordsBy (== ',')) $ ask) (m <> value [])
 
 -- | Make incompatible options.
 incompatible :: Monad m

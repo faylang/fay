@@ -148,7 +148,8 @@ executable fay
   build-depends:
       base
     , fay
-    , optparse-applicative == 0.10.*
+    , mtl
+    , optparse-applicative == 0.11.*
     , split
 
 executable fay-tests

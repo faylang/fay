@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+##### 0.21.0.1 (2014-10-12)
+
+* Update to `optparse-applicative == 0.11.*`
+
 ## 0.21.0.0 (2014-10-11)
 
 * Errors are now properly thrown from `encodeFay`. Changes the type signature to `encodeFay :: (GenericQ Value -> GenericQ Value) -> GenericQ Value`

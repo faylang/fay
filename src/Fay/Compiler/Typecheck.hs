@@ -11,6 +11,8 @@ import           Fay.Types
 
 import qualified GHC.Paths             as GHCPaths
 
+import           System.Directory
+
 -- | Call out to GHC to type-check the file.
 typecheck :: Config -> FilePath -> IO (Either CompileError String)
 typecheck cfg fp = do
@@ -37,7 +39,8 @@ typecheck cfg fp = do
           , "Language.Fay.DummyMain"
           , "-i" ++ intercalate ":" includeDirs
           , fp ] ++ ghcPackageDbArgs ++ wallF ++ map ("-package " ++) packages
-  res <- readAllFromProcess GHCPaths.ghc flags ""
+  exists <- doesFileExist GHCPaths.ghc
+  res <- readAllFromProcess (if exists then GHCPaths.ghc else "ghc") flags ""
   either (return . Left . GHCError . fst) (return . Right . fst) res
    where
     wallF | configWall cfg = ["-Wall"]

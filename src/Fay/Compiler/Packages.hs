@@ -55,7 +55,8 @@ doesSourceDirExist path = do
 -- | Describe the given package.
 describePackage :: Maybe FilePath -> String -> IO String
 describePackage db name = do
-  result <- readAllFromProcess ghc_pkg args ""
+  exists <- doesFileExist ghc_pkg
+  result <- readAllFromProcess (if exists then ghc_pkg else "ghc-pkg") args ""
   case result of
     Left  (err,out) -> error $ "ghc-pkg describe error:\n" ++ err ++ "\n" ++ out
     Right (_err,out) -> return out

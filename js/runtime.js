@@ -746,5 +746,73 @@ function Fay$$date(str){
 }
 
 /*******************************************************************************
+ * Data.Var
+ */
+
+function Fay$$Ref2(val){
+  this.val = val;
+}
+
+function Fay$$Sig(){
+  this.handlers = [];
+}
+
+function Fay$$Var(val){
+  this.val = val;
+  this.handlers = [];
+}
+
+// Helper used by Fay$$setValue and for merging
+function Fay$$broadcastInternal(self, val, force){
+  var handlers = self.handlers;
+  var exceptions = [];
+  for(var len = handlers.length, i = 0; i < len; i++) {
+    try {
+      force(handlers[i][1](val), true);
+    } catch (e) {
+      exceptions.push(e);
+    }
+  }
+  // Rethrow the encountered exceptions.
+  if (exceptions.length > 0) {
+    console.error("Encountered " + exceptions.length + " exception(s) while broadcasing a change to ", self);
+    for(var len = exceptions.length, i = 0; i < len; i++) {
+      (function(exception) {
+        window.setTimeout(function() { throw exception; }, 0);
+      })(exceptions[i]);
+    }
+  }
+}
+
+function Fay$$setValue(self, val, force){
+  if (self instanceof Fay$$Ref2) {
+    self.val = val;
+  } else if (self instanceof Fay$$Var) {
+    self.val = val;
+    Fay$$broadcastInternal(self, val, force);
+  } else if (self instanceof Fay$$Sig) {
+    Fay$$broadcastInternal(self, val, force);
+  } else {
+    throw "Fay$$setValue given something that's not a Ref2, Var, or Sig"
+  }
+}
+
+function Fay$$subscribe(self, f){
+  var key = {};
+  self.handlers.push([key,f]);
+  var searchStart = self.handlers.length - 1;
+  return function(_){
+    for(var i = Math.min(searchStart, self.handlers.length - 1); i >= 0; i--) {
+      if(self.handlers[i][0] == key) {
+        self.handlers = self.handlers.slice(0,i).concat(self.handlers.slice(i+1));
+        return;
+      }
+    }
+    return _; // This variable has to be used, otherwise Closure
+              // strips it out and Fay serialization breaks.
+  };
+}
+
+/*******************************************************************************
  * Application code.
  */

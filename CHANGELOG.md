@@ -2,7 +2,11 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
-##### 0.21.0.1 (2014-10-12)
+#### 0.21.0.2 (2014-10-19)
+
+* Fallback to ghc and ghc-pkg in PATH if not available from GHC.Paths
+
+#### 0.21.0.1 (2014-10-12)
 
 * Update to `optparse-applicative == 0.11.*`
 

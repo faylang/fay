@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+### 0.21.2 (2014-10-21)
+
+* Previously all package imports were ignored, now we only ignore `"base"` package imports.
+
 ### 0.21.1 (2014-10-21)
 
 * Lots of additions to in `fay-base` adding the following modules:

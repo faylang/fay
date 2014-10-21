@@ -98,9 +98,9 @@ compileImport
   -> F.ImportDecl
   -> Compile a
 compileImport compileModule i = case i of
-  -- Package imports are ignored since they are used for some trickery in fay-base.
-  ImportDecl _ _    _ _ _ Just{}  _ _ -> return mempty
-  ImportDecl _ name _ _ _ Nothing _ _ -> compileModuleFromName compileModule name
+  -- Trickery in fay-base needs this special case
+  ImportDecl _ _    _ _ _ (Just "base") _ _ -> return mempty
+  ImportDecl _ name _ _ _ _ _ _ -> compileModuleFromName compileModule name
 
 -- | Find an import's filepath and contents from its module name.
 findImport :: [FilePath] -> ModuleName a -> Compile (FilePath,String)

@@ -2,6 +2,22 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+### 0.21.1 (2014-10-21)
+
+* Lots of additions to in `fay-base` adding the following modules:
+  * Data.Var - Mutable variables, Reactive variables, and reactive signals
+  * Unsafe.Coerce
+  * Data.Text (fay-text will be updated to reuse this module)
+  * Data.Time
+  * Data.Ord, Data.Function, Data.Maybe, Data.List, Data.Either
+  * Data.Defined and Data.Nullable
+  * Data.Mutex - Simple mutexes
+  * Control.Exception
+  * Data.LocalStorage
+  * Data.MutMap - Mutable maps
+
+The introduction of `Data.Var` required some additions to fay's runtime.
+
 #### 0.21.0.2 (2014-10-19)
 
 * Fallback to ghc and ghc-pkg in PATH if not available from GHC.Paths

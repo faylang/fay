@@ -1,6 +1,10 @@
 ## Changelog
 
-#### 0.19.4 (2014-10-21)
+#### 0.19.4.1 (2014-10-25)
+
+* Merged fay-base into the main fay repository.
+
+### 0.19.4 (2014-10-21)
 
 * Fix type signature of `Data.Text.pack`.
 * Add IsString instance for `Text` for using the ffi with `RebindableSyntax` enabled.

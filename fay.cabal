@@ -169,11 +169,13 @@ executable fay-tests
       , aeson
       , attoparsec
       , bytestring
+      , containers
       , directory
       , fay
       , filepath
       , groom == 0.1.*
       , haskell-src-exts
+      , random >= 1.0 && < 1.2
       , tasty >= 0.9 && < 0.11
       , tasty-hunit >= 0.8 && < 0.10
       , tasty-th == 0.1.*

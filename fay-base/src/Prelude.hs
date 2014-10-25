@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE PackageImports       #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# OPTIONS -w #-}
+{-# OPTIONS -fno-warn-missing-methods #-}
 
 module Prelude
   (

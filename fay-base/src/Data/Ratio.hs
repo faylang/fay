@@ -1,8 +1,8 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE PackageImports #-}
+{-# OPTIONS -fno-warn-missing-methods #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# OPTIONS -w #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE PackageImports #-}
 
 module Data.Ratio where
 

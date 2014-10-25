@@ -1,0 +1,62 @@
+name:                fay-base
+version:             0.19.4
+synopsis:            The base package for Fay.
+description:         The base package for Fay.
+                     This package amongst others exports Prelude and FFI which you probably want to use with Fay.
+license:             BSD3
+license-file:        LICENSE
+author:              Chris Done
+maintainer:          adam@bergmark.nl
+homepage:            https://github.com/faylang/fay-base
+bug-reports:         https://github.com/faylang/fay-base/issues
+copyright:           2012 Chris Done
+category:            Development, Fay
+build-type:          Simple
+cabal-version:       >=1.8
+extra-source-files:
+  LICENSE
+  README.md
+  CHANGELOG.md
+data-files:
+  src/*.hs
+  src/Control/*.hs
+  src/Data/*.hs
+  src/Data/MutMap/*.hs
+  src/Debug/*.hs
+  src/Fay/*.hs
+  src/Unsafe/*.hs
+
+source-repository head
+  type: git
+  location: https://github.com/faylang/fay-base.git
+
+library
+  hs-source-dirs:    src
+  exposed:           False
+  exposed-modules:
+    Control.Exception
+    Data.Char
+    Data.Data
+    Data.Defined
+    Data.Either
+    Data.Function
+    Data.List
+    Data.LocalStorage
+    Data.Maybe
+    Data.MutMap
+    Data.MutMap.Internal
+    Data.Mutex
+    Data.Nullable
+    Data.Ord
+    Data.Ratio
+    Data.Text
+    Data.Time
+    Data.Var
+    Debug.Trace
+    FFI
+    Fay.Unsafe
+    Prelude
+    Unsafe.Coerce
+  build-depends:
+      base == 4.*
+    , fay >= 0.21.1 && < 0.22

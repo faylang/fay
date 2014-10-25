@@ -1,3 +1,4 @@
+{-# OPTIONS -fno-warn-missing-methods #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE NoImplicitPrelude #-}
@@ -62,7 +63,7 @@ module Data.Text
 import Data.Data
 import FFI
 import Data.Nullable (fromNullable)
-import Prelude (Eq,String,Int,Bool,Char,Maybe,Double,error)
+import Prelude (Eq,String,Int,Bool,Char,Maybe,Double,Ord,error)
 import qualified "base" Data.String as B (IsString (..))
 
 -- | A space efficient, packed, unboxed Unicode text type.
@@ -70,6 +71,7 @@ data Text
 deriving instance Eq Text
 deriving instance Data Text
 deriving instance Typeable Text
+instance Ord Text
 instance B.IsString Text where fromString = error "the method fromString can never be called"
 
 -- | O(n) The intercalate function takes a Text and a list of Texts and

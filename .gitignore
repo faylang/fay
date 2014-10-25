@@ -8,7 +8,6 @@ cabal.sandbox.config
 dist/
 examples/*.js
 examples/*.map
-fay-base
 fay-prim
 src/*.js
 tests/*.html

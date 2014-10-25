@@ -7,8 +7,8 @@ license:             BSD3
 license-file:        LICENSE
 author:              Chris Done
 maintainer:          adam@bergmark.nl
-homepage:            https://github.com/faylang/fay-base
-bug-reports:         https://github.com/faylang/fay-base/issues
+homepage:            https://github.com/faylang/fay/
+bug-reports:         https://github.com/faylang/fay/issues
 copyright:           2012 Chris Done
 category:            Development, Fay
 build-type:          Simple
@@ -28,7 +28,7 @@ data-files:
 
 source-repository head
   type: git
-  location: https://github.com/faylang/fay-base.git
+  location: https://github.com/faylang/fay.git
 
 library
   hs-source-dirs:    src

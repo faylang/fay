@@ -10,7 +10,6 @@ examples/*.js
 examples/*.map
 fay-base
 fay-prim
-hackage-test/
 src/*.js
 tests/*.html
 tests/*.js

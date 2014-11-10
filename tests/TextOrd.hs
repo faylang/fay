@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE PackageImports    #-}
 {-# LANGUAGE RebindableSyntax #-}
 module TextOrd where
 
-import "fay-base" Data.Text
+import Prelude
+
+import Data.Text
 
 main :: Fay ()
 main = do

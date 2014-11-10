@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.21.2.1 (2014-11-10)
+
+* Hide all packages by default when typechecking. This avoids conflicting with packages that haven't been specified on the command-line with `--package`, e.g. the `text` package when you import `Data.Text`.
+
 ### 0.21.2 (2014-10-21)
 
 * Previously all package imports were ignored, now we only ignore `"base"` package imports.

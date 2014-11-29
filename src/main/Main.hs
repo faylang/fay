@@ -42,6 +42,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optSourceMap          :: Bool
   , optFiles              :: [String]
   , optNoOptimizeNewtypes :: Bool
+  , optPrettyThunks       :: Bool
   }
 
 -- | Main entry point.
@@ -70,6 +71,7 @@ main = do
           , configRuntimePath      = optRuntimePath opts
           , configSourceMap        = optSourceMap opts
           , configOptimizeNewtypes = not $ optNoOptimizeNewtypes opts
+          , configPrettyThunks     = optPrettyThunks opts
           }
   if optVersion opts
     then runCommandVersion
@@ -121,6 +123,7 @@ options = FayCompilerOptions
   <*> switch (long "sourcemap" <> help "Produce a source map in <outfile>.map")
   <*> many (argument (ReadM ask) (metavar "<hs-file>..."))
   <*> switch (long "no-optimized-newtypes" <> help "Remove optimizations for newtypes, treating them as normal data types")
+  <*> switch (long "pretty-thunks" <> help "Use pretty thunk names")
   where
     strsOption :: Mod OptionFields [String] -> Parser [String]
     strsOption m = option (ReadM . fmap (wordsBy (== ',')) $ ask) (m <> value [])

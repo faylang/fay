@@ -36,7 +36,7 @@ printJSString x = concat . reverse . pwOutput $ execPrinter (printJS x) defaultP
 
 -- | Print the JS to a pretty string.
 printJSPretty :: Printable a => a -> String
-printJSPretty x = concat . reverse . pwOutput $ execPrinter (printJS x) defaultPrintReader { prPretty = True }
+printJSPretty x = concat . reverse . pwOutput $ execPrinter (printJS x) defaultPrintReader{ prPretty = True }
 
 -- | Print literals. These need some special encoding for
 -- JS-format literals. Could use the Text.JSON library.
@@ -218,15 +218,17 @@ instance Printable JsName where
     case name of
       JsNameVar qname     -> printJS qname
       JsThis              -> write "this"
-      JsThunk             -> write "Fay$$$"
-      JsForce             -> write "Fay$$_"
-      JsApply             -> write "Fay$$__"
+      JsThunk             -> writeThunkish "Fay$$$" "$"
+      JsForce             -> writeThunkish "Fay$$_" "_"
+      JsApply             -> writeThunkish "Fay$$__" "__"
       JsParam i           -> write ("$p" ++ show i)
       JsTmp i             -> write ("$tmp" ++ show i)
       JsConstructor qname -> printCons qname
       JsBuiltIn qname     -> "Fay$$" +> printJS qname
       JsParametrizedType  -> write "type"
       JsModuleName (ModuleName _ m) -> write m
+    where writeThunkish ugly pretty = askP $ \pr ->
+            write $ if prPrettyThunks pr then pretty else ugly
 
 -- | Print a constructor name given a QName.
 printCons :: N.QName -> Printer

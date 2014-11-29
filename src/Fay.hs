@@ -27,6 +27,7 @@ import           Fay.Compiler
 import           Fay.Compiler.Misc                      (ioWarn, printSrcSpanInfo)
 import           Fay.Compiler.Packages
 import           Fay.Compiler.Prelude
+import           Fay.Compiler.Print
 import           Fay.Compiler.Typecheck
 import           Fay.Config
 import qualified Fay.Exts                               as F
@@ -128,30 +129,29 @@ compileToModule :: FilePath
                 -> Config -> String -> (F.Module -> Compile [JsStmt]) -> String
                 -> IO (Either CompileError (String,Maybe [Mapping],CompileState))
 compileToModule filepath config raw with hscode = do
-  result <- compileViaStr filepath config printState with hscode
+  result <- compileViaStr filepath config with hscode
   return $ case result of
     Left err -> Left err
-    Right (ps,state,_) ->
-      Right ( generateWrapped (concat . reverse $ psOutput ps)
-                              (stateModuleName state)
-            , if null (psMappings ps) then Nothing else Just (psMappings ps)
+    Right (printer,state@CompileState{ stateModuleName = (ModuleName _ modulename) },_) ->
+      Right ((concat . reverse . pwOutput $ pw)
+            , if null (pwMappings pw) then Nothing else Just (pwMappings pw)
             , state
             )
-  where
-    generateWrapped jscode (ModuleName _ modulename) =
-      unlines $ filter (not . null)
-      [if configExportRuntime config then raw else ""
-      ,jscode
-      ,if not (configLibrary config)
-          then unlines [";"
-                       ,"Fay$$_(" ++ modulename ++ ".main,true);"
-                       ]
-          else ""
-      ]
-    printState = defaultPrintState
-      { psPretty = configPrettyPrint config
-      , psLine = length (lines raw) + 3
-      }
+      where
+        pw = execPrinter (runtime <> aliases <> printer <> main) pr
+        runtime = whenP (configExportRuntime config) $
+          write raw
+        aliases = whenP (configPrettyThunks config) $
+          write . unlines $ [ "var $ = Fay$$$;"
+                            , "var _ = Fay$$_;"
+                            , "var __ = Fay$$__;"
+                            ]
+        main = whenP (not $ configLibrary config) $
+          write $ "Fay$$_(" ++ modulename ++ ".main, true);\n"
+        pr = defaultPrintReader
+          { prPrettyThunks = configPrettyThunks config
+          , prPretty       = configPrettyPrint config
+          }
 
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String

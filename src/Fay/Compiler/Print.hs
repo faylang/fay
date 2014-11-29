@@ -22,7 +22,6 @@ import           Fay.Compiler.PrimOp
 import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
 
-import           Control.Monad.State
 import           Data.Aeson.Encode
 import qualified Data.ByteString.Lazy.UTF8       as UTF8
 import           Language.Haskell.Exts.Annotated hiding (alt, name, op, sym)
@@ -33,11 +32,11 @@ import           SourceMap.Types
 
 -- | Print the JS to a flat string.
 printJSString :: Printable a => a -> String
-printJSString x = concat . reverse . psOutput $ execState (runPrinter (printJS x)) defaultPrintState
+printJSString x = concat . reverse . pwOutput $ execPrinter (printJS x) defaultPrintReader
 
 -- | Print the JS to a pretty string.
 printJSPretty :: Printable a => a -> String
-printJSPretty x = concat . reverse . psOutput $ execState (runPrinter (printJS x)) defaultPrintState { psPretty = True }
+printJSPretty x = concat . reverse . pwOutput $ execPrinter (printJS x) defaultPrintReader{ prPretty = True }
 
 -- | Print literals. These need some special encoding for
 -- JS-format literals. Could use the Text.JSON library.
@@ -88,7 +87,7 @@ instance Printable N.Name where
 
 -- | Print a list of statements.
 instance Printable [JsStmt] where
-  printJS = mapM_ printJS
+  printJS = mconcat . map printJS
 
 -- | Print a single statement.
 instance Printable JsStmt where
@@ -102,9 +101,9 @@ instance Printable JsStmt where
     name +> " = " +> expr +> ";" +> newline
   printJS (JsSetProp name prop expr) =
     name +> "." +> prop +> " = " +> expr +> ";" +> newline
-  printJS (JsSetQName msrcloc name expr) = do
-    maybe (return ()) mapping msrcloc
-    name +> " = " +> expr +> ";" +> newline
+  printJS (JsSetQName msrcloc name expr) =
+    maybe mempty mapping msrcloc
+    <> (name +> " = " +> expr +> ";" +> newline)
   printJS (JsSetConstructor name expr) =
     printCons name +> " = " +> expr +> ";" +> newline +>
     -- The unqualifiedness here is bad.
@@ -117,9 +116,11 @@ instance Printable JsStmt where
     "if (" +> exp +> ") {" +> newline +>
     indented (printJS thens) +>
     "}" +>
-    (unless (null elses) $ " else {" +>
-    indented (printJS elses) +>
-    "}") +> newline
+    (if (null elses)
+      then mempty
+      else " else {" +>
+           indented (printJS elses) +>
+           "}") +> newline
   printJS (JsEarlyReturn exp) =
     "return " +> exp +> ";" +> newline
   printJS (JsThrow exp) =
@@ -137,7 +138,7 @@ instance Printable ModulePath where
 
 -- | Print an expression.
 instance Printable JsExp where
-  printJS (JsSeq es) = "(" +> intercalateM "," (map printJS es) +> ")"
+  printJS (JsSeq es) = "(" +> mintercalate "," (map printJS es) +> ")"
   printJS (JsRawExp e) = write e
   printJS (JsName name) = printJS name
   printJS (JsThrowExp exp) =
@@ -151,7 +152,7 @@ instance Printable JsExp where
   printJS (JsParen exp) =
     "(" +> exp +> ")"
   printJS (JsList exps) =
-    "[" +> intercalateM "," (map printJS exps) +> printJS "]"
+    "[" +> mintercalate "," (map printJS exps) +> "]"
   printJS (JsNew name args) =
     "new " +> JsApp (JsName name) args
   printJS (JsIndex i exp) =
@@ -176,28 +177,26 @@ instance Printable JsExp where
   printJS (JsInstanceOf exp classname) =
     exp +> " instanceof " +> classname
   printJS (JsObj assoc) =
-    "{" +> intercalateM "," (map cons assoc) +> "}"
+    "{" +> mintercalate "," (map cons assoc) +> "}"
       where cons (key,value) = "\"" +> key +> "\": " +> value
   printJS (JsLitObj assoc) =
-    "{" +> intercalateM "," (map cons assoc) +> "}"
-      where
-        cons :: (N.Name, JsExp) -> Printer ()
-        cons (key,value) = "\"" +> key +> "\": " +> value
+    "{" +> mintercalate "," (map cons assoc) +> "}"
+      where cons (key,value) = "\"" +> key +> "\": " +> value
   printJS (JsFun nm params stmts ret) =
        "function"
-    +> maybe (return ()) ((" " +>) . printJS . ident) nm
+    +> maybe mempty ((" " +>) . printJS . ident) nm
     +> "("
-    +> intercalateM "," (map printJS params)
+    +> mintercalate "," (map printJS params)
     +> "){" +> newline
     +> indented (stmts +>
                  case ret of
                    Just ret' -> "return " +> ret' +> ";" +> newline
-                   Nothing   -> return ())
+                   Nothing   -> mempty)
     +> "}"
   printJS (JsApp op args) =
     (if isFunc op then JsParen op else op)
     +> "("
-    +> (intercalateM "," (map printJS args))
+    +> mintercalate "," (map printJS args)
     +> ")"
      where isFunc JsFun{..} = True; isFunc _ = False
   printJS (JsNegApp args) =
@@ -219,38 +218,40 @@ instance Printable JsName where
     case name of
       JsNameVar qname     -> printJS qname
       JsThis              -> write "this"
-      JsThunk             -> write "Fay$$$"
-      JsForce             -> write "Fay$$_"
-      JsApply             -> write "Fay$$__"
+      JsThunk             -> writeThunkish "Fay$$$" "$"
+      JsForce             -> writeThunkish "Fay$$_" "_"
+      JsApply             -> writeThunkish "Fay$$__" "__"
       JsParam i           -> write ("$p" ++ show i)
       JsTmp i             -> write ("$tmp" ++ show i)
       JsConstructor qname -> printCons qname
       JsBuiltIn qname     -> "Fay$$" +> printJS qname
       JsParametrizedType  -> write "type"
       JsModuleName (ModuleName _ m) -> write m
+    where writeThunkish ugly pretty = askP $ \pr ->
+            write $ if prPrettyThunks pr then pretty else ugly
 
 -- | Print a constructor name given a QName.
-printCons :: N.QName -> Printer ()
+printCons :: N.QName -> Printer
 printCons (UnQual _ n) = printConsName n
 printCons (Qual _ (ModuleName _ m) n) = printJS m +> "." +> printConsName n
 printCons (Special {}) = error "qname2String Special"
 
 -- | Print an unqualified name.
-printConsUnQual :: N.QName -> Printer ()
+printConsUnQual :: N.QName -> Printer
 printConsUnQual (UnQual _ x) = printJS x
 printConsUnQual (Qual _ _ n) = printJS n
 printConsUnQual (Special {}) = error "printConsUnqual Special"
 
 -- | Print a constructor name given a Name. Helper for printCons.
-printConsName :: N.Name -> Printer ()
-printConsName n = write "_" >> printJS n
+printConsName :: N.Name -> Printer
+printConsName = (write "_" <>) . printJS
 
 -- | Just write out strings.
 instance Printable String where
   printJS = write
 
 -- | A printer is a printable.
-instance Printable (Printer ()) where
+instance Printable Printer where
   printJS = id
 
 --------------------------------------------------------------------------------
@@ -299,63 +300,55 @@ normalizeName = concatMap encodeChar
 
 
 -- | Print the given printer indented.
-indented :: Printer a -> Printer ()
-indented p = do
-  PrintState{..} <- get
-  if psPretty
-     then do modify $ \s -> s { psIndentLevel = psIndentLevel + 1 }
-             void p
-             modify $ \s -> s { psIndentLevel = psIndentLevel }
-     else void p
+indented :: Printer -> Printer
+indented p = askP $ \PrintReader{..} ->
+  if prPretty
+  then addToIndentLevel 1 <> p <> addToIndentLevel (-1)
+  else p
+  where addToIndentLevel d = modifyP (\s@PrintState{..} -> s { psIndentLevel = psIndentLevel + d } )
 
 -- | Output a newline.
-newline :: Printer ()
-newline = do
-  PrintState{..} <- get
-  when psPretty $ do
-    write "\n"
-    modify $ \s -> s { psNewline = True }
+newline :: Printer
+newline = askP  $ \PrintReader{..} ->
+  whenP prPretty $ write "\n" <> (modifyP $ \s -> s { psNewline = True })
+
 
 -- | Write out a string, updating the current position information.
-write :: String -> Printer ()
-write x = do
-  PrintState{..} <- get
-  let out = if psNewline then replicate (2*psIndentLevel) ' ' ++ x else x
-  modify $ \s -> s { psOutput  = out : psOutput
-                   , psLine    = psLine + additionalLines
-                   , psColumn  = if additionalLines > 0
-                                    then length (concat (take 1 (reverse srclines)))
-                                    else psColumn + length x
-                   , psNewline = False
-                   }
-  return (error "Nothing to return for writer string.")
-
-  where srclines = lines x
+write :: String -> Printer
+write x = p <> q
+  where p = getP $ \PrintState{..} -> 
+          let out = if psNewline 
+                    then replicate (2*psIndentLevel) ' ' ++ x
+                    else x
+          in tellP mempty { pwOutput = [out] }
+        q = modifyP $ \s@PrintState{..} -> 
+          s { psLine    = psLine + additionalLines
+            , psColumn  = if additionalLines > 0
+                          then length (concat (take 1 (reverse srclines)))
+                          else psColumn + length x
+            , psNewline = False
+            }
+        srclines = lines x
         additionalLines = length (filter (=='\n') x)
 
+
 -- | Generate a mapping from the Haskell location to the current point in the output.
-mapping :: SrcSpan -> Printer ()
-mapping SrcSpan{..} = do
-  modify $ \s -> s  { psMappings = m s : psMappings s }
-  return ()
+mapping :: SrcSpan -> Printer
+mapping SrcSpan{..} =
+  getP $ \PrintState{..} -> 
+    let m = Mapping { mapGenerated = Pos (fromIntegral (psLine))
+                                         (fromIntegral (psColumn))
+                    , mapOriginal = Just (Pos (fromIntegral srcSpanStartLine)
+                                              (fromIntegral srcSpanStartColumn - 1))
+                    , mapSourceFile = Just srcSpanFilename
+                    , mapName = Nothing
+                    }
+    in tellP $ mempty { pwMappings = [m] }
 
-  where m ps = Mapping { mapGenerated = Pos (fromIntegral (psLine ps))
-                                            (fromIntegral (psColumn ps))
-                       , mapOriginal = Just (Pos (fromIntegral srcSpanStartLine)
-                                                 (fromIntegral srcSpanStartColumn - 1))
-                       , mapSourceFile = Just srcSpanFilename
-                       , mapName = Nothing
-                       }
-
--- | Intercalate monadic action.
-intercalateM :: String -> [Printer a] -> Printer ()
-intercalateM _ [] = return ()
-intercalateM _ [x] = void x
-intercalateM str (x:xs) = do
-  void x
-  write str
-  intercalateM str xs
+-- | Intercalate monoids.
+mintercalate :: String -> [Printer] -> Printer
+mintercalate str xs = mconcat $ intersperse (write str) xs
 
 -- | Concatenate two printables.
-(+>) :: (Printable a, Printable b) => a -> b -> Printer ()
-pa +> pb = printJS pa >> printJS pb
+(+>) :: (Printable a, Printable b) => a -> b -> Printer
+pa +> pb = printJS pa <> printJS pb

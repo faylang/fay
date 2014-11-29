@@ -44,7 +44,7 @@ import           Fay.Types
 
 import           Control.Monad.Error
 import           Control.Monad.RWS
-import           Control.Monad.State
+
 import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated hiding (name)
 import           Language.Haskell.Names
@@ -57,16 +57,15 @@ compileViaStr
 
   :: FilePath
   -> Config
-  -> PrintState
   -> (F.Module -> Compile [JsStmt])
   -> String
-  -> IO (Either CompileError (PrintState,CompileState,CompileWriter))
-compileViaStr filepath cfg printState with from = do
+  -> IO (Either CompileError (Printer,CompileState,CompileWriter))
+compileViaStr filepath cfg with from = do
   rs <- defaultCompileReader cfg
   runTopCompile rs
              defaultCompileState
              (parseResult (throwError . uncurry ParseError)
-                          (fmap (\x -> execState (runPrinter (printJS x)) printState) . with)
+                          (fmap printJS . with)
                           (parseFay filepath from))
 
 -- | Compile the top-level Fay module.

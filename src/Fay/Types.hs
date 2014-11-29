@@ -20,7 +20,16 @@ module Fay.Types
   ,FundamentalType(..)
   ,PrintState(..)
   ,defaultPrintState
+  ,PrintReader(..)
+  ,defaultPrintReader
+  ,PrintWriter(..)
   ,Printer(..)
+  ,execPrinter
+  ,askP
+  ,getP
+  ,modifyP
+  ,tellP
+  ,whenP
   ,SerializeContext(..)
   ,ModulePath (unModulePath)
   ,mkModulePath
@@ -41,7 +50,6 @@ import           Fay.Types.ModulePath
 import           Control.Monad.Error               (ErrorT, MonadError)
 import           Control.Monad.Identity            (Identity)
 import           Control.Monad.RWS
-import           Control.Monad.State
 import           Data.Map                          (Map)
 import           Data.Set                          (Set)
 import           Distribution.HaskellSuite.Modules
@@ -114,33 +122,72 @@ instance MonadModule Compile where
 liftModuleT :: ModuleT Symbols IO a -> Compile a
 liftModuleT = Compile . lift . lift
 
+
+-- | Global options of the printer
+data PrintReader = PrintReader
+  { prPretty       :: Bool      -- ^ Are we to pretty print?
+  }
+
+defaultPrintReader :: PrintReader
+defaultPrintReader = PrintReader False
+
+
+-- | Output of printer
+data PrintWriter = PrintWriter
+  { pwMappings    :: [Mapping] -- ^ Source mappings.
+  , pwOutput      :: [String]  -- ^ The current output. TODO: Make more efficient.
+  }
+
+
+-- | Reverse concatenation (generated output need to be reversed)
+instance Monoid PrintWriter where
+  mempty =  PrintWriter [] []
+  mappend (PrintWriter a b) (PrintWriter x y) = PrintWriter (x ++ a) (y ++ b)
+
 -- | The state of the pretty printer.
 data PrintState = PrintState
-  { psPretty      :: Bool      -- ^ Are we to pretty print?
-  , psLine        :: Int       -- ^ The current line.
+  { psLine        :: Int       -- ^ The current line.
   , psColumn      :: Int       -- ^ Current column.
-  , psMappings    :: [Mapping] -- ^ Source mappings.
   , psIndentLevel :: Int       -- ^ Current indentation level.
-  , psOutput      :: [String]  -- ^ The current output. TODO: Make more efficient.
   , psNewline     :: Bool      -- ^ Just outputted a newline?
   }
 
 -- | Default state.
 defaultPrintState :: PrintState
-defaultPrintState = PrintState False 0 0 [] 0 [] False
+defaultPrintState = PrintState 0 0 0 False
 
--- | The printer monad.
-newtype Printer a = Printer { runPrinter :: State PrintState a }
-  deriving
-    ( Applicative
-    , Functor
-    , Monad
-    , MonadState PrintState
-    )
+-- | The printer.
+newtype Printer = Printer
+  { runPrinter :: RWS PrintReader PrintWriter PrintState ()
+  }
+
+execPrinter :: Printer -> PrintReader -> PrintWriter
+execPrinter (Printer p) r = snd $ execRWS p r defaultPrintState
+
+-- | monadic functions
+askP :: (PrintReader -> Printer) -> Printer
+askP f = Printer $ ask >>= (\r -> runPrinter (f r))
+
+getP :: (PrintState -> Printer) -> Printer
+getP f = Printer $ get >>= (\s -> runPrinter (f s))
+
+modifyP :: (PrintState -> PrintState) -> Printer
+modifyP f = Printer $ modify f
+
+tellP :: PrintWriter -> Printer
+tellP = Printer . tell
+
+whenP :: Bool -> Printer -> Printer
+whenP b p = if b then p else mempty
+
+
+instance Monoid Printer where
+  mempty = Printer $ return ()
+  mappend (Printer p) (Printer q) = Printer (p >> q)
 
 -- | Print some value.
 class Printable a where
-  printJS :: a -> Printer ()
+  printJS :: a -> Printer
 
 -- | The JavaScript FFI interfacing monad.
 newtype Fay a = Fay (Identity a)

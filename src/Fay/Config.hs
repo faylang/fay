@@ -23,6 +23,7 @@ module Fay.Config
       , configTypecheckOnly
       , configRuntimePath
       , configOptimizeNewtypes
+      , configPrettyThunks
       )
   , defaultConfig
   , defaultConfigWithSandbox
@@ -72,6 +73,7 @@ data Config = Config
   , configTypecheckOnly      :: Bool                        -- ^ Only invoke GHC for typechecking, don't produce any output
   , configRuntimePath        :: Maybe FilePath
   , configOptimizeNewtypes   :: Bool                        -- ^ Optimize away newtype constructors?
+  , configPrettyThunks       :: Bool                        -- ^ Use pretty thunk names?
   } deriving (Show)
 
 
@@ -101,6 +103,7 @@ defaultConfig = addConfigPackage "fay-base"
     , configRuntimePath        = Nothing
     , configSourceMap          = False
     , configOptimizeNewtypes   = True
+    , configPrettyThunks       = False
     }
 
 defaultConfigWithSandbox :: IO Config

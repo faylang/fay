@@ -126,10 +126,11 @@ liftModuleT = Compile . lift . lift
 -- | Global options of the printer
 data PrintReader = PrintReader
   { prPretty       :: Bool      -- ^ Are we to pretty print?
+  , prPrettyThunks :: Bool      -- ^ Use pretty thunk names?
   }
 
 defaultPrintReader :: PrintReader
-defaultPrintReader = PrintReader False
+defaultPrintReader = PrintReader False False
 
 
 -- | Output of printer

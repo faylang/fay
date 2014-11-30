@@ -138,12 +138,20 @@ compileToModule filepath config raw with hscode = do
             , state
             )
       where
-        pw = execPrinter (runtime <> printer <> main) pr
+        pw = execPrinter (runtime <> aliases <> printer <> main) pr
         runtime = whenP (configExportRuntime config) $
           write raw
+        aliases = whenP (configPrettyThunks config) $
+          write . unlines $ [ "var $ = Fay$$$;"
+                            , "var _ = Fay$$_;"
+                            , "var __ = Fay$$__;"
+                            ]
         main = whenP (not $ configLibrary config) $
           write $ "Fay$$_(" ++ modulename ++ ".main, true);\n"
-        pr = defaultPrintReader { prPretty = configPrettyPrint config }
+        pr = defaultPrintReader
+          { prPrettyThunks = configPrettyThunks config
+          , prPretty       = configPrettyPrint config
+          }
 
 -- | Convert a Haskell filename to a JS filename.
 toJsName :: String -> String

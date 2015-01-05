@@ -1,5 +1,9 @@
 ## Changelog
 
+#### 0.19.4.2 (2015-01-05)
+
+* Allow `fay 0.22.*`.
+
 #### 0.19.4.1 (2014-10-25)
 
 * Merged fay-base into the main fay repository.

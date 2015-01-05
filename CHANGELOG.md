@@ -2,6 +2,11 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+## 0.22.0.0
+
+* Add a `--pretty-thunks` flag and compiler option that replaces `Fay$$_` and `Fay$$$` with `_` and `$` respectively. Consider this a development flag since it may clash with JS libraries (notably jQuery and underscore)
+* Allow `language-ecmascript 0.17.*`
+
 #### 0.21.2.1 (2014-11-10)
 
 * Hide all packages by default when typechecking. This avoids conflicting with packages that haven't been specified on the command-line with `--package`, e.g. the `text` package when you import `Data.Text`.

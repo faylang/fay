@@ -28,6 +28,7 @@ module Fay.Types
   , execPrinter
   , indented
   , ifPrettyThunks
+  , ifPrettyOperators
   , newline
   , write
   , mapping

@@ -48,9 +48,26 @@ instance Printable (QName l) where
   printJS qname =
     case qname of
       Qual _ (ModuleName _ "Fay$") name -> "Fay$$" <> printJS name
-      Qual _ moduleName name -> printJS moduleName <> "." <> printJS name
+      Qual _ moduleName name -> printJS moduleName <> printProp name
       UnQual _ name -> printJS name
       Special _ con -> printJS con
+
+-- | Prints pretty operators.
+-- prPrettyOperator flag determines the way of accessing operators (e.g. `($)`) and
+-- identifiers with apostrophes (e.g. `length'`). If prPrettyOperators is set true,
+-- then these will be accessed with square brackets (e.g. Prelude["$"] or
+-- Prelude["length'"]). Otherwise special characters will be escaped and accessed
+-- with dot (e.g. Prelude.$36$ or Prelude.length$39$). Alphanumeric_ identifiers are
+-- always accessed with dot operator (e.g. Prelude.length)
+printProp :: Name l -> Printer
+printProp name = ifPrettyOperators pretty ugly
+  where pretty = if all (`elem` allowedNameChars) nameString then dot else brackets
+        ugly = dot
+        dot = "." <> printJS name
+        brackets = "[" <> write (toJsStringLit nameString) <> "]"
+        nameString = case name of
+          Ident _ s  -> s
+          Symbol _ s -> s
 
 -- | Print module name.
 instance Printable (ModuleName l) where

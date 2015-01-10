@@ -24,6 +24,7 @@ module Fay.Config
       , configRuntimePath
       , configOptimizeNewtypes
       , configPrettyThunks
+      , configPrettyOperators
       )
   , defaultConfig
   , defaultConfigWithSandbox
@@ -74,6 +75,7 @@ data Config = Config
   , configRuntimePath        :: Maybe FilePath
   , configOptimizeNewtypes   :: Bool                        -- ^ Optimize away newtype constructors?
   , configPrettyThunks       :: Bool                        -- ^ Use pretty thunk names?
+  , configPrettyOperators    :: Bool                        -- ^ Use pretty operators?
   } deriving (Show)
 
 defaultConfig :: Config
@@ -103,6 +105,7 @@ defaultConfig = addConfigPackage "fay-base"
     , configSourceMap          = False
     , configOptimizeNewtypes   = True
     , configPrettyThunks       = False
+    , configPrettyOperators    = False
     }
 
 defaultConfigWithSandbox :: IO Config

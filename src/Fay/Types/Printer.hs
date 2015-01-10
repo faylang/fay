@@ -12,6 +12,7 @@ module Fay.Types.Printer
   , newline
   , write
   , ifPrettyThunks
+  , ifPrettyOperators
   , mapping
   ) where
 
@@ -25,11 +26,12 @@ import SourceMap.Types
 data PrintReader = PrintReader
   { prPretty          :: Bool      -- ^ Are we to pretty print?
   , prPrettyThunks    :: Bool      -- ^ Use pretty thunk names?
+  , prPrettyOperators :: Bool      -- ^ Use pretty operators?
   }
 
 -- | default printer options (non-pretty printing)
 defaultPrintReader :: PrintReader
-defaultPrintReader = PrintReader False False
+defaultPrintReader = PrintReader False False False
 
 -- | Output of printer
 data PrintWriter = PrintWriter
@@ -117,6 +119,10 @@ instance IsString Printer where
 -- | exec one of Printers depending on PrintReader property.
 asksIf :: (PrintReader -> Bool) -> Printer -> Printer -> Printer
 asksIf f (Printer p) (Printer q) = Printer $ asks f >>= (\b -> if b then p else q)
+
+-- | Test prPrettyOperator flag
+ifPrettyOperators :: Printer -> Printer -> Printer
+ifPrettyOperators = asksIf prPrettyOperators
 
 -- | Test prPrettyThunks flag
 ifPrettyThunks :: Printer -> Printer -> Printer

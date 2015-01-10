@@ -150,6 +150,7 @@ compileToModule filepath config raw with hscode = do
         pr = defaultPrintReader
           { prPrettyThunks    = configPrettyThunks config
           , prPretty          = configPrettyPrint config
+          , prPrettyOperators = configPrettyOperators config
           }
 
 -- | Convert a Haskell filename to a JS filename.

@@ -65,7 +65,7 @@ compileViaStr filepath cfg with from = do
   runTopCompile rs
              defaultCompileState
              (parseResult (throwError . uncurry ParseError)
-                          (fmap printJS . with)
+                          (fmap (mconcat . map printJS) . with)
                           (parseFay filepath from))
 
 -- | Compile the top-level Fay module.

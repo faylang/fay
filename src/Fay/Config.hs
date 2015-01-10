@@ -76,7 +76,6 @@ data Config = Config
   , configPrettyThunks       :: Bool                        -- ^ Use pretty thunk names?
   } deriving (Show)
 
-
 defaultConfig :: Config
 defaultConfig = addConfigPackage "fay-base"
   Config
@@ -138,8 +137,6 @@ addConfigDirectoryIncludes pkgFps cfg = foldl (\c (pkg,fp) -> addConfigDirectory
 -- | Add several include directories without package references.
 addConfigDirectoryIncludePaths :: [FilePath] -> Config -> Config
 addConfigDirectoryIncludePaths fps cfg = foldl (flip (addConfigDirectoryInclude Nothing)) cfg fps
-
-
 
 -- | Reading _configPackages is safe to do.
 configPackages :: Config -> [String]

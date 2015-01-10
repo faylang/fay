@@ -32,8 +32,6 @@ import           Fay.Compiler.Typecheck
 import           Fay.Config
 import qualified Fay.Exts                               as F
 import           Fay.Types
-import           Fay.Types.CompileResult
-
 import           Data.Aeson                             (encode)
 import qualified Data.ByteString.Lazy                   as L
 import           Language.Haskell.Exts.Annotated        (prettyPrint)
@@ -133,24 +131,25 @@ compileToModule filepath config raw with hscode = do
   return $ case result of
     Left err -> Left err
     Right (printer,state@CompileState{ stateModuleName = (ModuleName _ modulename) },_) ->
-      Right ((concat . reverse . pwOutput $ pw)
+      Right ( pwOutputString pw
             , if null (pwMappings pw) then Nothing else Just (pwMappings pw)
             , state
             )
       where
         pw = execPrinter (runtime <> aliases <> printer <> main) pr
-        runtime = whenP (configExportRuntime config) $
-          write raw
-        aliases = whenP (configPrettyThunks config) $
-          write . unlines $ [ "var $ = Fay$$$;"
-                            , "var _ = Fay$$_;"
-                            , "var __ = Fay$$__;"
-                            ]
-        main = whenP (not $ configLibrary config) $
-          write $ "Fay$$_(" ++ modulename ++ ".main, true);\n"
+        runtime = if (configExportRuntime config) then write raw else mempty
+        aliases = if (configPrettyThunks config)
+                  then write . unlines $ [ "var $ = Fay$$$;"
+                                         , "var _ = Fay$$_;"
+                                         , "var __ = Fay$$__;"
+                                         ]
+                  else mempty
+        main = if (not $ configLibrary config)
+               then write $ "Fay$$_(" ++ modulename ++ ".main, true);\n"
+               else mempty
         pr = defaultPrintReader
-          { prPrettyThunks = configPrettyThunks config
-          , prPretty       = configPrettyPrint config
+          { prPrettyThunks    = configPrettyThunks config
+          , prPretty          = configPrettyPrint config
           }
 
 -- | Convert a Haskell filename to a JS filename.

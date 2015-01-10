@@ -4,37 +4,38 @@
 -- | All Fay types and instances.
 
 module Fay.Types
-  (JsStmt(..)
-  ,JsExp(..)
-  ,JsLit(..)
-  ,JsName(..)
-  ,CompileError(..)
-  ,Compile(..)
-  ,CompileModule
-  ,Printable(..)
-  ,Fay
-  ,CompileReader(..)
-  ,CompileWriter(..)
-  ,Config(..)
-  ,CompileState(..)
-  ,FundamentalType(..)
-  ,PrintState(..)
-  ,defaultPrintState
-  ,PrintReader(..)
-  ,defaultPrintReader
-  ,PrintWriter(..)
-  ,Printer(..)
-  ,execPrinter
-  ,askP
-  ,getP
-  ,modifyP
-  ,tellP
-  ,whenP
-  ,SerializeContext(..)
-  ,ModulePath (unModulePath)
-  ,mkModulePath
-  ,mkModulePaths
-  ,mkModulePathFromQName
+  ( JsStmt(..)
+  , JsExp(..)
+  , JsLit(..)
+  , JsName(..)
+  , CompileError(..)
+  , Compile(..)
+  , CompileModule
+  , Printable(..)
+  , Fay
+  , CompileReader(..)
+  , CompileResult(..)
+  , CompileWriter(..)
+  , Config(..)
+  , CompileState(..)
+  , FundamentalType(..)
+  , PrintReader(..)
+  , defaultPrintReader
+  , PrintWriter
+  , pwMappings
+  , pwOutputString
+  , Printer(..)
+  , execPrinter
+  , indented
+  , ifPrettyThunks
+  , newline
+  , write
+  , mapping
+  , SerializeContext(..)
+  , ModulePath (unModulePath)
+  , mkModulePath
+  , mkModulePaths
+  , mkModulePathFromQName
   ) where
 
 import           Fay.Compiler.Prelude
@@ -43,9 +44,11 @@ import           Fay.Config
 import qualified Fay.Exts.NoAnnotation             as N
 import qualified Fay.Exts.Scoped                   as S
 import           Fay.Types.CompileError
+import           Fay.Types.CompileResult
 import           Fay.Types.FFI
 import           Fay.Types.Js
 import           Fay.Types.ModulePath
+import           Fay.Types.Printer
 
 import           Control.Monad.Error               (ErrorT, MonadError)
 import           Control.Monad.Identity            (Identity)
@@ -54,7 +57,6 @@ import           Data.Map                          (Map)
 import           Data.Set                          (Set)
 import           Distribution.HaskellSuite.Modules
 import           Language.Haskell.Names            (Symbols)
-import           SourceMap.Types
 
 --------------------------------------------------------------------------------
 -- Compiler types
@@ -121,74 +123,6 @@ instance MonadModule Compile where
 
 liftModuleT :: ModuleT Symbols IO a -> Compile a
 liftModuleT = Compile . lift . lift
-
-
--- | Global options of the printer
-data PrintReader = PrintReader
-  { prPretty       :: Bool      -- ^ Are we to pretty print?
-  , prPrettyThunks :: Bool      -- ^ Use pretty thunk names?
-  }
-
-defaultPrintReader :: PrintReader
-defaultPrintReader = PrintReader False False
-
-
--- | Output of printer
-data PrintWriter = PrintWriter
-  { pwMappings    :: [Mapping] -- ^ Source mappings.
-  , pwOutput      :: [String]  -- ^ The current output. TODO: Make more efficient.
-  }
-
-
--- | Reverse concatenation (generated output need to be reversed)
-instance Monoid PrintWriter where
-  mempty =  PrintWriter [] []
-  mappend (PrintWriter a b) (PrintWriter x y) = PrintWriter (x ++ a) (y ++ b)
-
--- | The state of the pretty printer.
-data PrintState = PrintState
-  { psLine        :: Int       -- ^ The current line.
-  , psColumn      :: Int       -- ^ Current column.
-  , psIndentLevel :: Int       -- ^ Current indentation level.
-  , psNewline     :: Bool      -- ^ Just outputted a newline?
-  }
-
--- | Default state.
-defaultPrintState :: PrintState
-defaultPrintState = PrintState 0 0 0 False
-
--- | The printer.
-newtype Printer = Printer
-  { runPrinter :: RWS PrintReader PrintWriter PrintState ()
-  }
-
-execPrinter :: Printer -> PrintReader -> PrintWriter
-execPrinter (Printer p) r = snd $ execRWS p r defaultPrintState
-
--- | monadic functions
-askP :: (PrintReader -> Printer) -> Printer
-askP f = Printer $ ask >>= (\r -> runPrinter (f r))
-
-getP :: (PrintState -> Printer) -> Printer
-getP f = Printer $ get >>= (\s -> runPrinter (f s))
-
-modifyP :: (PrintState -> PrintState) -> Printer
-modifyP f = Printer $ modify f
-
-tellP :: PrintWriter -> Printer
-tellP = Printer . tell
-
-whenP :: Bool -> Printer -> Printer
-whenP b p = if b then p else mempty
-
-
-instance Monoid Printer where
-  mempty = Printer $ return ()
-  mappend (Printer p) (Printer q) = Printer (p >> q)
-
--- | Print some value.
-class Printable a where
-  printJS :: a -> Printer
 
 -- | The JavaScript FFI interfacing monad.
 newtype Fay a = Fay (Identity a)

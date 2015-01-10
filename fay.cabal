@@ -111,6 +111,7 @@ library
     Fay.Types.FFI
     Fay.Types.Js
     Fay.Types.ModulePath
+    Fay.Types.Printer
     Paths_fay
   build-depends:
       base >= 4 && < 4.8

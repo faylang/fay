@@ -39,6 +39,7 @@ data PrintWriter = PrintWriter
   , pwOutput      :: ShowS     -- ^ The current output.
   }
 
+pwOutputString :: PrintWriter -> String
 pwOutputString (PrintWriter _ out) = out ""
 
 -- | Output concatenation

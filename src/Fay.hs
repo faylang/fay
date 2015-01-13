@@ -27,7 +27,6 @@ import           Fay.Compiler
 import           Fay.Compiler.Misc                      (ioWarn, printSrcSpanInfo)
 import           Fay.Compiler.Packages
 import           Fay.Compiler.Prelude
-import           Fay.Compiler.Print
 import           Fay.Compiler.Typecheck
 import           Fay.Config
 import qualified Fay.Exts                               as F

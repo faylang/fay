@@ -60,7 +60,7 @@ instance Printable (QName l) where
 -- with dot (e.g. Prelude.$36$ or Prelude.length$39$). Alphanumeric_ identifiers are
 -- always accessed with dot operator (e.g. Prelude.length)
 printProp :: Name l -> Printer
-printProp name = ifPrettyOperators pretty ugly
+printProp name = askIf prPrettyOperators pretty ugly
   where pretty = if all (`elem` allowedNameChars) nameString then dot else brackets
         ugly = dot
         dot = "." <> printJS name
@@ -207,9 +207,9 @@ instance Printable JsName where
     case name of
       JsNameVar qname     -> printJS qname
       JsThis              -> "this"
-      JsThunk             -> ifPrettyThunks "$" "Fay$$$"
-      JsForce             -> ifPrettyThunks "_" "Fay$$_"
-      JsApply             -> ifPrettyThunks "__" "Fay$$__"
+      JsThunk             -> askIf prPrettyThunks "$" "Fay$$$"
+      JsForce             -> askIf prPrettyThunks "_" "Fay$$_"
+      JsApply             -> askIf prPrettyThunks "__" "Fay$$__"
       JsParam i           -> "$p" <> (write $ show i)
       JsTmp i             -> "$tmp" <> (write $ show i)
       JsConstructor qname -> printCons qname

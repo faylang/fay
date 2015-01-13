@@ -19,16 +19,16 @@ module Fay.Types
   , Config(..)
   , CompileState(..)
   , FundamentalType(..)
+  , PrintState(..)
+  , defaultPrintState
   , PrintReader(..)
   , defaultPrintReader
-  , PrintWriter
-  , pwMappings
+  , PrintWriter(..)
   , pwOutputString
   , Printer(..)
   , execPrinter
   , indented
-  , ifPrettyThunks
-  , ifPrettyOperators
+  , askIf
   , newline
   , write
   , mapping

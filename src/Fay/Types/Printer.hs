@@ -2,24 +2,24 @@
 module Fay.Types.Printer
   ( PrintReader(..)
   , defaultPrintReader
-  , PrintWriter
+  , PrintWriter(..)
   , pwOutputString
-  , pwMappings
+  , PrintState(..)
+  , defaultPrintState
   , Printer(..)
   , Printable(..)
   , execPrinter
   , indented
   , newline
   , write
-  , ifPrettyThunks
-  , ifPrettyOperators
+  , askIf
   , mapping
   ) where
 
 import Control.Monad.RWS
 import Data.List                       (elemIndex)
 import Data.String
-import Language.Haskell.Exts.Annotated 
+import Language.Haskell.Exts.Annotated
 import SourceMap.Types
 
 -- | Global options of the printer
@@ -82,7 +82,7 @@ indented (Printer p) = Printer $ asks prPretty >>= \pretty ->
   where addToIndentLevel d = modify (\ps -> ps { psIndentLevel = psIndentLevel ps + d })
 
 -- | Output a newline and makes next line indented when prPretty is True.
---   Does nothing whenprPretty is False
+--   Does nothing when prPretty is False
 newline :: Printer
 newline = Printer $ asks prPretty >>= flip when writeNewline
   where writeNewline = (writeRWS "\n" >> modify (\s -> s {psNewline = True}))
@@ -113,25 +113,16 @@ writeRWS x = do
          }
 
 -- | Write out a string, updating the current position information.
-  
 instance IsString Printer where
   fromString = write
 
 -- | exec one of Printers depending on PrintReader property.
-asksIf :: (PrintReader -> Bool) -> Printer -> Printer -> Printer
-asksIf f (Printer p) (Printer q) = Printer $ asks f >>= (\b -> if b then p else q)
-
--- | Test prPrettyOperator flag
-ifPrettyOperators :: Printer -> Printer -> Printer
-ifPrettyOperators = asksIf prPrettyOperators
-
--- | Test prPrettyThunks flag
-ifPrettyThunks :: Printer -> Printer -> Printer
-ifPrettyThunks = asksIf prPrettyThunks
+askIf :: (PrintReader -> Bool) -> Printer -> Printer -> Printer
+askIf f (Printer p) (Printer q) = Printer $ asks f >>= (\b -> if b then p else q)
 
 -- | Generate a mapping from the Haskell location to the current point in the output.
 mapping :: SrcSpan -> Printer
-mapping srcSpan = Printer $ get >>= \ps -> 
+mapping srcSpan = Printer $ get >>= \ps ->
     let m = Mapping { mapGenerated = Pos (fromIntegral (psLine ps))
                                          (fromIntegral (psColumn ps))
                     , mapOriginal = Just (Pos (fromIntegral (srcSpanStartLine srcSpan))

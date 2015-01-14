@@ -1,4 +1,4 @@
--- | Main compiler executable.
+\-- | Main compiler executable.
 
 module Main where
 
@@ -44,6 +44,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optNoOptimizeNewtypes :: Bool
   , optPrettyThunks       :: Bool
   , optPrettyOperators    :: Bool
+  , optPrettyAll          :: Bool
   }
 
 -- | Main entry point.
@@ -55,7 +56,7 @@ main = do
         addConfigPackages (optPackages opts) $ config'
           { configOptimize         = optOptimize opts
           , configFlattenApps      = optFlattenApps opts
-          , configPrettyPrint      = optPretty opts
+          , configPrettyPrint      = optPretty opts || optPrettyAll opts
           , configLibrary          = optLibrary opts
           , configHtmlWrapper      = optHTMLWrapper opts
           , configHtmlJSLibs       = optHTMLJSLibs opts
@@ -72,8 +73,8 @@ main = do
           , configRuntimePath      = optRuntimePath opts
           , configSourceMap        = optSourceMap opts
           , configOptimizeNewtypes = not $ optNoOptimizeNewtypes opts
-          , configPrettyThunks     = optPrettyThunks opts
-          , configPrettyOperators  = optPrettyOperators opts
+          , configPrettyThunks     = optPrettyThunks opts || optPrettyAll opts
+          , configPrettyOperators  = optPrettyOperators opts || optPrettyAll opts
           }
   if optVersion opts
     then runCommandVersion
@@ -127,6 +128,7 @@ options = FayCompilerOptions
   <*> switch (long "no-optimized-newtypes" <> help "Remove optimizations for newtypes, treating them as normal data types")
   <*> switch (long "pretty-thunks" <> help "Use pretty thunk names")
   <*> switch (long "pretty-operators" <> help "Use pretty operators")
+  <*> switch (long "pretty-all" <> help "Pretty print, pretty operators and pretty thunks"
   where
     strsOption :: Mod OptionFields [String] -> Parser [String]
     strsOption m = option (ReadM . fmap (wordsBy (== ',')) $ ask) (m <> value [])

@@ -1,4 +1,4 @@
-\-- | Main compiler executable.
+-- | Main compiler executable.
 
 module Main where
 
@@ -16,35 +16,35 @@ import qualified Control.Exception as E
 
 -- | Options and help.
 data FayCompilerOptions = FayCompilerOptions
-  { optLibrary            :: Bool
-  , optFlattenApps        :: Bool
-  , optHTMLWrapper        :: Bool
-  , optHTMLJSLibs         :: [String]
-  , optInclude            :: [String]
-  , optPackages           :: [String]
-  , optWall               :: Bool
-  , optNoGHC              :: Bool
-  , optStdout             :: Bool
-  , optVersion            :: Bool
-  , optOutput             :: Maybe String
-  , optPretty             :: Bool
-  , optOptimize           :: Bool
+  { optBasePath           :: Maybe FilePath
   , optGClosure           :: Bool
-  , optPackageConf        :: Maybe String
+  , optFlattenApps        :: Bool
+  , optHTMLJSLibs         :: [String]
+  , optHTMLWrapper        :: Bool
+  , optInclude            :: [String]
+  , optLibrary            :: Bool
+  , optNoGHC              :: Bool
+  , optNoOptimizeNewtypes :: Bool
   , optNoRTS              :: Bool
   , optNoStdlib           :: Bool
+  , optOptimize           :: Bool
+  , optOutput             :: Maybe String
+  , optPackages           :: [String]
+  , optPackageConf        :: Maybe String
+  , optPrettyAll          :: Bool
+  , optPretty             :: Bool
+  , optPrettyOperators    :: Bool
+  , optPrettyThunks       :: Bool
   , optPrintRuntime       :: Bool
-  , optStdlibOnly         :: Bool
-  , optBasePath           :: Maybe FilePath
-  , optStrict             :: [String]
-  , optTypecheckOnly      :: Bool
   , optRuntimePath        :: Maybe FilePath
   , optSourceMap          :: Bool
+  , optStdlibOnly         :: Bool
+  , optStdout             :: Bool
+  , optStrict             :: [String]
+  , optTypecheckOnly      :: Bool
+  , optVersion            :: Bool
+  , optWall               :: Bool
   , optFiles              :: [String]
-  , optNoOptimizeNewtypes :: Bool
-  , optPrettyThunks       :: Bool
-  , optPrettyOperators    :: Bool
-  , optPrettyAll          :: Bool
   }
 
 -- | Main entry point.
@@ -96,39 +96,39 @@ main = do
 -- | All Fay's command-line options.
 options :: Parser FayCompilerOptions
 options = FayCompilerOptions
-  <$> switch (long "library" <> help "Don't automatically call main in generated JavaScript")
+  <$> optional (strOption $ long "base-path" <> help "If fay can't find the sources of fay-base you can use this to provide the path. Use --base-path ~/example instead of --base-path=~/example to make sure ~ is expanded properly")
+  <*> switch (long "closure" <> help "Provide help with Google Closure")
   <*> switch (long "flatten-apps" <> help "flatten function applicaton")
-  <*> switch (long "html-wrapper" <> help "Create an html file that loads the javascript")
   <*> strsOption (long "html-js-lib" <> metavar "file1[, ..]"
       <> help "javascript files to add to <head> if using option html-wrapper")
+  <*> switch (long "html-wrapper" <> help "Create an html file that loads the javascript")
   <*> strsOption (long "include" <> metavar "dir1[, ..]"
       <> help "additional directories for include")
-  <*> strsOption (long "package" <> metavar "package[, ..]"
-      <> help "packages to use for compilation")
-  <*> switch (long "Wall" <> help "Typecheck with -Wall")
+  <*> switch (long "library" <> help "Don't automatically call main in generated JavaScript")
   <*> switch (long "no-ghc" <> help "Don't typecheck, specify when not working with files")
-  <*> switch (long "stdout" <> short 's' <> help "Output to stdout")
-  <*> switch (long "version" <> help "Output version number")
-  <*> optional (strOption (long "output" <> short 'o' <> metavar "file" <> help "Output to specified file"))
-  <*> switch (long "pretty" <> short 'p' <> help "Pretty print the output")
-  <*> switch (long "optimize" <> short 'O' <> help "Apply optimizations to generated code")
-  <*> switch (long "closure" <> help "Provide help with Google Closure")
-  <*> optional (strOption (long "package-conf" <> help "Specify the Cabal package config file"))
+  <*> switch (long "no-optimized-newtypes" <> help "Remove optimizations for newtypes, treating them as normal data types")
   <*> switch (long "no-rts" <> short 'r' <> help "Don't export the RTS")
   <*> switch (long "no-stdlib" <> help "Don't generate code for the Prelude/FFI")
+  <*> switch (long "optimize" <> short 'O' <> help "Apply optimizations to generated code")
+  <*> optional (strOption (long "output" <> short 'o' <> metavar "file" <> help "Output to specified file"))
+  <*> strsOption (long "package" <> metavar "package[, ..]"
+      <> help "packages to use for compilation")
+  <*> optional (strOption (long "package-conf" <> help "Specify the Cabal package config file"))
+  <*> switch (long "pretty-all" <> help "Pretty print, pretty operators and pretty thunks")
+  <*> switch (long "pretty" <> short 'p' <> help "Pretty print the output")
+  <*> switch (long "pretty-operators" <> help "Use pretty operators")
+  <*> switch (long "pretty-thunks" <> help "Use pretty thunk names")
   <*> switch (long "print-runtime" <> help "Print the runtime JS source to stdout")
+  <*> optional (strOption $ long "runtime-path" <> help "Custom path to the runtime so you don't have to reinstall fay when modifying it")
+  <*> switch (long "sourcemap" <> help "Produce a source map in <outfile>.map")
   <*> switch (long "stdlib" <> help "Only output the stdlib")
-  <*> optional (strOption $ long "base-path" <> help "If fay can't find the sources of fay-base you can use this to provide the path. Use --base-path ~/example instead of --base-path=~/example to make sure ~ is expanded properly")
+  <*> switch (long "stdout" <> short 's' <> help "Output to stdout")
   <*> strsOption (long "strict" <> metavar "modulename[, ..]"
       <> help "Generate strict and uncurried exports for the supplied modules. Simplifies calling Fay from JS")
   <*> switch (long "typecheck-only" <> help "Only invoke GHC for typechecking, don't produce any output")
-  <*> optional (strOption $ long "runtime-path" <> help "Custom path to the runtime so you don't have to reinstall fay when modifying it")
-  <*> switch (long "sourcemap" <> help "Produce a source map in <outfile>.map")
+  <*> switch (long "version" <> help "Output version number")
+  <*> switch (long "Wall" <> help "Typecheck with -Wall")
   <*> many (argument (ReadM ask) (metavar "<hs-file>..."))
-  <*> switch (long "no-optimized-newtypes" <> help "Remove optimizations for newtypes, treating them as normal data types")
-  <*> switch (long "pretty-thunks" <> help "Use pretty thunk names")
-  <*> switch (long "pretty-operators" <> help "Use pretty operators")
-  <*> switch (long "pretty-all" <> help "Pretty print, pretty operators and pretty thunks"
   where
     strsOption :: Mod OptionFields [String] -> Parser [String]
     strsOption m = option (ReadM . fmap (wordsBy (== ',')) $ ask) (m <> value [])

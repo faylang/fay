@@ -170,9 +170,9 @@ function Fay$$fayToJs(type,fayObj){
         if (args == "automatic_function")
         {
           for (var i = 0; i < arguments.length; i++) {
-            fayFunc = Fay$$fayToJs(["automatic"], Fay$$_(fayFunc(Fay$$jsToFay(["automatic"],arguments[i])),true));
+            fayFunc = Fay$$_(fayFunc(Fay$$jsToFay(["automatic"],arguments[i])),true);
           }
-          return fayFunc;
+          return Fay$$fayToJs(["automatic"], fayFunc);
         }
 
         for (var i = 0, len = len; i < len - 1 && fayFunc instanceof Function; i++) {

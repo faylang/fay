@@ -295,8 +295,8 @@ return = ffi "Fay$$return(%1)"
 fail :: String -> Fay a
 fail = error
 
-when :: Bool -> Fay a -> Fay ()
-when p m = if p then m >> return () else return ()
+when :: Bool -> Fay () -> Fay ()
+when p m = if p then m else return ()
 
 unless :: Bool -> Fay a -> Fay ()
 unless p m = if p then return () else m >> return ()

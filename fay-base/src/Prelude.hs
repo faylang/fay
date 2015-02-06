@@ -298,8 +298,8 @@ fail = error
 when :: Bool -> Fay () -> Fay ()
 when p m = if p then m else return ()
 
-unless :: Bool -> Fay a -> Fay ()
-unless p m = if p then return () else m >> return ()
+unless :: Bool -> Fay () -> Fay ()
+unless p m = if p then return () else m
 
 forM :: [a] -> (a -> Fay b) -> Fay [b]
 forM lst fn = sequence $ map fn lst

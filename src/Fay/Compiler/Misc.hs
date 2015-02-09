@@ -19,7 +19,7 @@ import qualified Fay.Exts.NoAnnotation             as N
 import qualified Fay.Exts.Scoped                   as S
 import           Fay.Types
 
-import           Control.Monad.Error
+import           Control.Monad.Except
 import           Control.Monad.RWS
 import qualified Data.Map                          as M
 import           Data.Version                      (parseVersion)
@@ -268,11 +268,11 @@ runTopCompile
   -> CompileState
   -> Compile a
   -> IO (Either CompileError (a,CompileState,CompileWriter))
-runTopCompile reader' state' m = fst <$> runModuleT (runErrorT (runRWST (unCompile m) reader' state')) [] "fay" (\_fp -> return undefined) M.empty
+runTopCompile reader' state' m = fst <$> runModuleT (runExceptT (runRWST (unCompile m) reader' state')) [] "fay" (\_fp -> return undefined) M.empty
 
 -- | Runs compilation for a single module.
 runCompileModule :: CompileReader -> CompileState -> Compile a -> CompileModule a
-runCompileModule reader' state' m = runErrorT (runRWST (unCompile m) reader' state')
+runCompileModule reader' state' m = runExceptT (runRWST (unCompile m) reader' state')
 
 shouldBeDesugared :: (Functor f, Show (f ())) => f l -> Compile a
 shouldBeDesugared = throwError . ShouldBeDesugared . show . unAnn

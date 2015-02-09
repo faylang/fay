@@ -18,7 +18,7 @@ import           Fay.Compiler.QName              (unname, unQual)
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types                       (CompileError (..))
 
-import           Control.Monad.Error
+import           Control.Monad.Except
 import           Control.Monad.Reader            (asks)
 import qualified Data.Generics.Uniplate.Data     as U
 import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)

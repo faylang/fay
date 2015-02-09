@@ -43,7 +43,7 @@ import           Data.Ord
 import           Prelude             hiding (exp, mod)
 import           Safe
 
-import           Control.Monad.Error
+import           Control.Monad.Except
 import           System.Exit
 import           System.Process
 

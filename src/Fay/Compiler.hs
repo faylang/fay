@@ -42,7 +42,7 @@ import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
 
-import           Control.Monad.Error
+import           Control.Monad.Except
 import           Control.Monad.RWS
 
 import qualified Data.Set                        as S

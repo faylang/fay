@@ -13,7 +13,7 @@ import           Fay.Compiler.Prelude
 
 import           Fay.Types            (CompileError (..))
 
-import           Control.Monad.Error
+import           Control.Monad.Except
 import           Control.Monad.Reader
 
 data DesugarReader l = DesugarReader
@@ -24,7 +24,7 @@ data DesugarReader l = DesugarReader
 
 newtype Desugar l a = Desugar
   { unDesugar :: (ReaderT (DesugarReader l)
-                       (ErrorT CompileError IO))
+                       (ExceptT CompileError IO))
                        a
   } deriving ( MonadReader (DesugarReader l)
              , MonadError CompileError
@@ -36,4 +36,4 @@ newtype Desugar l a = Desugar
 
 runDesugar :: String -> l -> Desugar l a -> IO (Either CompileError a)
 runDesugar tmpNamePrefix emptyAnnotation m =
-    runErrorT (runReaderT (unDesugar m) (DesugarReader 0 emptyAnnotation tmpNamePrefix))
+    runExceptT (runReaderT (unDesugar m) (DesugarReader 0 emptyAnnotation tmpNamePrefix))

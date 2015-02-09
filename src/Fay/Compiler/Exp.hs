@@ -27,7 +27,7 @@ import           Fay.Exts.Scoped                 (noI)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
-import           Control.Monad.Error             (throwError)
+import           Control.Monad.Except             (throwError)
 import           Control.Monad.RWS               (asks, gets)
 import qualified Data.Char                       as Char
 import           Language.Haskell.Exts.Annotated hiding (alt, binds, name, op)

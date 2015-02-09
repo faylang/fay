@@ -4,7 +4,6 @@ import qualified Fay.Exts                        as F
 import qualified Fay.Exts.NoAnnotation           as N
 import qualified Fay.Exts.Scoped                 as S
 
-import           Control.Monad.Error             (Error)
 import           Language.Haskell.Exts.Annotated
 
 -- | Error type.
@@ -38,4 +37,3 @@ data CompileError
   | UnsupportedWhereInAlt S.Alt
   | UnsupportedWhereInMatch S.Match
   deriving (Show)
-instance Error CompileError

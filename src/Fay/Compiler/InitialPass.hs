@@ -19,7 +19,7 @@ import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types
 
-import           Control.Monad.Error
+import           Control.Monad.Except
 import           Control.Monad.RWS
 import qualified Data.Map                        as M
 import           Language.Haskell.Exts.Annotated hiding (name, var)

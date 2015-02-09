@@ -51,7 +51,7 @@ import           Fay.Types.Js
 import           Fay.Types.ModulePath
 import           Fay.Types.Printer
 
-import           Control.Monad.Error               (ErrorT, MonadError)
+import           Control.Monad.Except               (ExceptT, MonadError)
 import           Control.Monad.Identity            (Identity)
 import           Control.Monad.RWS
 import           Data.Map                          (Map)
@@ -100,7 +100,7 @@ data CompileReader = CompileReader
 -- | Compile monad.
 newtype Compile a = Compile
   { unCompile :: RWST CompileReader CompileWriter CompileState
-                      (ErrorT CompileError (ModuleT (ModuleInfo Compile) IO))
+                      (ExceptT CompileError (ModuleT (ModuleInfo Compile) IO))
                       a -- ^ Uns the compiler
   } deriving
     ( Applicative

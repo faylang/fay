@@ -15,7 +15,7 @@ import qualified Fay.Exts.NoAnnotation           as N
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
-import           Control.Monad.Error
+import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Language.Haskell.Exts.Annotated hiding (name)
 import           Language.Haskell.Names

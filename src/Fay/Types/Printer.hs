@@ -1,4 +1,4 @@
-
+{-# LANGUAGE FlexibleContexts #-}
 module Fay.Types.Printer
   ( PrintReader(..)
   , defaultPrintReader

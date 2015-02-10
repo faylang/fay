@@ -20,7 +20,7 @@ import qualified Fay.Exts.Scoped                   as S
 import           Fay.Types
 
 import           Control.Monad.Except
-import           Control.Monad.RWS
+import           Control.Monad.RWS                 (asks, gets, modify, runRWST)
 import qualified Data.Map                          as M
 import           Data.Version                      (parseVersion)
 import           Distribution.HaskellSuite.Modules

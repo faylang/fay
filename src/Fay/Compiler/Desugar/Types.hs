@@ -1,18 +1,22 @@
--- | The transformer stack used during desugaring.
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+
+-- | The transformer stack used during desugaring.
+
 module Fay.Compiler.Desugar.Types
   ( DesugarReader (..)
   , Desugar
   , runDesugar
   ) where
 
-import           Fay.Compiler.Prelude
-
 import           Fay.Types            (CompileError (..))
 
+#if __GLASGOW_HASKELL__ < 710
+import           Control.Applicative
+#endif
 import           Control.Monad.Except
 import           Control.Monad.Reader
 

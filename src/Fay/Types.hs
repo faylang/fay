@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
 
@@ -39,8 +40,6 @@ module Fay.Types
   , mkModulePathFromQName
   ) where
 
-import           Fay.Compiler.Prelude
-
 import           Fay.Config
 import qualified Fay.Exts.NoAnnotation             as N
 import qualified Fay.Exts.Scoped                   as S
@@ -51,7 +50,10 @@ import           Fay.Types.Js
 import           Fay.Types.ModulePath
 import           Fay.Types.Printer
 
-import           Control.Monad.Except               (ExceptT, MonadError)
+#if __GLASGOW_HASKELL__ < 710
+import           Control.Applicative
+#endif
+import           Control.Monad.Except              (ExceptT, MonadError)
 import           Control.Monad.Identity            (Identity)
 import           Control.Monad.RWS
 import           Data.Map                          (Map)

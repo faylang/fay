@@ -123,7 +123,7 @@ decodeFay specialCases value = specialCases value $
     rec :: GenericParser
     rec = decodeFay specialCases
 
-type GenericParser = Data a => Value -> Either String a
+type GenericParser = forall a. Data a => Value -> Either String a
 
 -- | Parse a data type or record or tuple.
 parseDataOrTuple :: forall a. Data a => GenericParser -> Value -> Either String a

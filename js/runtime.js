@@ -235,8 +235,10 @@ function Fay$$fayToJs(type,fayObj){
     // Bools are unboxed.
     return Fay$$_(fayObj);
   }
-  else if(base == "ptr" || base == "unknown")
+  else if(base == "ptr")
     return fayObj;
+  else if(base == "unknown")
+    return Fay$$fayToJs(["automatic"], fayObj);
   else if(base == "automatic" && fayObj instanceof Function) {
     return Fay$$fayToJs(["function", "automatic_function"], fayObj);
   }
@@ -384,10 +386,11 @@ function Fay$$jsToFay(type,jsObj){
   }
   else if (base == "double" ||
            base == "bool" ||
-           base ==  "ptr" ||
-           base ==  "unknown") {
+           base ==  "ptr") {
     return jsObj;
   }
+  else if(base == "unknown")
+    return Fay$$jsToFay(["automatic"], jsObj);
   else if(base == "automatic" && jsObj instanceof Function) {
     var type = [["automatic"]];
     for (var i = 0; i < jsObj.length; i++)

@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.20.0.0 (2015-02-10)
+
+* Changes the type signature of `when` and `unless` from `:: Bool -> Fay a -> Fay ()` to `:: Bool -> Fay () -> Fay ()`. This allows tail call optimization for these functions and matches base - by Zachary Mason
+
 #### 0.19.4.2 (2015-01-05)
 
 * Allow `fay 0.22.*`.

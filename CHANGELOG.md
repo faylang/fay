@@ -2,6 +2,38 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+## 0.23.0.0
+
+New features:
+
+* GHC 7.10 support
+* Add a `--pretty-operators` flag to replace the escaped operator names with their actual names - By Michal Seweryn
+* Add a `--pretty-all` flag that enables `--pretty`, `--pretty-operators`, and `--pretty-thunks` - By Michal Seweryn
+* De/serialize type variables as 'automatic'. You no longer have to annotate FFI functions with Automatic, this is now the default. If you need the old behavior, use Ptr. For most existing cases this change shouldn't change anything. - By Zachary Mason
+
+Example output with `--pretty-all`:
+```javascript
+Main.main = new $(function(){
+  return _(_(Prelude["$"])(Prelude.print))(_(_(Prelude["++"])(Main.g))(Fay$$list("b")));
+});
+```
+
+
+API changes - By Michal Seweryn:
+
+* Export CompileResult from Fay.Types
+* Export PrintReader and PrintWriter, and reducing number of PrintState fields (these are moved to PrinterReader and PrintWriter)
+* In the meanwhile PrintWriter field type changed - output is now stored as ShowS - tests run faster now
+* Replace monadic functions (askP, getP, ...) with higher level ones: indented, askIf, newline, write, mapping. askIf is pretty much like previous askP, but works like if-then-else.
+* Internally we are now using `ExceptT` instead of `ErrorT`. This fixes deprecation warnings when using `transformers 0.4.*`.
+
+Bug fixes:
+* Defer automatic_function fayToJs call until after argument application - by Zachary Mason
+
+Dependency bumps:
+* Allow `utf8-string 1.0.*`
+* Allow `time == 1.5.*`
+
 ## 0.22.0.0
 
 * Add a `--pretty-thunks` flag and compiler option that replaces `Fay$$_` and `Fay$$$` with `_` and `$` respectively. Consider this a development flag since it may clash with JS libraries (notably jQuery and underscore)

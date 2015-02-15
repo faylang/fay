@@ -96,14 +96,14 @@ case_strictWrapper = do
 
 assertPretty :: Config -> String -> Assertion
 assertPretty cfg flagName = do
-  res <- compileFile cfg "tests/Compile/Pretty.hs"
+  res <- compileFile cfg $ "tests/Compile/" ++ flagName ++ ".hs"
   case res of
     Left l  -> assertFailure $ "Should compile, but failed with: " ++ show l
     Right js -> do
-    writeFile "tests/Compile/Pretty.js" js
-    (err, out) <- either id id <$> readAllFromProcess "node" ["tests/Compile/Pretty.js"] ""
+    writeFile ("tests/Compile/" ++ flagName ++ ".js") js
+    (err, out) <- either id id <$> readAllFromProcess "node" ["tests/Compile/" ++ flagName ++ ".js"] ""
     when (err /= "") $ assertFailure err
-    expected <- readFile "tests/Compile/Pretty.res"
+    expected <- readFile $ "tests/Compile/" ++ flagName ++ ".res"
     assertEqual (flagName ++ " node stdout") expected out
 
 case_pretty :: Assertion

@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.0.1
+
+* Allow `mtl-compat 0.2.*` and `transformers-compat 0.4.*"`.
+
 ## 0.23.0.0
 
 New features:

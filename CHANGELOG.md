@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.0
+
+* Add `--show-ghc-calls` and `configShowGhcCalls` to print invocations to GHC.
+
 #### 0.23.0.1
 
 * Allow `mtl-compat 0.2.*` and `transformers-compat 0.4.*"`.

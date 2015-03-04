@@ -40,7 +40,10 @@ typecheck cfg fp = do
           , "-i" ++ intercalate ":" includeDirs
           , fp ] ++ ghcPackageDbArgs ++ wallF ++ map ("-package " ++) packages
   exists <- doesFileExist GHCPaths.ghc
-  res <- readAllFromProcess (if exists then GHCPaths.ghc else "ghc") flags ""
+  let ghcPath = if exists then GHCPaths.ghc else "ghc"
+  when (configShowGhcCalls cfg) $
+    putStrLn . intercalate " " $ ghcPath : flags
+  res <- readAllFromProcess ghcPath flags ""
   either (return . Left . GHCError . fst) (return . Right . fst) res
    where
     wallF | configWall cfg = ["-Wall"]

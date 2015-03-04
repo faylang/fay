@@ -25,6 +25,7 @@ module Fay.Config
       , configOptimizeNewtypes
       , configPrettyThunks
       , configPrettyOperators
+      , configShowGhcCalls
       )
   , defaultConfig
   , defaultConfigWithSandbox
@@ -76,6 +77,7 @@ data Config = Config
   , configOptimizeNewtypes   :: Bool                        -- ^ Optimize away newtype constructors?
   , configPrettyThunks       :: Bool                        -- ^ Use pretty thunk names?
   , configPrettyOperators    :: Bool                        -- ^ Use pretty operators?
+  , configShowGhcCalls       :: Bool                        -- ^ Print commands sent to GHC?
   } deriving (Show)
 
 defaultConfig :: Config
@@ -106,6 +108,7 @@ defaultConfig = addConfigPackage "fay-base"
     , configOptimizeNewtypes   = True
     , configPrettyThunks       = False
     , configPrettyOperators    = False
+    , configShowGhcCalls       = False
     }
 
 defaultConfigWithSandbox :: IO Config

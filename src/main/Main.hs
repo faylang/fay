@@ -44,6 +44,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optTypecheckOnly      :: Bool
   , optVersion            :: Bool
   , optWall               :: Bool
+  , optShowGhcCalls       :: Bool
   , optFiles              :: [String]
   }
 
@@ -75,6 +76,7 @@ main = do
           , configOptimizeNewtypes = not $ optNoOptimizeNewtypes opts
           , configPrettyThunks     = optPrettyThunks opts || optPrettyAll opts
           , configPrettyOperators  = optPrettyOperators opts || optPrettyAll opts
+          , configShowGhcCalls     = optShowGhcCalls opts
           }
   if optVersion opts
     then runCommandVersion
@@ -128,6 +130,7 @@ options = FayCompilerOptions
   <*> switch (long "typecheck-only" <> help "Only invoke GHC for typechecking, don't produce any output")
   <*> switch (long "version" <> help "Output version number")
   <*> switch (long "Wall" <> help "Typecheck with -Wall")
+  <*> switch (long "show-ghc-calls" <> help "Print commands sent to ghc")
   <*> many (argument (ReadM ask) (metavar "<hs-file>..."))
   where
     strsOption :: Mod OptionFields [String] -> Parser [String]

@@ -2,7 +2,11 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
-#### 0.23.1.0
+### 0.23.1.1
+
+* Allow do let bindings of newtypes.
+
+### 0.23.1.0
 
 * Add `--show-ghc-calls` and `configShowGhcCalls` to print invocations to GHC.
 

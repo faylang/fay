@@ -7,6 +7,7 @@ main = do
   fourth
   fifth
   sixth
+  newtyp
 
 first = do
   let x = 123
@@ -43,3 +44,11 @@ sixth = do
   let y = 777
   print y
   print x
+
+newtype I = I Int
+newtyp = do
+  putStrLn "newtype"
+  I i <- return (I 1)
+  print i
+  let I j = I 2
+  print j

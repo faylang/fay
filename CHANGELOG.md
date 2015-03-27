@@ -2,7 +2,11 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
-### 0.23.1.1
+#### 0.23.1.2
+
+* Allow filepath 1.4.*
+
+#### 0.23.1.1
 
 * Allow do let bindings of newtypes.
 

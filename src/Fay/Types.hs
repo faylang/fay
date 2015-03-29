@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
 
@@ -40,9 +40,10 @@ module Fay.Types
   , mkModulePathFromQName
   ) where
 
+import           Fay.Compiler.ModuleT
 import           Fay.Config
-import qualified Fay.Exts.NoAnnotation             as N
-import qualified Fay.Exts.Scoped                   as S
+import qualified Fay.Exts.NoAnnotation   as N
+import qualified Fay.Exts.Scoped         as S
 import           Fay.Types.CompileError
 import           Fay.Types.CompileResult
 import           Fay.Types.FFI
@@ -53,13 +54,12 @@ import           Fay.Types.Printer
 #if __GLASGOW_HASKELL__ < 710
 import           Control.Applicative
 #endif
-import           Control.Monad.Except              (ExceptT, MonadError)
-import           Control.Monad.Identity            (Identity)
+import           Control.Monad.Except    (ExceptT, MonadError)
+import           Control.Monad.Identity  (Identity)
 import           Control.Monad.RWS
-import           Data.Map                          (Map)
-import           Data.Set                          (Set)
-import           Distribution.HaskellSuite.Modules
-import           Language.Haskell.Names            (Symbols)
+import           Data.Map                (Map)
+import           Data.Set                (Set)
+import           Language.Haskell.Names  (Symbols)
 
 --------------------------------------------------------------------------------
 -- Compiler types
@@ -121,7 +121,6 @@ instance MonadModule Compile where
   type ModuleInfo Compile = Symbols
   lookupInCache        = liftModuleT . lookupInCache
   insertInCache n m    = liftModuleT $ insertInCache n m
-  getPackages          = liftModuleT getPackages
   readModuleInfo fps n = liftModuleT $ readModuleInfo fps n
 
 liftModuleT :: ModuleT Symbols IO a -> Compile a

@@ -10,25 +10,25 @@ module Fay.Compiler.Misc where
 
 import           Fay.Compiler.Prelude
 
+import           Fay.Compiler.ModuleT            (runModuleT)
 import           Fay.Compiler.PrimOp
-import           Fay.Compiler.QName                (unname)
+import           Fay.Compiler.QName              (unname)
 import           Fay.Config
-import qualified Fay.Exts                          as F
-import           Fay.Exts.NoAnnotation             (unAnn)
-import qualified Fay.Exts.NoAnnotation             as N
-import qualified Fay.Exts.Scoped                   as S
+import qualified Fay.Exts                        as F
+import           Fay.Exts.NoAnnotation           (unAnn)
+import qualified Fay.Exts.NoAnnotation           as N
+import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
 import           Control.Monad.Except
-import           Control.Monad.RWS                 (asks, gets, modify, runRWST)
-import qualified Data.Map                          as M
-import           Data.Version                      (parseVersion)
-import           Distribution.HaskellSuite.Modules
-import           Language.Haskell.Exts.Annotated   hiding (name)
-import           Language.Haskell.Names
+import           Control.Monad.RWS               (asks, gets, modify, runRWST)
+import           Data.Version                    (parseVersion)
+import           Language.Haskell.Exts.Annotated hiding (name)
+import           Language.Haskell.Names          (GName (GName), NameInfo (GlobalValue, LocalValue, ScopeError),
+                                                  OrigName, Scoped (Scoped), origGName, origName)
 import           System.IO
-import           System.Process                    (readProcess)
-import           Text.ParserCombinators.ReadP      (readP_to_S)
+import           System.Process                  (readProcess)
+import           Text.ParserCombinators.ReadP    (readP_to_S)
 
 -- | Wrap an expression in a thunk.
 thunk :: JsExp -> JsExp
@@ -268,7 +268,7 @@ runTopCompile
   -> CompileState
   -> Compile a
   -> IO (Either CompileError (a,CompileState,CompileWriter))
-runTopCompile reader' state' m = fst <$> runModuleT (runExceptT (runRWST (unCompile m) reader' state')) [] "fay" (\_fp -> return undefined) M.empty
+runTopCompile reader' state' m = fst <$> runModuleT (runExceptT (runRWST (unCompile m) reader' state'))
 
 -- | Runs compilation for a single module.
 runCompileModule :: CompileReader -> CompileState -> Compile a -> CompileModule a

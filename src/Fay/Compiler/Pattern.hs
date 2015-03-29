@@ -18,7 +18,7 @@ import           Fay.Types
 import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Language.Haskell.Exts.Annotated hiding (name)
-import           Language.Haskell.Names
+import           Language.Haskell.Names (Scoped (Scoped), NameInfo (RecPatWildcard))
 
 -- | Compile the given pattern against the given expression.
 compilePat :: JsExp -> S.Pat -> [JsStmt] -> Compile [JsStmt]

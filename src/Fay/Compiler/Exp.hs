@@ -31,7 +31,7 @@ import           Control.Monad.Except             (throwError)
 import           Control.Monad.RWS               (asks, gets)
 import qualified Data.Char                       as Char
 import           Language.Haskell.Exts.Annotated hiding (alt, binds, name, op)
-import           Language.Haskell.Names
+import           Language.Haskell.Names (Scoped (Scoped), NameInfo (RecExpWildcard))
 
 -- | Compile Haskell expression.
 compileExp :: S.Exp -> Compile JsExp

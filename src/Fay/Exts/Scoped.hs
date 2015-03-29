@@ -3,7 +3,7 @@ module Fay.Exts.Scoped where
 import qualified Fay.Exts                        as F
 
 import qualified Language.Haskell.Exts.Annotated as A
-import qualified Language.Haskell.Names          as HN
+import qualified Language.Haskell.Names          as HN (Scoped (Scoped), NameInfo (None))
 
 
 type X = HN.Scoped A.SrcSpanInfo

@@ -47,7 +47,7 @@ import           Control.Monad.RWS
 
 import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated hiding (name)
-import           Language.Haskell.Names
+import           Language.Haskell.Names (annotateModule)
 
 --------------------------------------------------------------------------------
 -- Top level entry points

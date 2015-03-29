@@ -12,7 +12,7 @@ import           Fay.Types
 import qualified Data.Map               as M
 import           Data.Set               (Set)
 import qualified Data.Set               as S
-import           Language.Haskell.Names
+import           Language.Haskell.Names (sv_origName, Symbols (Symbols), SymValueInfo (SymValue, SymMethod, SymSelector, SymConstructor), OrigName, sv_typeName)
 
 -- | Get all non local identifiers that should be exported in the JS module scope.
 getNonLocalExportsWithoutNewtypes :: N.ModuleName -> CompileState -> Maybe (Set N.QName)

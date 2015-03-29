@@ -23,7 +23,7 @@ import           Control.Monad.Except
 import           Control.Monad.RWS
 import qualified Data.Map                        as M
 import           Language.Haskell.Exts.Annotated hiding (name, var)
-import qualified Language.Haskell.Names          as HN
+import qualified Language.Haskell.Names          as HN (getInterfaces)
 
 -- | Preprocess and collect all information needed during code generation.
 initialPass :: FilePath -> Compile ()

@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.3
+
+* Inline parts of `haskell-names 0.4.1` and `haskell-packages` to drop transitive dependencies on Cabal and other packages.
+
 #### 0.23.1.2
 
 * Allow filepath 1.4.*

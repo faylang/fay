@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.5
+
+* Allow `aeson 0.9.*`
+
 #### 0.23.1.4
 
 * Fix compilation on at least GHC 7.6 (maybe older versions as well...)

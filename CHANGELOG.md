@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.6
+
+* Allow `syb 0.5.*`
+
 #### 0.23.1.5
 
 * Allow `aeson 0.9.*`

@@ -1,5 +1,5 @@
 name:                fay
-version:             0.23.1.5
+version:             0.23.1.6
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which is type-checked
                      with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
@@ -153,7 +153,7 @@ library
     , sourcemap < 0.2
     , split < 0.3
     , spoon < 0.4
-    , syb < 0.5
+    , syb < 0.6
     , text < 1.3
     , time >= 1 && < 1.6
     , transformers >= 0.3 && < 0.4 || > 0.4.1 && < 0.5

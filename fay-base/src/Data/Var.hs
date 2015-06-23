@@ -51,14 +51,14 @@ import Prelude
 data Sig a
 
 -- | Make a new signal.
-newSig :: Fay (Sig a)
+newSig :: Fay (Ptr (Sig a))
 newSig = ffi "new Fay$$Sig()"
 
 -- | A mutable reference, with no subscribers.
 data Ref a
 
 -- | Make a new mutable reference.
-newRef :: a -> Fay (Ref a)
+newRef :: Ptr a -> Fay (Ptr (Ref a))
 newRef = ffi "new Fay$$Ref2(%1)"
 
 -- | A reactive variable.  Stores a value, and can have handlers subscribed to
@@ -66,7 +66,7 @@ newRef = ffi "new Fay$$Ref2(%1)"
 data Var a
 
 -- | Make a new reactive variable.
-newVar :: a -> Fay (Var a)
+newVar :: Ptr a -> Fay (Ptr (Var a))
 newVar = ffi "new Fay$$Var(%1)"
 
 
@@ -77,7 +77,7 @@ instance Settable (Sig a)
 instance Settable (Var a)
 
 -- | Write to the value (if any), and call subscribers (if any).
-set :: Settable (v a) => v a -> a -> Fay ()
+set :: Settable (v a) => Ptr (v a) -> Ptr a -> Fay ()
 set = ffi "Fay$$setValue(Fay$$_(%1), %2, Fay$$_)"
 
 
@@ -87,7 +87,7 @@ instance Gettable (Ref a)
 instance Gettable (Var a)
 
 -- | Get the value of a 'Ref' or 'Var'.
-get :: Gettable (v a) => v a -> Fay a
+get :: Gettable (v a) => Ptr (v a) -> Fay (Ptr a)
 get = ffi "Fay$$_(%1).val"
 
 -- | Modifies the current value with a pure function.
@@ -107,7 +107,7 @@ instance Subscribable (Var a)
 -- | Subscribe to the value of a 'Sig' or 'Var'.
 --
 --   The result is an unsubscribe function.
-subscribe :: Subscribable (v a) => v a -> Ptr (a -> Fay void) -> Fay (() -> Fay ())
+subscribe :: Subscribable (v a) => Ptr (v a) -> Ptr (a -> Fay void) -> Fay (() -> Fay ())
 subscribe = ffi "Fay$$subscribe(Fay$$_(%1), Fay$$_(%2))"
 
 -- | Run the same subscribing action but provide an additional
@@ -241,10 +241,10 @@ mergeVars f mg va vb = do
       return $ unsubscribeA () >> unsubscribeB () >> unsubscribeC ()
   return (vc, unsubscribe)
 
-setInternal :: Var a -> a -> Fay ()
+setInternal :: Ptr (Var a) -> Ptr a -> Fay ()
 setInternal = ffi "function() { Fay$$_(%1).val = %2; }()"
 
-broadcastInternal :: Var a -> a -> Fay ()
+broadcastInternal :: Ptr (Var a) -> Ptr a -> Fay ()
 broadcastInternal = ffi "Fay$$broadcastInternal(Fay$$_(%1), %2, Fay$$_)"
 
 -- | Like 'mergeVars', but discards the unsubscribe function.

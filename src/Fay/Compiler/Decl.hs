@@ -99,12 +99,20 @@ compilePatBind toplevel patDecl = case patDecl of
       exp <- compileExp rhs
       name <- withScopedTmpJsName return
       m <- compilePat (JsName name) pat []
-      case m of
-        [JsIf t b1 []] -> do
-          let err = [throw ("Irrefutable pattern failed for pattern: " ++ prettyPrint pat) (JsList [])]
-          return [JsVar name exp, JsIf t b1 err]
-        [JsVar n _] -> return [JsVar n exp]
-        x -> error $ "Fay bug! Can't compile pat bind for: " ++ show x
+      m2 <- interleavePatternMatchFailures m pat m
+      return (JsVar name exp : m2)
+
+    interleavePatternMatchFailures :: [JsStmt] -> S.Pat -> [JsStmt] -> Compile [JsStmt]
+    interleavePatternMatchFailures original pat = walk
+      where
+        walk m = case m of
+          [JsIf t b1 []] -> do
+            b2 <- walk b1
+            return [JsIf t b2 err]
+          [JsVar n exp2] -> return [JsVar n exp2]
+          stmt:stmts -> (stmt:) <$> walk stmts
+          [] -> error $ "Fay bug! Can't compile pat bind for pattern: " ++ show original
+        err = [throw ("Irrefutable pattern failed for pattern: " ++ prettyPrint pat) (JsList [])]
 
 -- | Compile a normal simple pattern binding.
 compileUnguardedRhs :: Bool -> S.X -> S.Name -> S.Exp -> Compile [JsStmt]

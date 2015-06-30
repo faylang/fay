@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.7
+
+* Fix panic when compiling irrefutable pattern matches on lists (thanks Christopher Parks)
+
 #### 0.23.1.6
 
 * Allow `syb 0.5.*`

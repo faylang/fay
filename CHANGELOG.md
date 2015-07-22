@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.8
+
+* Allow `vector 0.11.*`
+
 #### 0.23.1.7
 
 * Fix panic when compiling irrefutable pattern matches on lists (thanks Christopher Parks)

@@ -1,4 +1,5 @@
 language: "haskell"
+sudo: false
 install:
   - "travis_retry cabal install 'cpphs >= 1.18.3'"
   - "cabal install --dry-run -v3"

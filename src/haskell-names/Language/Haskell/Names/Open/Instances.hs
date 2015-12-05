@@ -13,18 +13,15 @@
 {-# LANGUAGE MonoLocalBinds        #-}
 module Language.Haskell.Names.Open.Instances () where
 
+import           Fay.Compiler.Prelude
 import           Language.Haskell.Names.GetBound
 import           Language.Haskell.Names.Open.Base
 import           Language.Haskell.Names.Open.Derived    ()
 import           Language.Haskell.Names.RecordWildcards
 import           Language.Haskell.Names.Types
 
-import           Control.Applicative
-import qualified Data.Data                              as D
 import           Data.Lens.Light
-import           Data.List
 import qualified Data.Traversable                       as T
-import           Data.Typeable
 import           Language.Haskell.Exts.Annotated
 
 c :: Applicative w => c -> w c
@@ -40,7 +37,7 @@ infixl 4 <|
 sc -: b = (b, sc)
 infix 5 -:
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Decl l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Decl l) where
   rtraverse e sc =
     case e of
       -- N.B. We do not add pat to the local scope.
@@ -68,10 +65,10 @@ instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Decl l) where
           <| sc       -: ty
       _ -> defaultRtraverse e sc
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Type l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Type l) where
   rtraverse e sc = defaultRtraverse e (exprT sc)
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (DeclHead l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (DeclHead l) where
   rtraverse e sc =
     case e of
       DHead l name ->
@@ -85,7 +82,7 @@ instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (DeclHead l) where
           <| binderT sc -: name
       _ -> defaultRtraverse e sc
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (ConDecl l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (ConDecl l) where
   rtraverse e sc =
     case e of
       ConDecl l name tys ->
@@ -106,7 +103,7 @@ instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (ConDecl l) where
           <| sc -: fields
 
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (FieldDecl l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (FieldDecl l) where
   rtraverse e sc =
     case e of
       FieldDecl l name tys ->
@@ -115,7 +112,7 @@ instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (FieldDecl l) where
           <| binderV sc -: name
           <| sc -: tys
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Pat l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Pat l) where
   rtraverse e sc =
     case e of
       PVar l name ->
@@ -159,7 +156,7 @@ instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Pat l) where
           <| sc       -: pat
       _ -> defaultRtraverse e sc
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (PatField l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (PatField l) where
   rtraverse e sc =
     case e of
       PFieldPat l qn pat ->
@@ -183,7 +180,7 @@ chain
      , GetBound (a l) l
      , Applicative w
      , SrcInfo l
-     , D.Data l
+     , Data l
      , ?alg :: Alg w)
   => [a l] -> Scope -> (w [a l], Scope)
 chain pats sc =
@@ -196,7 +193,7 @@ chain pats sc =
         (ps', sc'') = chain ps sc'
       in ((:) <$> p' <*> ps', sc'')
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Match l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Match l) where
   rtraverse e sc =
     case e of
       Match l name pats rhs mbWhere ->
@@ -222,7 +219,7 @@ instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Match l) where
 
 -- NB: there is an inefficiency here (and in similar places), because we
 -- call intro on the same subtree several times. Maybe tackle it later.
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Binds l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Binds l) where
   rtraverse e sc =
     case e of
       BDecls l decls ->
@@ -233,7 +230,7 @@ instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Binds l) where
           <| scWithBinds -: decls
       _ -> defaultRtraverse e sc
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Exp l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Exp l) where
   rtraverse e sc =
     case e of
       Let l bnds body ->
@@ -297,7 +294,7 @@ instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Exp l) where
 
       _ -> defaultRtraverse e sc
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Alt l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Alt l) where
   rtraverse e sc =
     case e of
       Alt l pat guardedAlts mbWhere ->
@@ -311,7 +308,7 @@ instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Alt l) where
           <| scWithBinds -: guardedAlts
           <| scWithBinds -: mbWhere
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (GuardedRhs l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (GuardedRhs l) where
   rtraverse e sc =
     case e of
       GuardedRhs l stmts exp ->
@@ -322,11 +319,11 @@ instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (GuardedRhs l) where
           <*> stmts'
           <|  scWithStmts -: exp
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable [Stmt l] where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable [Stmt l] where
   rtraverse e sc =
     fst $ chain e sc
 
-instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (QualStmt l) where
+instance (Resolvable l, SrcInfo l, Data l) => Resolvable (QualStmt l) where
   rtraverse e sc =
     case e of
       QualStmt {} -> defaultRtraverse e sc

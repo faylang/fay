@@ -5,19 +5,16 @@
 module Language.Haskell.Names.Imports (processImports) where
 
 import           Fay.Compiler.ModuleT
+import           Fay.Compiler.Prelude
 import qualified Language.Haskell.Names.GlobalSymbolTable as Global
 import           Language.Haskell.Names.ScopeUtils
 import           Language.Haskell.Names.SyntaxUtils
 import           Language.Haskell.Names.Types
 
-import           Control.Applicative
-import           Control.Arrow
 import           Control.Monad.Writer
-import           Data.Either
-import           Data.Foldable                            (fold, foldMap)
+import           Data.Foldable                            (fold)
 import           Data.Lens.Light
 import qualified Data.Map                                 as Map
-import           Data.Maybe
 import qualified Data.Set                                 as Set
 import           Language.Haskell.Exts.Annotated
 

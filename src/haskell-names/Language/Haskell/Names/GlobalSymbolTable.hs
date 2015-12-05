@@ -13,15 +13,12 @@ module Language.Haskell.Names.GlobalSymbolTable
   , toSymbols
   ) where
 
+import           Fay.Compiler.Prelude               hiding (empty)
 import           Language.Haskell.Names.SyntaxUtils
 import           Language.Haskell.Names.Types
 
-import           Control.Applicative                hiding (empty)
-import           Control.Arrow
-import           Data.Data
 import           Data.Lens.Light
 import qualified Data.Map                           as Map
-import           Data.Monoid
 import qualified Data.Set                           as Set
 import           Language.Haskell.Exts.Annotated    as HSE
 

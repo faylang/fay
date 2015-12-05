@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 module Fay.Compiler.ModuleT
@@ -26,10 +27,10 @@ module Fay.Compiler.ModuleT
   , ModName (..)
   ) where
 
-import           Control.Applicative
+import           Fay.Compiler.Prelude
+
 import           Control.Monad.Reader
 import           Control.Monad.State
-import           Control.Monad.Writer
 import qualified Data.Char            as Char (isAlphaNum, isUpper)
 import qualified Data.Map             as Map
 

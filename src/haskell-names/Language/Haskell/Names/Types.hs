@@ -29,13 +29,11 @@ module Language.Haskell.Names.Types
   ) where
 
 import {-# SOURCE #-} qualified Language.Haskell.Names.GlobalSymbolTable as Global
+import           Fay.Compiler.Prelude
 
-import           Data.Data
 import           Data.Foldable                            as F
 import           Data.Lens.Light
-import           Data.Monoid
 import qualified Data.Set                                 as Set
-import           Data.Traversable
 import           Language.Haskell.Exts.Annotated
 import           Text.Printf
 

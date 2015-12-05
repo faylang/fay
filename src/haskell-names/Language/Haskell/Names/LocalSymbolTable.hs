@@ -1,5 +1,6 @@
 -- | This module is designed to be imported qualified.
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
 module Language.Haskell.Names.LocalSymbolTable
   ( Table
   , empty
@@ -7,11 +8,11 @@ module Language.Haskell.Names.LocalSymbolTable
   , addValue
   ) where
 
+import           Fay.Compiler.Prelude               hiding (empty)
 import           Language.Haskell.Names.SyntaxUtils
 import           Language.Haskell.Names.Types
 
 import qualified Data.Map                           as Map
-import           Data.Monoid
 import           Language.Haskell.Exts.Annotated
 
 -- | Local symbol table — contains locally bound names

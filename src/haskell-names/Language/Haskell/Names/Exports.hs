@@ -6,6 +6,7 @@ module Language.Haskell.Names.Exports
   ) where
 
 import           Fay.Compiler.ModuleT
+import           Fay.Compiler.Prelude
 import           Language.Haskell.Names.GlobalSymbolTable as Global
 import           Language.Haskell.Names.ModuleSymbols
 import           Language.Haskell.Names.ScopeUtils
@@ -13,11 +14,7 @@ import           Language.Haskell.Names.SyntaxUtils
 import           Language.Haskell.Names.Types             (Error (..), GName (..), ModuleNameS, NameInfo (..),
                                                            Scoped (..), Symbols (..), mkTy, mkVal, st_origName)
 
-import           Control.Applicative
-import           Control.Arrow
-import           Control.Monad
 import           Control.Monad.Writer
-import           Data.Data
 import qualified Data.Map                                 as Map
 import qualified Data.Set                                 as Set
 import           Language.Haskell.Exts.Annotated

@@ -17,6 +17,7 @@ module Language.Haskell.Names.Annotated
   , annotate
   ) where
 
+import           Fay.Compiler.Prelude
 import qualified Language.Haskell.Names.GlobalSymbolTable as Global
 import qualified Language.Haskell.Names.LocalSymbolTable  as Local
 import           Language.Haskell.Names.Open.Base
@@ -24,10 +25,8 @@ import           Language.Haskell.Names.Open.Instances    ()
 import           Language.Haskell.Names.RecordWildcards
 import           Language.Haskell.Names.Types
 
-import           Control.Applicative
 import           Data.Lens.Light
 import           Data.Proxy
-import           Data.Typeable                            (Typeable)
 import           Language.Haskell.Exts.Annotated
 import           Type.Eq
 

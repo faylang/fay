@@ -8,14 +8,14 @@ module Language.Haskell.Names.GetBound
   ( GetBound(..)
   ) where
 
+import           Fay.Compiler.Prelude
 import qualified Language.Haskell.Names.GlobalSymbolTable as Global
 import           Language.Haskell.Names.RecordWildcards
 import           Language.Haskell.Names.SyntaxUtils
 
-import           Control.Applicative
-import           Data.Data
 import           Data.Generics.Uniplate.Data
 import           Language.Haskell.Exts.Annotated
+
 
 -- | Get bound value identifiers.
 class GetBound a l | a -> l where

@@ -43,7 +43,6 @@ import qualified Language.Haskell.Names.GlobalSymbolTable as Global
 import qualified Language.Haskell.Names.LocalSymbolTable  as Local
 import           Language.Haskell.Names.RecordWildcards
 
-import           Control.Applicative
 import           Control.Monad.Identity
 import           Data.Generics.Traversable
 import           Data.Lens.Light

@@ -8,14 +8,12 @@ module Language.Haskell.Names.ScopeUtils
   , sv_parent
   ) where
 
+import           Fay.Compiler.Prelude
 import qualified Language.Haskell.Names.GlobalSymbolTable as Global
 import           Language.Haskell.Names.SyntaxUtils
 import           Language.Haskell.Names.Types
 
-import           Control.Applicative
-import           Control.Arrow
 import           Data.Lens.Light
-import           Data.Monoid
 import qualified Data.Set                                 as Set
 import           Language.Haskell.Exts.Annotated
 

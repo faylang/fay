@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 module Test.Desugar
   ( tests
   , devTest
@@ -91,12 +92,17 @@ testDeclarations =
 
 parseAndDesugar :: String -> String -> IO (Module SrcLoc, Either CompileError (Module SrcLoc))
 parseAndDesugar name s =
-  case parseFay "test" s :: ParseResult (Module SrcLoc) of
+  case parseFay "test" s :: ParseResult (Module SrcSpanInfo) of
     ParseFailed a b -> error $ show (name, a, b)
-    ParseOk m -> do
-      d <- desugar' "gen" noLoc m
-      return (m,d)
-
+    ParseOk (fmap srcSpanInfoToSrcLoc -> m) -> do
+      d <- desugar' "gen" noLoc $ m
+      return (m, d)
+  where
+    srcSpanInfoToSrcLoc :: SrcSpanInfo -> SrcLoc
+    srcSpanInfoToSrcLoc = (\ss -> SrcLoc { srcFilename = srcSpanFilename ss
+                                         , srcLine     = srcSpanStartLine ss
+                                         , srcColumn   = srcSpanStartColumn ss
+                                         }) . srcInfoSpan
 doDesugar :: String -> String -> String -> Assertion
 doDesugar testName a b = do
   (originalExpected, desugaredExpected, desugared) <- parseAndDesugarAll testName a b
@@ -106,8 +112,8 @@ doDesugar testName a b = do
 
 parseAndDesugarAll :: String -> String -> String -> IO (Module SrcLoc, Module SrcLoc, Module SrcLoc)
 parseAndDesugarAll testName a b = do
-  (originalExpected',Right desugaredExpected) <- parseAndDesugar (testName ++ " expected")   a
-  (_                ,Right desugared        ) <- parseAndDesugar (testName ++ " input") b
+  (originalExpected',Right desugaredExpected) <- parseAndDesugar (testName ++ " expected") a
+  (_                ,Right desugared        ) <- parseAndDesugar (testName ++ " input")    b
   -- We need to desugar parens in the original module since we
   -- strip it away in desugaring but there isn't alawys a way to construct
   -- this paren directly from a source string

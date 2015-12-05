@@ -14,7 +14,7 @@ import           Fay.Compiler.Prelude
 import           Fay.Compiler.Desugar.Name
 import           Fay.Compiler.Desugar.Types
 import           Fay.Compiler.Misc               (ffiExp, hasLanguagePragma)
-import           Fay.Compiler.QName              (unname, unQual)
+import           Fay.Compiler.QName              (unQual, unname)
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types                       (CompileError (..))
 
@@ -28,7 +28,7 @@ desugar :: (Data l, Typeable l) => l -> Module l -> IO (Either CompileError (Mod
 desugar = desugar' "$gen"
 
 -- | Desugar with the option to specify a prefix for generated names.
--- Useful if you want to provide valid haskell name that HSE can print.
+-- Useful if you want to provide valid haskell names that HSE can print.
 desugar' :: (Data l, Typeable l) => String -> l -> Module l -> IO (Either CompileError (Module l))
 desugar' prefix emptyAnnotation md = runDesugar prefix emptyAnnotation $
       checkEnum md

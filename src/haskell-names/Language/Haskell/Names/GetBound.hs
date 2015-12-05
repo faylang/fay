@@ -72,6 +72,7 @@ instance (Data l) => GetBound (Decl l) l where
       InlineConlikeSig{} -> []
       ClosedTypeFamDecl{} -> []
       MinimalPragma{} -> []
+      _ -> error "Unsupported syntax"
 
 instance (Data l) => GetBound (QualConDecl l) l where
     getBound ctx (QualConDecl _ _ _ d) = getBound ctx d

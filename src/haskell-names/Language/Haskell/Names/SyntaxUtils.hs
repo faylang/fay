@@ -48,7 +48,7 @@ getExportSpecList m = me where ModuleHead _ _ _ me = getModuleHead m
 getModuleHead :: Module l -> ModuleHead l
 getModuleHead (Module _ (Just mh) _ _ _) = mh
 getModuleHead (XmlHybrid _ (Just mh) _ _ _ _ _ _ _) = mh
-getModuleHead m = ModuleHead l (main_mod l) Nothing (Just (ExportSpecList l [EVar l (NoNamespace l) (UnQual l (Ident l "main"))]))
+getModuleHead m = ModuleHead l (main_mod l) Nothing (Just (ExportSpecList l [EVar l (UnQual l (Ident l "main"))]))
   where l = ann m
 
 qNameToName :: QName l -> Name l

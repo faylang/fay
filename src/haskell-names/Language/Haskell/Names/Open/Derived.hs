@@ -80,3 +80,5 @@ deriveGTraversable ''TypeEqn
 deriveGTraversable ''Overlap
 deriveGTraversable ''Sign
 deriveGTraversable ''Namespace
+deriveGTraversable ''Role
+deriveGTraversable ''PatternSynDirection

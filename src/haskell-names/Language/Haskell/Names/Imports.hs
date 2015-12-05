@@ -146,7 +146,7 @@ resolveImportSpec
 -- NB: this can be made more efficient
 resolveImportSpec mod isHiding syms spec =
   case spec of
-    IVar _ (NoNamespace {}) n ->
+    IVar _ n ->
       let
         matches = mconcat $
           -- Strictly speaking, the isConstructor check is unnecessary
@@ -162,8 +162,7 @@ resolveImportSpec mod isHiding syms spec =
           matches
           spec
     -- FIXME think about data families etc.
-    IVar _ (TypeNamespace {}) _ -> error "'type' namespace is not supported yet" -- FIXME
-    IAbs _ n
+    IAbs _ _ n
       | isHiding ->
           -- This is a bit special. 'C' may match both types/classes and
           -- data constructors.
@@ -188,6 +187,7 @@ resolveImportSpec mod isHiding syms spec =
               (ENotExported Nothing n mod)
               matches
               spec
+    IAbs _ (TypeNamespace {}) _ -> error "'type' namespace is not supported yet" -- FIXME
 
     -- FIXME
     -- What about things like:

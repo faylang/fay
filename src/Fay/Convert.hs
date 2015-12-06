@@ -1,3 +1,4 @@
+{-# LANGUAGE NoImplicitPrelude   #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE PatternGuards       #-}
 {-# LANGUAGE RankNTypes          #-}
@@ -18,7 +19,7 @@ module Fay.Convert
 
 import           Fay.Compiler.Prelude
 
-import           Control.Monad.State
+import           Control.Monad.State   (evalStateT, get, lift, put)
 import           Control.Spoon
 import           Data.Aeson
 import           Data.Aeson.Types      (parseEither)

@@ -21,8 +21,8 @@ import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
-import           Control.Monad.Except
-import           Control.Monad.RWS
+import           Control.Monad.Except            (throwError)
+import           Control.Monad.RWS               (gets, modify)
 import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)
 
 -- | Compile Haskell declaration.
@@ -161,7 +161,7 @@ compileDataDecl toplevel tyvars constructors =
         JsSetConstructor qname $
           JsFun (Just $ JsConstructor qname)
                 fields
-                (for fields $ \field -> JsSetProp JsThis field (JsName field))
+                (flip fmap fields $ \field -> JsSetProp JsThis field (JsName field))
                 Nothing
 
     -- Creates a function to initialize the record by regular application

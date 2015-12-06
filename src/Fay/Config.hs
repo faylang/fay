@@ -1,5 +1,5 @@
+{-# LANGUAGE NoImplicitPrelude #-}
 -- | Configuring the compiler
-
 module Fay.Config
   ( Config
       ( configOptimize

@@ -1,12 +1,11 @@
 {-# OPTIONS -fno-warn-orphans     #-}
-{-# LANGUAGE OverloadedStrings    #-}
-
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- | Code printers. Can be used to produce both pretty and not
 -- pretty output.
 --
 -- Special constructors and symbols in Haskell are encoded to
 -- JavaScript appropriately.
-
 module Fay.Compiler.Print where
 
 import           Fay.Compiler.Prelude

@@ -1,17 +1,19 @@
-{-# LANGUAGE PatternGuards #-}
-{-# LANGUAGE TypeFamilies  #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE PatternGuards     #-}
+{-# LANGUAGE TypeFamilies      #-}
 {-# OPTIONS -fno-warn-name-shadowing #-}
 {-# OPTIONS -fno-warn-orphans #-} -- ModName (ModuleName l)
 module Language.Haskell.Names.Imports (processImports) where
 
-import           Fay.Compiler.ModuleT
 import           Fay.Compiler.Prelude
+
+import           Fay.Compiler.ModuleT
 import qualified Language.Haskell.Names.GlobalSymbolTable as Global
 import           Language.Haskell.Names.ScopeUtils
 import           Language.Haskell.Names.SyntaxUtils
 import           Language.Haskell.Names.Types
 
-import           Control.Monad.Writer
+import           Control.Monad.Writer                     (WriterT (WriterT), runWriterT)
 import           Data.Foldable                            (fold)
 import           Data.Lens.Light
 import qualified Data.Map                                 as Map

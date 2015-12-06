@@ -42,12 +42,12 @@ import           Fay.Exts.NoAnnotation           (unAnn)
 import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types
 
-import           Control.Monad.Except
-import           Control.Monad.RWS
+import           Control.Monad.Except            (throwError)
+import           Control.Monad.RWS               (gets, modify)
 
 import qualified Data.Set                        as S
 import           Language.Haskell.Exts.Annotated hiding (name)
-import           Language.Haskell.Names (annotateModule)
+import           Language.Haskell.Names          (annotateModule)
 
 --------------------------------------------------------------------------------
 -- Top level entry points

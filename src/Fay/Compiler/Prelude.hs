@@ -1,46 +1,48 @@
 -- | Re-exports of base functionality. Note that this module is just
 -- used inside the compiler. It's not compiled to JavaScript.
 -- Based on the base-extended package (c) 2013 Simon Meier, licensed as BSD3.
+{-# LANGUAGE NoImplicitPrelude #-}
 module Fay.Compiler.Prelude
-  ( module Prelude       -- Partial
+  ( module Prelude.Compat -- Partial
 
   -- * Control modules
   , module Control.Applicative
   , module Control.Arrow -- Partial
-  , module Control.Monad
+  , module Control.Monad.Compat
 
   -- * Data modules
-  , module Data.Char     -- Partial
-  , module Data.Data     -- Partial
+  , module Data.Char -- Partial
+  , module Data.Data -- Partial
   , module Data.Either
   , module Data.Function
-  , module Data.List     -- Partial
+  , module Data.List.Compat -- Partial
   , module Data.Maybe
-  , module Data.Monoid   -- Partial
+  , module Data.Monoid -- Partial
   , module Data.Ord
+  , module Data.Traversable
 
   -- * Safe
   , module Safe
 
   -- * Additions
   , anyM
-  , for
   , io
   , readAllFromProcess
   ) where
 
 import           Control.Applicative
-import           Control.Arrow       (first, second, (&&&), (***), (+++), (|||))
-import           Control.Monad       hiding (guard)
-import           Data.Char           hiding (GeneralCategory (..))
-import           Data.Data           (Data (..), Typeable)
+import           Control.Arrow        (first, second, (&&&), (***), (+++), (|||))
+import           Control.Monad.Compat hiding (guard)
+import           Data.Char            hiding (GeneralCategory (..))
+import           Data.Data            (Data (..), Typeable)
 import           Data.Either
-import           Data.Function       (on)
-import           Data.List           hiding (delete)
+import           Data.Function        (on)
+import           Data.List.Compat
 import           Data.Maybe
-import           Data.Monoid         (Monoid (..), (<>))
+import           Data.Monoid          (Monoid (..), (<>))
 import           Data.Ord
-import           Prelude             hiding (exp, mod)
+import           Data.Traversable
+import           Prelude.Compat       hiding (exp, mod)
 import           Safe
 
 import           Control.Monad.Except
@@ -54,10 +56,6 @@ io = liftIO
 -- | Do any of the (monadic) predicates match?
 anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
 anyM p l = return . not . null =<< filterM p l
-
--- | Flip of map.
-for :: (Functor f) => f a -> (a -> b) -> f b
-for = flip fmap
 
 -- | Read from a process returning both std err and out.
 readAllFromProcess :: FilePath -> [String] -> String -> IO (Either (String,String) (String,String))

@@ -20,7 +20,7 @@ import qualified Fay.Exts.NoAnnotation           as N
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
-import           Control.Monad.Except
+import           Control.Monad.Except            (runExceptT, throwError)
 import           Control.Monad.RWS               (asks, gets, modify, runRWST)
 import           Data.Version                    (parseVersion)
 import           Language.Haskell.Exts.Annotated hiding (name)

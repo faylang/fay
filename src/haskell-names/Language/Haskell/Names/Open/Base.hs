@@ -11,6 +11,7 @@
 {-# LANGUAGE ImplicitParams        #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverlappingInstances  #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -38,6 +39,7 @@ module Language.Haskell.Names.Open.Base
   , lTable
   ) where
 
+import           Fay.Compiler.Prelude
 import           Language.Haskell.Names.GetBound
 import qualified Language.Haskell.Names.GlobalSymbolTable as Global
 import qualified Language.Haskell.Names.LocalSymbolTable  as Local
@@ -46,9 +48,6 @@ import           Language.Haskell.Names.RecordWildcards
 import           Control.Monad.Identity
 import           Data.Generics.Traversable
 import           Data.Lens.Light
-import           Data.List
-import           Data.Monoid
-import           Data.Typeable
 import           GHC.Exts                                 (Constraint)
 import           Language.Haskell.Exts.Annotated
 

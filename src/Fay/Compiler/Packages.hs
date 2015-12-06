@@ -1,7 +1,6 @@
-{-# LANGUAGE TupleSections #-}
-
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE TupleSections     #-}
 -- | Dealing with Cabal packages in Fay's own special way.
-
 module Fay.Compiler.Packages where
 
 import           Fay.Compiler.Prelude

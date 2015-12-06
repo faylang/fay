@@ -13,8 +13,8 @@ import           Fay.Compiler.Prelude
 import           Fay.Compiler.Misc
 import           Fay.Types
 
-import           Control.Monad.State
-import           Control.Monad.Writer
+import           Control.Monad.State             (State, modify, runState)
+import           Control.Monad.Writer            (runWriter, tell)
 import qualified Fay.Exts.NoAnnotation           as N
 import           Language.Haskell.Exts.Annotated hiding (app, name, op)
 

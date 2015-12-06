@@ -25,8 +25,8 @@ import qualified Fay.Exts.NoAnnotation                  as N
 import qualified Fay.Exts.Scoped                        as S
 import           Fay.Types
 
-import           Control.Monad.Except
-import           Control.Monad.Writer
+import           Control.Monad.Except                   (throwError)
+import           Control.Monad.Writer                   (tell)
 import           Data.Generics.Schemes
 import           Language.ECMAScript3.Parser            as JS
 import           Language.ECMAScript3.Syntax

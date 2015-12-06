@@ -15,10 +15,10 @@ import qualified Fay.Exts.NoAnnotation           as N
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
-import           Control.Monad.Except
-import           Control.Monad.Reader
+import           Control.Monad.Except            (throwError)
+import           Control.Monad.Reader            (ask)
 import           Language.Haskell.Exts.Annotated hiding (name)
-import           Language.Haskell.Names (Scoped (Scoped), NameInfo (RecPatWildcard))
+import           Language.Haskell.Names          (NameInfo (RecPatWildcard), Scoped (Scoped))
 
 -- | Compile the given pattern against the given expression.
 compilePat :: JsExp -> S.Pat -> [JsStmt] -> Compile [JsStmt]

@@ -1,12 +1,14 @@
 {-# OPTIONS -fno-warn-name-shadowing #-}
-{-# LANGUAGE NoMonoLocalBinds #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE NoMonoLocalBinds  #-}
+{-# LANGUAGE TypeFamilies      #-}
 module Language.Haskell.Names.Exports
   ( processExports
   ) where
 
-import           Fay.Compiler.ModuleT
 import           Fay.Compiler.Prelude
+
+import           Fay.Compiler.ModuleT
 import           Language.Haskell.Names.GlobalSymbolTable as Global
 import           Language.Haskell.Names.ModuleSymbols
 import           Language.Haskell.Names.ScopeUtils
@@ -14,7 +16,7 @@ import           Language.Haskell.Names.SyntaxUtils
 import           Language.Haskell.Names.Types             (Error (..), GName (..), ModuleNameS, NameInfo (..),
                                                            Scoped (..), Symbols (..), mkTy, mkVal, st_origName)
 
-import           Control.Monad.Writer
+import           Control.Monad.Writer                     (WriterT (WriterT), runWriterT)
 import qualified Data.Map                                 as Map
 import qualified Data.Set                                 as Set
 import           Language.Haskell.Exts.Annotated

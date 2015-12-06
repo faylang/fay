@@ -19,8 +19,8 @@ import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types
 
-import           Control.Monad.Except
-import           Control.Monad.RWS
+import           Control.Monad.Except            (throwError)
+import           Control.Monad.RWS               (modify)
 import qualified Data.Map                        as M
 import           Language.Haskell.Exts.Annotated hiding (name, var)
 import qualified Language.Haskell.Names          as HN (getInterfaces)
@@ -90,7 +90,7 @@ scanRecordDecls :: F.Decl -> Compile ()
 scanRecordDecls decl = do
   case decl of
     DataDecl _loc ty _ctx (F.declHeadName -> name) qualcondecls _deriv -> do
-      let addIt = let ns = for qualcondecls (\(QualConDecl _loc' _tyvarbinds _ctx' condecl) -> conDeclName condecl)
+      let addIt = let ns = flip fmap qualcondecls (\(QualConDecl _loc' _tyvarbinds _ctx' condecl) -> conDeclName condecl)
                   in addRecordTypeState name ns
       case ty of
         DataType{} -> addIt

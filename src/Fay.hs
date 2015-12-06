@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
@@ -23,14 +24,16 @@ module Fay
   ,getRuntime
   ) where
 
+import           Fay.Compiler.Prelude
+
 import           Fay.Compiler
 import           Fay.Compiler.Misc                      (ioWarn, printSrcSpanInfo)
 import           Fay.Compiler.Packages
-import           Fay.Compiler.Prelude
 import           Fay.Compiler.Typecheck
 import           Fay.Config
 import qualified Fay.Exts                               as F
 import           Fay.Types
+
 import           Data.Aeson                             (encode)
 import qualified Data.ByteString.Lazy                   as L
 import           Language.Haskell.Exts.Annotated        (prettyPrint)

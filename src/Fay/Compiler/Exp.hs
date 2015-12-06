@@ -27,11 +27,11 @@ import           Fay.Exts.Scoped                 (noI)
 import qualified Fay.Exts.Scoped                 as S
 import           Fay.Types
 
-import           Control.Monad.Except             (throwError)
+import           Control.Monad.Except            (throwError)
 import           Control.Monad.RWS               (asks, gets)
 import qualified Data.Char                       as Char
 import           Language.Haskell.Exts.Annotated hiding (alt, binds, name, op)
-import           Language.Haskell.Names (Scoped (Scoped), NameInfo (RecExpWildcard))
+import           Language.Haskell.Names          (NameInfo (RecExpWildcard), Scoped (Scoped))
 
 -- | Compile Haskell expression.
 compileExp :: S.Exp -> Compile JsExp
@@ -291,7 +291,7 @@ compileRecConstr origExp name fieldUpdates = do
       exp <- compileExp value
       return [JsSetProp (JsNameVar $ withIdent lowerFirst $ unQualify o) (JsNameVar $ unQualify field) exp]
     updateStmt o (FieldWildcard (wildcardFields -> fields)) =
-      return $ for fields $ \fieldName -> JsSetProp (JsNameVar . withIdent lowerFirst . unQualify . unAnn $ o)
+      return $ flip fmap fields $ \fieldName -> JsSetProp (JsNameVar . withIdent lowerFirst . unQualify . unAnn $ o)
                                                     (JsNameVar fieldName)
                                                     (JsName $ JsNameVar fieldName)
     -- I couldn't find a code that generates (FieldUpdate (FieldPun ..))

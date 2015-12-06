@@ -7,8 +7,8 @@
 -- which at this point is InitialPass's preprocessing
 -- and Compiler's code generation
 module Fay.Compiler.Import
-  (startCompile
-  ,compileWith
+  ( startCompile
+  , compileWith
   ) where
 
 import           Fay.Compiler.Prelude
@@ -20,8 +20,8 @@ import qualified Fay.Exts                        as F
 import           Fay.Exts.NoAnnotation           (unAnn)
 import           Fay.Types
 
-import           Control.Monad.Except
-import           Control.Monad.RWS
+import           Control.Monad.Except            (throwError)
+import           Control.Monad.RWS               (ask, get, gets, lift, listen, modify)
 import           Language.Haskell.Exts.Annotated hiding (name, var)
 import           System.Directory
 import           System.FilePath

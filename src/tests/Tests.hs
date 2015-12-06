@@ -1,4 +1,5 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 -- | Generate the web site/documentation for the Fay project.
 --
@@ -7,8 +8,9 @@
 
 module Main where
 
-import           Fay
 import           Fay.Compiler.Prelude
+
+import           Fay
 import qualified Test.CommandLine     as Cmd
 import qualified Test.Compile         as Compile
 import qualified Test.Convert         as Convert

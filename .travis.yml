@@ -1,7 +1,7 @@
 language: "haskell"
 sudo: false
 install:
-  - "travis_retry cabal install 'cpphs >= 1.18.3'"
+  - "travis_retry cabal install 'cpphs >= 1.18.3' 'happy >= 1.19.5'"
   - "cabal install --dry-run -v3"
   - "travis_retry cabal install --force-reinstalls --only-dependencies -ftest"
 script:

@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.9
+
+* Allow and require `haskell-src-exts 1.17.*`
+
 #### 0.23.1.8
 
 * Allow `vector 0.11.*`

@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.10
+
+* Don't compile with `-fprof-auto` by default.
+
 #### 0.23.1.9
 
 * Allow and require `haskell-src-exts 1.17.*`

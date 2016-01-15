@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.12
+
+* Fix compilation on GHC < 7.8.
+
 #### 0.23.1.11
 
 * Tighten some impossible lower bounds we can't support.

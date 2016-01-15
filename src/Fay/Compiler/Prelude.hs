@@ -54,7 +54,7 @@ io :: MonadIO m => IO a -> m a
 io = liftIO
 
 -- | Do any of the (monadic) predicates match?
-anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
+anyM :: (Functor m, Applicative m, Monad m) => (a -> m Bool) -> [a] -> m Bool
 anyM p l = return . not . null =<< filterM p l
 
 -- | Read from a process returning both std err and out.

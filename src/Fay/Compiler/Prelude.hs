@@ -45,7 +45,7 @@ import           Data.Traversable
 import           Prelude.Compat       hiding (exp, mod)
 import           Safe
 
-import           Control.Monad.Except
+import           Control.Monad.Except hiding (filterM)
 import           System.Exit
 import           System.Process
 

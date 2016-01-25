@@ -157,8 +157,8 @@ library
     , syb >= 0.3 && < 0.7
     , text >= 0.11 && < 1.3
     , time >= 1.4 && < 1.6
-    , transformers >= 0.3 && < 0.4 || > 0.4.1 && < 0.5
-    , transformers-compat >= 0.3 && < 0.5
+    , transformers >= 0.3 && < 0.4 || > 0.4.1 && < 0.6
+    , transformers-compat >= 0.3 && < 0.6
     , traverse-with-class >= 0.1 && < 0.3
     , type-eq >= 0.1 && < 0.6
     , uniplate >= 1.6.11 && < 1.7

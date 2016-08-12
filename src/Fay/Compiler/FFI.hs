@@ -18,20 +18,20 @@ module Fay.Compiler.FFI
 import           Fay.Compiler.Prelude
 
 import           Fay.Compiler.Misc
-import           Fay.Compiler.Print                     (printJSString)
+import           Fay.Compiler.Print           (printJSString)
 import           Fay.Compiler.QName
-import           Fay.Exts.NoAnnotation                  (unAnn)
-import qualified Fay.Exts.NoAnnotation                  as N
-import qualified Fay.Exts.Scoped                        as S
+import           Fay.Exts.NoAnnotation        (unAnn)
+import qualified Fay.Exts.NoAnnotation        as N
+import qualified Fay.Exts.Scoped              as S
 import           Fay.Types
 
-import           Control.Monad.Except                   (throwError)
-import           Control.Monad.Writer                   (tell)
+import           Control.Monad.Except         (throwError)
+import           Control.Monad.Writer         (tell)
 import           Data.Generics.Schemes
-import           Language.ECMAScript3.Parser            as JS
+import           Language.ECMAScript3.Parser  as JS
 import           Language.ECMAScript3.Syntax
-import           Language.Haskell.Exts.Annotated        (SrcSpanInfo, prettyPrint)
-import           Language.Haskell.Exts.Annotated.Syntax
+import           Language.Haskell.Exts        (SrcSpanInfo, prettyPrint)
+import           Language.Haskell.Exts.Syntax
 
 -- | Compile an FFI expression (also used when compiling top level definitions).
 compileFFIExp :: SrcSpanInfo -> Maybe (Name a) -> String -> S.Type -> Compile JsExp
@@ -56,7 +56,10 @@ compileFFIExp loc (fmap unAnn -> nameopt) formatstr sig' =
       TyParArray _ t    -> TyParArray () <$> rmNewtys t
       TyEquals _ t1 t2  -> TyEquals () <$> rmNewtys t1 <*> rmNewtys t2
       TySplice {}       -> return $ unAnn typ
-      TyBang _ bt t     -> TyBang () (unAnn bt) <$> rmNewtys t
+      TyBang _ bt unp t -> TyBang () (unAnn bt) (unAnn unp) <$> rmNewtys t
+      TyWildCard _ _    -> error "TyWildCard not supported"
+      TyQuasiQuote _ _ _ -> error "TyQuasiQuote not supported"
+
     compileFFI' :: N.Type -> Compile JsExp
     compileFFI' sig = do
       let name = fromMaybe "<exp>" nameopt

@@ -21,7 +21,7 @@ import           Fay.Types                       (CompileError (..))
 import           Control.Monad.Except            (throwError)
 import           Control.Monad.Reader            (asks)
 import qualified Data.Generics.Uniplate.Data     as U
-import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)
+import           Language.Haskell.Exts hiding (binds, loc, name)
 
 -- | Top level, desugar a whole module possibly returning errors
 desugar :: (Data l, Typeable l) => l -> Module l -> IO (Either CompileError (Module l))

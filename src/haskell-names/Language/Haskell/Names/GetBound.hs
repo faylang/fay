@@ -15,7 +15,7 @@ import           Language.Haskell.Names.RecordWildcards
 import           Language.Haskell.Names.SyntaxUtils
 
 import           Data.Generics.Uniplate.Data
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 
 -- | Get bound value identifiers.

@@ -19,7 +19,7 @@ import           Language.Haskell.Names.Types             (Error (..), GName (..
 import           Control.Monad.Writer                     (WriterT (WriterT), runWriterT)
 import qualified Data.Map                                 as Map
 import qualified Data.Set                                 as Set
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 processExports
   :: (MonadModule m, ModuleInfo m ~ Symbols, Data l, Eq l)
@@ -70,8 +70,7 @@ resolveExportSpec tbl exp =
             (EAbs (Scoped (Export s) l) (noScope ns)
               (Scoped (GlobalType i) <$> qn), s)
         Global.Special {} -> error "Global.Special in export list?"
-    EAbs _ NoNamespace{} _ -> error "resolveExportSpec: 'type' namespace is not supported yet" -- FIXME
-    EThingAll l qn -> return $
+    EThingWith l (EWildcard wcl wcn) qn [] -> return $
       case Global.lookupType qn tbl of
         Global.Error err ->
           (scopeError err exp, mempty)
@@ -84,11 +83,15 @@ resolveExportSpec tbl exp =
               , n' == st_origName i ]
             s = mkTy i <> subs
           in
-            ( EThingAll (Scoped (Export s) l) (Scoped (GlobalType i) <$> qn)
+            ( EThingWith (Scoped (Export s) l)
+                         (EWildcard (Scoped (Export s) wcl) wcn)
+                         (Scoped (GlobalType i) <$> qn)
+                         []
             , s
             )
         Global.Special {} -> error "Global.Special in export list?"
-    EThingWith l qn cns -> return $
+    EThingWith l (EWildcard _ _) _cns -> error "Name resolution: CNames are not supported in wildcard exports"
+    EThingWith l (NoWildcard wcl) qn cns -> return $
       case Global.lookupType qn tbl of
         Global.Error err ->
           (scopeError err exp, mempty)
@@ -102,7 +105,10 @@ resolveExportSpec tbl exp =
                 cns
             s = mkTy i <> subs
           in
-            ( EThingWith (Scoped (Export s) l) (Scoped (GlobalType i) <$> qn) cns'
+            ( EThingWith (Scoped (Export s) l)
+                         (NoWildcard (Scoped (Export s) wcl))
+                         (Scoped (GlobalType i) <$> qn)
+                         cns'
             , s
             )
         Global.Special {} -> error "Global.Special in export list?"

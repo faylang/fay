@@ -7,7 +7,7 @@
 module Language.Haskell.Names.Open.Derived where
 
 import           Data.Generics.Traversable.TH
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 deriveGTraversable ''ModuleName
 deriveGTraversable ''SpecialCon
@@ -82,3 +82,6 @@ deriveGTraversable ''Sign
 deriveGTraversable ''Namespace
 deriveGTraversable ''Role
 deriveGTraversable ''PatternSynDirection
+deriveGTraversable ''Unpackedness
+deriveGTraversable ''ResultSig
+deriveGTraversable ''InjectivityInfo

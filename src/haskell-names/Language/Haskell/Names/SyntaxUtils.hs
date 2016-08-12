@@ -21,7 +21,7 @@ import           Data.Either
 import           Data.Foldable
 import           Data.Maybe
 import qualified Data.Set                        as Set
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 dropAnn :: (Functor a) => a l -> a ()
 dropAnn = fmap (const ())

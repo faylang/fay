@@ -46,7 +46,7 @@ import           Control.Monad.Except            (throwError)
 import           Control.Monad.RWS               (gets, modify)
 
 import qualified Data.Set                        as S
-import           Language.Haskell.Exts.Annotated hiding (name)
+import           Language.Haskell.Exts hiding (name)
 import           Language.Haskell.Names          (annotateModule)
 
 --------------------------------------------------------------------------------

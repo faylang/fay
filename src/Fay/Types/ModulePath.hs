@@ -10,7 +10,7 @@ import qualified Fay.Exts                        as F
 
 import           Data.List
 import           Data.List.Split
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 -- | The name of a module split into a list for code generation.
 newtype ModulePath = ModulePath { unModulePath :: [String] }

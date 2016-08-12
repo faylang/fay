@@ -3,7 +3,7 @@ module Fay.Compiler.Parse
   , defaultExtensions
   ) where
 
-import           Language.Haskell.Exts.Annotated hiding (name)
+import           Language.Haskell.Exts hiding (name)
 
 -- | Parse some Fay code.
 parseFay :: Parseable ast => FilePath -> String -> ParseResult ast

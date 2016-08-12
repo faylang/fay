@@ -36,8 +36,8 @@ import           Fay.Types
 
 import           Data.Aeson                             (encode)
 import qualified Data.ByteString.Lazy                   as L
-import           Language.Haskell.Exts.Annotated        (prettyPrint)
-import           Language.Haskell.Exts.Annotated.Syntax
+import           Language.Haskell.Exts        (prettyPrint)
+import           Language.Haskell.Exts.Syntax
 import           Language.Haskell.Exts.SrcLoc
 import           Paths_fay
 import           SourceMap                              (generate)

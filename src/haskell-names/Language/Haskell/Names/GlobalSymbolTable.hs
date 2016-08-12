@@ -20,7 +20,7 @@ import           Language.Haskell.Names.Types
 import           Data.Lens.Light
 import qualified Data.Map                           as Map
 import qualified Data.Set                           as Set
-import           Language.Haskell.Exts.Annotated    as HSE
+import           Language.Haskell.Exts    as HSE
 
 -- | Global symbol table — contains global names
 data Table =

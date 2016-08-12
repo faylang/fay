@@ -1,7 +1,7 @@
 -- | This module provides a more flexible way to process Haskell code —
 -- using an open-recursive traversal.
 --
--- You can look at "Language.Haskell.Exts.Annotated" source as an example
+-- You can look at "Language.Haskell.Exts" source as an example
 -- of how to use this module.
 {-# OPTIONS -fno-warn-name-shadowing #-}
 {-# LANGUAGE DataKinds             #-}
@@ -49,7 +49,7 @@ import           Control.Monad.Identity
 import           Data.Generics.Traversable
 import           Data.Lens.Light
 import           GHC.Exts                                 (Constraint)
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 -- | Describes how we should treat names in the current context
 data NameContext

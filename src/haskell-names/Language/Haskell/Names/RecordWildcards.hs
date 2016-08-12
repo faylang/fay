@@ -20,7 +20,7 @@ import           Control.Monad
 import qualified Data.Map                                 as Map
 import           Data.Maybe
 import qualified Data.Set                                 as Set
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 -- | Information about the names being introduced by a record wildcard
 --

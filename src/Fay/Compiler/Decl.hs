@@ -23,7 +23,7 @@ import           Fay.Types
 
 import           Control.Monad.Except            (throwError)
 import           Control.Monad.RWS               (gets, modify)
-import           Language.Haskell.Exts.Annotated hiding (binds, loc, name)
+import           Language.Haskell.Exts hiding (binds, loc, name)
 
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]

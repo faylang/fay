@@ -13,7 +13,7 @@ import           Language.Haskell.Names.SyntaxUtils
 import           Language.Haskell.Names.Types
 
 import qualified Data.Map                           as Map
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 -- | Local symbol table — contains locally bound names
 newtype Table = Table (Map.Map NameS SrcLoc)

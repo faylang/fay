@@ -24,7 +24,7 @@ import           Data.Graph                           (flattenSCC, stronglyConnC
 import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Set                             as Set
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 
 -- | Take a set of modules and return a list of sets, where each sets for

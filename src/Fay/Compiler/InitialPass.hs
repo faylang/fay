@@ -22,7 +22,7 @@ import           Fay.Types
 import           Control.Monad.Except            (throwError)
 import           Control.Monad.RWS               (modify)
 import qualified Data.Map                        as M
-import           Language.Haskell.Exts.Annotated hiding (name, var)
+import           Language.Haskell.Exts hiding (name, var)
 import qualified Language.Haskell.Names          as HN (getInterfaces)
 
 -- | Preprocess and collect all information needed during code generation.

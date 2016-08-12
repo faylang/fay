@@ -16,7 +16,7 @@ import           Fay.Types
 import           Control.Monad.State             (State, modify, runState)
 import           Control.Monad.Writer            (runWriter, tell)
 import qualified Fay.Exts.NoAnnotation           as N
-import           Language.Haskell.Exts.Annotated hiding (app, name, op)
+import           Language.Haskell.Exts hiding (app, name, op)
 
 -- | The arity of a function. Arity here is defined to be the number
 -- of arguments that can be directly uncurried from a curried lambda

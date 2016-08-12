@@ -45,7 +45,7 @@ import           Fay.Compiler.Prelude
 
 import           Data.Default
 import           Data.Maybe                      ()
-import           Language.Haskell.Exts.Annotated (ModuleName (..))
+import           Language.Haskell.Exts (ModuleName (..))
 import           System.Environment
 
 -- | Configuration of the compiler.

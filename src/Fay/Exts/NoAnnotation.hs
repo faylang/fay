@@ -6,7 +6,7 @@ import           Fay.Compiler.Prelude
 
 import           Data.List.Split                 (splitOn)
 import           Data.String
-import qualified Language.Haskell.Exts.Annotated as A
+import qualified Language.Haskell.Exts as A
 
 type Alt = A.Alt ()
 type BangType = A.BangType ()

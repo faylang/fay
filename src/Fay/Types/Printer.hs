@@ -19,7 +19,7 @@ module Fay.Types.Printer
 import Control.Monad.RWS
 import Data.List                       (elemIndex)
 import Data.String
-import Language.Haskell.Exts.Annotated
+import Language.Haskell.Exts
 import SourceMap.Types
 
 -- | Global options of the printer

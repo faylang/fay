@@ -27,7 +27,7 @@ import           Language.Haskell.Names.Types
 
 import           Data.Lens.Light
 import           Data.Proxy
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 import           Type.Eq
 
 annotate

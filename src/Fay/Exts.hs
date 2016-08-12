@@ -1,6 +1,6 @@
 module Fay.Exts where
 
-import qualified Language.Haskell.Exts.Annotated as A
+import qualified Language.Haskell.Exts as A
 
 type X = A.SrcSpanInfo
 

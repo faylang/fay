@@ -10,13 +10,13 @@ module Test.Desugar
 import           Fay.Compiler.Prelude
 
 import           Fay.Compiler.Desugar
-import           Fay.Compiler.Parse              (parseFay)
-import           Fay.Types.CompileError          (CompileError (..))
+import           Fay.Compiler.Parse     (parseFay)
+import           Fay.Types.CompileError (CompileError (..))
 
-import           Language.Haskell.Exts.Annotated hiding (alt, binds, loc, name)
+import           Language.Haskell.Exts  hiding (alt, binds, loc, name)
 import           Test.Tasty
 import           Test.Tasty.HUnit
-import           Text.Groom
+-- import           Text.Groom
 
 tests :: TestTree
 tests = testGroup "desugar" $ map (\(T k a b) -> testCase k $ doDesugar k a b) testDeclarations
@@ -147,7 +147,7 @@ devTest nam = do
   when (unAnn desugaredExpected /= unAnn originalExpected ) $ putStrLn "desugaredExpected /= undesugared"
 
 g :: Show a => a -> IO ()
-g = putStrLn . groom
+g = putStrLn . show -- groom
 
 unAnn :: Functor f => f a -> f ()
 unAnn = void

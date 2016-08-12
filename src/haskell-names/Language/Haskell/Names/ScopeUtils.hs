@@ -15,7 +15,7 @@ import           Language.Haskell.Names.Types
 
 import           Data.Lens.Light
 import qualified Data.Set                                 as Set
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 scopeError :: Functor f => Error l -> f l -> f (Scoped l)
 scopeError e f = Scoped (ScopeError e) <$> f

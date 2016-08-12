@@ -11,7 +11,7 @@ import qualified Fay.Exts.NoAnnotation           as N
 import           Fay.Types.ModulePath
 
 import           Data.String
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 -- | Statement type.
 data JsStmt

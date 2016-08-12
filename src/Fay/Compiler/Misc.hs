@@ -23,7 +23,7 @@ import           Fay.Types
 import           Control.Monad.Except            (runExceptT, throwError)
 import           Control.Monad.RWS               (asks, gets, modify, runRWST)
 import           Data.Version                    (parseVersion)
-import           Language.Haskell.Exts.Annotated hiding (name)
+import           Language.Haskell.Exts hiding (name)
 import           Language.Haskell.Names          (GName (GName), NameInfo (GlobalValue, LocalValue, ScopeError),
                                                   OrigName, Scoped (Scoped), origGName, origName)
 import           System.IO

@@ -9,7 +9,7 @@ import           Fay.Compiler.Prelude
 import           Fay.Compiler.Desugar.Types
 
 import           Control.Monad.Reader            (asks, local)
-import           Language.Haskell.Exts.Annotated (Name (..))
+import           Language.Haskell.Exts (Name (..))
 
 -- | Generate a temporary, SCOPED name for testing conditions and
 -- such. We don't have name tracking yet, so instead we use this.

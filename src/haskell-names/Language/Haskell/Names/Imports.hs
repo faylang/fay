@@ -18,7 +18,7 @@ import           Data.Foldable                            (fold)
 import           Data.Lens.Light
 import qualified Data.Map                                 as Map
 import qualified Data.Set                                 as Set
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 instance ModName (ModuleName l) where
   modToString (ModuleName _ s) = s

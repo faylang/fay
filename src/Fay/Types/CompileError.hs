@@ -4,7 +4,7 @@ import qualified Fay.Exts                        as F
 import qualified Fay.Exts.NoAnnotation           as N
 import qualified Fay.Exts.Scoped                 as S
 
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 -- | Error type.
 data CompileError

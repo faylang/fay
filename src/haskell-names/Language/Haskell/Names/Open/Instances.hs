@@ -22,7 +22,7 @@ import           Language.Haskell.Names.Types
 
 import           Data.Lens.Light
 import qualified Data.Traversable                       as T
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 c :: Applicative w => c -> w c
 c = pure

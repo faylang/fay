@@ -15,7 +15,7 @@ import           Fay.Types
 
 import           Data.Aeson.Encode
 import qualified Data.ByteString.Lazy.UTF8       as UTF8
-import           Language.Haskell.Exts.Annotated hiding (alt, name, op, sym)
+import           Language.Haskell.Exts hiding (alt, name, op, sym)
 
 --------------------------------------------------------------------------------
 -- Printing

@@ -7,7 +7,7 @@ module Language.Haskell.Names.ModuleSymbols
   )
   where
 
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 import           Language.Haskell.Names.GetBound
 import qualified Language.Haskell.Names.GlobalSymbolTable as Global
 import           Language.Haskell.Names.ScopeUtils
@@ -74,7 +74,7 @@ getTopDeclSymbols impTbl mdl d =
       let tn = hname dh
       in  [ Right (SymType        { st_origName = tn, st_fixity = Nothing })]
 
-    TypeFamDecl _ dh _ ->
+    TypeFamDecl _loc dh _mrs _mk ->
       let tn = hname dh
       in  [ Right (SymTypeFam     { st_origName = tn, st_fixity = Nothing })]
 
@@ -121,7 +121,7 @@ getTopDeclSymbols impTbl mdl d =
         cdecls = fromMaybe [] mds
       in
           Right (SymClass   { st_origName = cq,       st_fixity = Nothing }) :
-        [ Right (SymTypeFam { st_origName = hname dh, st_fixity = Nothing }) | ClsTyFam   _   dh _ <- cdecls ] ++
+        [ Right (SymTypeFam { st_origName = hname dh, st_fixity = Nothing }) | ClsTyFam   _   dh _ _ <- cdecls ] ++
         [ Right (SymDataFam { st_origName = hname dh, st_fixity = Nothing }) | ClsDataFam _ _ dh _ <- cdecls ] ++
         [ Left  (SymMethod  { sv_origName = qname mn, sv_fixity = Nothing, sv_className = cq }) | mn <- ms ]
 
@@ -139,6 +139,7 @@ getTopDeclSymbols impTbl mdl d =
   where
     ModuleName _ smdl = mdl
     qname = GName smdl . nameToString
+    hname :: DeclHead l -> GName
     hname = qname . getDeclHeadName
     dataOrNewCon dataOrNew = case dataOrNew of DataType {} -> SymData; NewType {} -> SymNewType
 

@@ -30,7 +30,7 @@ import           Fay.Types
 import           Control.Monad.Except            (throwError)
 import           Control.Monad.RWS               (asks, gets)
 import qualified Data.Char                       as Char
-import           Language.Haskell.Exts.Annotated hiding (alt, binds, name, op)
+import           Language.Haskell.Exts hiding (alt, binds, name, op)
 import           Language.Haskell.Names          (NameInfo (RecExpWildcard), Scoped (Scoped))
 
 -- | Compile Haskell expression.

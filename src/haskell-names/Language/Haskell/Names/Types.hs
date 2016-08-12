@@ -34,7 +34,7 @@ import           Fay.Compiler.Prelude
 import           Data.Foldable                            as F
 import           Data.Lens.Light
 import qualified Data.Set                                 as Set
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 import           Text.Printf
 
 type ExtensionSet = Set.Set KnownExtension

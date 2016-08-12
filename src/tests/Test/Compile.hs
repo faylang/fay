@@ -11,7 +11,7 @@ import           Fay.Compiler.Prelude
 import           Test.Util                       (isRight)
 #endif
 
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.TH

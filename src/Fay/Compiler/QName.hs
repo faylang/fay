@@ -2,7 +2,7 @@
 
 module Fay.Compiler.QName where
 
-import           Language.Haskell.Exts.Annotated
+import           Language.Haskell.Exts
 
 -- | Extract the module name from a qualified name.
 qModName :: QName a -> Maybe (ModuleName a)

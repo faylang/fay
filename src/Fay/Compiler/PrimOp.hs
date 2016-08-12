@@ -29,7 +29,7 @@ import qualified Fay.Exts.NoAnnotation           as N
 
 import           Data.Map                        (Map)
 import qualified Data.Map                        as M
-import           Language.Haskell.Exts.Annotated hiding (binds, name)
+import           Language.Haskell.Exts hiding (binds, name)
 
 -- | Make an identifier from the built-in HJ module.
 fayBuiltin :: a -> String -> QName a

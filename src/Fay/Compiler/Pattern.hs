@@ -17,7 +17,7 @@ import           Fay.Types
 
 import           Control.Monad.Except            (throwError)
 import           Control.Monad.Reader            (ask)
-import           Language.Haskell.Exts.Annotated hiding (name)
+import           Language.Haskell.Exts hiding (name)
 import           Language.Haskell.Names          (NameInfo (RecPatWildcard), Scoped (Scoped))
 
 -- | Compile the given pattern against the given expression.

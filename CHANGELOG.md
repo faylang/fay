@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.13
+
+* Add support for haskell-src-exts 1.18.1.
+
 #### 0.23.1.12
 
 * Fix compilation on GHC < 7.8.

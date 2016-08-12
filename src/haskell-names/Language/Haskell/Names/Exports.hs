@@ -90,7 +90,7 @@ resolveExportSpec tbl exp =
             , s
             )
         Global.Special {} -> error "Global.Special in export list?"
-    EThingWith l (EWildcard _ _) _cns -> error "Name resolution: CNames are not supported in wildcard exports"
+    EThingWith _ (EWildcard _ _) _qn _cns -> error "Name resolution: CNames are not supported in wildcard exports"
     EThingWith l (NoWildcard wcl) qn cns -> return $
       case Global.lookupType qn tbl of
         Global.Error err ->

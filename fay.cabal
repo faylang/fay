@@ -177,7 +177,7 @@ executable fay
       base
     , fay
     , mtl
-    , optparse-applicative >= 0.11 && < 0.13
+    , optparse-applicative >= 0.11 && < 0.14
     , split
 
 executable fay-tests

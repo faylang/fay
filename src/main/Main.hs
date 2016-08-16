@@ -3,16 +3,20 @@
 module Main where
 
 import           Fay
-import           Paths_fay (version)
+import           Paths_fay                 (version)
 
+import           Control.Applicative       ((<|>))
+import qualified Control.Exception         as E
 import           Control.Monad
 import           Control.Monad.Reader
-import           Data.List.Split (wordsBy)
+import           Data.List.Split           (wordsBy)
 import           Data.Maybe
-import           Data.Version (showVersion)
-import           Options.Applicative
-import           Options.Applicative.Types
-import qualified Control.Exception as E
+import           Data.Monoid               ((<>))
+import           Data.Version              (showVersion)
+import           Options.Applicative       (Mod, OptionFields, Parser, argument, execParser, fullDesc, header, help,
+                                            helper, info, long, many, metavar, option, optional, short, strOption,
+                                            switch, value)
+import           Options.Applicative.Types (ReadM (ReadM))
 
 -- | Options and help.
 data FayCompilerOptions = FayCompilerOptions

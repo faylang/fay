@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.15
+
+* Allow optparse-applicative 0.13.*.
+
 #### 0.23.1.14
 
 * Fix a compilation error introduced in 0.23.1.13.

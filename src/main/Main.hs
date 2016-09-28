@@ -5,7 +5,7 @@ module Main where
 import           Fay
 import           Paths_fay                 (version)
 
-import           Control.Applicative       ((<|>))
+import           Control.Applicative       ((<|>), (<$>), (<*>))
 import qualified Control.Exception         as E
 import           Control.Monad
 import           Control.Monad.Reader

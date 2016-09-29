@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.23.1.16
+
+* Fix build on GHC 7.4
+
 #### 0.23.1.15
 
 * Allow optparse-applicative 0.13.*.

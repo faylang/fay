@@ -164,7 +164,7 @@ library
     , uniplate >= 1.6.11 && < 1.7
     , unordered-containers == 0.2.*
     , utf8-string >= 0.1 && < 1.1
-    , vector < 0.12
+    , vector < 0.13
 
   if impl(ghc < 7.8)
     build-depends: tagged

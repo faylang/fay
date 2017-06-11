@@ -15,10 +15,18 @@ let
   ghc7103 = pkgs.haskell.packages.ghc7103.override { inherit packageSetConfig; };
   ghc802 = pkgs.haskell.packages.ghc802.override { inherit packageSetConfig; };
 
-in rec {
-  fay_ghc7103 = ghc7103.fay;
-  fay_ghc802 = ghc802.fay;
-  fay_ALL = pkgs.runCommand "dummy" {
-    buildInputs = [ fay_ghc802 fay_ghc7103 ];
+  mkFayTest = fay: pkgs.callPackage (import ./pkg-fay-tests.nix) { inherit fay; };
+
+  jobs = {
+    fay_ghc802 = ghc802.fay;
+    fay-tests_ghc802 = mkFayTest ghc802.fay;
+
+    fay_ghc7103 = ghc7103.fay;
+    fay-tests_ghc7103 = mkFayTest ghc7103.fay;
+  };
+
+in (jobs // {
+  everything = pkgs.runCommand "dummy" {
+    buildInputs = builtins.attrValues jobs;
   } "";
-}
+})

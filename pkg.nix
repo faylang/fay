@@ -5,6 +5,7 @@
 , stdenv, syb, text, time, transformers, transformers-compat
 , traverse-with-class, type-eq, uniplate, unordered-containers
 , utf8-string, vector
+, tasty, tasty-hunit, tasty-th
 }:
 mkDerivation {
   pname = "fay";
@@ -20,8 +21,12 @@ mkDerivation {
     traverse-with-class type-eq uniplate unordered-containers
     utf8-string vector
   ];
+  testHaskellDepends = [
+    tasty tasty-hunit tasty-th
+  ];
   executableHaskellDepends = [ base mtl optparse-applicative split ];
   homepage = "https://github.com/faylang/fay/wiki";
   description = "A compiler for Fay, a Haskell subset that compiles to JavaScript";
   license = stdenv.lib.licenses.bsd3;
+  configureFlags = [ "-ftest" ];
 }

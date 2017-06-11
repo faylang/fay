@@ -15,7 +15,10 @@ let
   ghc7103 = pkgs.haskell.packages.ghc7103.override { inherit packageSetConfig; };
   ghc802 = pkgs.haskell.packages.ghc802.override { inherit packageSetConfig; };
 
-in {
-  fay_ghc7103 = ghc802.fay;
+in rec {
+  fay_ghc7103 = ghc7103.fay;
   fay_ghc802 = ghc802.fay;
+  fay_ALL = pkgs.runCommand "dummy" {
+    buildInputs = [ fay_ghc802 fay_ghc7103 ];
+  } "";
 }

@@ -6,7 +6,7 @@ install:
 #  - "travis_retry cabal install --force-reinstalls --only-dependencies -ftest"
 language: nix
 script:
-  - nix-build release.nix -A fay_ghc802 -A fay_ghc7103
+  - nix-build release.nix -A fay_ALL
 #  - fay-tests --num-threads=4 -random 20
 # notifications:
 #   irc:

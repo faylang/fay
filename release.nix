@@ -26,7 +26,10 @@ let
   };
 
 in (jobs // {
-  everything = pkgs.runCommand "dummy" {
-    buildInputs = builtins.attrValues jobs;
-  } "";
+ everything = pkgs.releaseTools.aggregate
+   { name = "everything";
+     meta.description = "Every job in release.nix";
+     constituents = builtins.attrValues jobs;
+   };
 })
+

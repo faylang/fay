@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.21.0.0 (2017-08-02)
+
+* Changed the definition of `splitOn` from `Char -> Text -> [Text]` to `Text -> Text -> [Text]` to make it more general and to match `text:Data.Text.splitOn`. Thanks to A. Bram Neijt!
+
 ## 0.20.0.1 (2015-06-24)
 
 * Fix polymorphic arguments in `Data.Var` (thanks Jakub Ryška)

@@ -181,7 +181,7 @@ stripSuffix prefix text =
 -- | O(m+n) Break a Text into pieces separated by the first Text
 -- argument, consuming the delimiter. An empty delimiter is
 -- invalid, and will cause an error to be raised.
-splitOn :: Char -> Text -> [Text]
+splitOn :: Text -> Text -> [Text]
 splitOn = ffi "%2.split(%1)"
 
 -- |

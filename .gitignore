@@ -13,3 +13,4 @@ src/*.js
 tests/*.html
 tests/*.js
 tests/*/*.js
+.stack-work

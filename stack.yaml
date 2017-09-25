@@ -1,0 +1,7 @@
+resolver: lts-8.24
+packages:
+- .
+- fay-base
+extra-deps: []
+flags: {}
+extra-package-dbs: []

@@ -7,7 +7,7 @@ module Test.Util
   , getRecursiveContents
   ) where
 
-import           Fay.Compiler.Prelude
+import           Fay.Compiler.Prelude hiding (fromLeft)
 
 import           System.Directory
 import           System.FilePath

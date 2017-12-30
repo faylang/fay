@@ -2,7 +2,7 @@
 
 module Test.CommandLine (tests) where
 
-import           Fay.Compiler.Prelude
+import           Fay.Compiler.Prelude hiding (fromLeft)
 import           Test.Util
 
 import           System.Directory

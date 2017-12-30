@@ -2,6 +2,8 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE MonoLocalBinds        #-}
+
 module Fay.Compiler.Desugar
   ( desugar
   , desugar'

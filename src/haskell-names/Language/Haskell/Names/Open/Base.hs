@@ -12,11 +12,13 @@
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
-{-# LANGUAGE OverlappingInstances  #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE MonoLocalBinds        #-}
+
 module Language.Haskell.Names.Open.Base
   ( Resolvable (..)
   , intro
@@ -95,7 +97,7 @@ defaultRtraverse
   => a -> Scope -> f a
 defaultRtraverse a sc =
   let ?c = ConstraintProxy :: ConstraintProxy Resolvable
-  in gtraverse (\a -> alg a sc) a
+  in gtraverse @Resolvable (\a -> alg a sc) a
 
 -- | A type that implements 'Resolvable' provides a way to perform
 -- a shallow scope-aware traversal.

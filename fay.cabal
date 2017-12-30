@@ -1,5 +1,5 @@
 name:                fay
-version:             0.23.1.16
+version:             0.24
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which is type-checked
                      with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
@@ -133,7 +133,6 @@ library
     Language.Haskell.Names.SyntaxUtils
     Language.Haskell.Names.Types
     Paths_fay
-
   build-depends:
       base >= 4.5 && < 4.11
     , base-compat >= 0.8 && < 0.10
@@ -149,18 +148,17 @@ library
     , language-ecmascript >= 0.15 && < 0.18
     , mtl >= 2.1 && < 2.3
     , mtl-compat >= 0.1 && < 0.3
-    , process >= 1.1 && < 1.5
+    , process >= 1.1 && < 1.7
     , safe >= 0.2 && < 0.4
     , sourcemap == 0.1.*
     , split >= 0.1 && < 0.3
     , spoon >= 0.1 && < 0.4
     , syb >= 0.3 && < 0.8
     , text >= 0.11 && < 1.3
-    , time >= 1.4 && < 1.7
+    , time >= 1.4 && < 1.9
     , transformers >= 0.3 && < 0.4 || > 0.4.1 && < 0.7
     , transformers-compat >= 0.3 && < 0.6
-    , traverse-with-class >= 0.1 && < 0.3
-    , type-eq >= 0.1 && < 0.6
+    , traverse-with-class >= 1.0 && < 2.0
     , uniplate >= 1.6.11 && < 1.7
     , unordered-containers == 0.2.*
     , utf8-string >= 0.1 && < 1.1
@@ -179,7 +177,8 @@ executable fay
     , mtl
     , optparse-applicative >= 0.11 && < 0.15
     , split
-
+  other-modules:
+    Paths_fay
 executable fay-tests
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   hs-source-dirs:    src/tests
@@ -191,6 +190,7 @@ executable fay-tests
       Test.Convert
       Test.Desugar
       Test.Util
+      Paths_fay
     build-depends:
         base
       , aeson

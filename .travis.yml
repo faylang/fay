@@ -1,5 +1,8 @@
 language: "haskell"
 sudo: false
+ghc:
+  - "8.0"
+  - "8.2"
 install:
   - "travis_retry cabal install 'cpphs >= 1.18.3' 'happy >= 1.19.5'"
   - "cabal install --dry-run -v3"
@@ -8,9 +11,6 @@ script:
   - cabal install . fay-base/ --jobs=1 -ftest
   - fay-tests --num-threads=4 -random 20
 notifications:
-  irc:
-    channels: "irc.freenode.net#fay"
-    skip_join: true
   email:
     recipients: adam@bergmark.nl
     on_success: change

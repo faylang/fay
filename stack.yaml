@@ -1,4 +1,4 @@
-resolver: lts-10.1
+resolver: lts-10.2
 packages:
 - .
 - fay-base
@@ -7,5 +7,7 @@ extra-deps:
 - spoon-0.3.1
 - testing-feat-0.4.0.3
 - tagshare-0.0
-flags: {}
+flags:
+  fay:
+    test: true
 extra-package-dbs: []

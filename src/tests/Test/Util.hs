@@ -2,12 +2,10 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 module Test.Util
   ( fayPath
-  , isRight
-  , fromLeft
   , getRecursiveContents
   ) where
 
-import           Fay.Compiler.Prelude hiding (fromLeft)
+import           Fay.Compiler.Prelude
 
 import           System.Directory
 import           System.FilePath
@@ -32,10 +30,6 @@ firstWhereM p ins = case ins of
 hush :: Either a b -> Maybe b
 hush = either (const Nothing) Just
 
-fromLeft :: Either a b -> a
-fromLeft (Left a) = a
-fromLeft (Right _) = error "fromLeft got Right"
-
 -- | Get all files in a folder and its subdirectories.
 -- Taken from Real World Haskell
 -- http://book.realworldhaskell.org/read/io-case-study-a-library-for-searching-the-filesystem.html
@@ -50,9 +44,3 @@ getRecursiveContents topdir = do
       then getRecursiveContents path
       else return [path]
   return (concat paths)
-
-#if !MIN_VERSION_base(4,7,0)
-isRight :: Either a b -> Bool
-isRight Right{} = True
-isRight Left{} = False
-#endif

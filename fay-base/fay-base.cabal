@@ -1,5 +1,5 @@
 name:                fay-base
-version:             0.24
+version:             0.21.0.0
 synopsis:            The base package for Fay.
 description:         The base package for Fay.
                      This package amongst others exports Prelude and FFI which you probably want to use with Fay.
@@ -58,5 +58,5 @@ library
     Prelude
     Unsafe.Coerce
   build-depends:
-      base == 4.*,
-      fay == 0.24
+      base == 4.*
+    , fay >= 0.21.1 && < 0.24

@@ -13,7 +13,7 @@ import           Fay.Compiler.Prelude
 import           Fay.Compiler.PrimOp
 import           Fay.Types
 
-import           Data.Aeson.Encode
+import           Data.Aeson
 import qualified Data.ByteString.Lazy.UTF8       as UTF8
 import           Language.Haskell.Exts hiding (alt, name, op, sym)
 

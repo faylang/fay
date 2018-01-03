@@ -37,7 +37,7 @@ infixl 4 <|
 sc -: b = (b, sc)
 infix 5 -:
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Decl l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (Decl l) where
   rtraverse e sc =
     case e of
       -- N.B. We do not add pat to the local scope.
@@ -65,10 +65,10 @@ instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Decl l) where
           <| sc       -: ty
       _ -> defaultRtraverse e sc
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Type l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (Type l) where
   rtraverse e sc = defaultRtraverse e (exprT sc)
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (DeclHead l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (DeclHead l) where
   rtraverse e sc =
     case e of
       DHead l name ->
@@ -82,7 +82,7 @@ instance (Resolvable l, SrcInfo l, Data l) => Resolvable (DeclHead l) where
           <| binderT sc -: name
       _ -> defaultRtraverse e sc
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (ConDecl l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (ConDecl l) where
   rtraverse e sc =
     case e of
       ConDecl l name tys ->
@@ -103,7 +103,7 @@ instance (Resolvable l, SrcInfo l, Data l) => Resolvable (ConDecl l) where
           <| sc -: fields
 
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (FieldDecl l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (FieldDecl l) where
   rtraverse e sc =
     case e of
       FieldDecl l name tys ->
@@ -112,7 +112,7 @@ instance (Resolvable l, SrcInfo l, Data l) => Resolvable (FieldDecl l) where
           <| binderV sc -: name
           <| sc -: tys
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Pat l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (Pat l) where
   rtraverse e sc =
     case e of
       PVar l name ->
@@ -156,7 +156,7 @@ instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Pat l) where
           <| sc       -: pat
       _ -> defaultRtraverse e sc
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (PatField l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (PatField l) where
   rtraverse e sc =
     case e of
       PFieldPat l qn pat ->
@@ -193,7 +193,7 @@ chain pats sc =
         (ps', sc'') = chain ps sc'
       in ((:) <$> p' <*> ps', sc'')
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Match l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (Match l) where
   rtraverse e sc =
     case e of
       Match l name pats rhs mbWhere ->
@@ -219,7 +219,7 @@ instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Match l) where
 
 -- NB: there is an inefficiency here (and in similar places), because we
 -- call intro on the same subtree several times. Maybe tackle it later.
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Binds l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (Binds l) where
   rtraverse e sc =
     case e of
       BDecls l decls ->
@@ -230,7 +230,7 @@ instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Binds l) where
           <| scWithBinds -: decls
       _ -> defaultRtraverse e sc
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Exp l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (Exp l) where
   rtraverse e sc =
     case e of
       Let l bnds body ->
@@ -294,7 +294,7 @@ instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Exp l) where
 
       _ -> defaultRtraverse e sc
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Alt l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (Alt l) where
   rtraverse e sc =
     case e of
       Alt l pat guardedAlts mbWhere ->
@@ -308,7 +308,7 @@ instance (Resolvable l, SrcInfo l, Data l) => Resolvable (Alt l) where
           <| scWithBinds -: guardedAlts
           <| scWithBinds -: mbWhere
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (GuardedRhs l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (GuardedRhs l) where
   rtraverse e sc =
     case e of
       GuardedRhs l stmts exp ->
@@ -319,11 +319,11 @@ instance (Resolvable l, SrcInfo l, Data l) => Resolvable (GuardedRhs l) where
           <*> stmts'
           <|  scWithStmts -: exp
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable [Stmt l] where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable [Stmt l] where
   rtraverse e sc =
     fst $ chain e sc
 
-instance (Resolvable l, SrcInfo l, Data l) => Resolvable (QualStmt l) where
+instance {-# OVERLAPPING #-} (Resolvable l, SrcInfo l, Data l) => Resolvable (QualStmt l) where
   rtraverse e sc =
     case e of
       QualStmt {} -> defaultRtraverse e sc
@@ -351,9 +351,11 @@ Example: f x (find (< x) -> Just y) = ...
 -}
 
 -- Some road-block Resolvable instances
-instance Typeable a => Resolvable (Scoped a) where
+instance {-# OVERLAPPING #-} Typeable a => Resolvable (Scoped a) where
   rtraverse = flip $ const pure
-instance Resolvable SrcSpan where
+instance {-# OVERLAPPING #-} Resolvable SrcSpan where
   rtraverse = flip $ const pure
-instance Resolvable SrcSpanInfo where
+instance {-# OVERLAPPING #-} Resolvable SrcSpanInfo where
   rtraverse = flip $ const pure
+
+

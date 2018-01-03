@@ -6,7 +6,6 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE ImplicitParams        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverlappingInstances  #-}
 {-# LANGUAGE PatternGuards         #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -28,7 +27,7 @@ import           Language.Haskell.Names.Types
 import           Data.Lens.Light
 import           Data.Proxy
 import           Language.Haskell.Exts
-import           Type.Eq
+import           Data.Typeable ( eqT, (:~:)(Refl) )
 
 annotate
   :: forall a l .
@@ -44,18 +43,18 @@ annotateRec _ sc a = go sc a where
   go :: forall a . Resolvable a => Scope -> a -> a
   go sc a
     | ReferenceV <- getL nameCtx sc
-    , Just (Eq :: QName (Scoped l) :~: a) <- dynamicEq
+    , Just (Refl :: QName (Scoped l) :~: a) <- eqT
       = lookupValue (fmap sLoc a) sc <$ a
     | ReferenceT <- getL nameCtx sc
-    , Just (Eq :: QName (Scoped l) :~: a) <- dynamicEq
+    , Just (Refl :: QName (Scoped l) :~: a) <- eqT
       = lookupType (fmap sLoc a) sc <$ a
     | BindingV <- getL nameCtx sc
-    , Just (Eq :: Name (Scoped l) :~: a) <- dynamicEq
+    , Just (Refl :: Name (Scoped l) :~: a) <- eqT
       = Scoped ValueBinder (sLoc . ann $ a) <$ a
     | BindingT <- getL nameCtx sc
-    , Just (Eq :: Name (Scoped l) :~: a) <- dynamicEq
+    , Just (Refl :: Name (Scoped l) :~: a) <- eqT
       = Scoped TypeBinder (sLoc . ann $ a) <$ a
-    | Just (Eq :: FieldUpdate (Scoped l) :~: a) <- dynamicEq
+    | Just (Refl :: FieldUpdate (Scoped l) :~: a) <- eqT
       = case a of
           FieldPun l n -> FieldPun l (lookupValue (sLoc <$> n) sc <$ n)
           FieldWildcard l ->
@@ -70,7 +69,7 @@ annotateRec _ sc a = go sc a where
                   namesUnres
             in FieldWildcard $ Scoped (RecExpWildcard namesRes) (sLoc l)
           _ -> rmap go sc a
-    | Just (Eq :: PatField (Scoped l) :~: a) <- dynamicEq
+    | Just (Refl :: PatField (Scoped l) :~: a) <- eqT
     , PFieldWildcard l <- a
       = PFieldWildcard $
           Scoped

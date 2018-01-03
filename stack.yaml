@@ -1,7 +1,13 @@
-resolver: lts-8.24
+resolver: lts-10.2
 packages:
 - .
 - fay-base
-extra-deps: []
-flags: {}
+extra-deps:
+- language-ecmascript-0.17.2.0
+- spoon-0.3.1
+- testing-feat-0.4.0.3
+- tagshare-0.0
+flags:
+  fay:
+    test: true
 extra-package-dbs: []

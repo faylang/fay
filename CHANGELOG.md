@@ -2,6 +2,11 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+### 0.23.2.0
+
+* GHC 8.2 support
+* Use traverse-with-class 1.0.*, and as a result drop support for GHC < 8.
+
 #### 0.23.1.16
 
 * Fix build on GHC 7.4

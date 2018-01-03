@@ -13,7 +13,7 @@ import           Fay.Compiler.Desugar
 import           Fay.Compiler.Parse     (parseFay)
 import           Fay.Types.CompileError (CompileError (..))
 
-import           Language.Haskell.Exts  hiding (alt, binds, loc, name)
+import           Language.Haskell.Exts  hiding (name)
 import           Test.Tasty
 import           Test.Tasty.HUnit
 -- import           Text.Groom
@@ -95,7 +95,7 @@ parseAndDesugar name s =
   case parseFay "test" s :: ParseResult (Module SrcSpanInfo) of
     ParseFailed a b -> error $ show (name, a, b)
     ParseOk (fmap srcSpanInfoToSrcLoc -> m) -> do
-      d <- desugar' "gen" noLoc $ m
+      d <- desugar' "gen" noLoc m
       return (m, d)
   where
     srcSpanInfoToSrcLoc :: SrcSpanInfo -> SrcLoc
@@ -147,7 +147,7 @@ devTest nam = do
   when (unAnn desugaredExpected /= unAnn originalExpected ) $ putStrLn "desugaredExpected /= undesugared"
 
 g :: Show a => a -> IO ()
-g = putStrLn . show -- groom
+g = print -- putStrLn . groom
 
 unAnn :: Functor f => f a -> f ()
 unAnn = void

@@ -282,7 +282,7 @@ hasLanguagePragmas :: [String] -> [ModulePragma l] -> Bool
 hasLanguagePragmas pragmas modulePragmas = (== length pragmas) . length . filter (`elem` pragmas) $ flattenPragmas modulePragmas
   where
     flattenPragmas :: [ModulePragma l] -> [String]
-    flattenPragmas ps = concatMap pragmaName ps
+    flattenPragmas = concatMap pragmaName
     pragmaName (LanguagePragma _ q) = map unname q
     pragmaName _ = []
 

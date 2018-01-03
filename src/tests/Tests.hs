@@ -54,13 +54,13 @@ makeCompilerTests packageConf basePath rand = do
   runtimeFiles  <- maybe (return runtimeFiles') (randomize runtimeFiles') rand
   codegenFiles  <- codegenTestFiles
   return
-    (makeTestGroup "Runtime tests"
-                   runtimeFiles
-                   (\file -> do testFile packageConf basePath False file
-                                testFile packageConf basePath True file)
-    ,makeTestGroup "Codegen tests"
-                   codegenFiles
-                   (\file -> testCodegen packageConf basePath file))
+    ( makeTestGroup "Runtime tests"
+                    runtimeFiles
+                    (\file -> do testFile packageConf basePath False file
+                                 testFile packageConf basePath True file)
+    , makeTestGroup "Codegen tests"
+                    codegenFiles
+                    (testCodegen packageConf basePath))
   where
     makeTestGroup title files inner =
       testGroup title $ flip map files $ \file ->
@@ -86,11 +86,18 @@ makeCompilerTests packageConf basePath rand = do
         then return s'
         else randomizeAux (S.insert i s) count b
 
+fns :: String -> (String, String, FilePath)
+fns file =
+  ( root
+  , toJsName file
+  , root <.> "res"
+  )
+  where
+    root = reverse . drop 1 . dropWhile (/='.') . reverse $ file
+
 testFile :: Maybe FilePath -> Maybe FilePath -> Bool -> String -> IO ()
 testFile packageConf basePath opt file = do
-  let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
-      out = toJsName file
-      resf = root <.> "res"
+  let (root, out, resf) = fns file
       config =
         addConfigDirectoryIncludePaths ["tests/"]
           defaultConfig
@@ -121,9 +128,7 @@ testFile packageConf basePath opt file = do
 -- things like that; it's only concerned with the core of the program.
 testCodegen :: Maybe FilePath -> Maybe FilePath -> String -> IO ()
 testCodegen packageConf basePath file = do
-  let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
-      out = toJsName file
-      resf = root <.> "res"
+  let (_, out, resf) = fns file
       config =
         addConfigDirectoryIncludePaths ["tests/codegen/"]
           defaultConfig

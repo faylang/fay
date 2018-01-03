@@ -25,6 +25,8 @@ import           Control.Monad.Except            (throwError)
 import           Control.Monad.RWS               (gets, modify)
 import           Language.Haskell.Exts hiding (binds, loc, name)
 
+{-# ANN module ("HLint: ignore Reduce duplication"::String) #-}
+
 -- | Compile Haskell declaration.
 compileDecls :: Bool -> [S.Decl] -> Compile [JsStmt]
 compileDecls toplevel = fmap concat . mapM (compileDecl toplevel)

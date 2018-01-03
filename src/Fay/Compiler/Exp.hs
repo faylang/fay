@@ -220,7 +220,7 @@ compileGuards (GuardedRhs _ (Qualifier _ guard:_) exp : rest) =
          <*> if null rest then return [] else do
            gs' <- compileGuards rest
            return [gs']
-    where makeIf gs e gss = JsIf gs [JsEarlyReturn e] gss
+    where makeIf gs e = JsIf gs [JsEarlyReturn e]
 
 compileGuards rhss = throwError . UnsupportedRhs . GuardedRhss noI $ rhss
 
@@ -283,7 +283,7 @@ compileRecConstr origExp name fieldUpdates = do
   let unQualName = withIdent lowerFirst . unQualify $ unAnn name
   qname <- unsafeResolveName name
   let record = JsVar (JsNameVar unQualName) (JsNew (JsConstructor qname) [])
-  setFields <- liftM concat (forM fieldUpdates (updateStmt name))
+  setFields <- concat <$> forM fieldUpdates (updateStmt name)
   return $ JsApp (JsFun Nothing [] (record:setFields) (Just . JsName . JsNameVar . withIdent lowerFirst . unQualify $ unAnn name)) []
   where
     -- updateStmt :: QName a -> S.FieldUpdate -> Compile [JsStmt]

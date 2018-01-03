@@ -144,7 +144,7 @@ subscribeChange v f = subscribeWithOld v $ \x x' -> when (x /= x') $ f x'
 subscribeAndRead :: Var a -> (a -> Fay void) -> Fay (() -> Fay ())
 subscribeAndRead v f = do
   x <- get v
-  f x
+  _ <- f x
   subscribe v f
 
 -- | Subscribe to a 'Var', but only call handler when it actually changes, and

@@ -49,6 +49,7 @@ desugar' prefix emptyAnnotation md = runDesugar prefix emptyAnnotation $
   >>= return . desugarInfixOp
   >>= return . desugarInfixPat
   >>= return . desugarExpParen
+{-# ANN desugar' "HLint: ignore Use <$>" #-}
 
 -- | (a `f`) => \b -> a `f` b
 --   (`f` b) => \a -> a `f` b

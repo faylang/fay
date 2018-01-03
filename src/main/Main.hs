@@ -150,10 +150,9 @@ incompatible test opts message = if test opts
 
 -- | The basic help text.
 helpTxt :: String
-helpTxt = concat
-  ["fay -- The fay compiler from (a proper subset of) Haskell to Javascript\n\n"
-  ,"  fay <hs-file>... processes each .hs file"
-  ]
+helpTxt
+  =  "fay -- The fay compiler from (a proper subset of) Haskell to Javascript\n\n"
+  ++ "  fay <hs-file>... processes each .hs file"
 
 -- | Print the command version.
 runCommandVersion :: IO ()

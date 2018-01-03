@@ -3,9 +3,7 @@
 {-# LANGUAGE PatternGuards       #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE ViewPatterns        #-}
-{-# OPTIONS -fno-warn-type-defaults #-}
 
 -- | Convert a Haskell value to a (JSON representation of a) Fay value.
 
@@ -40,7 +38,7 @@ import qualified Data.Vector           as Vector
 --   values aren't handled by explicit cases.  'encodeFay' can be used to
 --   resolve this issue.
 showToFay :: Data a => a -> Maybe Value
-showToFay = spoon . encodeFay (\x -> x)
+showToFay = spoon . encodeFay id
 
 -- | Convert a Haskell value to a Fay json value.  This can fail when primitive
 --   values aren't handled by explicit cases.  When this happens, you can add
@@ -92,12 +90,12 @@ encodeGeneric rec x =
 
 -- | Convert a Fay json value to a Haskell value.
 readFromFay :: Data a => Value -> Maybe a
-readFromFay = either (\_ -> Nothing) Just . decodeFay (\_ -> id)
+readFromFay = either (const Nothing) Just . decodeFay (const id)
 
 -- | Convert a Fay json value to a Haskell value.  This is like readFromFay,
 --   except it yields helpful error messages on failure.
 readFromFay' :: Data a => Value -> Either String a
-readFromFay' = decodeFay (\_ -> id)
+readFromFay' = decodeFay (const id)
 
 -- | Convert a Fay json value to a Haskell value.
 --
@@ -171,17 +169,18 @@ makeSimple rec obj cons =
                               value <- lift (lookupField obj (Text.pack ("slot" ++ show i)))
                               lift (rec value))
                           cons)
-             [1..]
+             [(1::Integer)..]
 
 -- | Make a record from a key-value: { "x": 1 } -> Foo { x = 1 }
 makeRecord :: Data a => GenericParser -> HashMap Text Value -> Constr -> [String] -> Either String a
-makeRecord rec obj cons fields =
-  evalStateT (fromConstrM (do key:next <- get
-                              put next
-                              value <- lift (lookupField obj (Text.pack key))
-                              lift (rec value))
-                          cons)
-             fields
+makeRecord rec obj cons =
+  evalStateT $
+    fromConstrM
+      (do key:next <- get
+          put next
+          value <- lift (lookupField obj (Text.pack key))
+          lift $ rec value)
+      cons
 
 lookupField :: HashMap Text Value -> Text -> Either String Value
 lookupField obj key =

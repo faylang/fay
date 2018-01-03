@@ -47,7 +47,7 @@ fromString string
     components' = split string
 
     split cs = case break (=='.') cs of
-      (chunk,[])     -> chunk : []
+      (chunk,[])     -> [chunk]
       (chunk,_:rest) -> chunk : split rest
 
     validModuleComponent :: String -> Bool
@@ -105,9 +105,9 @@ getModuleInfo = lookupInCache
 --
 -- @i@ is the type of module info, @m@ is the underlying monad.
 newtype ModuleT i m a =
-  ModuleT (
+  ModuleT
     (StateT (Map.Map ModuleName i)
-            (ReaderT ([FilePath] -> ModuleName -> m i) m) a))
+            (ReaderT ([FilePath] -> ModuleName -> m i) m) a)
   deriving (Functor, Applicative, Monad)
 
 instance MonadTrans (ModuleT i) where

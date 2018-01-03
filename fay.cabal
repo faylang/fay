@@ -72,6 +72,11 @@ flag test
   manual:            True
   default:           False
 
+custom-setup
+  setup-depends:
+      base
+    , Cabal
+
 library
   ghc-options:       -O2 -Wall
   hs-source-dirs:

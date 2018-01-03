@@ -209,7 +209,9 @@ module Prelude
   )
   where
 
+#ifdef FAY
 import           Data.Data
+#endif
 import           Fay.FFI
 import           "base" Prelude   (Bool (True, False), Eq, seq, (&&), (/=),
                                    (==), (||))
@@ -792,7 +794,7 @@ tail (_:t) = t
 
 init :: [a] -> [a]
 init []    = error "init: empty list"
-init [a]   = []
+init [_]   = []
 init (h:t) = h : init t
 
 last :: [a] -> a
@@ -824,7 +826,7 @@ take n (x:xs) = if n < 0 then []
 drop :: Int -> [a] -> [a]
 drop 0 xs = xs
 drop _ [] = []
-drop n xss@(x:xs) = if n < 0 then xss
+drop n xss@(_:xs) = if n < 0 then xss
                              else drop (n-1) xs
 
 splitAt :: Int -> [a] -> ([a], [a])

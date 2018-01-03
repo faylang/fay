@@ -22,7 +22,7 @@ import           Fay.Types
 import           Control.Monad.Except            (throwError)
 import           Control.Monad.RWS               (modify)
 import qualified Data.Map                        as M
-import           Language.Haskell.Exts hiding (name, var)
+import           Language.Haskell.Exts hiding (name)
 import qualified Language.Haskell.Names          as HN (getInterfaces)
 
 -- | Preprocess and collect all information needed during code generation.
@@ -85,6 +85,7 @@ compileNewtypeDecl [QualConDecl _ _ _ condecl] = case condecl of
                cs{stateNewtypes=(qcname,qdname,unAnn ty):nts})
 compileNewtypeDecl q = error $ "compileNewtypeDecl: Should be impossible (this is a bug). Got: " ++ show q
 
+{-# ANN scanRecordDecls ("HLint: ignore Redundant flip" :: String) #-}
 -- | Add record declarations to the state
 scanRecordDecls :: F.Decl -> Compile ()
 scanRecordDecls decl = do

@@ -42,7 +42,7 @@ typecheck cfg fp = do
   exists <- doesFileExist GHCPaths.ghc
   let ghcPath = if exists then GHCPaths.ghc else "ghc"
   when (configShowGhcCalls cfg) $
-    putStrLn . intercalate " " $ ghcPath : flags
+    putStrLn . unwords $ ghcPath : flags
   res <- readAllFromProcess ghcPath flags ""
   either (return . Left . GHCError . fst) (return . Right . fst) res
    where

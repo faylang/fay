@@ -22,7 +22,6 @@ module Data.MutMap
 import Data.Defined
 import Data.MutMap.Internal
 import Data.Text (Text)
-import qualified Data.Text as T
 import FFI
 import Prelude
 

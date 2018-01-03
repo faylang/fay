@@ -18,6 +18,7 @@ module Fay.Types.Printer
 
 import Control.Monad.RWS
 import Data.List                       (elemIndex)
+import Data.Maybe                      (fromMaybe)
 import Data.String
 import Language.Haskell.Exts
 import SourceMap.Types
@@ -85,7 +86,7 @@ indented (Printer p) = Printer $ asks prPretty >>= \pretty ->
 --   Does nothing when prPretty is False
 newline :: Printer
 newline = Printer $ asks prPretty >>= flip when writeNewline
-  where writeNewline = (writeRWS "\n" >> modify (\s -> s {psNewline = True}))
+  where writeNewline = writeRWS "\n" >> modify (\s -> s { psNewline = True })
 
 -- | Write out a raw string, respecting the indentation
 --   Note: if you pass a string with newline characters, it will print them
@@ -106,9 +107,7 @@ writeRWS x = do
 
   let newLines = length (filter (== '\n') x)
   put ps { psLine    = psLine ps + newLines
-         , psColumn  = case elemIndex '\n' (reverse x) of
-                        Just i  -> i
-                        Nothing -> psColumn ps + length x
+         , psColumn  = fromMaybe (psColumn ps + length x) . elemIndex '\n' $ reverse x
          , psNewline = False
          }
 

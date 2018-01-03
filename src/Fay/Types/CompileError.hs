@@ -37,3 +37,4 @@ data CompileError
   | UnsupportedWhereInAlt S.Alt
   | UnsupportedWhereInMatch S.Match
   deriving (Show)
+{-# ANN module "HLint: ignore Use camelCase" #-}

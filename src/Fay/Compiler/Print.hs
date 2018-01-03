@@ -89,7 +89,7 @@ instance Printable (SpecialCon l) where
         UnitCon _ -> "unit"
         Cons    _ -> "cons"
         _         -> error $ "Special constructor not supported: " ++
-                   show (fmap (const ()) specialCon)
+                   show (void specialCon)
 
 
 -- | Print a list of statements.
@@ -101,7 +101,7 @@ instance Printable JsStmt where
   printJS (JsExpStmt e) =
     printJS e <> ";" <> newline
   printJS (JsBlock stmts) =
-    "{ " <> (printStmts stmts) <> "}"
+    "{ " <> printStmts stmts <> "}"
   printJS (JsVar name expr) =
     "var " <> printJS name <> " = " <> printJS expr <> ";" <> newline
   printJS (JsUpdate name expr) =
@@ -122,7 +122,7 @@ instance Printable JsStmt where
     "if (" <> printJS expr <> ") {" <> newline <>
     indented (printStmts thens) <>
     "}" <>
-    (if (null elses)
+    (if null elses
       then mempty
       else " else {" <> newline <>
            indented (printStmts elses) <>
@@ -152,7 +152,7 @@ instance Printable JsExp where
   printJS (JsLit lit) = printJS lit
   printJS (JsParen expr) = "(" <> printJS expr <> ")"
   printJS (JsList exprs) = "[" <> mintercalate "," (map printJS exprs) <> "]"
-  printJS (JsNew name args) = "new " <> (printJS $ JsApp (JsName name) args)
+  printJS (JsNew name args) = "new " <> printJS (JsApp (JsName name) args)
   printJS (JsIndex i expr) = "(" <> printJS expr <> ")[" <> write (show i) <> "]"
   printJS (JsEq expr1 expr2) = printJS expr1 <> " === " <> printJS expr2
   printJS (JsNeq expr1 expr2) = printJS expr1 <> " !== " <> printJS expr2
@@ -186,7 +186,7 @@ instance Printable JsExp where
                    Nothing   -> mempty)
     <> "}"
   printJS (JsApp op args) =
-    printJS (case op of JsFun _ _ _ _ -> JsParen op; _ -> op)
+    printJS (case op of JsFun {} -> JsParen op; _ -> op)
     <> "("
     <> mintercalate "," (map printJS args)
     <> ")"
@@ -209,8 +209,8 @@ instance Printable JsName where
       JsThunk             -> askIf prPrettyThunks "$" "Fay$$$"
       JsForce             -> askIf prPrettyThunks "_" "Fay$$_"
       JsApply             -> askIf prPrettyThunks "__" "Fay$$__"
-      JsParam i           -> "$p" <> (write $ show i)
-      JsTmp i             -> "$tmp" <> (write $ show i)
+      JsParam i           -> "$p" <> write (show i)
+      JsTmp i             -> "$tmp" <> write (show i)
       JsConstructor qname -> printCons qname
       JsBuiltIn qname     -> "Fay$$" <> printJS qname
       JsParametrizedType  -> "type"
@@ -220,13 +220,13 @@ instance Printable JsName where
 printCons :: QName l -> Printer
 printCons (UnQual _ n) = printConsName n
 printCons (Qual _ (ModuleName _ m) n) = write m <> "." <> printConsName n
-printCons (Special {}) = error "qname2String Special"
+printCons Special {} = error "qname2String Special"
 
 -- | Print an unqualified name.
 printConsUnQual :: QName l -> Printer
 printConsUnQual (UnQual _ x) = printJS x
 printConsUnQual (Qual _ _ n) = printJS n
-printConsUnQual (Special {}) = error "printConsUnqual Special"
+printConsUnQual Special {} = error "printConsUnqual Special"
 
 -- | Print a constructor name given a Name. Helper for printCons.
 printConsName :: Name l -> Printer
@@ -252,7 +252,7 @@ reservedWords =
   -- The problem only occurs if there is a module A.B and a constructor B in module A.
    ++ ["__defineGetter__", "__defineSetter__", "__lookupGetter__", "__lookupSetter__", "constructor", "force", "forced", "hasOwnProperty", "isPrototypeOf", "propertyIsEnumerable", "toLocaleString", "toString", "value", "valueOf"]
 
-allowedNameChars :: [Char]
+allowedNameChars :: String
 allowedNameChars = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ "_"
 
 -- | Encode a Haskell name to JavaScript.

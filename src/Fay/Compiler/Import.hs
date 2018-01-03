@@ -22,7 +22,7 @@ import           Fay.Types
 
 import           Control.Monad.Except            (throwError)
 import           Control.Monad.RWS               (ask, get, gets, lift, listen, modify)
-import           Language.Haskell.Exts hiding (name, var)
+import           Language.Haskell.Exts hiding (name)
 import           System.Directory
 import           System.FilePath
 

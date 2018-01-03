@@ -153,10 +153,10 @@ compileModuleFromAST _ mod = throwError $ UnsupportedModuleSyntax "compileModule
 createModulePath :: ModuleName a -> Compile [JsStmt]
 createModulePath (unAnn -> m) = do
   cfg <- config id
-  reg <- liftM concat . mapM modPath . mkModulePaths $ m
+  reg <- fmap concat . mapM modPath . mkModulePaths $ m
   strict <-
     if shouldExportStrictWrapper m cfg
-      then liftM concat . mapM modPath . mkModulePaths $ (\(ModuleName i n) -> ModuleName i ("Strict." ++ n)) m
+      then fmap concat . mapM modPath . mkModulePaths $ (\(ModuleName i n) -> ModuleName i ("Strict." ++ n)) m
        else return []
   return $ reg ++ strict
   where

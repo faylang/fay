@@ -2,7 +2,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE ViewPatterns          #-}
 
@@ -139,14 +138,14 @@ compileToModule filepath config raw with hscode = do
             )
       where
         pw = execPrinter (runtime <> aliases <> printer <> main) pr
-        runtime = if (configExportRuntime config) then write raw else mempty
-        aliases = if (configPrettyThunks config)
+        runtime = if configExportRuntime config then write raw else mempty
+        aliases = if configPrettyThunks config
                   then write . unlines $ [ "var $ = Fay$$$;"
                                          , "var _ = Fay$$_;"
                                          , "var __ = Fay$$__;"
                                          ]
                   else mempty
-        main = if (not $ configLibrary config)
+        main = if not (configLibrary config)
                then write $ "Fay$$_(" ++ modulename ++ ".main, true);\n"
                else mempty
         pr = defaultPrintReader

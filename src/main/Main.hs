@@ -49,6 +49,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optVersion            :: Bool
   , optWall               :: Bool
   , optShowGhcCalls       :: Bool
+  , optTypeScript         :: Bool
   , optFiles              :: [String]
   }
 
@@ -81,6 +82,7 @@ main = do
           , configPrettyThunks     = optPrettyThunks opts || optPrettyAll opts
           , configPrettyOperators  = optPrettyOperators opts || optPrettyAll opts
           , configShowGhcCalls     = optShowGhcCalls opts
+          , configTypeScript       = optTypeScript opts
           }
   if optVersion opts
     then runCommandVersion
@@ -97,7 +99,7 @@ main = do
     parser = info (helper <*> options) (fullDesc <> header helpTxt)
 
     outPutFile :: FayCompilerOptions -> String -> FilePath
-    outPutFile opts file = fromMaybe (toJsName file) $ optOutput opts
+    outPutFile opts file = fromMaybe (if optTypeScript opts then toTsName file else toJsName file) $ optOutput opts
 
 -- | All Fay's command-line options.
 options :: Parser FayCompilerOptions
@@ -135,6 +137,7 @@ options = FayCompilerOptions
   <*> switch (long "version" <> help "Output version number")
   <*> switch (long "Wall" <> help "Typecheck with -Wall")
   <*> switch (long "show-ghc-calls" <> help "Print commands sent to ghc")
+  <*> switch (long "ts" <> help "Output TypeScript-File")
   <*> many (argument (ReadM ask) (metavar "<hs-file>..."))
   where
     strsOption :: Mod OptionFields [String] -> Parser [String]

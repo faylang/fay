@@ -40,4 +40,4 @@ r2 :: R
 r2 = ffi "{ instance : 'R', slot1 : null }"
 
 parseInt :: String -> Nullable Int
-parseInt = ffi "(function () { var n = global.parseInt(%1, 10); if (isNaN(n)) return null; return n; })()"
+parseInt = ffi "(function () { var n = parseInt(%1, 10); if (isNaN(n)) return null; return n; })()"

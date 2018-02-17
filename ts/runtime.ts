@@ -2,6 +2,8 @@
  * Misc.
  */
 
+var Fay:{[key:string]: any;} = {};
+
 // Workaround for missing functionality in IE 8 and earlier.
 if( Object.create === undefined ) {
   Object.create = function( o ) {
@@ -24,7 +26,7 @@ function Fay$$objConcat(a,b){
  */
 
 // Force a thunk (if it is a thunk) until WHNF.
-function Fay$$_(thunkish,nocache){
+function Fay$$_(thunkish,nocache?: boolean){
   while (thunkish instanceof Fay$$$) {
     thunkish = thunkish.force(nocache);
   }
@@ -392,7 +394,7 @@ function Fay$$jsToFay(type,jsObj){
   else if(base == "unknown")
     return Fay$$jsToFay(["automatic"], jsObj);
   else if(base == "automatic" && jsObj instanceof Function) {
-    var type = [["automatic"]];
+    let type: string[][] = [["automatic"]];
     for (var i = 0; i < jsObj.length; i++)
       type.push(["automatic"]);
     return Fay$$jsToFay(["function", type], jsObj);
@@ -769,7 +771,7 @@ function Fay$$Var(val){
 function Fay$$broadcastInternal(self, val, force){
   var handlers = self.handlers;
   var exceptions = [];
-  for(var len = handlers.length, i = 0; i < len; i++) {
+  for(let len = handlers.length, i = 0; i < len; i++) {
     try {
       force(handlers[i][1](val), true);
     } catch (e) {
@@ -779,7 +781,7 @@ function Fay$$broadcastInternal(self, val, force){
   // Rethrow the encountered exceptions.
   if (exceptions.length > 0) {
     console.error("Encountered " + exceptions.length + " exception(s) while broadcasing a change to ", self);
-    for(var len = exceptions.length, i = 0; i < len; i++) {
+    for(let len: number = exceptions.length, i = 0; i < len; i++) {
       (function(exception) {
         setTimeout(function() { throw exception; }, 0);
       })(exceptions[i]);

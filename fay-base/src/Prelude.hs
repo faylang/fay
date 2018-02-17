@@ -292,7 +292,7 @@ maybe _ f (Just x) = f x
 
 -- | Monomorphic return for Fay.
 return :: a -> Fay a
-return = ffi "Fay$$return(%1)"
+return = ffi "Fay$$$_return(%1)"
 
 fail :: String -> Fay a
 fail = error

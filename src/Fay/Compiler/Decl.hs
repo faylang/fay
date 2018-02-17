@@ -208,10 +208,15 @@ compileFunCase toplevel matches@(Match srcloc name argslen _ _:_) = do
                        (Just (srcInfoSpan (S.srcSpanInfo srcloc)))
                        name
                        (foldr (\arg inner -> JsFun Nothing [arg] [] (Just inner))
-                              (stmtsThunk (concat pats ++ basecase))
+                              (stmtsThunk $ deleteAfterReturn (concat pats ++ basecase))
                               args)
   return [bind]
   where
+    deleteAfterReturn :: [JsStmt] -> [JsStmt]
+    deleteAfterReturn [] = []
+    deleteAfterReturn (x@(JsEarlyReturn _):_) = [x]
+    deleteAfterReturn (x:xs) = x:deleteAfterReturn xs
+
     args = zipWith const uniqueNames argslen
 
     isWildCardMatch (Match _ _ pats          _ _) = all isWildCardPat pats

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ViewPatterns      #-}
 
@@ -89,7 +90,11 @@ makeCompilerTests packageConf basePath rand = do
 fns :: String -> (String, String, FilePath)
 fns file =
   ( root
+#if TYPESCRIPT
+  , toTsName file
+#else
   , toJsName file
+#endif
   , root <.> "res"
   )
   where
@@ -105,12 +110,15 @@ testFile packageConf basePath opt file = do
             , configTypecheck   = False
             , configPackageConf = packageConf
             , configBasePath    = basePath
+#if TYPESCRIPT
+            , configTypeScript  = True
+#endif
             }
   resExists <- doesFileExist resf
   let partialName = root ++ "_partial.res"
   partialExists <- doesFileExist partialName
   compileFromTo config file (Just out)
-  result <- runJavaScriptFile out
+  result <- Compile.runScriptFile out
   if resExists
      then do output <- readFile resf
              assertEqual file output (either show snd result)
@@ -140,14 +148,18 @@ testCodegen packageConf basePath file = do
             , configPrettyPrint   = True
             , configLibrary       = True
             , configExportRuntime = False
+#if TYPESCRIPT
+            , configTypeScript    = True
+#endif
             }
   compileFromTo config file (Just out)
   actual <- readStripped out
-  expected <- readStripped resf
+#if TYPESCRIPT
+  expected <- readStripped $ resf ++ "_ts"
+#else
+  expected <- readStripped $ resf
+#endif
   assertEqual file expected actual
   where readStripped =
           fmap (unlines . filter (not . null) . lines) . readFile
 
--- | Run a JS file.
-runJavaScriptFile :: String -> IO (Either (String,String) (String,String))
-runJavaScriptFile file = readAllFromProcess "node" [file] ""

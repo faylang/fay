@@ -18,6 +18,7 @@ module Fay
   ,compileFromTo
   ,compileFromToAndGenerateHtml
   ,toJsName
+  ,toTsName
   ,showCompileError
   ,getConfigRuntime
   ,getRuntime
@@ -160,6 +161,12 @@ toJsName x = case reverse x of
   ('s':'h':'.': (reverse -> file)) -> file ++ ".js"
   _ -> x
 
+-- | Convert a Haskell filename to a TypeScript filename.
+toTsName :: String -> String
+toTsName x = case reverse x of
+  ('s':'h':'.': (reverse -> file)) -> file ++ ".ts"
+  _ -> x
+
 -- | Print a compile error for human consumption.
 showCompileError :: CompileError -> String
 showCompileError e = case e of
@@ -203,8 +210,8 @@ showCompileError e = case e of
 -- | Get the JS runtime source.
 -- This will return the user supplied runtime if it exists.
 getConfigRuntime :: Config -> IO String
-getConfigRuntime cfg = maybe getRuntime return $ configRuntimePath cfg
+getConfigRuntime cfg = maybe (getRuntime cfg) return $ configRuntimePath cfg
 
--- | Get the default JS runtime source.
-getRuntime :: IO String
-getRuntime = getDataFileName "js/runtime.js"
+-- | Get the default runtime source.
+getRuntime :: Config -> IO String
+getRuntime cfg = getDataFileName $ if configTypeScript cfg then "ts/runtime.ts" else "js/runtime.js"

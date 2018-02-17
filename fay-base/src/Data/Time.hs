@@ -65,4 +65,4 @@ showTime = ffi "new Date(%1).toString()"
 -- | Show a day. Meant for debugging purposes, not production presentation.
 showDay :: Day -> Text
 showDay =
-  ffi "date.getUTCFullYear() + ' ' + showMonth(date) + ' ' + (date.getUTCDate() + 1)"
+  ffi "(%1).getUTCFullYear() + ' ' + ((%1).getUTCMonth() + 1) + ' ' + ((%1).getUTCDate() + 1)"

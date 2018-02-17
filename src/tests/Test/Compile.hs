@@ -3,7 +3,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-module Test.Compile (tests) where
+module Test.Compile (tests,runScriptFile) where
 
 import           Fay
 import           Fay.Compiler.Prelude
@@ -87,21 +87,23 @@ case_strictWrapper :: Assertion
 case_strictWrapper = do
   cfg <- defConf
   res <- compileFile cfg { configTypecheck = True, configFilePath = Just "tests/Compile/StrictWrapper.hs", configStrict = ["StrictWrapper"] } "tests/Compile/StrictWrapper.hs"
+  let suffix = if configTypeScript cfg then ".ts" else ".js"
   (\a b -> either a b res) (assertFailure . show) $ \js -> do
-    writeFile "tests/Compile/StrictWrapper.js" js
-    (err, out) <- either id id <$> readAllFromProcess "node" ["tests/Compile/StrictWrapper.js"] ""
+    writeFile ("tests/Compile/StrictWrapper" ++ suffix) js
+    (err, out) <- either id id <$> runScriptFile ("tests/Compile/StrictWrapper" ++ suffix)
     when (err /= "") $ assertFailure err
     expected <- readFile "tests/Compile/StrictWrapper.res"
     assertEqual "strictWrapper node stdout" expected out
 
 assertPretty :: Config -> String -> Assertion
 assertPretty cfg flagName = do
+  let suffix = if configTypeScript cfg then ".ts" else ".js"
   res <- compileFile cfg $ "tests/Compile/" ++ flagName ++ ".hs"
   case res of
     Left l  -> assertFailure $ "Should compile, but failed with: " ++ show l
     Right js -> do
-    writeFile ("tests/Compile/" ++ flagName ++ ".js") js
-    (err, out) <- either id id <$> readAllFromProcess "node" ["tests/Compile/" ++ flagName ++ ".js"] ""
+    writeFile ("tests/Compile/" ++ flagName ++ suffix) js
+    (err, out) <- either id id <$> runScriptFile ("tests/Compile/" ++ flagName ++ suffix)
     when (err /= "") $ assertFailure err
     expected <- readFile $ "tests/Compile/" ++ flagName ++ ".res"
     assertEqual (flagName ++ " node stdout") expected out
@@ -133,4 +135,20 @@ case_charEnum = do
 defConf :: IO Config
 defConf = do
   cfg <- defaultConfigWithSandbox
+#if TYPESCRIPT
+  return $ addConfigDirectoryIncludePaths ["tests/"] cfg { configTypecheck = False, configTypeScript = True }
+#else
   return $ addConfigDirectoryIncludePaths ["tests/"] cfg { configTypecheck = False }
+#endif
+
+-- | Run a JS or TS file.
+runScriptFile :: String -> IO (Either (String,String) (String,String))
+runScriptFile file = do
+#if TYPESCRIPT
+  tsc_ret <- readAllFromProcess "tsc" [file] ""
+  case tsc_ret of
+    Left _ -> return tsc_ret
+    Right _ -> readAllFromProcess "node" [(reverse (drop 3 (reverse file))) ++ ".js" ] ""
+#else
+  readAllFromProcess "node" [file] ""
+#endif

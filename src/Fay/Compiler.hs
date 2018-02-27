@@ -164,7 +164,7 @@ createModulePath (unAnn -> m) = do
     modPath :: Bool -> ModulePath -> Compile [JsStmt]
     modPath isTs mp = whenImportNotGenerated mp $ \(unModulePath -> l) -> case l of
      [n] -> if isTs
-              then [JsDecl (JsNameVar . UnQual () $ Ident () n) (JsObj [])]
+              then [JsMapVar (JsNameVar . UnQual () $ Ident () n) (JsObj [])]
               else [JsVar (JsNameVar . UnQual () $ Ident () n) (JsObj [])]
      _   -> [JsSetModule mp (JsObj [])]
 

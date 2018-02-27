@@ -102,7 +102,7 @@ instance Printable JsStmt where
     printJS e <> ";" <> newline
   printJS (JsBlock stmts) =
     "{ " <> printStmts stmts <> "}"
-  printJS (JsDecl name expr) =
+  printJS (JsMapVar name expr) =
     "var " <> printJS name <> " : {[key: string]: any;} = " <> printJS expr <> ";" <> newline
   printJS (JsVar name expr) =
     "var " <> printJS name <> " = " <> printJS expr <> ";" <> newline

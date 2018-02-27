@@ -137,7 +137,7 @@ options = FayCompilerOptions
   <*> switch (long "version" <> help "Output version number")
   <*> switch (long "Wall" <> help "Typecheck with -Wall")
   <*> switch (long "show-ghc-calls" <> help "Print commands sent to ghc")
-  <*> switch (long "ts" <> help "Output TypeScript-File")
+  <*> switch (long "ts" <> help "Output TypeScript instead of JavaScript")
   <*> many (argument (ReadM ask) (metavar "<hs-file>..."))
   where
     strsOption :: Mod OptionFields [String] -> Parser [String]

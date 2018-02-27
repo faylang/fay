@@ -62,7 +62,7 @@ mutAssocsI :: MutMap a -> Fay [KeyValI a]
 mutAssocsI = ffi "function() { var r = []; for (var k in %1) { r.push({ instance : 'KeyValI', slot1 : k, slot2 : %1[k] }); } return r; }()"
 
 mutClone :: MutMap a -> Fay (MutMap a)
-mutClone = ffi "JSON.parse(JSON.stringify(%1))"
+mutClone = ffi "Fay$$objConcat({}, %1)"
 
 -- Note: Also clones.
 mutMapM :: (a -> Fay b) -> MutMap a -> MutMap b

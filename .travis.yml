@@ -1,5 +1,6 @@
 language: "haskell"
-sudo: false
+sudo: required
+dist: trusty
 ghc:
   - "8.0"
   - "8.2"

@@ -24,8 +24,6 @@ category:            Development, Web, Fay
 build-type:          Custom
 cabal-version:       >=1.8
 data-files:
-  js/runtime.js
-  ts/runtime.ts
   src/Fay/FFI.hs
 extra-source-files:
   CHANGELOG.md
@@ -118,6 +116,7 @@ library
     Fay.Exts
     Fay.Exts.NoAnnotation
     Fay.Exts.Scoped
+    Fay.Runtime
     Fay.Types.FFI
     Fay.Types.Js
     Fay.Types.ModulePath
@@ -169,6 +168,7 @@ library
     , unordered-containers == 0.2.*
     , utf8-string >= 0.1 && < 1.1
     , vector < 0.13
+    , shakespeare
 
   if impl(ghc < 7.8)
     build-depends: tagged

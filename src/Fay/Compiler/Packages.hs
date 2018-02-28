@@ -60,7 +60,7 @@ describePackage db name = do
     Left  (err,out) -> error $ "ghc-pkg describe error:\n" ++ err ++ "\n" ++ out
     Right (_err,out) -> return out
 
-  where args = ["describe",name] -- ++ ["-f" ++ db' | Just db' <- [db]]
+  where args = ["describe",name] ++ ["-f" ++ db' | Just db' <- [db]]
 
 -- | Get the package version from the package description.
 packageVersion :: String -> Maybe String

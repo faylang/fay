@@ -20,8 +20,7 @@ module Fay
   ,toJsName
   ,toTsName
   ,showCompileError
-  ,getConfigRuntime
-  ,getRuntime
+  ,readConfigRuntime
   ) where
 
 import           Fay.Compiler.Prelude
@@ -31,6 +30,7 @@ import           Fay.Compiler.Misc                      (ioWarn, printSrcSpanInf
 import           Fay.Compiler.Packages
 import           Fay.Compiler.Typecheck
 import           Fay.Config
+import           Fay.Runtime
 import qualified Fay.Exts                               as F
 import           Fay.Types
 
@@ -39,7 +39,6 @@ import qualified Data.ByteString.Lazy                   as L
 import           Language.Haskell.Exts        (prettyPrint)
 import           Language.Haskell.Exts.Syntax
 import           Language.Haskell.Exts.SrcLoc
-import           Paths_fay
 import           SourceMap                              (generate)
 import           SourceMap.Types
 import           System.FilePath
@@ -118,9 +117,8 @@ compileFileWithResult config filein = do
 -- Don't use this directly, it's only exposed for the test suite.
 compileFileWithState :: Config -> FilePath -> IO (Either CompileError (String,Maybe [Mapping],CompileState))
 compileFileWithState config filein = do
-  runtime <- getConfigRuntime config
+  raw <- readConfigRuntime config
   hscode <- readFile filein
-  raw <- readFile runtime
   config' <- resolvePackages config
   compileToModule filein config' raw (compileToplevelModule filein) hscode
 
@@ -209,9 +207,8 @@ showCompileError e = case e of
 
 -- | Get the JS runtime source.
 -- This will return the user supplied runtime if it exists.
-getConfigRuntime :: Config -> IO String
-getConfigRuntime cfg = maybe (getRuntime cfg) return $ configRuntimePath cfg
-
--- | Get the default runtime source.
-getRuntime :: Config -> IO String
-getRuntime cfg = getDataFileName $ if configTypeScript cfg then "ts/runtime.ts" else "js/runtime.js"
+readConfigRuntime :: Config -> IO String
+readConfigRuntime cfg =
+  case configRuntimePath cfg of
+    Just path -> readFile path
+    Nothing -> return $ getRuntimeSource cfg

@@ -32,7 +32,7 @@ main = do
                                       return ()
                               else do setVal (show n) display
                                       writeRef appendMore True)
-      getInput = getVal display >>= (return . parseDouble 10)
+      getInput = getVal display >>= (return . parseDouble)
       operator op = do
         calculate
         num <- getInput
@@ -104,8 +104,8 @@ onClick = ffi "%2['click'](%1)"
 --------------------------------------------------------------------------------
 -- Utilities
 
-parseDouble :: Int -> String -> Double
-parseDouble = ffi "parseFloat(%2,%1) || 0"
+parseDouble :: String -> Double
+parseDouble = ffi "parseFloat(%1) || 0"
 
 --------------------------------------------------------------------------------
 -- Refs

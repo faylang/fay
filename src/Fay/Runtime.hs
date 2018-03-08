@@ -1,6 +1,25 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE QuasiQuotes #-}
+
+module Fay.Runtime where
+
+import Text.Shakespeare.Text
+import Data.Text.Lazy as T
+import Fay.Config
+
+-- | Get the default runtime source.
+getRuntimeSource :: Config -> String
+getRuntimeSource cfg =
+  let ifTs :: T.Text -> T.Text
+      ifTs a = if configTypeScript cfg then a else ""
+      ifTsJs :: T.Text -> T.Text -> T.Text
+      ifTsJs a b = if configTypeScript cfg then a else b
+  in T.unpack [lt|
 /*******************************************************************************
  * Misc.
  */
+#{ifTs "var Fay:{[key:string]: any;} = {};"}
 
 // Workaround for missing functionality in IE 8 and earlier.
 if( Object.create === undefined ) {
@@ -24,7 +43,7 @@ function Fay$$objConcat(a,b){
  */
 
 // Force a thunk (if it is a thunk) until WHNF.
-function Fay$$_(thunkish,nocache){
+function Fay$$_(thunkish,nocache#{ifTs "?: boolean"}){
   while (thunkish instanceof Fay$$$) {
     thunkish = thunkish.force(nocache);
   }
@@ -392,7 +411,7 @@ function Fay$$jsToFay(type,jsObj){
   else if(base == "unknown")
     return Fay$$jsToFay(["automatic"], jsObj);
   else if(base == "automatic" && jsObj instanceof Function) {
-    var type = [["automatic"]];
+    #{ifTsJs "let type: string[][]" "var type"} = [["automatic"]];
     for (var i = 0; i < jsObj.length; i++)
       type.push(["automatic"]);
     return Fay$$jsToFay(["function", type], jsObj);
@@ -737,7 +756,7 @@ function Fay$$writeRef(ref,x){
 }
 
 // Get the value from the ref.
-function Fay$$readRef(ref,x){
+function Fay$$readRef(ref){
   return ref.value;
 }
 
@@ -745,7 +764,7 @@ function Fay$$readRef(ref,x){
  * Dates.
  */
 function Fay$$date(str){
-  return window.Date.parse(str);
+  return Date.parse(str);
 }
 
 /*******************************************************************************
@@ -769,7 +788,7 @@ function Fay$$Var(val){
 function Fay$$broadcastInternal(self, val, force){
   var handlers = self.handlers;
   var exceptions = [];
-  for(var len = handlers.length, i = 0; i < len; i++) {
+  for(#{ifTsJs "let" "var"} len = handlers.length, i = 0; i < len; i++) {
     try {
       force(handlers[i][1](val), true);
     } catch (e) {
@@ -779,9 +798,9 @@ function Fay$$broadcastInternal(self, val, force){
   // Rethrow the encountered exceptions.
   if (exceptions.length > 0) {
     console.error("Encountered " + exceptions.length + " exception(s) while broadcasing a change to ", self);
-    for(var len = exceptions.length, i = 0; i < len; i++) {
+    for(#{ifTsJs "let len: number" "var len"} = exceptions.length, i = 0; i < len; i++) {
       (function(exception) {
-        window.setTimeout(function() { throw exception; }, 0);
+        setTimeout(function() { throw exception; }, 0);
       })(exceptions[i]);
     }
   }
@@ -819,3 +838,5 @@ function Fay$$subscribe(self, f){
 /*******************************************************************************
  * Application code.
  */
+
+|]

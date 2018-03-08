@@ -26,6 +26,7 @@ module Fay.Config
       , configPrettyThunks
       , configPrettyOperators
       , configShowGhcCalls
+      , configTypeScript
       )
   , defaultConfig
   , defaultConfigWithSandbox
@@ -78,6 +79,7 @@ data Config = Config
   , configPrettyThunks       :: Bool                        -- ^ Use pretty thunk names?
   , configPrettyOperators    :: Bool                        -- ^ Use pretty operators?
   , configShowGhcCalls       :: Bool                        -- ^ Print commands sent to GHC?
+  , configTypeScript         :: Bool                        -- ^ Output a TypeScript file.
   } deriving (Show)
 
 defaultConfig :: Config
@@ -109,6 +111,7 @@ defaultConfig = addConfigPackage "fay-base"
     , configPrettyThunks       = False
     , configPrettyOperators    = False
     , configShowGhcCalls       = False
+    , configTypeScript         = False
     }
 
 defaultConfigWithSandbox :: IO Config

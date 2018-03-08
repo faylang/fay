@@ -187,14 +187,21 @@ compileCase e alts = do
   exp <- compileExp e
   withScopedTmpJsName $ \tmpName -> do
     pats <- optimizePatConditions <$> mapM (compilePatAlt (JsName tmpName)) alts
+    let (xx,flag) = deleteAfterReturn (concat pats)
     return $
       JsApp (JsFun Nothing
                    [tmpName]
-                   (concat pats)
-                   (if any isWildCardAlt alts
+                   xx
+                   (if (flag || any isWildCardAlt alts)
                        then Nothing
                        else Just (throwExp "unhandled case" (JsName tmpName))))
             [exp]
+  where
+    deleteAfterReturn :: [JsStmt] -> ([JsStmt],Bool)
+    deleteAfterReturn [] = ([],False)
+    deleteAfterReturn (x@(JsEarlyReturn _):_) = ([x],True)
+    deleteAfterReturn (x:xs) = ((x:xx),flag)
+      where (xx,flag) = deleteAfterReturn xs
 
 -- | Compile the given pattern against the given expression.
 compilePatAlt :: JsExp -> S.Alt -> Compile [JsStmt]
@@ -237,9 +244,13 @@ compileLambda pats = compileExp >=> \exp -> do
         generateStatements exp =
           foldM (\inner (param,pat) -> do
                   stmts <- compilePat (JsName param) pat inner
-                  return [JsEarlyReturn (JsFun Nothing [param] (stmts ++ [unhandledcase param | not allfree]) Nothing)])
+                  return [JsEarlyReturn (JsFun Nothing [param] (deleteAfterReturn $ stmts ++ [unhandledcase param | not allfree]) Nothing)])
                 [JsEarlyReturn exp]
                 (reverse (zip uniqueNames pats))
+        deleteAfterReturn :: [JsStmt] -> [JsStmt]
+        deleteAfterReturn [] = []
+        deleteAfterReturn (x@(JsEarlyReturn _):_) = [x]
+        deleteAfterReturn (x:xs) = x:deleteAfterReturn xs
 
 -- | Compile [e1..] arithmetic sequences.
 compileEnumFrom :: S.Exp -> Compile JsExp

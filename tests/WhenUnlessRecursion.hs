@@ -3,7 +3,7 @@ module WhenUnlessRecursion where
 import FFI
 
 getStackSize :: Fay Int
-getStackSize = ffi "(Error.stackTraceLimit = Infinity, new Error().stack.split('\\n').length)"
+getStackSize = ffi "(Error[\"stackTraceLimit\"] = Infinity, new Error().stack.split('\\n').length)"
 
 checkGrowth :: Maybe Int -> Int -> Fay ()
 checkGrowth Nothing _      = return ()

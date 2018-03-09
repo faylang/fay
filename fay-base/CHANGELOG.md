@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.21.1.0 (2018-03-09)
+
+* fay 0.24.0.0 support
+
 ## 0.21.0.0 (2017-08-02)
 
 * Changed the definition of `splitOn` from `Char -> Text -> [Text]` to `Text -> Text -> [Text]` to make it more general and to match `text:Data.Text.splitOn`. Thanks to A. Bram Neijt!

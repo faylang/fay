@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+### 0.24.0.0
+
+* Add the option to generate typescript output, thanks to Junji Hashimoto.
+
 ### 0.23.2.0
 
 * GHC 8.2 support

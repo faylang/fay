@@ -14,10 +14,11 @@ import           Language.Haskell.Names.Types
 
 import qualified Data.Map                           as Map
 import           Language.Haskell.Exts
+import           Data.Semigroup ()
 
 -- | Local symbol table — contains locally bound names
 newtype Table = Table (Map.Map NameS SrcLoc)
-  deriving Monoid
+  deriving Semigroup
 
 addValue :: SrcInfo l => Name l -> Table -> Table
 addValue n (Table vs) =

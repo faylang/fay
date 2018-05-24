@@ -1,5 +1,5 @@
 name:                fay
-version:             0.24.0.0
+version:             0.24.0.1
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which is type-checked
                      with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
@@ -139,34 +139,35 @@ library
     Language.Haskell.Names.Types
     Paths_fay
   build-depends:
-      base >= 4.9 && < 4.11
-    , base-compat >= 0.8 && < 0.10
-    , aeson > 0.6 && < 1.4
-    , bytestring >= 0.9 && < 0.11
-    , containers >= 0.4 && < 0.6
-    , data-default >= 0.2 && < 0.8
+      base >= 4.9
+    , base-compat >= 0.8
+    , aeson > 0.6
+    , bytestring >= 0.9
+    , containers >= 0.4
+    , data-default >= 0.2
     , data-lens-light == 0.1.*
-    , directory >= 1.1 && < 1.4
-    , filepath >= 1.3 && < 1.5
+    , directory >= 1.1
+    , filepath >= 1.3
     , ghc-paths == 0.1.*
-    , haskell-src-exts >= 1.18.1 && < 1.20
-    , language-ecmascript >= 0.15 && < 0.18
-    , mtl >= 2.1 && < 2.3
-    , mtl-compat >= 0.1 && < 0.3
-    , process >= 1.1 && < 1.7
-    , safe >= 0.2 && < 0.4
+--    , haskell-src-exts >= 1.18.1 && <1.20
+    , haskell-src-exts >= 1.18.1
+    , language-ecmascript >= 0.15
+    , mtl >= 2.1
+    , mtl-compat >= 0.1
+    , process >= 1.1
+    , safe >= 0.2
     , sourcemap == 0.1.*
-    , split >= 0.1 && < 0.3
-    , spoon >= 0.1 && < 0.4
-    , syb >= 0.3 && < 0.8
-    , text >= 0.11 && < 1.3
-    , time >= 1.4 && < 1.9
-    , transformers >= 0.3 && < 0.4 || > 0.4.1 && < 0.7
-    , transformers-compat >= 0.3 && < 0.7
-    , traverse-with-class >= 1.0 && < 1.1
-    , uniplate >= 1.6.11 && < 1.7
+    , split >= 0.1
+    , spoon >= 0.1
+    , syb >= 0.3
+    , text >= 0.11
+    , time >= 1.4
+    , transformers >= 0.3
+    , transformers-compat >= 0.3
+    , traverse-with-class >= 1.0
+    , uniplate >= 1.6.11
     , unordered-containers == 0.2.*
-    , utf8-string >= 0.1 && < 1.1
+    , utf8-string >= 0.1
     , vector < 0.13
     , shakespeare
 
@@ -181,7 +182,7 @@ executable fay
       base
     , fay
     , mtl
-    , optparse-applicative >= 0.11 && < 0.15
+    , optparse-applicative >= 0.11
     , split
   other-modules:
     Paths_fay
@@ -207,11 +208,11 @@ executable fay-tests
       , fay
       , filepath
       , haskell-src-exts
-      , random >= 1.0 && < 1.2
-      , tasty >= 0.9 && < 1.1
-      , tasty-hunit >= 0.8 && < 0.11
+      , random >= 1.0
+      , tasty >= 0.9
+      , tasty-hunit >= 0.8
       , tasty-th == 0.1.*
       , text
       , utf8-string
   else
-    buildable:         False
+    buildable:         True

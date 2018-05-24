@@ -36,6 +36,7 @@ import           Data.Lens.Light
 import qualified Data.Set                                 as Set
 import           Language.Haskell.Exts
 import           Text.Printf
+import qualified Data.Semigroup                           as SG
 
 type ExtensionSet = Set.Set KnownExtension
 
@@ -118,10 +119,12 @@ instance HasOrigName SymTypeInfo where
 data Symbols = Symbols (Set.Set (SymValueInfo OrigName)) (Set.Set (SymTypeInfo OrigName))
   deriving (Eq, Ord, Show, Data, Typeable)
 
+instance SG.Semigroup Symbols where
+  (Symbols s1 t1) <> (Symbols s2 t2) =
+    Symbols (s1 <> s2) (t1 <> t2)
+
 instance Monoid Symbols where
   mempty = Symbols mempty mempty
-  mappend (Symbols s1 t1) (Symbols s2 t2) =
-    Symbols (s1 `mappend` s2) (t1 `mappend` t2)
 
 valSyms :: Lens Symbols (Set.Set (SymValueInfo OrigName))
 valSyms = lens (\(Symbols vs _) -> vs) (\vs (Symbols _ ts) -> Symbols vs ts)

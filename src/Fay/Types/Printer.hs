@@ -22,6 +22,7 @@ import Data.Maybe                      (fromMaybe)
 import Data.String
 import Language.Haskell.Exts
 import SourceMap.Types
+import qualified Data.Semigroup as SG
 
 -- | Global options of the printer
 data PrintReader = PrintReader
@@ -43,10 +44,12 @@ data PrintWriter = PrintWriter
 pwOutputString :: PrintWriter -> String
 pwOutputString (PrintWriter _ out) = out ""
 
+instance SG.Semigroup PrintWriter where
+  (PrintWriter a b) <> (PrintWriter x y) = PrintWriter (a ++ x) (b . y)
+
 -- | Output concatenation
 instance Monoid PrintWriter where
   mempty =  PrintWriter [] id
-  mappend (PrintWriter a b) (PrintWriter x y) = PrintWriter (a ++ x) (b . y)
 
 -- | The state of the pretty printer.
 data PrintState = PrintState
@@ -67,10 +70,11 @@ newtype Printer = Printer
 execPrinter :: Printer -> PrintReader -> PrintWriter
 execPrinter (Printer p) r = snd $ execRWS p r defaultPrintState
 
+instance SG.Semigroup Printer where
+  (Printer p) <> (Printer q) = Printer (p >> q)
 
 instance Monoid Printer where
   mempty = Printer $ return ()
-  mappend (Printer p) (Printer q) = Printer (p >> q)
 
 -- | Print some value.
 class Printable a where

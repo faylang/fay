@@ -60,6 +60,7 @@ import           Control.Monad.RWS
 import           Data.Map                (Map)
 import           Data.Set                (Set)
 import           Language.Haskell.Names  (Symbols)
+import           Data.Semigroup          (Semigroup)
 
 --------------------------------------------------------------------------------
 -- Compiler types
@@ -85,6 +86,11 @@ data CompileWriter = CompileWriter
   , writerFayToJs :: [(String,JsExp)] -- ^ Fay to JS dispatchers.
   , writerJsToFay :: [(String,JsExp)] -- ^ JS to Fay dispatchers.
   } deriving (Show)
+
+-- | Simple concatenating instance.
+instance Semigroup CompileWriter where
+  (CompileWriter a b c) <> (CompileWriter x y z) =
+    CompileWriter (a++x) (b++y) (c++z)
 
 -- | Simple concatenating instance.
 instance Monoid CompileWriter where

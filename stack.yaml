@@ -1,11 +1,11 @@
-resolver: lts-10.2
+resolver: nightly-2018-05-13
 packages:
 - .
 - fay-base
+- language-ecmascript
+allow-newer: true
 extra-deps:
-- language-ecmascript-0.17.2.0
 - spoon-0.3.1
-- testing-feat-0.4.0.3
 - tagshare-0.0
 flags:
   fay:

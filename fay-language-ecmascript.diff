@@ -1,0 +1,167 @@
+diff --git a/CHANGELOG b/CHANGELOG
+index 857e529..0902a89 100644
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -1,9 +1,4 @@
+ Version change log.
+-=0.18.1=
+-Moved dependency on test-feat from src to test.  Removed tabs.
+-	
+-=0.18=
+-Pull request #83: Updated dependencies, migrated to ansi-wl-pprint.
+ 
+ =0.17.2.0=
+ Issue #82: Tighter lexing of identifiers using Unicode character classes (thanks @berdario).
+diff --git a/language-ecmascript.cabal b/language-ecmascript.cabal
+index e5de214..c9b9633 100644
+--- a/language-ecmascript.cabal
++++ b/language-ecmascript.cabal
+@@ -1,6 +1,6 @@
+ Name:           language-ecmascript
+-Version:        0.18.1
+-Cabal-Version:	>= 1.10.0.1
++Version:        0.18
++Cabal-Version:	>= 1.10
+ Copyright:      (c) 2007-2012 Brown University, (c) 2008-2010 Claudiu Saftoiu,
+                 (c) 2012-2015 Stevens Institute of Technology, (c) 2016 Eyal Lotem, (c) 2016-2017 Andrey Chudnov
+ License:        BSD3
+@@ -29,7 +29,7 @@ Source-repository head
+ Source-repository this
+    type: git
+    location: git://github.com/jswebtools/language-ecmascript.git
+-   tag: 0.18
++   tag: 0.17.2.0
+ 
+ Library
+   Hs-Source-Dirs:
+@@ -45,6 +45,7 @@ Library
+     QuickCheck >= 2.5 && < 3,
+     template-haskell >= 2.7 && < 3,
+     Diff == 0.3.*,
++    testing-feat >= 0.4.0.2 && < 1.1,
+     charset >= 0.3
+   ghc-options:
+     -fwarn-incomplete-patterns
+@@ -55,6 +56,7 @@ Library
+     Language.ECMAScript3.PrettyPrint
+     Language.ECMAScript3.Syntax
+     Language.ECMAScript3.Syntax.Annotations
++    Language.ECMAScript3.Syntax.Arbitrary
+     Language.ECMAScript3.Syntax.CodeGen
+     Language.ECMAScript3.Syntax.QuasiQuote
+     Language.ECMAScript3.Analysis.Environment
+@@ -68,19 +70,10 @@ Library
+   Default-Language: Haskell2010
+ 
+ Test-Suite test
+-  Hs-Source-Dirs: src test
++  Hs-Source-Dirs: test
+   Type: exitcode-stdio-1.0
+   Main-Is: TestMain.hs
+   Other-Modules:
+-    Language.ECMAScript3.Lexer                                        
+-    Language.ECMAScript3.Parser                                       
+-    Language.ECMAScript3.Parser.State                                 
+-    Language.ECMAScript3.Parser.Type                                  
+-    Language.ECMAScript3.PrettyPrint                                  
+-    Language.ECMAScript3.SourceDiff                                   
+-    Language.ECMAScript3.Syntax                                       
+-    Language.ECMAScript3.Syntax.Annotations  
+-    Language.ECMAScript3.Syntax.Arbitrary
+     Test.Diff
+     Test.Unit
+     Test.Pretty
+@@ -90,14 +83,12 @@ Test-Suite test
+     mtl >= 1 && < 3,
+     parsec >= 3 && < 3.2.0,
+     ansi-wl-pprint >= 0.6 && < 1,
+-    charset >= 0.3,
+     containers == 0.*,
+     directory >= 1.2 && < 1.4,
+     filepath >= 1.3 && < 1.5,
+     HUnit >= 1.2 && < 1.7,
+     QuickCheck >= 2.5 && < 3,
+     data-default-class >= 0.0.1 && < 0.2,
+-    testing-feat >= 0.4.0.2 && < 1.1,
+     test-framework >= 0.8 && < 0.9,
+     test-framework-hunit >= 0.3.0 && < 0.4,
+     test-framework-quickcheck2 >= 0.3.0.1 && < 0.4,
+diff --git a/src/Language/ECMAScript3/Lexer.hs b/src/Language/ECMAScript3/Lexer.hs
+index c23ceb1..cc22604 100644
+--- a/src/Language/ECMAScript3/Lexer.hs
++++ b/src/Language/ECMAScript3/Lexer.hs
+@@ -80,45 +80,45 @@ lex = T.makeTokenParser javascriptDef
+ 
+ -- everything but commaSep and semiSep
+ identifier :: Stream s Identity Char => Parser s String
+-identifier = T.identifier  lex
++identifier = T.identifier	 lex
+ reserved :: Stream s Identity Char => String -> Parser s ()
+-reserved = T.reserved  lex
++reserved = T.reserved	 lex
+ operator :: Stream s Identity Char => Parser s String
+-operator = T.operator  lex
++operator = T.operator	 lex
+ reservedOp :: Stream s Identity Char => String -> Parser s ()
+-reservedOp = T.reservedOp lex 
++reservedOp = T.reservedOp lex	
+ charLiteral :: Stream s Identity Char => Parser s Char
+-charLiteral = T.charLiteral lex 
++charLiteral = T.charLiteral lex	
+ stringLiteral :: Stream s Identity Char => Parser s String
+ stringLiteral = T.stringLiteral lex
+ -- natural :: Stream s Identity Char => Parser s Integer
+--- natural = T.natural lex 
++-- natural = T.natural lex	
+ -- integer :: Stream s Identity Char => Parser s Integer
+--- integer = T.integer lex 
++-- integer = T.integer lex	
+ -- float :: Stream s Identity Char => Parser s Double
+ -- float = T.float lex
+ -- naturalOrFloat :: Stream s Identity Char => Parser s (Either Integer Double)
+ -- naturalOrFloat = T.naturalOrFloat lex
+ -- decimal :: Stream s Identity Char => Parser s Integer
+--- decimal = T.decimal lex 
++-- decimal = T.decimal lex	
+ -- hexadecimal :: Stream s Identity Char => Parser s Integer
+--- hexadecimal = T.hexadecimal lex 
++-- hexadecimal = T.hexadecimal lex	
+ -- octal :: Stream s Identity Char => Parser s Integer
+ -- octal = T.octal lex
+ symbol :: Stream s Identity Char => String -> Parser s String
+ symbol = T.symbol lex
+ whiteSpace :: Stream s Identity Char => Parser s ()
+-whiteSpace = T.whiteSpace lex 
++whiteSpace = T.whiteSpace lex	
+ parens :: Stream s Identity Char => Parser s a -> Parser s a
+-parens = T.parens  lex
++parens = T.parens	 lex
+ braces :: Stream s Identity Char => Parser s a -> Parser s a
+-braces = T.braces  lex
++braces = T.braces	 lex
+ squares :: Stream s Identity Char => Parser s a -> Parser s a
+-squares = T.squares lex 
++squares = T.squares lex	
+ semi :: Stream s Identity Char => Parser s String
+-semi = T.semi  lex
++semi = T.semi	 lex
+ comma :: Stream s Identity Char => Parser s String
+-comma = T.comma  lex
++comma = T.comma	 lex
+ colon :: Stream s Identity Char => Parser s String
+ colon = T.colon lex
+ dot :: Stream s Identity Char => Parser s String
+diff --git a/stack.yaml b/stack.yaml
+index 6ee7919..d63504e 100644
+--- a/stack.yaml
++++ b/stack.yaml
+@@ -1,8 +1,7 @@
+ # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration.html
+ 
+ # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
+-# resolver: lts-8.22
+-resolver: lts-11.4
++resolver: lts-8.22
+ 
+ # Local packages, usually specified by relative directory name
+ packages:

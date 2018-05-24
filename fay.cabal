@@ -1,218 +1,217 @@
-name:                fay
-version:             0.24.0.1
-synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
-description:         Fay is a proper subset of Haskell which is type-checked
-                     with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
-                     an FFI, tail-recursion optimization (experimental), and support for cabal packages.
-                     .
-                     /Documentation/
-                     .
-                     See <https://github.com/faylang/fay/wiki>
-                     .
-                     /Examples/
-                     .
-                     See the examples directory and <https://github.com/faylang/fay/wiki#fay-in-the-wild>
-                     .
-homepage:            https://github.com/faylang/fay/wiki
-bug-reports:         https://github.com/faylang/fay/issues
-license:             BSD3
-license-file:        LICENSE
-author:              Chris Done, Adam Bergmark
-maintainer:          adam@bergmark.nl
-copyright:           2012 Chris Done, Adam Bergmark
-category:            Development, Web, Fay
-build-type:          Custom
-cabal-version:       >=1.8
+cabal-version: >=1.8
+name: fay
+version: 0.24.0.1
+license: BSD3
+license-file: LICENSE
+copyright: 2012 Chris Done, Adam Bergmark
+maintainer: adam@bergmark.nl
+author: Chris Done, Adam Bergmark
+homepage: https://github.com/faylang/fay/wiki
+bug-reports: https://github.com/faylang/fay/issues
+synopsis: A compiler for Fay, a Haskell subset that compiles to JavaScript.
+description:
+    Fay is a proper subset of Haskell which is type-checked
+    with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
+    an FFI, tail-recursion optimization (experimental), and support for cabal packages.
+    .
+    /Documentation/
+    .
+    See <https://github.com/faylang/fay/wiki>
+    .
+    /Examples/
+    .
+    See the examples directory and <https://github.com/faylang/fay/wiki#fay-in-the-wild>
+    .
+category: Development, Web, Fay
+build-type: Custom
 data-files:
-  src/Fay/FFI.hs
+    src/Fay/FFI.hs
 extra-source-files:
-  CHANGELOG.md
-  LICENSE
-  README.md
-  src/haskell-names/LICENSE
-  -- Examples
-  examples/*.hs
-  examples/*.html
-  examples/*.png
-  -- Test cases
-  tests/*.hs
-  tests/*.res
-  tests/Compile/*.hs
-  tests/Compile/*.res
-  tests/FromString/*.hs
-  tests/FromString/*.res
-  tests/Hierarchical/*.hs
-  tests/Hierarchical/*.res
-  tests/ImportList1/*.hs
-  tests/ImportList1/*.res
-  tests/ImportType2I/*.hs
-  tests/ImportType2I/*.res
-  tests/Issue215/*.hs
-  tests/Issue215/*.res
-  tests/ModuleReExport/*.hs
-  tests/ModuleReExport/*.res
-  tests/ModuleRecordClash/*.hs
-  tests/ModuleRecordClash/*.res
-  tests/NestedImporting/*.hs
-  tests/NestedImporting/*.res
-  tests/NestedImporting2/*.hs
-  tests/NestedImporting2/*.res
-  tests/QualifiedImport/*.hs
-  tests/QualifiedImport/*.res
-  tests/ReExportGlobally/*.hs
-  tests/ReExportGlobally/*.res
+    CHANGELOG.md
+    LICENSE
+    README.md
+    src/haskell-names/LICENSE
+    examples/*.hs
+    examples/*.html
+    examples/*.png
+    tests/*.hs
+    tests/*.res
+    tests/Compile/*.hs
+    tests/Compile/*.res
+    tests/FromString/*.hs
+    tests/FromString/*.res
+    tests/Hierarchical/*.hs
+    tests/Hierarchical/*.res
+    tests/ImportList1/*.hs
+    tests/ImportList1/*.res
+    tests/ImportType2I/*.hs
+    tests/ImportType2I/*.res
+    tests/Issue215/*.hs
+    tests/Issue215/*.res
+    tests/ModuleReExport/*.hs
+    tests/ModuleReExport/*.res
+    tests/ModuleRecordClash/*.hs
+    tests/ModuleRecordClash/*.res
+    tests/NestedImporting/*.hs
+    tests/NestedImporting/*.res
+    tests/NestedImporting2/*.hs
+    tests/NestedImporting2/*.res
+    tests/QualifiedImport/*.hs
+    tests/QualifiedImport/*.res
+    tests/ReExportGlobally/*.hs
+    tests/ReExportGlobally/*.res
 
 source-repository head
-  type: git
-  location: https://github.com/faylang/fay.git
-
-flag test
-  description:       Build the fay-tests executable
-  manual:            True
-  default:           False
+    type: git
+    location: https://github.com/faylang/fay.git
 
 custom-setup
-  setup-depends:
-      base
-    , Cabal
+    setup-depends: base -any,
+                   Cabal -any
+
+flag test
+    description:
+        Build the fay-tests executable
+    default: False
+    manual: True
 
 library
-  ghc-options:       -O2 -Wall
-  hs-source-dirs:
-    src
-    src/haskell-names
-  exposed-modules:
-    Fay
-    Fay.Compiler
-    Fay.Compiler.Desugar
-    Fay.Compiler.Parse
-    Fay.Compiler.Prelude
-    Fay.Config
-    Fay.Convert
-    Fay.FFI
-    Fay.Types
-    Fay.Types.CompileError
-    Fay.Types.CompileResult
-  other-modules:
-    Fay.Compiler.Decl
-    Fay.Compiler.Defaults
-    Fay.Compiler.Desugar.Name
-    Fay.Compiler.Desugar.Types
-    Fay.Compiler.Exp
-    Fay.Compiler.FFI
-    Fay.Compiler.GADT
-    Fay.Compiler.Import
-    Fay.Compiler.InitialPass
-    Fay.Compiler.Misc
-    Fay.Compiler.ModuleT
-    Fay.Compiler.Optimizer
-    Fay.Compiler.Packages
-    Fay.Compiler.Pattern
-    Fay.Compiler.PrimOp
-    Fay.Compiler.Print
-    Fay.Compiler.QName
-    Fay.Compiler.State
-    Fay.Compiler.Typecheck
-    Fay.Exts
-    Fay.Exts.NoAnnotation
-    Fay.Exts.Scoped
-    Fay.Runtime
-    Fay.Types.FFI
-    Fay.Types.Js
-    Fay.Types.ModulePath
-    Fay.Types.Printer
-    Language.Haskell.Names
-    Language.Haskell.Names.Annotated
-    Language.Haskell.Names.Exports
-    Language.Haskell.Names.GetBound
-    Language.Haskell.Names.GlobalSymbolTable
-    Language.Haskell.Names.Imports
-    Language.Haskell.Names.LocalSymbolTable
-    Language.Haskell.Names.ModuleSymbols
-    Language.Haskell.Names.Open.Base
-    Language.Haskell.Names.Open.Derived
-    Language.Haskell.Names.Open.Instances
-    Language.Haskell.Names.RecordWildcards
-    Language.Haskell.Names.Recursive
-    Language.Haskell.Names.ScopeUtils
-    Language.Haskell.Names.SyntaxUtils
-    Language.Haskell.Names.Types
-    Paths_fay
-  build-depends:
-      base >= 4.9
-    , base-compat >= 0.8
-    , aeson > 0.6
-    , bytestring >= 0.9
-    , containers >= 0.4
-    , data-default >= 0.2
-    , data-lens-light == 0.1.*
-    , directory >= 1.1
-    , filepath >= 1.3
-    , ghc-paths == 0.1.*
---    , haskell-src-exts >= 1.18.1 && <1.20
-    , haskell-src-exts >= 1.18.1
-    , language-ecmascript >= 0.15
-    , mtl >= 2.1
-    , mtl-compat >= 0.1
-    , process >= 1.1
-    , safe >= 0.2
-    , sourcemap == 0.1.*
-    , split >= 0.1
-    , spoon >= 0.1
-    , syb >= 0.3
-    , text >= 0.11
-    , time >= 1.4
-    , transformers >= 0.3
-    , transformers-compat >= 0.3
-    , traverse-with-class >= 1.0
-    , uniplate >= 1.6.11
-    , unordered-containers == 0.2.*
-    , utf8-string >= 0.1
-    , vector < 0.13
-    , shakespeare
-
-  if impl(ghc < 7.8)
-    build-depends: tagged
+    exposed-modules:
+        Fay
+        Fay.Compiler
+        Fay.Compiler.Desugar
+        Fay.Compiler.Parse
+        Fay.Compiler.Prelude
+        Fay.Config
+        Fay.Convert
+        Fay.FFI
+        Fay.Types
+        Fay.Types.CompileError
+        Fay.Types.CompileResult
+    hs-source-dirs: src src/haskell-names
+    other-modules:
+        Fay.Compiler.Decl
+        Fay.Compiler.Defaults
+        Fay.Compiler.Desugar.Name
+        Fay.Compiler.Desugar.Types
+        Fay.Compiler.Exp
+        Fay.Compiler.FFI
+        Fay.Compiler.GADT
+        Fay.Compiler.Import
+        Fay.Compiler.InitialPass
+        Fay.Compiler.Misc
+        Fay.Compiler.ModuleT
+        Fay.Compiler.Optimizer
+        Fay.Compiler.Packages
+        Fay.Compiler.Pattern
+        Fay.Compiler.PrimOp
+        Fay.Compiler.Print
+        Fay.Compiler.QName
+        Fay.Compiler.State
+        Fay.Compiler.Typecheck
+        Fay.Exts
+        Fay.Exts.NoAnnotation
+        Fay.Exts.Scoped
+        Fay.Runtime
+        Fay.Types.FFI
+        Fay.Types.Js
+        Fay.Types.ModulePath
+        Fay.Types.Printer
+        Language.Haskell.Names
+        Language.Haskell.Names.Annotated
+        Language.Haskell.Names.Exports
+        Language.Haskell.Names.GetBound
+        Language.Haskell.Names.GlobalSymbolTable
+        Language.Haskell.Names.Imports
+        Language.Haskell.Names.LocalSymbolTable
+        Language.Haskell.Names.ModuleSymbols
+        Language.Haskell.Names.Open.Base
+        Language.Haskell.Names.Open.Derived
+        Language.Haskell.Names.Open.Instances
+        Language.Haskell.Names.RecordWildcards
+        Language.Haskell.Names.Recursive
+        Language.Haskell.Names.ScopeUtils
+        Language.Haskell.Names.SyntaxUtils
+        Language.Haskell.Names.Types
+        Paths_fay
+    ghc-options: -O2 -Wall
+    build-depends:
+        base >=4.9 && <4.12,
+        base-compat >=0.8 && <0.11,
+        aeson >0.6 && <1.4,
+        bytestring >=0.9 && <0.11,
+        containers >=0.4 && <0.6,
+        data-default >=0.2 && <0.8,
+        data-lens-light ==0.1.*,
+        directory >=1.1 && <1.4,
+        filepath >=1.3 && <1.5,
+        ghc-paths ==0.1.*,
+        haskell-src-exts >=1.18.1 && <1.21,
+        language-ecmascript >=0.15 && <0.19,
+        mtl >=2.1 && <2.3,
+        mtl-compat >=0.1 && <0.3,
+        process >=1.1 && <1.7,
+        safe >=0.2 && <0.4,
+        sourcemap ==0.1.*,
+        split >=0.1 && <0.3,
+        spoon >=0.1 && <0.4,
+        syb >=0.3 && <0.8,
+        text >=0.11 && <1.3,
+        time >=1.4 && <1.9,
+        transformers >=0.3 && <0.6,
+        transformers-compat >=0.3 && <0.7,
+        traverse-with-class ==1.0.*,
+        uniplate >=1.6.11 && <1.7,
+        unordered-containers ==0.2.*,
+        utf8-string >=0.1 && <1.1,
+        vector <0.13,
+        shakespeare <2.1
+    
+    if impl(ghc <7.8)
+        build-depends:
+            tagged <0.9
 
 executable fay
-  hs-source-dirs:    src/main
-  ghc-options:       -O2 -Wall
-  main-is:           Main.hs
-  build-depends:
-      base
-    , fay
-    , mtl
-    , optparse-applicative >= 0.11
-    , split
-  other-modules:
-    Paths_fay
-executable fay-tests
-  ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
-  hs-source-dirs:    src/tests
-  main-is:           Tests.hs
-  if flag(test)
+    main-is: Main.hs
+    hs-source-dirs: src/main
     other-modules:
-      Test.CommandLine
-      Test.Compile
-      Test.Convert
-      Test.Desugar
-      Test.Util
-      Paths_fay
+        Paths_fay
+    ghc-options: -O2 -Wall
     build-depends:
-        base
-      , aeson
-      , attoparsec
-      , bytestring
-      , containers
-      , directory
-      , fay
-      , filepath
-      , haskell-src-exts
-      , random >= 1.0
-      , tasty >= 0.9
-      , tasty-hunit >= 0.8
-      , tasty-th == 0.1.*
-      , text
-      , utf8-string
-  else
-    buildable:         True
+        base <4.12,
+        fay -any,
+        mtl <2.3,
+        optparse-applicative >=0.11 && <0.15,
+        split <0.3
+
+executable fay-tests
+    main-is: Tests.hs
+    hs-source-dirs: src/tests
+    ghc-options: -O2 -Wall -threaded -with-rtsopts=-N
+    
+    if flag(test)
+        other-modules:
+            Test.CommandLine
+            Test.Compile
+            Test.Convert
+            Test.Desugar
+            Test.Util
+            Paths_fay
+        build-depends:
+            base -any,
+            aeson -any,
+            attoparsec -any,
+            bytestring -any,
+            containers -any,
+            directory -any,
+            fay -any,
+            filepath -any,
+            haskell-src-exts -any,
+            random >=1.0,
+            tasty >=0.9,
+            tasty-hunit >=0.8,
+            tasty-th ==0.1.*,
+            text -any,
+            utf8-string -any
+    else
+      buildable:         False

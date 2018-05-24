@@ -21,6 +21,7 @@ import           Data.Lens.Light
 import qualified Data.Map                           as Map
 import qualified Data.Set                           as Set
 import           Language.Haskell.Exts    as HSE
+import           Data.Semigroup (Semigroup)
 
 -- | Global symbol table — contains global names
 data Table =
@@ -35,9 +36,8 @@ valLens = lens (\(Table vs _) -> vs) (\vs (Table _ ts) -> Table vs ts)
 tyLens :: Lens Table (Map.Map GName (Set.Set (SymTypeInfo OrigName)))
 tyLens = lens (\(Table _ ts) -> ts) (\ts (Table vs _) -> Table vs ts)
 
-instance Monoid Table where
-  mempty = empty
-  mappend (Table vs1 ts1) (Table vs2 ts2) =
+instance Semigroup Table where
+  (Table vs1 ts1) <> (Table vs2 ts2) =
     Table (j vs1 vs2) (j ts1 ts2)
     where
       j :: (Ord i, Ord k)
@@ -45,6 +45,8 @@ instance Monoid Table where
         -> Map.Map k (Set.Set i)
         -> Map.Map k (Set.Set i)
       j = Map.unionWith Set.union
+instance Monoid Table where
+  mempty = empty
 
 toGName :: QName l -> GName
 toGName (UnQual _ n) = GName "" (nameToString n)

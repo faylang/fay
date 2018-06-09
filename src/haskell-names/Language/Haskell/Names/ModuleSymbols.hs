@@ -1,4 +1,5 @@
 {-# OPTIONS -fno-warn-name-shadowing #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns        #-}
 module Language.Haskell.Names.ModuleSymbols
@@ -7,6 +8,8 @@ module Language.Haskell.Names.ModuleSymbols
   )
   where
 
+import           Fay.Compiler.Prelude
+
 import           Language.Haskell.Exts
 import           Language.Haskell.Names.GetBound
 import qualified Language.Haskell.Names.GlobalSymbolTable as Global
@@ -14,13 +17,8 @@ import           Language.Haskell.Names.ScopeUtils
 import           Language.Haskell.Names.SyntaxUtils
 import           Language.Haskell.Names.Types
 
-import           Control.Monad
-import           Data.Data
-import           Data.Either
 import           Data.Lens.Light
 import qualified Data.Map                                 as Map
-import           Data.Maybe
-import           Data.Monoid
 import qualified Data.Set                                 as Set
 
 -- | Compute module's global table. It contains both the imported entities

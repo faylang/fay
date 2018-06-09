@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE TypeFamilies               #-}
 
 -- | All Fay types and instances.
@@ -39,6 +40,8 @@ module Fay.Types
   , mkModulePaths
   , mkModulePathFromQName
   ) where
+
+import           Fay.Compiler.Prelude
 
 import           Fay.Compiler.ModuleT
 import           Fay.Config

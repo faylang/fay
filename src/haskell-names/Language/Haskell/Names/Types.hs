@@ -4,6 +4,7 @@
 {-# LANGUAGE DeriveFoldable     #-}
 {-# LANGUAGE DeriveFunctor      #-}
 {-# LANGUAGE DeriveTraversable  #-}
+{-# LANGUAGE NoImplicitPrelude  #-}
 {-# LANGUAGE StandaloneDeriving #-}
 module Language.Haskell.Names.Types
   ( Error (..)
@@ -125,6 +126,7 @@ instance SG.Semigroup Symbols where
 
 instance Monoid Symbols where
   mempty = Symbols mempty mempty
+  mappend = (<>)
 
 valSyms :: Lens Symbols (Set.Set (SymValueInfo OrigName))
 valSyms = lens (\(Symbols vs _) -> vs) (\vs (Symbols _ ts) -> Symbols vs ts)

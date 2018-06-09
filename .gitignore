@@ -2,9 +2,11 @@
 *.hi
 *.o
 .cabal-sandbox
+.stack-work
 TAGS
 cabal-dev
 cabal.sandbox.config
+dist-newstyle/
 dist/
 examples/*.js
 examples/*.map
@@ -13,4 +15,3 @@ src/*.js
 tests/*.html
 tests/*.js
 tests/*/*.js
-.stack-work

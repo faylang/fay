@@ -34,7 +34,7 @@ startCompile compileModule filein = do
 
 -- | Compile a module
 compileWith
-  :: Monoid a
+  :: (Monoid a, Semigroup a)
   => FilePath
   -> (a -> F.Module -> Compile a)
   -> (FilePath -> String -> Compile a)

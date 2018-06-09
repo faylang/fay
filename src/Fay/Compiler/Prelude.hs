@@ -39,7 +39,7 @@ import           Data.Either
 import           Data.Function        (on)
 import           Data.List.Compat
 import           Data.Maybe
-import           Data.Monoid          (Monoid (..), (<>))
+import           Data.Monoid          (Monoid (..))
 import           Data.Ord
 import           Data.Traversable
 import           Prelude.Compat       hiding (exp, mod)

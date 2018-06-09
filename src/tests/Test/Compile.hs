@@ -7,9 +7,6 @@ module Test.Compile (tests,runScriptFile) where
 
 import           Fay
 import           Fay.Compiler.Prelude
-#if !MIN_VERSION_base(4,7,0)
-import           Test.Util                       (isRight)
-#endif
 
 import           Language.Haskell.Exts
 import           Test.Tasty

@@ -50,6 +50,7 @@ instance SG.Semigroup PrintWriter where
 -- | Output concatenation
 instance Monoid PrintWriter where
   mempty =  PrintWriter [] id
+  mappend = (<>)
 
 -- | The state of the pretty printer.
 data PrintState = PrintState
@@ -75,6 +76,7 @@ instance SG.Semigroup Printer where
 
 instance Monoid Printer where
   mempty = Printer $ return ()
+  mappend = (<>)
 
 -- | Print some value.
 class Printable a where

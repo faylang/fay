@@ -4,6 +4,7 @@ dist: trusty
 ghc:
   - "8.0"
   - "8.2"
+  - "8.4"
 install:
   - "travis_retry cabal install 'cpphs >= 1.18.3' 'happy >= 1.19.5'"
   - "cabal install --dry-run -v3"

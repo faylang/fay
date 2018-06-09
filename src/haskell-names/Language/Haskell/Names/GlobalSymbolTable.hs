@@ -1,5 +1,6 @@
 {-# OPTIONS -fno-warn-name-shadowing #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE NoImplicitPrelude  #-}
 -- | This module is designed to be imported qualified.
 module Language.Haskell.Names.GlobalSymbolTable
   ( Table
@@ -47,6 +48,7 @@ instance Semigroup Table where
       j = Map.unionWith Set.union
 instance Monoid Table where
   mempty = empty
+  mappend = (<>)
 
 toGName :: QName l -> GName
 toGName (UnQual _ n) = GName "" (nameToString n)

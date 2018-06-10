@@ -1,12 +1,8 @@
-resolver: nightly-2018-05-13
+resolver: nightly-2018-06-10
 packages:
 - .
 - fay-base
 allow-newer: true
-extra-deps:
-- spoon-0.3.1
-- tagshare-0.0
-- language-ecmascript-0.19
 flags:
   fay:
     test: true

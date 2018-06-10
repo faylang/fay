@@ -16,7 +16,9 @@ module Fay.Types.Printer
   , mapping
   ) where
 
-import Control.Monad.RWS
+import Fay.Compiler.Prelude
+
+import Control.Monad.RWS               (RWS, asks, execRWS, get, modify, put, tell)
 import Data.List                       (elemIndex)
 import Data.Maybe                      (fromMaybe)
 import Data.String

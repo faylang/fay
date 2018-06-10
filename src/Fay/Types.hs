@@ -59,7 +59,7 @@ import           Control.Applicative
 #endif
 import           Control.Monad.Except    (ExceptT, MonadError)
 import           Control.Monad.Identity  (Identity)
-import           Control.Monad.RWS
+import           Control.Monad.RWS       (MonadIO, MonadReader, MonadState, MonadWriter, RWST, lift)
 import           Data.Map                (Map)
 import           Data.Set                (Set)
 import           Language.Haskell.Names  (Symbols)
@@ -98,8 +98,7 @@ instance Semigroup CompileWriter where
 -- | Simple concatenating instance.
 instance Monoid CompileWriter where
   mempty = CompileWriter [] [] []
-  mappend (CompileWriter a b c) (CompileWriter x y z) =
-    CompileWriter (a++x) (b++y) (c++z)
+  mappend = (<>)
 
 -- | Configuration and globals for the compiler.
 data CompileReader = CompileReader

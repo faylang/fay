@@ -2,7 +2,11 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
-### 0.24.0.0
+#### 0.24.0.1
+
+* Dependency updates incl GHC 8.4 support
+
+## 0.24.0.0
 
 * Add the option to generate typescript output, thanks to Junji Hashimoto.
 

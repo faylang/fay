@@ -2,6 +2,8 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE MonoLocalBinds        #-}
+
 module Fay.Compiler.Desugar
   ( desugar
   , desugar'
@@ -47,6 +49,7 @@ desugar' prefix emptyAnnotation md = runDesugar prefix emptyAnnotation $
   >>= return . desugarInfixOp
   >>= return . desugarInfixPat
   >>= return . desugarExpParen
+{-# ANN desugar' "HLint: ignore Use <$>" #-}
 
 -- | (a `f`) => \b -> a `f` b
 --   (`f` b) => \a -> a `f` b

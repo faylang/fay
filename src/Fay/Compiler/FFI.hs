@@ -57,8 +57,9 @@ compileFFIExp loc (fmap unAnn -> nameopt) formatstr sig' =
       TyEquals _ t1 t2  -> TyEquals () <$> rmNewtys t1 <*> rmNewtys t2
       TySplice {}       -> return $ unAnn typ
       TyBang _ bt unp t -> TyBang () (unAnn bt) (unAnn unp) <$> rmNewtys t
-      TyWildCard _ _    -> error "TyWildCard not supported"
-      TyQuasiQuote _ _ _ -> error "TyQuasiQuote not supported"
+      TyWildCard {}     -> error "TyWildCard not supported"
+      TyQuasiQuote {}   -> error "TyQuasiQuote not supported"
+      TyUnboxedSum {}   -> error "TyUnboxedSum not supported"
 
     compileFFI' :: N.Type -> Compile JsExp
     compileFFI' sig = do

@@ -49,6 +49,7 @@ data FayCompilerOptions = FayCompilerOptions
   , optVersion            :: Bool
   , optWall               :: Bool
   , optShowGhcCalls       :: Bool
+  , optTypeScript         :: Bool
   , optFiles              :: [String]
   }
 
@@ -81,11 +82,12 @@ main = do
           , configPrettyThunks     = optPrettyThunks opts || optPrettyAll opts
           , configPrettyOperators  = optPrettyOperators opts || optPrettyAll opts
           , configShowGhcCalls     = optShowGhcCalls opts
+          , configTypeScript       = optTypeScript opts
           }
   if optVersion opts
     then runCommandVersion
     else if optPrintRuntime opts
-      then getConfigRuntime config >>= readFile >>= putStr
+      then readConfigRuntime config >>= putStr
       else do
         void $ incompatible htmlAndStdout opts "Html wrapping and stdout are incompatible"
         case optFiles opts of
@@ -97,7 +99,7 @@ main = do
     parser = info (helper <*> options) (fullDesc <> header helpTxt)
 
     outPutFile :: FayCompilerOptions -> String -> FilePath
-    outPutFile opts file = fromMaybe (toJsName file) $ optOutput opts
+    outPutFile opts file = fromMaybe (if optTypeScript opts then toTsName file else toJsName file) $ optOutput opts
 
 -- | All Fay's command-line options.
 options :: Parser FayCompilerOptions
@@ -135,6 +137,7 @@ options = FayCompilerOptions
   <*> switch (long "version" <> help "Output version number")
   <*> switch (long "Wall" <> help "Typecheck with -Wall")
   <*> switch (long "show-ghc-calls" <> help "Print commands sent to ghc")
+  <*> switch (long "ts" <> help "Output TypeScript instead of JavaScript")
   <*> many (argument (ReadM ask) (metavar "<hs-file>..."))
   where
     strsOption :: Mod OptionFields [String] -> Parser [String]
@@ -150,10 +153,9 @@ incompatible test opts message = if test opts
 
 -- | The basic help text.
 helpTxt :: String
-helpTxt = concat
-  ["fay -- The fay compiler from (a proper subset of) Haskell to Javascript\n\n"
-  ,"  fay <hs-file>... processes each .hs file"
-  ]
+helpTxt
+  =  "fay -- The fay compiler from (a proper subset of) Haskell to Javascript\n\n"
+  ++ "  fay <hs-file>... processes each .hs file"
 
 -- | Print the command version.
 runCommandVersion :: IO ()

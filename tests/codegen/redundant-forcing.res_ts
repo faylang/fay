@@ -1,0 +1,16 @@
+var Main : {[key: string]: any;} = {};
+Main.main = new Fay$$$(function(){
+  return Fay$$_(Prelude.print)(Main.foo$36$uncurried(Fay$$unit));
+});
+Main.foo = function($p1){
+  return new Fay$$$(function(){
+    var a = $p1;
+    return Fay$$unit;
+  });
+};
+Main.foo$36$uncurried = function($p1){
+  return new Fay$$$(function(){
+    var a = $p1;
+    return Fay$$unit;
+  });
+};

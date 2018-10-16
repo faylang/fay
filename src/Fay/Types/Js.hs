@@ -16,6 +16,7 @@ import           Language.Haskell.Exts
 -- | Statement type.
 data JsStmt
   = JsVar JsName JsExp
+  | JsMapVar JsName JsExp
   | JsIf JsExp [JsStmt] [JsStmt]
   | JsEarlyReturn JsExp
   | JsThrow JsExp

@@ -153,16 +153,19 @@ compileModuleFromAST _ mod = throwError $ UnsupportedModuleSyntax "compileModule
 createModulePath :: ModuleName a -> Compile [JsStmt]
 createModulePath (unAnn -> m) = do
   cfg <- config id
-  reg <- liftM concat . mapM modPath . mkModulePaths $ m
+  let isTs = configTypeScript cfg
+  reg <- fmap concat . mapM (modPath isTs) . mkModulePaths $ m
   strict <-
     if shouldExportStrictWrapper m cfg
-      then liftM concat . mapM modPath . mkModulePaths $ (\(ModuleName i n) -> ModuleName i ("Strict." ++ n)) m
+      then fmap concat . mapM (modPath isTs) . mkModulePaths $ (\(ModuleName i n) -> ModuleName i ("Strict." ++ n)) m
        else return []
   return $ reg ++ strict
   where
-    modPath :: ModulePath -> Compile [JsStmt]
-    modPath mp = whenImportNotGenerated mp $ \(unModulePath -> l) -> case l of
-     [n] -> [JsVar (JsNameVar . UnQual () $ Ident () n) (JsObj [])]
+    modPath :: Bool -> ModulePath -> Compile [JsStmt]
+    modPath isTs mp = whenImportNotGenerated mp $ \(unModulePath -> l) -> case l of
+     [n] -> if isTs
+              then [JsMapVar (JsNameVar . UnQual () $ Ident () n) (JsObj [])]
+              else [JsVar (JsNameVar . UnQual () $ Ident () n) (JsObj [])]
      _   -> [JsSetModule mp (JsObj [])]
 
     whenImportNotGenerated :: ModulePath -> (ModulePath -> [JsStmt]) -> Compile [JsStmt]

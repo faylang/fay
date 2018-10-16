@@ -22,7 +22,7 @@ import           Fay.Types
 
 import           Control.Monad.Except            (throwError)
 import           Control.Monad.RWS               (ask, get, gets, lift, listen, modify)
-import           Language.Haskell.Exts hiding (name, var)
+import           Language.Haskell.Exts hiding (name)
 import           System.Directory
 import           System.FilePath
 
@@ -34,7 +34,7 @@ startCompile compileModule filein = do
 
 -- | Compile a module
 compileWith
-  :: Monoid a
+  :: (Monoid a, Semigroup a)
   => FilePath
   -> (a -> F.Module -> Compile a)
   -> (FilePath -> String -> Compile a)

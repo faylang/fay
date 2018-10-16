@@ -85,3 +85,5 @@ deriveGTraversable ''PatternSynDirection
 deriveGTraversable ''Unpackedness
 deriveGTraversable ''ResultSig
 deriveGTraversable ''InjectivityInfo
+deriveGTraversable ''DerivStrategy
+deriveGTraversable ''MaybePromotedName

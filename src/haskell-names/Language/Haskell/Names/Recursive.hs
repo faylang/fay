@@ -1,4 +1,5 @@
 {-# OPTIONS -fno-warn-name-shadowing #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 module Language.Haskell.Names.Recursive
@@ -6,6 +7,8 @@ module Language.Haskell.Names.Recursive
   , getInterfaces
   , annotateModule
   ) where
+
+import           Fay.Compiler.Prelude
 
 import           Fay.Compiler.ModuleT
 import           Language.Haskell.Names.Annotated
@@ -17,12 +20,9 @@ import           Language.Haskell.Names.ScopeUtils
 import           Language.Haskell.Names.SyntaxUtils
 import           Language.Haskell.Names.Types
 
-import           Control.Monad                        hiding (forM_)
 import           Data.Data                            (Data)
 import           Data.Foldable
 import           Data.Graph                           (flattenSCC, stronglyConnComp)
-import           Data.Maybe
-import           Data.Monoid
 import qualified Data.Set                             as Set
 import           Language.Haskell.Exts
 

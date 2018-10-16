@@ -45,27 +45,25 @@ lengthBenchmark :: Fay ()
 lengthBenchmark = do
   let a = [1..1000000]
   echo "Forcing the list ..."
-  (length a) `seq` return False
+  length a `seq` return False
   runAndSummarize "length [1..1000000]" $ benchmark 5 (length a)
 
 -- | Benchmark the n-queens problem.
 queensBenchmark :: Fay ()
-queensBenchmark = do
+queensBenchmark =
   runAndSummarize "nqueens 11" $ benchmark 1 (nqueens 11)
 
 -- | Solve the n-queens problem for nq.
 nqueens :: Int -> Int
 nqueens nq = length (gen nq) where
-  gen 0 = [] : []
-  gen n = concat (map (\bs -> map (\q -> q : bs)
-                                  (filter (\q -> safe q 1 bs) nqs))
-                      (gen (n-1)))
+  gen 0 = [[]]
+  gen n = concatMap (\bs -> map (: bs)
+                                (filter (\q -> safe q 1 bs) nqs))
+                      (gen (n-1))
 
   nqs = [1..nq]
 
-safe x d (q:l) = if (x /= q) && (x /= (q+d)) && (x /= (q-d))
-                     then safe x (d+1) l
-                     else False
+safe x d (q:l) = ((x /= q) && (x /= (q + d)) && (x /= (q - d))) && safe x (d + 1) l
 safe _ _ _     = True
 
 --------------------------------------------------------------------------------
@@ -104,7 +102,7 @@ benchmark benchmarks a = do
 -- unwords = intercalate " "
 
 mean :: [Double] -> Double
-mean xs = foldl (\x y -> x + y) 0 xs / fromIntegral (length xs)
+mean xs = foldl' (+) 0 xs / fromIntegral (length xs)
 
 stddev :: [Double] -> Double
 stddev xs = let tmean = mean xs

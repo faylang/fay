@@ -189,8 +189,6 @@ resolveImportSpec mod isHiding syms spec =
               (ENotExported Nothing n mod)
               matches
               spec
-    IAbs _ (TypeNamespace {}) _ -> error "'type' namespace is not supported yet" -- FIXME
-
     -- FIXME
     -- What about things like:
     -- head(..)

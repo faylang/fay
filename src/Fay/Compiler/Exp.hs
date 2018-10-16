@@ -187,14 +187,21 @@ compileCase e alts = do
   exp <- compileExp e
   withScopedTmpJsName $ \tmpName -> do
     pats <- optimizePatConditions <$> mapM (compilePatAlt (JsName tmpName)) alts
+    let (xx,flag) = deleteAfterReturn (concat pats)
     return $
       JsApp (JsFun Nothing
                    [tmpName]
-                   (concat pats)
-                   (if any isWildCardAlt alts
+                   xx
+                   (if (flag || any isWildCardAlt alts)
                        then Nothing
                        else Just (throwExp "unhandled case" (JsName tmpName))))
             [exp]
+  where
+    deleteAfterReturn :: [JsStmt] -> ([JsStmt],Bool)
+    deleteAfterReturn [] = ([],False)
+    deleteAfterReturn (x@(JsEarlyReturn _):_) = ([x],True)
+    deleteAfterReturn (x:xs) = ((x:xx),flag)
+      where (xx,flag) = deleteAfterReturn xs
 
 -- | Compile the given pattern against the given expression.
 compilePatAlt :: JsExp -> S.Alt -> Compile [JsStmt]
@@ -220,7 +227,7 @@ compileGuards (GuardedRhs _ (Qualifier _ guard:_) exp : rest) =
          <*> if null rest then return [] else do
            gs' <- compileGuards rest
            return [gs']
-    where makeIf gs e gss = JsIf gs [JsEarlyReturn e] gss
+    where makeIf gs e = JsIf gs [JsEarlyReturn e]
 
 compileGuards rhss = throwError . UnsupportedRhs . GuardedRhss noI $ rhss
 
@@ -237,9 +244,13 @@ compileLambda pats = compileExp >=> \exp -> do
         generateStatements exp =
           foldM (\inner (param,pat) -> do
                   stmts <- compilePat (JsName param) pat inner
-                  return [JsEarlyReturn (JsFun Nothing [param] (stmts ++ [unhandledcase param | not allfree]) Nothing)])
+                  return [JsEarlyReturn (JsFun Nothing [param] (deleteAfterReturn $ stmts ++ [unhandledcase param | not allfree]) Nothing)])
                 [JsEarlyReturn exp]
                 (reverse (zip uniqueNames pats))
+        deleteAfterReturn :: [JsStmt] -> [JsStmt]
+        deleteAfterReturn [] = []
+        deleteAfterReturn (x@(JsEarlyReturn _):_) = [x]
+        deleteAfterReturn (x:xs) = x:deleteAfterReturn xs
 
 -- | Compile [e1..] arithmetic sequences.
 compileEnumFrom :: S.Exp -> Compile JsExp
@@ -283,7 +294,7 @@ compileRecConstr origExp name fieldUpdates = do
   let unQualName = withIdent lowerFirst . unQualify $ unAnn name
   qname <- unsafeResolveName name
   let record = JsVar (JsNameVar unQualName) (JsNew (JsConstructor qname) [])
-  setFields <- liftM concat (forM fieldUpdates (updateStmt name))
+  setFields <- concat <$> forM fieldUpdates (updateStmt name)
   return $ JsApp (JsFun Nothing [] (record:setFields) (Just . JsName . JsNameVar . withIdent lowerFirst . unQualify $ unAnn name)) []
   where
     -- updateStmt :: QName a -> S.FieldUpdate -> Compile [JsStmt]

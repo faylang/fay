@@ -1,0 +1,9 @@
+resolver: nightly-2018-06-10
+packages:
+- .
+- fay-base
+allow-newer: true
+flags:
+  fay:
+    test: true
+extra-package-dbs: []

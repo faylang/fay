@@ -47,7 +47,7 @@ compilePVar (unAnn -> name) exp body =
 -- | Compile a record field pattern.
 compilePatFields :: JsExp -> S.QName -> [S.PatField] -> [JsStmt] -> Compile [JsStmt]
 compilePatFields exp name pats body = do
-  c <- liftM (++ body) (compilePats' [] pats)
+  c <- (++ body) <$> compilePats' [] pats
   qname <- unsafeResolveName name
   return [JsIf (force exp `JsInstanceOf` JsConstructor qname) c []]
   where

@@ -33,8 +33,11 @@ main = do
   (packageConf,args)     <- prefixed (== "-package-conf") <$> getArgs
   let (basePath,args')    = prefixed (== "-base-path"   ) args
   let (testCount, args'') = first (readMay =<<) $ prefixed (== "-random") args'
-  (runtime,codegen) <- makeCompilerTests (packageConf <|> sandbox) basePath testCount
-  withArgs args'' $ defaultMain $ testGroup "Fay"
+  let (isTs, args''') = case args'' of
+                          ("-ts":xs) -> (True,xs)
+                          _ -> (False,args'')
+  (runtime,codegen) <- makeCompilerTests (packageConf <|> sandbox) basePath testCount isTs
+  withArgs args''' $ defaultMain $ testGroup "Fay"
     [ Desugar.tests
     , Convert.tests
     , codegen
@@ -48,19 +51,19 @@ prefixed :: (a -> Bool) -> [a] -> (Maybe a,[a])
 prefixed f (break f -> (x,y)) = (listToMaybe (drop 1 y),x ++ drop 2 y)
 
 -- | Make the case-by-case unit tests.
-makeCompilerTests :: Maybe FilePath -> Maybe FilePath -> Maybe Int -> IO (TestTree,TestTree)
-makeCompilerTests packageConf basePath rand = do
+makeCompilerTests :: Maybe FilePath -> Maybe FilePath -> Maybe Int -> Bool -> IO (TestTree,TestTree)
+makeCompilerTests packageConf basePath rand isTs = do
   runtimeFiles' <- runtimeTestFiles
   runtimeFiles  <- maybe (return runtimeFiles') (randomize runtimeFiles') rand
   codegenFiles  <- codegenTestFiles
   return
-    (makeTestGroup "Runtime tests"
-                   runtimeFiles
-                   (\file -> do testFile packageConf basePath False file
-                                testFile packageConf basePath True file)
-    ,makeTestGroup "Codegen tests"
-                   codegenFiles
-                   (\file -> testCodegen packageConf basePath file))
+    ( makeTestGroup "Runtime tests"
+                    runtimeFiles
+                    (\file -> do testFile packageConf basePath False isTs file
+                                 testFile packageConf basePath True isTs file)
+    , makeTestGroup "Codegen tests"
+                    codegenFiles
+                    (testCodegen packageConf basePath isTs))
   where
     makeTestGroup title files inner =
       testGroup title $ flip map files $ \file ->
@@ -86,11 +89,18 @@ makeCompilerTests packageConf basePath rand = do
         then return s'
         else randomizeAux (S.insert i s) count b
 
-testFile :: Maybe FilePath -> Maybe FilePath -> Bool -> String -> IO ()
-testFile packageConf basePath opt file = do
-  let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
-      out = toJsName file
-      resf = root <.> "res"
+fns :: Bool -> String -> (String, String, FilePath)
+fns isTs file =
+  ( root
+  , if isTs then toTsName file else toJsName file
+  , root <.> "res"
+  )
+  where
+    root = reverse . drop 1 . dropWhile (/='.') . reverse $ file
+
+testFile :: Maybe FilePath -> Maybe FilePath -> Bool -> Bool -> String -> IO ()
+testFile packageConf basePath opt isTs file = do
+  let (root, out, resf) = fns isTs file
       config =
         addConfigDirectoryIncludePaths ["tests/"]
           defaultConfig
@@ -98,12 +108,13 @@ testFile packageConf basePath opt file = do
             , configTypecheck   = False
             , configPackageConf = packageConf
             , configBasePath    = basePath
+            , configTypeScript  = isTs
             }
   resExists <- doesFileExist resf
   let partialName = root ++ "_partial.res"
   partialExists <- doesFileExist partialName
   compileFromTo config file (Just out)
-  result <- runJavaScriptFile out
+  result <- Compile.runScriptFile isTs out
   if resExists
      then do output <- readFile resf
              assertEqual file output (either show snd result)
@@ -119,11 +130,9 @@ testFile packageConf basePath opt file = do
 -- | Test the generated code output for the given file with
 -- optimizations turned on. This disables runtime generation and
 -- things like that; it's only concerned with the core of the program.
-testCodegen :: Maybe FilePath -> Maybe FilePath -> String -> IO ()
-testCodegen packageConf basePath file = do
-  let root = (reverse . drop 1 . dropWhile (/='.') . reverse) file
-      out = toJsName file
-      resf = root <.> "res"
+testCodegen :: Maybe FilePath -> Maybe FilePath -> Bool -> String -> IO ()
+testCodegen packageConf basePath isTs file = do
+  let (_, out, resf) = fns isTs file
       config =
         addConfigDirectoryIncludePaths ["tests/codegen/"]
           defaultConfig
@@ -135,14 +144,12 @@ testCodegen packageConf basePath file = do
             , configPrettyPrint   = True
             , configLibrary       = True
             , configExportRuntime = False
+            , configTypeScript    = isTs
             }
   compileFromTo config file (Just out)
   actual <- readStripped out
-  expected <- readStripped resf
+  expected <- readStripped $ resf ++ (if isTs then "_ts" else "")
   assertEqual file expected actual
   where readStripped =
           fmap (unlines . filter (not . null) . lines) . readFile
 
--- | Run a JS file.
-runJavaScriptFile :: String -> IO (Either (String,String) (String,String))
-runJavaScriptFile file = readAllFromProcess "node" [file] ""

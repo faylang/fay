@@ -22,7 +22,6 @@ module Data.MutMap
 import Data.Defined
 import Data.MutMap.Internal
 import Data.Text (Text)
-import qualified Data.Text as T
 import FFI
 import Prelude
 
@@ -37,7 +36,7 @@ mutFromList :: [(Text, a)] -> Fay (MutMap a)
 mutFromList = mutFromListI . map (\(key, val) -> KeyValI (addSalt key) val)
 
 mutFromListI :: [KeyValI a] -> Fay (MutMap a)
-mutFromListI = ffi "function() { var r = {}; $.each(%1, function(ix, x) { r[x.slot1] = x.slot2; }); return r; }()"
+mutFromListI = ffi "function() { var r = {}; for(var key in %1) { r[%1[key].slot1] = %1[key].slot2; } return r; }()"
 
 -- Query
 
@@ -63,21 +62,21 @@ mutAssocsI :: MutMap a -> Fay [KeyValI a]
 mutAssocsI = ffi "function() { var r = []; for (var k in %1) { r.push({ instance : 'KeyValI', slot1 : k, slot2 : %1[k] }); } return r; }()"
 
 mutClone :: MutMap a -> Fay (MutMap a)
-mutClone = ffi "jQuery['extend']({}, %1)"
+mutClone = ffi "Fay$$objConcat({}, %1)"
 
 -- Note: Also clones.
 mutMapM :: (a -> Fay b) -> MutMap a -> MutMap b
-mutMapM = ffi "jQuery['map'](jQuery['extend']({}, %2), %1)"
+mutMapM = ffi "function () { var r = {}; for(var key in %2){ r[key] = %1(%2[key]); } return r;}()"
 
 mutMapM_ :: (a -> Fay ()) -> MutMap a -> Fay ()
-mutMapM_ = ffi "jQuery['map'](%2, function(x) { %1(x); return x; })"
+mutMapM_ = ffi "function () { var r = {}; for(var key in %2){ %1(%2[key]); } return;}()"
 
 -- Note: Also clones.
 mutMapMaybeM :: (a -> Fay (Maybe b)) -> MutMap a -> MutMap b
 mutMapMaybeM f = mutMapMaybeMI $ \x -> f x >>= return . toDefined
 
 mutMapMaybeMI :: (a -> Fay (Defined b)) -> MutMap a -> MutMap b
-mutMapMaybeMI = ffi "jQuery['map']($['extend']({}, %2), %1)"
+mutMapMaybeMI = ffi "function () { var r = {}; for(var key in %2){ r[key] = %1(%2[key]); } return r;}()"
 
 -- Mutation
 

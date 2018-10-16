@@ -16,11 +16,15 @@ module Fay.Types.Printer
   , mapping
   ) where
 
-import Control.Monad.RWS
+import Fay.Compiler.Prelude
+
+import Control.Monad.RWS               (RWS, asks, execRWS, get, modify, put, tell)
 import Data.List                       (elemIndex)
+import Data.Maybe                      (fromMaybe)
 import Data.String
 import Language.Haskell.Exts
 import SourceMap.Types
+import qualified Data.Semigroup as SG
 
 -- | Global options of the printer
 data PrintReader = PrintReader
@@ -42,10 +46,13 @@ data PrintWriter = PrintWriter
 pwOutputString :: PrintWriter -> String
 pwOutputString (PrintWriter _ out) = out ""
 
+instance SG.Semigroup PrintWriter where
+  (PrintWriter a b) <> (PrintWriter x y) = PrintWriter (a ++ x) (b . y)
+
 -- | Output concatenation
 instance Monoid PrintWriter where
   mempty =  PrintWriter [] id
-  mappend (PrintWriter a b) (PrintWriter x y) = PrintWriter (a ++ x) (b . y)
+  mappend = (<>)
 
 -- | The state of the pretty printer.
 data PrintState = PrintState
@@ -66,10 +73,12 @@ newtype Printer = Printer
 execPrinter :: Printer -> PrintReader -> PrintWriter
 execPrinter (Printer p) r = snd $ execRWS p r defaultPrintState
 
+instance SG.Semigroup Printer where
+  (Printer p) <> (Printer q) = Printer (p >> q)
 
 instance Monoid Printer where
   mempty = Printer $ return ()
-  mappend (Printer p) (Printer q) = Printer (p >> q)
+  mappend = (<>)
 
 -- | Print some value.
 class Printable a where
@@ -85,7 +94,7 @@ indented (Printer p) = Printer $ asks prPretty >>= \pretty ->
 --   Does nothing when prPretty is False
 newline :: Printer
 newline = Printer $ asks prPretty >>= flip when writeNewline
-  where writeNewline = (writeRWS "\n" >> modify (\s -> s {psNewline = True}))
+  where writeNewline = writeRWS "\n" >> modify (\s -> s { psNewline = True })
 
 -- | Write out a raw string, respecting the indentation
 --   Note: if you pass a string with newline characters, it will print them
@@ -106,9 +115,7 @@ writeRWS x = do
 
   let newLines = length (filter (== '\n') x)
   put ps { psLine    = psLine ps + newLines
-         , psColumn  = case elemIndex '\n' (reverse x) of
-                        Just i  -> i
-                        Nothing -> psColumn ps + length x
+         , psColumn  = fromMaybe (psColumn ps + length x) . elemIndex '\n' $ reverse x
          , psNewline = False
          }
 

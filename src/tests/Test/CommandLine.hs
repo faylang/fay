@@ -39,4 +39,6 @@ case_compile = do
   whatAGreatFramework <- fmap (lookup "HASKELL_PACKAGE_SANDBOX") getEnvironment
   res <- compileFile (["--include=tests", "tests/RecordImport_Import.hs","--no-ghc"] ++
                       ["--package-conf=" ++ packageConf | Just packageConf <- [whatAGreatFramework] ])
-  assertBool (fromLeft res) (isRight res)
+  case res of
+    Left  e -> assertFailure $ "Compilation failed: " ++ e
+    Right _ -> assertBool "impossible" True

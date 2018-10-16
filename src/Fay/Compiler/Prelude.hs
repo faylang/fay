@@ -39,7 +39,7 @@ import           Data.Either
 import           Data.Function        (on)
 import           Data.List.Compat
 import           Data.Maybe
-import           Data.Monoid          (Monoid (..), (<>))
+import           Data.Monoid          (Monoid (..))
 import           Data.Ord
 import           Data.Traversable
 import           Prelude.Compat       hiding (exp, mod)
@@ -55,7 +55,7 @@ io = liftIO
 
 -- | Do any of the (monadic) predicates match?
 anyM :: (Functor m, Applicative m, Monad m) => (a -> m Bool) -> [a] -> m Bool
-anyM p l = return . not . null =<< filterM p l
+anyM p l = not . null <$> filterM p l
 
 -- | Read from a process returning both std err and out.
 readAllFromProcess :: FilePath -> [String] -> String -> IO (Either (String,String) (String,String))

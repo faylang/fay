@@ -2,7 +2,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE ViewPatterns          #-}
 
@@ -19,9 +18,9 @@ module Fay
   ,compileFromTo
   ,compileFromToAndGenerateHtml
   ,toJsName
+  ,toTsName
   ,showCompileError
-  ,getConfigRuntime
-  ,getRuntime
+  ,readConfigRuntime
   ) where
 
 import           Fay.Compiler.Prelude
@@ -31,6 +30,7 @@ import           Fay.Compiler.Misc                      (ioWarn, printSrcSpanInf
 import           Fay.Compiler.Packages
 import           Fay.Compiler.Typecheck
 import           Fay.Config
+import           Fay.Runtime
 import qualified Fay.Exts                               as F
 import           Fay.Types
 
@@ -39,7 +39,6 @@ import qualified Data.ByteString.Lazy                   as L
 import           Language.Haskell.Exts        (prettyPrint)
 import           Language.Haskell.Exts.Syntax
 import           Language.Haskell.Exts.SrcLoc
-import           Paths_fay
 import           SourceMap                              (generate)
 import           SourceMap.Types
 import           System.FilePath
@@ -118,9 +117,8 @@ compileFileWithResult config filein = do
 -- Don't use this directly, it's only exposed for the test suite.
 compileFileWithState :: Config -> FilePath -> IO (Either CompileError (String,Maybe [Mapping],CompileState))
 compileFileWithState config filein = do
-  runtime <- getConfigRuntime config
+  raw <- readConfigRuntime config
   hscode <- readFile filein
-  raw <- readFile runtime
   config' <- resolvePackages config
   compileToModule filein config' raw (compileToplevelModule filein) hscode
 
@@ -139,14 +137,14 @@ compileToModule filepath config raw with hscode = do
             )
       where
         pw = execPrinter (runtime <> aliases <> printer <> main) pr
-        runtime = if (configExportRuntime config) then write raw else mempty
-        aliases = if (configPrettyThunks config)
+        runtime = if configExportRuntime config then write raw else mempty
+        aliases = if configPrettyThunks config
                   then write . unlines $ [ "var $ = Fay$$$;"
                                          , "var _ = Fay$$_;"
                                          , "var __ = Fay$$__;"
                                          ]
                   else mempty
-        main = if (not $ configLibrary config)
+        main = if not (configLibrary config)
                then write $ "Fay$$_(" ++ modulename ++ ".main, true);\n"
                else mempty
         pr = defaultPrintReader
@@ -159,6 +157,12 @@ compileToModule filepath config raw with hscode = do
 toJsName :: String -> String
 toJsName x = case reverse x of
   ('s':'h':'.': (reverse -> file)) -> file ++ ".js"
+  _ -> x
+
+-- | Convert a Haskell filename to a TypeScript filename.
+toTsName :: String -> String
+toTsName x = case reverse x of
+  ('s':'h':'.': (reverse -> file)) -> file ++ ".ts"
   _ -> x
 
 -- | Print a compile error for human consumption.
@@ -203,9 +207,8 @@ showCompileError e = case e of
 
 -- | Get the JS runtime source.
 -- This will return the user supplied runtime if it exists.
-getConfigRuntime :: Config -> IO String
-getConfigRuntime cfg = maybe getRuntime return $ configRuntimePath cfg
-
--- | Get the default JS runtime source.
-getRuntime :: IO String
-getRuntime = getDataFileName "js/runtime.js"
+readConfigRuntime :: Config -> IO String
+readConfigRuntime cfg =
+  case configRuntimePath cfg of
+    Just path -> readFile path
+    Nothing -> return $ getRuntimeSource cfg

@@ -55,12 +55,20 @@ doesSourceDirExist path = do
 describePackage :: Maybe FilePath -> String -> IO String
 describePackage db name = do
   exists <- doesFileExist ghc_pkg
-  result <- readAllFromProcess (if exists then ghc_pkg else "ghc-pkg") args ""
+  let command = if exists
+        then if (isInfixOf ".stack" ghc_pkg)
+             then "stack"
+             else ghc_pkg
+        else "ghc-pkg"
+      extraArgs = case command of
+        "stack" -> ["exec","--","ghc-pkg"]
+        _       -> []
+      args = extraArgs ++ ["describe",name] ++ ["--expand-env-vars", "-v2"]
+             ++ ["--package-db=" ++ db' | Just db' <- [db]]
+  result <- readAllFromProcess command args ""
   case result of
     Left  (err,out) -> error $ "ghc-pkg describe error:\n" ++ err ++ "\n" ++ out
     Right (_err,out) -> return out
-
-  where args = ["describe",name] ++ ["-f" ++ db' | Just db' <- [db]]
 
 -- | Get the package version from the package description.
 packageVersion :: String -> Maybe String

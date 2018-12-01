@@ -40,10 +40,17 @@ typecheck cfg fp = do
           , "-i" ++ intercalate ":" includeDirs
           , fp ] ++ ghcPackageDbArgs ++ wallF ++ map ("-package " ++) packages
   exists <- doesFileExist GHCPaths.ghc
-  let ghcPath = if exists then GHCPaths.ghc else "ghc"
+  let ghcPath = if exists
+        then if (isInfixOf ".stack" GHCPaths.ghc)
+             then "stack"
+             else GHCPaths.ghc
+        else "ghc"
+      extraFlags = case ghcPath of
+        "stack" -> ["exec","--","ghc"]
+        _       -> []
   when (configShowGhcCalls cfg) $
-    putStrLn . unwords $ ghcPath : flags
-  res <- readAllFromProcess ghcPath flags ""
+    putStrLn . unwords $ ghcPath : (extraFlags ++ flags)
+  res <- readAllFromProcess ghcPath (extraFlags ++ flags) ""
   either (return . Left . GHCError . fst) (return . Right . fst) res
    where
     wallF | configWall cfg = ["-Wall"]

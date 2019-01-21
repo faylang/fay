@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.24.0.2
+
+* Fix dependent compilation fail when building project with stack (#457).
+
 #### 0.24.0.1
 
 * Dependency updates incl GHC 8.4 support

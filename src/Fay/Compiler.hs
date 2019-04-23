@@ -121,7 +121,7 @@ compileFileWithSource filepath contents = do
 -- | Compile a parse HSE module.
 compileModuleFromAST :: ([JsStmt], [JsStmt]) -> F.Module -> Compile ([JsStmt], [JsStmt])
 compileModuleFromAST (hstmts0, fstmts0) mod'@Module{} = do
-  mod@(Module _ _ pragmas _ decls) <- annotateModule Haskell2010 defaultExtensions mod'
+  ~mod@(Module _ _ pragmas _ decls) <- annotateModule Haskell2010 defaultExtensions mod'
   let modName = unAnn $ F.moduleName mod
   modify $ \s -> s { stateUseFromString = hasLanguagePragmas ["OverloadedStrings", "RebindableSyntax"] pragmas
                    }

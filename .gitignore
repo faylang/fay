@@ -16,3 +16,4 @@ tests/*.html
 tests/*.js
 tests/*/*.js
 .stack-work
+.ghc*

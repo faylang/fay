@@ -139,11 +139,11 @@ library
     Language.Haskell.Names.Types
     Paths_fay
   build-depends:
-      base >= 4.9 && < 4.12
+      base >= 4.9 && < 4.13
     , base-compat >= 0.10 && < 0.11
     , aeson > 0.6 && < 1.5
     , bytestring >= 0.9 && < 0.11
-    , containers >= 0.4 && < 0.6
+    , containers >= 0.4 && < 0.7
     , data-default >= 0.2 && < 0.8
     , data-lens-light == 0.1.*
     , directory >= 1.1 && < 1.4

@@ -139,7 +139,7 @@ parseDataOrTuple rec value = result where
 parseTuple :: Data a => GenericParser -> DataType -> Vector Value -> Either String a
 parseTuple rec typ arr =
   case dataTypeConstrs typ of
-    [cons] -> evalStateT (fromConstrM (do i:next <- get
+    [cons] -> evalStateT (fromConstrM (do ~(i:next) <- get
                                           put next
                                           value <- lift (Vector.indexM arr i)
                                           lift (rec value))
@@ -164,7 +164,7 @@ parseObject rec typ obj =
 -- | Make a simple ADT constructor from an object: { "slot1": 1, "slot2": 2} -> Foo 1 2
 makeSimple :: Data a => GenericParser -> HashMap Text Value -> Constr -> Either String a
 makeSimple rec obj cons =
-  evalStateT (fromConstrM (do i:next <- get
+  evalStateT (fromConstrM (do ~(i:next) <- get
                               put next
                               value <- lift (lookupField obj (Text.pack ("slot" ++ show i)))
                               lift (rec value))
@@ -176,7 +176,7 @@ makeRecord :: Data a => GenericParser -> HashMap Text Value -> Constr -> [String
 makeRecord rec obj cons =
   evalStateT $
     fromConstrM
-      (do key:next <- get
+      (do ~(key:next) <- get
           put next
           value <- lift (lookupField obj (Text.pack key))
           lift $ rec value)

@@ -51,7 +51,7 @@ preprocessFileWithSource filepath contents = do
 preprocessAST :: () -> F.Module -> Compile ()
 preprocessAST () mod@(Module _ _ _ _ decls) = do
   -- This can only return one element since we only compile one module.
-  ([exports],_) <- HN.getInterfaces Haskell2010 defaultExtensions [mod]
+  ~([exports],_) <- HN.getInterfaces Haskell2010 defaultExtensions [mod]
   modify $ \s -> s { stateInterfaces = M.insert (stateModuleName s) exports $ stateInterfaces s }
   forM_ decls scanTypeSigs
   forM_ decls scanRecordDecls

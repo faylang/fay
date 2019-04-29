@@ -5,6 +5,7 @@ See full history at: <https://github.com/faylang/fay/commits>
 #### 0.24.0.3 (2019-04-29)
 
 * Dependency updates including GHC-8.6 support.
+* Added stack compatibility.
 
 #### 0.24.0.2
 

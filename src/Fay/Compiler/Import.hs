@@ -50,7 +50,7 @@ compileWith filepath with compileModule before from = do
       st
       (parseResult (throwError . uncurry ParseError)
                    (\mod' -> do
-                     mod@(Module _ _ _ imports _) <-
+                     ~mod@(Module _ _ _ imports _) <-
                        either throwError return =<< io (before F.noI mod')
                      res <- foldr (<>) mempty <$> mapM (compileImport compileModule) imports
                      modify $ \s -> s { stateModuleName = unAnn $ F.moduleName mod }

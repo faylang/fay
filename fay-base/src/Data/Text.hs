@@ -63,7 +63,7 @@ module Data.Text
 import Data.Data
 import FFI
 import Data.Nullable (fromNullable)
-import Prelude (Eq,String,Int,Bool,Char,Maybe,Double,Ord,error)
+import Prelude (Eq,String,Int,Bool,Char,Maybe,Double,Ord,Show,error)
 import qualified "base" Data.String as B (IsString (..))
 
 -- | A space efficient, packed, unboxed Unicode text type.
@@ -71,6 +71,7 @@ data Text
 deriving instance Eq Text
 deriving instance Data Text
 deriving instance Typeable Text
+deriving instance Show Text
 instance Ord Text
 instance B.IsString Text where fromString = error "the method fromString can never be called"
 

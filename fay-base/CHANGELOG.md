@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.21.1.1 (2019-05-01)
+
+* Added `Show` instance for `Text` (#453).
+
 ## 0.21.1.0 (2018-03-09)
 
 * fay 0.24.0.0 support

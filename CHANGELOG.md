@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+#### 0.24.0.4 (2019-12-03)
+
+* Fixes stack nix  integration broken
+
 #### 0.24.0.3 (2019-04-29)
 
 * Dependency updates including GHC-8.6 support.

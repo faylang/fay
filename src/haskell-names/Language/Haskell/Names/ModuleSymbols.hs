@@ -101,7 +101,7 @@ getTopDeclSymbols impTbl mdl d =
 
         cons :: Constructors
         cons = do -- list monad
-          GadtDecl _ cn (fromMaybe [] -> fields) _ty <- gadtDecls
+          GadtDecl _ cn _tyvarBinds _context (fromMaybe [] -> fields) _ty <- gadtDecls
           return (void cn , [void f | FieldDecl _ fNames _ <- fields, f <- fNames])
 
         infos = constructorsToInfos dq cons

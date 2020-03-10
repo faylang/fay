@@ -47,7 +47,6 @@ deriveGTraversable ''Rhs
 deriveGTraversable ''GuardedRhs
 deriveGTraversable ''Type
 deriveGTraversable ''TyVarBind
-deriveGTraversable ''Kind
 deriveGTraversable ''FunDep
 deriveGTraversable ''Context
 deriveGTraversable ''Asst

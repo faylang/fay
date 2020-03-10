@@ -17,3 +17,4 @@ tests/*.js
 tests/*/*.js
 .stack-work
 .ghc*
+cabal.project.local

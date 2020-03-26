@@ -2,9 +2,13 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+### 0.24.1.0 (2020-03-26)
+
+* GHC 8.10.1 support.
+
 #### 0.24.0.5 (2020-03-10)
 
-* GHC 8.8 support
+* GHC 8.8 support.
 
 #### 0.24.0.4 (2019-12-03)
 

@@ -22,7 +22,7 @@ maintainer:          adam@bergmark.nl
 copyright:           2012 Chris Done, Adam Bergmark
 category:            Development, Web, Fay
 build-type:          Custom
-cabal-version:       2.0
+cabal-version:       3.0
 data-files:
   src/Fay/FFI.hs
 extra-source-files:

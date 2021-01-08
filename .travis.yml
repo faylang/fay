@@ -17,6 +17,6 @@ script:
   - npm test
 notifications:
   email:
-    recipients: adam@bergmark.nl
+    recipients: adam@bergmark.nl, persiantiger@yandex.ru
     on_success: change
     on_failure: change

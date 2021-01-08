@@ -2,6 +2,10 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+### 0.24.1.1 (2021-01-08)
+
+* Relax boundaries for aeson, tasty, base-compat. Allow builds for Gentoo (#469).
+
 ### 0.24.1.0 (2020-03-26)
 
 * GHC 8.10.1 support.

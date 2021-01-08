@@ -22,7 +22,7 @@ maintainer:          adam@bergmark.nl
 copyright:           2012 Chris Done, Adam Bergmark
 category:            Development, Web, Fay
 build-type:          Custom
-cabal-version:       >=1.8
+cabal-version:       2.0
 data-files:
   src/Fay/FFI.hs
 extra-source-files:
@@ -77,10 +77,13 @@ custom-setup
     , Cabal
 
 library
+  default-language:  Haskell2010                           
   ghc-options:       -O2 -Wall
   hs-source-dirs:
     src
     src/haskell-names
+  autogen-modules:
+    Paths_fay
   exposed-modules:
     Fay
     Fay.Compiler
@@ -174,9 +177,12 @@ library
     build-depends: tagged
 
 executable fay
+  default-language:  Haskell2010                           
   hs-source-dirs:    src/main
   ghc-options:       -O2 -Wall
   main-is:           Main.hs
+  autogen-modules:
+    Paths_fay
   build-depends:
       base
     , fay
@@ -187,10 +193,13 @@ executable fay
     Paths_fay
 
 executable fay-tests
+  default-language:  Haskell2010                           
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   hs-source-dirs:    src/tests
   main-is:           Tests.hs
   if flag(test)
+    autogen-modules:
+      Paths_fay
     other-modules:
       Test.CommandLine
       Test.Compile

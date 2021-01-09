@@ -115,11 +115,12 @@ script:
   - find . -maxdepth 1 -type f -name '*.tar.gz' -exec tar -xvf '{}' \;
   - find . -maxdepth 1 -type f -name '*.tar.gz' -exec rm       '{}' \;
   - PKGDIR_fay="$(find . -maxdepth 1 -type d -regex '.*/fay-[0-9.]*')"
+  - PKGDIR_fay_base="$(find . -maxdepth 1 -type d -regex '.*/fay-base-[0-9.]*')"
   # Generate cabal.project
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
   - touch cabal.project
   - |
-    echo "packages: . fay-base/" >> cabal.project
+    echo "packages: $PKGDIR_fay $PKGDIR_fay_base" >> cabal.project
   - if [ $HCNUMVER -ge 80400 ] ; then echo 'package fay' >> cabal.project ; fi
   - "if [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
   - |

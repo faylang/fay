@@ -92,7 +92,7 @@ install:
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
   - touch cabal.project
   - |
-    echo "packages: ." >> cabal.project
+    echo "packages: . fay-base" >> cabal.project
   - if [ $HCNUMVER -ge 80400 ] ; then echo 'package fay' >> cabal.project ; fi
   - "if [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
   - |
@@ -131,8 +131,7 @@ script:
   - ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks all
   # Building with tests and benchmarks...
   # build & run tests, build benchmarks
-  - ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} all
-  - ${CABAL} v2-build $WITHCOMPILER fay-base
+  - ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} all -ftest
   - ${CABAL} v2-exec $WITHCOMPILER fay-tests -- --num-threads=4 -random 20
   # cabal check...
   - (cd ${PKGDIR_fay} && ${CABAL} -vnormal check)

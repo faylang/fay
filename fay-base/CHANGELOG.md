@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.21.1.2 (2020-02-09)
+
+* Cabal-version upgraded to 3.0.
+
 ## 0.21.1.1 (2019-05-01)
 
 * Added `Show` instance for `Text` (#453).

@@ -182,8 +182,6 @@ executable fay
   hs-source-dirs:    src/main
   ghc-options:       -O2 -Wall
   main-is:           Main.hs
-  autogen-modules:
-    Paths_fay
   build-depends:
       base
     , fay
@@ -199,8 +197,6 @@ executable fay-tests
   hs-source-dirs:    src/tests
   main-is:           Tests.hs
   if flag(test)
-    autogen-modules:
-      Paths_fay
     other-modules:
       Test.CommandLine
       Test.Compile

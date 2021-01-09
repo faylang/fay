@@ -92,7 +92,7 @@ install:
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
   - touch cabal.project
   - |
-    echo "packages: . fay-base" >> cabal.project
+    echo "packages: . fay-base/" >> cabal.project
   - if [ $HCNUMVER -ge 80400 ] ; then echo 'package fay' >> cabal.project ; fi
   - "if [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
   - |
@@ -119,7 +119,7 @@ script:
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
   - touch cabal.project
   - |
-    echo "packages: ${PKGDIR_fay}" >> cabal.project
+    echo "packages: . fay-base/" >> cabal.project
   - if [ $HCNUMVER -ge 80400 ] ; then echo 'package fay' >> cabal.project ; fi
   - "if [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
   - |

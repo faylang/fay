@@ -129,8 +129,8 @@ script:
   - cat cabal.project.local || true
   # Building...
   # this builds all libraries and executables (without tests/benchmarks)
-  - travis_retry ${CABAL} v2-build $WITHCOMPILER --force-reinstalls --only-dependencies -ftest --disable-tests --disable-benchmarks
-  - travis_retry ${CABAL} v2-build $WITHCOMPILER --force-reinstalls --only-dependencies -ftest --disable-tests --disable-benchmarks all
+  - travis_retry ${CABAL} v2-build $WITHCOMPILER -ftest --disable-tests --disable-benchmarks fay
+  - travis_retry ${CABAL} v2-build $WITHCOMPILER -ftest --disable-tests --disable-benchmarks all
   # Building with tests and benchmarks...
   # build & run tests, build benchmarks
   - ${CABAL} v2-install $WITHCOMPILER fay-tests -ftest

@@ -101,11 +101,12 @@ assertPretty cfg flagName = do
   case res of
     Left l  -> assertFailure $ "Should compile, but failed with: " ++ show l
     Right js -> do
-    writeFile ("tests/Compile/" ++ flagName ++ suffix) js
-    (err, out) <- either id id <$> runScriptFile isTs ("tests/Compile/" ++ flagName ++ suffix)
-    when (err /= "") $ assertFailure err
-    expected <- readFile $ "tests/Compile/" ++ flagName ++ ".res"
-    assertEqual (flagName ++ " node stdout") expected out
+      writeFile ("tests/Compile/" ++ flagName ++ suffix) js
+      (err, out) <- either id id <$> runScriptFile isTs
+        ("tests/Compile/" ++ flagName ++ suffix)
+      when (err /= "") $ assertFailure err
+      expected <- readFile $ "tests/Compile/" ++ flagName ++ ".res"
+      assertEqual (flagName ++ " node stdout") expected out
 
 case_pretty :: Assertion
 case_pretty = do

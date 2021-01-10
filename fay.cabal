@@ -1,5 +1,6 @@
+cabal-version:       2.0
 name:                fay
-version:             0.24.1.0
+version:             0.24.1.1
 synopsis:            A compiler for Fay, a Haskell subset that compiles to JavaScript.
 description:         Fay is a proper subset of Haskell which is type-checked
                      with GHC, and compiled to JavaScript. It is lazy, pure, has a Fay monad,
@@ -22,7 +23,7 @@ maintainer:          adam@bergmark.nl
 copyright:           2012 Chris Done, Adam Bergmark
 category:            Development, Web, Fay
 build-type:          Custom
-cabal-version:       >=1.8
+Tested-with:         GHC ==8.4.4 || ==8.6.5 || ==8.8.3
 data-files:
   src/Fay/FFI.hs
 extra-source-files:
@@ -77,10 +78,13 @@ custom-setup
     , Cabal
 
 library
+  default-language:  Haskell2010                           
   ghc-options:       -O2 -Wall
   hs-source-dirs:
     src
     src/haskell-names
+  autogen-modules:
+    Paths_fay
   exposed-modules:
     Fay
     Fay.Compiler
@@ -174,6 +178,7 @@ library
     build-depends: tagged
 
 executable fay
+  default-language:  Haskell2010                           
   hs-source-dirs:    src/main
   ghc-options:       -O2 -Wall
   main-is:           Main.hs
@@ -187,6 +192,7 @@ executable fay
     Paths_fay
 
 executable fay-tests
+  default-language:  Haskell2010                           
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   hs-source-dirs:    src/tests
   main-is:           Tests.hs

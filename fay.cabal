@@ -83,8 +83,9 @@ library
   hs-source-dirs:
     src
     src/haskell-names
-  autogen-modules:
-    Paths_fay
+  if impl(ghc >= 8.2)
+    autogen-modules:
+      Paths_fay
   exposed-modules:
     Fay
     Fay.Compiler

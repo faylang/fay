@@ -1,10 +1,10 @@
-cabal-version:       3.0
+cabal-version:       2.0
 name:                fay-base
 version:             0.21.1.2
 synopsis:            The base package for Fay.
 description:         The base package for Fay.
                      This package amongst others exports Prelude and FFI which you probably want to use with Fay.
-license:             BSD-3-Clause
+license:             BSD3
 license-file:        LICENSE
 author:              Chris Done
 maintainer:          adam@bergmark.nl

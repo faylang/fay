@@ -2,6 +2,12 @@
 
 See full history at: <https://github.com/faylang/fay/commits>
 
+### 0.24.2.0 (2021-01-10)
+
+* Drop GHC 8.0 support.
+* Cabal upgraded to 2.0 spec-version.
+* Travis CI refactored to allow cabal-install 3.2.0.0 builds.
+
 ### 0.24.1.1 (2021-01-08)
 
 * Relax boundaries for aeson, tasty, base-compat. Allow builds for Gentoo (#469).

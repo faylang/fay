@@ -1,6 +1,6 @@
 cabal-version:       2.0
 name:                fay-base
-version:             0.21.1.2
+version:             0.21.2.0
 synopsis:            The base package for Fay.
 description:         The base package for Fay.
                      This package amongst others exports Prelude and FFI which you probably want to use with Fay.

@@ -1,8 +1,9 @@
 ## Changelog
 
-## 0.21.1.2 (2020-02-09)
+## 0.21.2.0 (2021-01-10)
 
-* Cabal-version upgraded to 3.0.
+* Cabal-version upgraded to 2.0.
+* Dropped GHC 8.0 support.
 
 ## 0.21.1.1 (2019-05-01)
 

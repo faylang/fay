@@ -87,11 +87,11 @@ install:
     echo "  ghc-options: $GHCJOBS +RTS -M6G -RTS" >> $CABALHOME/config
   - cat $CABALHOME/config
   - travis_retry ${CABAL} v1-update -v
-  - "travis_retry ${CABAL} v1-install 'cpphs >= 1.18.3' 'happy >= 1.19.5'"
-  - "${CABAL} v1-install --dry-run -v3"
-  - "travis_retry ${CABAL} v1-install --force-reinstalls --only-dependencies -ftest"
+  - "travis_retry ${CABAL} v1-install $WITHCOMPILER 'cpphs >= 1.18.3' 'happy >= 1.19.5'"
+  - "${CABAL} v1-install $WITHCOMPILER --dry-run -v3"
+  - "travis_retry ${CABAL} v1-install $WITHCOMPILER --force-reinstalls --only-dependencies -ftest"
 script:
-  - "${CABAL} v1-install . fay-base/ --jobs=1 -ftest"
-  - "${CABAL} v1-exec fay-tests -- --num-threads=4 -random 20"
+  - "${CABAL} v1-install $WITHCOMPILER . fay-base/ --jobs=1 -ftest"
+  - "${CABAL} v1-exec $WITHCOMPILER fay-tests -- --num-threads=4 -random 20"
 # REGENDATA ("0.10.3",["fay.cabal","--output",".travis.yml"])
 # EOF

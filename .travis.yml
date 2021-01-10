@@ -86,62 +86,12 @@ install:
     echo "program-default-options"                >> $CABALHOME/config
     echo "  ghc-options: $GHCJOBS +RTS -M6G -RTS" >> $CABALHOME/config
   - cat $CABALHOME/config
-  - rm -fv cabal.project cabal.project.local cabal.project.freeze
-  - travis_retry ${CABAL} v2-update -v
-  # Generate cabal.project
-  - rm -rf cabal.project cabal.project.local cabal.project.freeze
-  - touch cabal.project
-  - |
-    echo "packages: . fay-base/" >> cabal.project
-  - if [ $HCNUMVER -ge 80400 ] ; then echo 'package fay' >> cabal.project ; fi
-  - "if [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - |
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(fay)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
-  - cat cabal.project || true
-  - cat cabal.project.local || true
-  - if [ -f "./configure.ac" ]; then (cd "." && autoreconf -i); fi
-  - ${CABAL} v2-freeze $WITHCOMPILER ${TEST} ${BENCH}
-  - "cat cabal.project.freeze | sed -E 's/^(constraints: *| *)//' | sed 's/any.//'"
-  - rm  cabal.project.freeze
-  - travis_wait 40 ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} --dep -j2 -ftest all
-  - travis_wait 40 ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks --dep -j2 all
+  - travis_retry ${CABAL} v1-update -v
+  - "travis_retry ${CABAL} v1-install 'cpphs >= 1.18.3' 'happy >= 1.19.5'"
+  - "${CABAL} v1-install --dry-run -v3"
+  - "travis_retry ${CABAL} v1-install --force-reinstalls --only-dependencies -ftest"
 script:
-  - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
-  # Packaging...
-  - ${CABAL} v2-sdist all
-  # Unpacking...
-  - mv dist-newstyle/sdist/*.tar.gz ${DISTDIR}/
-  - cd ${DISTDIR} || false
-  - find . -maxdepth 1 -type f -name '*.tar.gz' -exec tar -xvf '{}' \;
-  - find . -maxdepth 1 -type f -name '*.tar.gz' -exec rm       '{}' \;
-  - PKGDIR_fay="$(find . -maxdepth 1 -type d -regex '.*/fay-[0-9.]*')"
-  - PKGDIR_fay_base="$(find . -maxdepth 1 -type d -regex '.*/fay-base-[0-9.]*')"
-  # Generate cabal.project
-  - rm -rf cabal.project cabal.project.local cabal.project.freeze
-  - touch cabal.project
-  - |
-    echo "packages: $PKGDIR_fay $PKGDIR_fay_base" >> cabal.project
-  - if [ $HCNUMVER -ge 80400 ] ; then echo 'package fay' >> cabal.project ; fi
-  - "if [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - |
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(fay)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
-  - cat cabal.project || true
-  - cat cabal.project.local || true
-  # Building...
-  # this builds all libraries and executables (without tests/benchmarks)
-  - travis_retry ${CABAL} v2-build $WITHCOMPILER -ftest --disable-tests --disable-benchmarks fay
-  - travis_retry ${CABAL} v2-build $WITHCOMPILER -ftest --disable-tests --disable-benchmarks all
-  # Building with tests and benchmarks...
-  # build & run tests, build benchmarks
-  - ${CABAL} v2-install $WITHCOMPILER fay-tests -ftest
-  - (cd $PKGDIR_fay && ${CABAL} v2-exec $WITHCOMPILER fay-tests -- -package-conf $PKGDIR_fay/dist-newstyle/packagedb/ghc-$(${HC} --numeric-version) -base-path $PKGDIR_fay_base/src --num-threads=4 -random 20 && cd -)
-  # cabal check...
-  - (cd ${PKGDIR_fay} && ${CABAL} -vnormal check)
-  # haddock...
-  - ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all
-  # Building without installed constraints for packages in global-db...
-  - rm -f cabal.project.local
-  - ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks all
-
+  - "${CABAL} v1-install . fay-base/ --jobs=1 -ftest"
+  - "${CABAL} v1-exec fay-tests -- --num-threads=4 -random 20"
 # REGENDATA ("0.10.3",["fay.cabal","--output",".travis.yml"])
 # EOF

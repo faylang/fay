@@ -143,7 +143,7 @@ library
     Language.Haskell.Names.Types
     Paths_fay
   build-depends:
-      base >= 4.9 && < 4.15
+      base >= 4.9 && < 4.16
     , base-compat >= 0.10 && < 0.12
     , aeson > 0.6 && < 1.6
     , bytestring >= 0.9 && < 0.11
@@ -191,34 +191,32 @@ executable fay
   other-modules:
     Paths_fay
 
-executable fay-tests
+test-suite fay-tests
   default-language:  Haskell2010                           
   ghc-options:       -O2 -Wall -threaded -with-rtsopts=-N
   hs-source-dirs:    src/tests
+  type:              exitcode-stdio-1.0
   main-is:           Tests.hs
-  if flag(test)
-    other-modules:
-      Test.CommandLine
-      Test.Compile
-      Test.Convert
-      Test.Desugar
-      Test.Util
-      Paths_fay
-    build-depends:
-        base
-      , aeson
-      , attoparsec
-      , bytestring
-      , containers
-      , directory
-      , fay
-      , filepath
-      , haskell-src-exts
-      , random >= 1.0 && < 1.3
-      , tasty >= 0.9 && < 1.5
-      , tasty-hunit >= 0.8 && < 0.11
-      , tasty-th == 0.1.*
-      , text
-      , utf8-string
-  else
-    buildable:         False
+  other-modules:
+    Test.CommandLine
+    Test.Compile
+    Test.Convert
+    Test.Desugar
+    Test.Util
+    Paths_fay
+  build-depends:
+      base
+    , aeson
+    , attoparsec
+    , bytestring
+    , containers
+    , directory
+    , fay
+    , filepath
+    , haskell-src-exts
+    , random >= 1.0 && < 1.3
+    , tasty >= 0.9 && < 1.5
+    , tasty-hunit >= 0.8 && < 0.11
+    , tasty-th == 0.1.*
+    , text
+    , utf8-string

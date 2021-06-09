@@ -1,8 +1,10 @@
-resolver: lts-12.7
+resolver: lts-16.28
 packages:
 - .
 - fay-base
 allow-newer: true
+extra-deps:
+- language-ecmascript-0.19.1.0
 flags:
   fay:
     test: true

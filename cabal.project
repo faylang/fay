@@ -1,1 +1,12 @@
 packages: . fay-base/
+
+allow-newer: language-ecmascript:base
+
+source-repository-package
+    type: git
+    location: https://github.com/swamp-agr/traverse-with-class
+
+source-repository-package
+    type: git
+    location: https://github.com/sorki/data-lens-light
+    tag: db75ed52810293013da577d72fbfb502273ef02e

@@ -37,8 +37,8 @@ import qualified Data.Vector           as Vector
 -- | Convert a Haskell value to a Fay json value.  This can fail when primitive
 --   values aren't handled by explicit cases.  'encodeFay' can be used to
 --   resolve this issue.
-showToFay :: Data a => a -> Maybe Value
-showToFay = spoon . encodeFay id
+showToFay :: forall a. Data a => a -> Maybe Value
+showToFay v = spoon $ encodeFay (\f -> f) v
 
 -- | Convert a Haskell value to a Fay json value.  This can fail when primitive
 --   values aren't handled by explicit cases.  When this happens, you can add
